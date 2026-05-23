@@ -1,4 +1,4 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -113,4 +113,33 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+} */
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/Inter-VariableFont_opsz,wght.ttf");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url(assets/fonts/JetBrainsMono-VariableFont_wght.ttf);
+  font-weight: 700;
+}
+@font-face {
+  font-family: "SpaceGrotesk";
+  src: url("./assets/SpaceGrotesk-VariableFont_wght.ttf");
+  font-weight: 700;
+}
+body {
+  font-family: "Inter", sans-serif;
+}
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
 }
