@@ -9,7 +9,7 @@ const LoginPage = () => {
     <div className="h-screen bg-white flex overflow-hidden font-sans relative">
       
       {/* Left Column - Login Form */}
-      <div className="w-[40%] flex flex-col h-full overflow-y-auto border-r border-gray-100 relative">
+      <div className="w-[40%] flex flex-col h-full overflow-y-auto no-scrollbar border-r border-gray-100 relative">
         <Link to="/" className="absolute top-6 left-8 text-[#1E50FF] font-bold text-xl flex items-center gap-2 hover:opacity-80 transition-opacity">
           InteliPath
         </Link>
@@ -20,7 +20,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Column - Dashboard Preview */}
-      <div className="w-[60%] bg-[#F4F7FB] h-full overflow-y-auto px-10 py-8 relative">
+      <div className="w-[60%] bg-[#F4F7FB] h-full overflow-y-auto no-scrollbar px-10 py-8 relative">
         
         {/* Floating Sidebar */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">

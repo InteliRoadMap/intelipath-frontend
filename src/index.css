@@ -144,3 +144,13 @@ body {
   background: linear-gradient(90deg, #1A60FF 0%, #174EE6 100%);
 >>>>>>> 006722e (Initial commit from Antigravity)
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

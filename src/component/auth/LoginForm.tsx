@@ -6,18 +6,26 @@ import { Button } from '../ui/Button';
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    const isAdmin = email.includes('admin');
+    
     login({
-      id: 'u1',
-      name: 'John',
-      email: 'john@example.com',
-      role: 'student'
+      id: isAdmin ? 'a1' : 'u1',
+      name: isAdmin ? 'Admin User' : 'John',
+      email: email || 'john@example.com',
+      role: isAdmin ? 'admin' : 'student'
     });
-    navigate('/dashboard');
+    
+    if (isAdmin) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -31,6 +39,8 @@ export const LoginForm = () => {
           <input 
             type="email" 
             placeholder="name@company.com" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#1E50FF] transition-all"
           />
         </div>
