@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -113,4 +114,33 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+=======
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1E50FF;
+  --color-primary-dark: #1030A0;
+  --color-bg: #F4F7FB;
+  --color-text-dark: #1A1F36;
+  --color-text-gray: #6B7280;
+  --font-sans: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-dark);
+  font-family: var(--font-sans);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+/* Custom background for the bottom banner */
+.bg-banner {
+  background: linear-gradient(90deg, #1A60FF 0%, #174EE6 100%);
+>>>>>>> 006722e (Initial commit from Antigravity)
 }
