@@ -7,26 +7,17 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-<<<<<<< HEAD
-    "verbatimModuleSyntax": true,
-=======
     "verbatimModuleSyntax": false,
->>>>>>> 006722e (Initial commit from Antigravity)
+
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
-<<<<<<< HEAD
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-=======
     "noUnusedLocals": false,
     "noUnusedParameters": false,
->>>>>>> 006722e (Initial commit from Antigravity)
+
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },

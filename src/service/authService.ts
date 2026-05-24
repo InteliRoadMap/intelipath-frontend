@@ -1,10 +1,10 @@
-import api from "../api/axios"
+import api from "../api/StoreApi"
 
 type LoginResponse = {
   status: number
   message: string
   data: {
-    accessToken: string 
+    accessToken: string
     userId: string
     email: string
     fullName: string
