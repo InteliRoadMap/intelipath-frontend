@@ -1,194 +1,262 @@
 import {
-  FaBrain,
-  FaBriefcase,
-  FaCheck,
-  FaCloud,
-  FaCode,
-  FaDatabase,
-  FaLaptopCode,
-  FaRobot,
-} from "react-icons/fa"
+  BookOpen,
+  Trophy,
+  Lock,
+  Layout,
+  Database,
+  MonitorPlay,
+  Cpu
+} from "lucide-react"
+import { SkillGapCard } from "../common/SkillGapCard"
 
-// Sample data for skill progress and roadmap steps
-const skillBars = [
-  { name: "Frontend", val: "80%", bg: "w-[80%]" },
-  { name: "Backend", val: "70%", bg: "w-[70%]" },
-  { name: "Database", val: "60%", bg: "w-[60%]" },
-  { name: "DevOps", val: "65%", bg: "w-[65%]" },
-  { name: "System Design", val: "50%", bg: "w-[50%]" },
-]
+type AuthPreviewProps = {
+  mentorText?: string
+}
 
-const roadmapSteps = [
-  { icon: <FaCode />, title: "Fundamentals", done: true },
-  { icon: <FaLaptopCode />, title: "Frontend", done: true },
-  { icon: <FaDatabase />, title: "Backend", done: true },
-  { icon: <FaCloud />, title: "DevOps", done: false },
-  { icon: <FaBrain />, title: "System Design", done: false },
-]
-//
-function AuthDashboardPreview() {
+export const AuthPreview = ({
+  mentorText = "Create your account and let AI guide your engineering journey from day one."
+}: AuthPreviewProps) => {
   return (
-    <div className="hidden lg:flex min-h-screen bg-linear-to-br from-[rgb(190,211,244)] to-[#cbdff7] flex-col items-center justify-center p-8 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 opacity-20 rounded-full blur-3xl"></div>
-      <div className="w-full max-w-4xl mx-auto text-center mb-8 z-10">
-        <div className="flex items-center justify-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full bg-blue-500"></div>
-          <h2 className="text-3xl font-bold text-[#12306b]">IntelliPath</h2>
-        </div>
+    // 1. TĂNG w-[60%] LÊN w-[68%] (hoặc w-[70%]) ĐỂ MỞ RỘNG KHUNG PHẢI
+    <div className="w-full bg-bg h-full overflow-y-auto no-scrollbar px-10 py-8 relative">
+      {/* Floating Sidebar */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
+        <button className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-gray-500 hover:text-primary transition-colors">
+          <BookOpen size={18} />
+          <span className="text-[9px] mt-1 font-medium">Learn</span>
+        </button>
 
-        <h1 className="text-4xl font-bold text-[#17326b] leading-tight mb-4">
-          AI-Powered Career Guidance
-          <br />
-          for{" "}
-          <span className="text-[#1d75ff]">
-            Software Engineering Students
+        <button className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-gray-500 hover:text-primary transition-colors">
+          <span className="text-primary mb-0.5">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
           </span>
-        </h1>
+          <span className="text-[9px] font-medium text-primary">Track</span>
+        </button>
 
-        <p className="text-gray-500 text-base">
-          Your personalized roadmap to learn, grow and
-          <br />
-          build your dream career.
+        <button className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-gray-500 hover:text-primary transition-colors">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-blue-400"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span className="text-[9px] mt-1 font-medium">Improve</span>
+        </button>
+
+        <button className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-gray-500 hover:text-primary transition-colors">
+          <Trophy size={18} className="text-orange-400" />
+          <span className="text-[9px] mt-1 font-medium">Achieve</span>
+        </button>
+      </div>
+
+      {/* Header */}
+      <div className="text-center mb-8 max-w-lg mx-auto">
+        <div className="text-primary font-semibold mb-1">InteliPath</div>
+        <h2 className="text-xl font-bold text-text-dark">
+          AI-Powered Career Guidance
+        </h2>
+        <div className="text-lg font-medium mb-1">
+          for <span className="text-primary">Software Engineering</span>{" "}
+          Students
+        </div>
+        <p className="text-gray-500 text-xs">
+          Your personalized roadmap to learn, grow and build your dream career.
         </p>
       </div>
 
-      <div className="grid grid-cols-12 gap-5 w-full max-w-4xl mx-auto z-10">
-        <div className="col-span-5 bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs font-bold text-gray-400 tracking-wider mb-4">
-              SKILL PROGRESS
+      {/* Dashboard Grid */}
+      {/* 2. GIẢM pr-10 XUỐNG pr-4 ĐỂ CÁC CARD TRÀN RA SÁT THANH MENU HƠN */}
+      <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto pr-4 pb-8">
+        {/* LEFT */}
+        <div className="flex flex-col gap-4">
+          {/* Skill Progress */}
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700 mb-4 uppercase tracking-wider">
+              Skill Progress
             </h3>
-            <div className="relative flex items-center justify-center my-2">
-              <svg className="w-28 h-28 -rotate-90" viewBox="0 0 112 112">
-                <circle
-                  cx="56"
-                  cy="56"
-                  r="45"
-                  stroke="#edf4ff"
-                  strokeWidth="10"
-                  fill="transparent"
-                />
-                <circle
-                  cx="56"
-                  cy="56"
-                  r="45"
-                  stroke="#3b82f6"
-                  strokeWidth="10"
-                  fill="transparent"
-                  strokeDasharray={2 * Math.PI * 45}
-                  strokeDashoffset={2 * Math.PI * 45 * (1 - 0.75)}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-2xl font-bold text-gray-800">75%</span>
-                <span className="text-[10px] text-gray-400 font-medium">
+
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center justify-center relative w-18 h-18 shrink-0">
+                <div className="w-full h-full rounded-full border-4 border-gray-100 border-t-primary border-r-primary flex items-center justify-center transform -rotate-45">
+                  <div className="transform rotate-45 flex flex-col items-center">
+                    <span className="font-bold text-lg text-primary">75%</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-medium text-gray-400 mt-1">
                   Overall
                 </span>
               </div>
+
+              <div className="grow space-y-2">
+                {[
+                  { label: "Frontend", val: 60 },
+                  { label: "Backend", val: 70 },
+                  { label: "Database", val: 60 },
+                  { label: "DevOps", val: 65 },
+                  { label: "System Design", val: 50 }
+                ].map((skill) => (
+                  <div key={skill.label} className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-600 w-20">
+                      {skill.label}
+                    </span>
+                    <div className="grow bg-gray-100 rounded-full h-1">
+                      <div
+                        className="bg-primary h-1 rounded-full"
+                        style={{ width: `${skill.val}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-[10px] text-gray-400 w-6 text-right">
+                      {skill.val}%
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2 mt-4 text-[11px] text-gray-500 font-medium">
-            {skillBars.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <span className="w-20 text-gray-600">{item.name}</span>
-                <div className="flex-1 h-1.5 bg-blue-50 rounded-full mx-2 overflow-hidden">
-                  <div
-                    className={`h-full bg-blue-500 rounded-full ${item.bg}`}
-                  ></div>
-                </div>
-                <span className="w-8 text-right text-gray-400">
-                  {item.val}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+          <SkillGapCard />
 
-        <div className="col-span-7 bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative">
-          <div className="flex justify-between items-center mb-7">
-            <h3 className="text-xs font-bold text-gray-400 tracking-wider">
-              YOUR LEARNING ROADMAP
+          {/* Recommended */}
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700 mb-4 uppercase tracking-wider">
+              Recommended For You
             </h3>
-            <span className="bg-blue-50 text-blue-600 text-sm font-semibold px-3 py-1.5 rounded-full">
-              68%
-            </span>
-          </div>
 
-          <div className="flex items-center justify-between relative px-2 py-5">
-            <div className="absolute top-12 left-8 right-8 h-1 bg-blue-100 z-0"></div>
-            <div className="absolute top-12 left-8 w-[60%] h-1 bg-cyan-400 z-0"></div>
-
-            {roadmapSteps.map((step) => (
-              <div
-                key={step.title}
-                className="flex flex-col items-center flex-1 z-10 relative"
-              >
-                <div
-                  className={`w-13 h-13 rounded-full flex items-center justify-center border-2 transition-colors shadow-sm text-lg ${
-                    step.done
-                      ? "bg-white border-blue-500 text-blue-500"
-                      : "bg-white border-gray-200 text-gray-300"
-                  }`}
-                >
-                  {step.icon}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
+                  <Layout size={14} />
                 </div>
-                <span className="text-[11px] font-semibold text-gray-600 text-center mt-3 wrap-break-word max-w-19.5">
-                  {step.title}
-                </span>
-                <div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center mt-2 ${
-                    step.done
-                      ? "bg-emerald-400 text-white"
-                      : "border-2 border-gray-200 bg-white"
-                  }`}
-                >
-                  {step.done && <FaCheck className="text-[9px]" />}
+                <div>
+                  <div className="text-xs font-semibold text-text-dark">
+                    System Design Basics
+                  </div>
+                  <div className="text-[10px] text-gray-500">12 lessons</div>
                 </div>
               </div>
-            ))}
+
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                  <Database size={14} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-text-dark">
+                    Database Indexing
+                  </div>
+                  <div className="text-[10px] text-gray-500">8 lessons</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
+                  <MonitorPlay size={14} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-text-dark">
+                    Docker Fundamentals
+                  </div>
+                  <div className="text-[10px] text-gray-500">10 lessons</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="col-span-5 bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center text-center">
-          <h3 className="text-xs font-bold text-gray-400 tracking-wider mb-4 w-full text-left">
-            CAREER RECOMMENDATION
-          </h3>
-          <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-xl shadow-inner mb-3">
-            <FaBriefcase />
-          </div>
-          <h4 className="text-md font-bold text-gray-800">
-            Backend Developer
-          </h4>
-          <p className="text-blue-500 text-xs font-bold mt-1">95% Match</p>
+        {/* RIGHT */}
+        <div className="flex flex-col gap-4">
+          {/* roadmap */}
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Your Learning Roadmap
+              </h3>
+              <span className="text-primary font-bold text-xs">68%</span>
+            </div>
 
-          <div className="w-32 h-1.5 bg-blue-100 rounded-full mt-3 overflow-hidden">
-            <div className="w-[95%] h-full bg-blue-500 rounded-full"></div>
-          </div>
-        </div>
+            <div className="relative flex justify-between px-2 mb-2">
+              <div className="absolute top-2.5 left-4 right-4 h-0.5 bg-blue-100"></div>
+              <div className="absolute top-2.5 left-4 w-1/2 h-0.5 bg-primary"></div>
 
-        <div className="col-span-7 bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between relative overflow-hidden">
-          <div className="flex flex-col justify-center space-y-2 z-10 max-w-[60%]">
-            <div className="bg-[#f0f6ff] text-gray-700 rounded-2xl p-3 text-xs leading-relaxed shadow-sm relative border border-blue-50">
-              <span className="font-bold block text-gray-800 mb-0.5">
-                Hi! I'm your AI Mentor.
-              </span>
-              I'll help you navigate your learning journey.
-              <div className="absolute bottom-3 -right-2 w-3 h-3 bg-[#f0f6ff] border-r border-b border-blue-50 -rotate-45"></div>
+              {["Fundamentals", "Frontend", "Backend"].map((item) => (
+                <div
+                  key={item}
+                  className="flex flex-col items-center z-10 gap-2"
+                >
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white shadow-sm">
+                    ✓
+                  </div>
+                  <span className="text-[9px] text-gray-500 text-center">
+                    {item}
+                  </span>
+                </div>
+              ))}
+
+              {["DevOps", "System Design"].map((item) => (
+                <div
+                  key={item}
+                  className="flex flex-col items-center z-10 gap-2"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gray-50 border-2 border-gray-200 flex items-center justify-center text-gray-400 shadow-sm">
+                    <Lock size={10} />
+                  </div>
+                  <span className="text-[9px] text-gray-400 text-center">
+                    {item}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="w-32 h-32 flex items-center justify-center bg-linear-to-b from-blue-50 to-white rounded-full border border-blue-100 shadow-sm relative">
-            <FaRobot className="text-5xl text-blue-500 animate-bounce" />
-            <div className="absolute bottom-2 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-              AI
+          {/* Career */}
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col items-center justify-center">
+            <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wider w-full text-center">
+              Career Recommendation
+            </h3>
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary mb-2">
+              💼
             </div>
+            <h4 className="font-bold text-sm text-text-dark">
+              Backend Developer
+            </h4>
+            <div className="text-primary font-bold text-xs mt-0.5">
+              95% Match
+            </div>
+          </div>
+
+          {/* AI Mentor */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex items-center gap-4">
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary relative shrink-0">
+              <Cpu size={20} />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white"></div>
+            </div>
+            {/* Cập nhật lại chuỗi chữ AI Mentor trùng khớp với UI mockup */}
+            <p className="text-primary text-[11px] font-medium leading-relaxed">
+              {mentorText}
+            </p>
           </div>
         </div>
       </div>
     </div>
   )
 }
-
-export default AuthDashboardPreview

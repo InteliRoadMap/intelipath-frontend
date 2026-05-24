@@ -1,29 +1,20 @@
 import axios from "axios"
-
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080"
-console.log(import.meta.env.VITE_API_URL)
-const api = axios.create({
-  baseURL: baseURL,
+// Create an Axios instance with default configuration
+const axiosClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json"
   }
 })
-
-api.interceptors.request.use((config) => {
-  // Gắn token cho các endpoint cần auth
+// Add a request interceptor to include the access token in headers
+axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken")
-  if (token) {
+
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
   return config
 })
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("API Error:", error.response?.status, error.response?.data)
-    return Promise.reject(error)
-  }
-)
-
-export default api
+export default axiosClient

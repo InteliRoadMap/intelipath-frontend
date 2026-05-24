@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui/Button';
+
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +30,7 @@ export const LoginForm = () => {
 
   return (
     <div className="w-full max-w-md mx-auto p-8">
-      <h1 className="text-4xl font-bold text-[#1A1F36] mb-2">Welcome Back</h1>
+      <h1 className="text-4xl font-bold text-text-dark mb-2">Welcome Back</h1>
       <p className="text-gray-500 mb-8">Sign in to continue your skill journey.</p>
 
       <form className="space-y-6" onSubmit={handleLogin}>
@@ -41,20 +41,20 @@ export const LoginForm = () => {
             placeholder="name@company.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#1E50FF] transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-primary transition-all"
           />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-1">
             <label className="block text-sm font-medium text-gray-700">Password</label>
-            <Link to="/forgot-password" className="text-sm text-[#1E50FF] font-medium hover:underline">Forgot password?</Link>
+            <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">Forgot password?</Link>
           </div>
           <div className="relative">
             <input 
               type={showPassword ? "text" : "password"} 
               placeholder="••••••••" 
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#1E50FF] transition-all pr-12"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-primary transition-all pr-12"
             />
             <button 
               type="button"
@@ -68,7 +68,7 @@ export const LoginForm = () => {
 
         <button 
           type="submit" 
-          className="w-full py-3 bg-[#1E50FF] text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
           Sign In
         </button>
@@ -102,7 +102,7 @@ export const LoginForm = () => {
         
         <div className="text-center mt-6">
           <span className="text-gray-500 text-sm">Don't have an account? </span>
-          <Link to="/register" className="text-[#1E50FF] text-sm font-medium hover:underline">Get started</Link>
+          <Link to="/register" className="text-primary text-sm font-medium hover:underline">Get started</Link>
         </div>
       </form>
     </div>
