@@ -133,7 +133,7 @@ const LoginPage = () => {
                       </span>
                       <div className="grow bg-gray-100 rounded-full h-1">
                         <div
-                          className="bg-[#1E50FF] h-1 rounded-full"
+                          className="bg-primary h-1 rounded-full"
                           style={{ width: `${skill.val}%` }}
                         ></div>
                       </div>
@@ -156,11 +156,11 @@ const LoginPage = () => {
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#1E50FF]">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
                     <Layout size={14} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-[#1A1F36]">
+                    <div className="text-xs font-semibold text-text-dark">
                       System Design Basics
                     </div>
                     <div className="text-[10px] text-gray-500">12 lessons</div>
@@ -171,7 +171,7 @@ const LoginPage = () => {
                     <Database size={14} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-[#1A1F36]">
+                    <div className="text-xs font-semibold text-text-dark">
                       Database Indexing
                     </div>
                     <div className="text-[10px] text-gray-500">8 lessons</div>
@@ -182,7 +182,7 @@ const LoginPage = () => {
                     <MonitorPlay size={14} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-[#1A1F36]">
+                    <div className="text-xs font-semibold text-text-dark">
                       Docker Fundamentals
                     </div>
                     <div className="text-[10px] text-gray-500">10 lessons</div>
@@ -200,14 +200,14 @@ const LoginPage = () => {
                 <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                   Your Learning Roadmap
                 </h3>
-                <span className="text-[#1E50FF] font-bold text-xs">68%</span>
+                <span className="text-primary font-bold text-xs">68%</span>
               </div>
               <div className="relative flex justify-between px-2 mb-2">
                 <div className="absolute top-2.5 left-4 right-4 h-0.5 bg-blue-100"></div>
-                <div className="absolute top-2.5 left-4 w-1/2 h-0.5 bg-[#1E50FF]"></div>
+                <div className="absolute top-2.5 left-4 w-1/2 h-0.5 bg-primary"></div>
 
                 <div className="flex flex-col items-center z-10 gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#1E50FF] flex items-center justify-center text-white border-2 border-white shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white shadow-sm">
                     <svg
                       width="10"
                       height="10"
@@ -226,7 +226,7 @@ const LoginPage = () => {
                   </span>
                 </div>
                 <div className="flex flex-col items-center z-10 gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#1E50FF] flex items-center justify-center text-white border-2 border-white shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white border-2 border-white shadow-sm">
                     <svg
                       width="10"
                       height="10"
@@ -245,7 +245,7 @@ const LoginPage = () => {
                   </span>
                 </div>
                 <div className="flex flex-col items-center z-10 gap-2">
-                  <div className="w-6 h-6 rounded-full bg-white border-2 border-[#1E50FF] flex items-center justify-center text-[#1E50FF] shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-white border-2 border-primary flex items-center justify-center text-primary shadow-sm">
                     <span className="text-[10px] font-bold">4</span>
                   </div>
                   <span className="text-[9px] font-medium text-gray-700 text-center">
@@ -297,11 +297,11 @@ const LoginPage = () => {
 
             {/* AI Mentor Horizontal */}
             <div className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary relative flex-shrink-0">
+              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-primary relative shrink-0">
                 <Cpu size={20} />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white"></div>
               </div>
-              <p className="text-[#1E50FF] text-[11px] font-medium leading-relaxed">
+              <p className="text-primary text-[11px] font-medium leading-relaxed">
                 Hi! I'm your AI mentor. I'll help you navigate your learning
                 journey.
               </p>
@@ -320,14 +320,14 @@ const LoginPage = () => {
                 <div className="absolute bottom-2 left-10 w-2 h-4 bg-gray-700"></div>
                 {/* Monitor 2 */}
                 <div className="absolute bottom-2 right-6 w-20 h-14 bg-gray-900 rounded-md border-2 border-gray-700 z-10 flex flex-col p-1 gap-1">
-                  <div className="w-full h-1 bg-[#1E50FF]"></div>
+                  <div className="w-full h-1 bg-primary"></div>
                   <div className="w-1/2 h-1 bg-gray-600"></div>
                   <div className="w-3/4 h-1 bg-gray-600"></div>
                 </div>
                 <div className="absolute bottom-2 right-14 w-2 h-6 bg-gray-700"></div>
                 {/* Person */}
                 <div className="absolute bottom-1 left-2 z-20">
-                  <div className="w-8 h-10 bg-[#1E50FF] rounded-t-xl"></div>
+                  <div className="w-8 h-10 bg-primary rounded-t-xl"></div>
                   <div className="absolute -top-5 left-1 w-6 h-6 bg-blue-200 rounded-full"></div>
                 </div>
                 {/* Floating elements */}

@@ -7,9 +7,9 @@ export interface User {
 }
 
 export interface RegisterPayload {
-  fullName: string
   email: string
   password: string
+  fullName: string
 }
 
 export interface LoginPayload {
@@ -19,4 +19,5 @@ export interface LoginPayload {
 export interface LoginResponse {
   status: number
   message: string
+  token: string
 }

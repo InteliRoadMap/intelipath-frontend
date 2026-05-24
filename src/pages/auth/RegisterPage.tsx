@@ -1,74 +1,25 @@
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa"
 import { Link } from "react-router-dom"
-import { useState } from "react"
-import { register } from "../../services/authService"
 import { AuthPreview } from "../../components/auth/AuthDashboardPreview"
+import { useRegisterLogic } from "../../hooks/auth/useRegister"
 
 function RegisterPage() {
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [error, setError] = useState("")
-
-  const handleRegister = async () => {
-    if (!fullName.trim()) {
-      setError("Please enter your full name.")
-      return
-    }
-
-    if (!email.trim()) {
-      setError("Please enter your email address.")
-      return
-    }
-
-    if (!password) {
-      setError("Please enter your password.")
-      return
-    }
-
-    if (!confirmPassword) {
-      setError("Please confirm your password.")
-      return
-    }
-
-    const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{4,10}$/
-
-    if (!passwordPattern.test(password)) {
-      setError(
-        "Passwords must be 4-10 characters and include at least one uppercase letter, one number, and one special character."
-      )
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError("Password and confirm password do not match")
-      return
-    }
-
-    try {
-      const response = await register({
-        fullName,
-        email,
-        password
-      })
-
-      console.log("Registration successful:", response)
-      setError("")
-    } catch (err: any) {
-      console.log(err.response)
-
-      if (err.response?.status === 400) {
-        setError(err.response.data.message)
-      } else if (err.response?.status === 403) {
-        setError("Invalid API Key")
-      } else {
-        setError("Registration failed. Please try again.")
-      }
-    }
-  }
+  const {
+    fullName,
+    setFullName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
+    error,
+    handleRegister
+  } = useRegisterLogic()
 
   return (
     <div className="h-screen bg-white flex overflow-hidden font-sans relative">
