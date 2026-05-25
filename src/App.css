@@ -1,0 +1,13 @@
+/* Global App Styles */
+.app {
+  min-height: 100vh;
+}
+
+/* Loading spinner */
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--color-bg);
+}
