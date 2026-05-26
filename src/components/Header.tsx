@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/AuthContext'
-import '../styles/welcome.css'
+// import '../styles/welcome.css'
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth()

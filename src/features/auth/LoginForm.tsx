@@ -1,147 +1,283 @@
-import { useState } from 'react'
-import { Form, Button, Spinner } from 'react-bootstrap'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../store/AuthContext'
-import authApi from '../../api/authApi'
-import { isValidEmail, getErrorMessage } from '../../lib/utils'
+import React, { useState } from "react"
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import authApi from "../../api/authApi"
+import { getErrorMessage, isValidEmail } from "../../lib/utils"
+import { useAuth } from "../../store/AuthContext"
+
+const ChromeIcon = () => (
+  <svg
+    className="h-4 w-4 text-brand-cyan/80"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+    <path
+      d="M12 3h8.2M5.2 7.5l4.1 7.1M18.8 16.5H10"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+const GithubIcon = () => (
+  <svg
+    className="h-4 w-4 text-slate-300"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.88-.01-1.72-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.64-1.36-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.37 9.37 0 0 1 12 7.04c.85 0 1.7.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.17 10.17 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"
+    />
+  </svg>
+)
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [errors, setErrors] = useState<{
+    email?: string
+    password?: string
+    general?: string
+  }>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    setErrors({})
 
-    // Validation
+    const currentErrors: { email?: string; password?: string } = {}
+
     if (!email.trim()) {
-      setError('Please enter your email address.')
-      return
+      currentErrors.email = "Please enter your email address."
+    } else if (!isValidEmail(email)) {
+      currentErrors.email = "Please enter a valid email address."
     }
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address.')
-      return
-    }
+
     if (!password) {
-      setError('Please enter your password.')
+      currentErrors.password = "Please enter your password."
+    }
+
+    if (Object.keys(currentErrors).length > 0) {
+      setErrors(currentErrors)
       return
     }
 
-    setLoading(true)
+    setIsSubmitting(true)
     try {
       const response = await authApi.login(email, password)
       const { user } = response.data
       login(user)
-      navigate('/dashboard')
+      navigate("/dashboard")
     } catch (err) {
-      setError(getErrorMessage(err))
+      setErrors({ general: getErrorMessage(err) })
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault()
+    navigate("/forgot-password")
+  }
+
   return (
-    <div className="animate-fade-in">
-      <h1 className="auth-title">Welcome Back</h1>
-      <p className="auth-subtitle">Sign in to continue your skill journey.</p>
+    <div className="w-full">
+      <div className="mb-5 select-none">
+        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-white">
+          Welcome Back
+        </h2>
+        <p className="font-sans text-sm font-light text-slate-400">
+          Continue your learning journey with{" "}
+          <span className="font-medium text-brand-cyan">InteliPath</span>
+        </p>
+      </div>
 
-      {error && <div className="auth-error">{error}</div>}
+      {errors.general && (
+        <div className="mb-5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+          {errors.general}
+        </div>
+      )}
 
-      <Form className="auth-form" onSubmit={handleSubmit}>
-        <Form.Group className="form-group">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="name@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="form-control-custom"
-            id="login-email"
-          />
-        </Form.Group>
-
-        <Form.Group className="form-group">
-          <div className="forgot-password-row">
-            <Form.Label>Password</Form.Label>
-            <Link to="/forgot-password" className="auth-link">
-              Forgot password?
-            </Link>
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="login-email"
+            className="text-xs font-semibold tracking-wide text-slate-400"
+          >
+            Email Address
+          </label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+              <Mail className="h-4 w-4" />
+            </span>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="e.g. engineering@university.edu"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (errors.email) setErrors({ ...errors, email: undefined })
+              }}
+              className={`w-full rounded-xl py-2.5 pl-10 pr-4 text-sm glass-input ${
+                errors.email
+                  ? "border-rose-500/50 focus:border-rose-500 focus:shadow-rose-500/10"
+                  : ""
+              }`}
+            />
           </div>
-          <div className="password-wrapper">
-            <Form.Control
-              type={showPassword ? 'text' : 'password'}
+          {errors.email && (
+            <span className="pl-1 font-sans text-[11px] font-medium leading-none text-rose-400 mt-0.5">
+              {errors.email}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="login-password"
+              className="text-xs font-semibold tracking-wide text-slate-400"
+            >
+              Password
+            </label>
+            <a
+              href="#forgot-password"
+              onClick={handleForgotPassword}
+              className="text-xs font-semibold text-brand-cyan transition-colors duration-150 hover:text-brand-blue"
+            >
+              Forgot password?
+            </a>
+          </div>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+              <Lock className="h-4 w-4" />
+            </span>
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-control-custom"
-              id="login-password"
+              onChange={(e) => {
+                setPassword(e.target.value)
+                if (errors.password)
+                  setErrors({ ...errors, password: undefined })
+              }}
+              className={`w-full rounded-xl py-2.5 pl-10 pr-10 text-sm glass-input ${
+                errors.password
+                  ? "border-rose-500/50 focus:border-rose-500 focus:shadow-rose-500/10"
+                  : ""
+              }`}
             />
             <button
               type="button"
-              className="password-toggle"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition-colors duration-150 hover:text-slate-300"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
+                <EyeOff className="h-4 w-4" />
               ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <Eye className="h-4 w-4" />
               )}
             </button>
           </div>
-        </Form.Group>
-
-        <Button
-          type="submit"
-          className="btn-primary-custom w-100 mt-2"
-          disabled={loading}
-          id="login-submit-btn"
-        >
-          {loading ? (
-            <><Spinner size="sm" animation="border" className="me-2" />Signing in...</>
-          ) : (
-            'Sign In'
+          {errors.password && (
+            <span className="pl-1 font-sans text-[11px] font-medium leading-none text-rose-400 mt-0.5">
+              {errors.password}
+            </span>
           )}
-        </Button>
-      </Form>
+        </div>
 
-      <div className="auth-divider">
-        <span>Or sign in with</span>
+        <button
+          type="submit"
+          id="login-submit-btn"
+          disabled={isSubmitting}
+          className="relative flex w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-electric via-brand-blue to-brand-cyan px-4 py-3 font-sans text-sm font-semibold tracking-wide text-white shadow-md transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_24px_rgba(6,182,212,0.3)] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-70 group"
+        >
+          {isSubmitting ? (
+            <svg
+              className="h-5 w-5 animate-spin text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+          ) : (
+            <>
+              <span>Authenticate Session</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </>
+          )}
+          <div className="absolute top-0 z-10 block h-full w-1/2 -inset-full -skew-x-12 bg-gradient-to-r from-transparent to-white/10 opacity-40 group-hover:animate-[shimmer_1.2s_ease-in-out_infinite]" />
+        </button>
+      </form>
+
+      <div className="relative my-4 select-none">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-800" />
+        </div>
+        <div className="relative flex justify-center font-mono text-xs uppercase tracking-widest">
+          <span className="bg-[#080e27]/95 px-3.5 text-slate-500">
+            Or connect secure key
+          </span>
+        </div>
       </div>
 
-      <div className="social-buttons">
-        <button type="button" className="social-btn" id="google-login-btn">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-          </svg>
-          Google
+      <div className="grid grid-cols-2 gap-3.5">
+        <button
+          type="button"
+          id="google-login-btn"
+          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
+        >
+          <ChromeIcon />
+          <span>Google Key</span>
         </button>
-        <button type="button" className="social-btn" id="github-login-btn">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-          </svg>
-          GitHub
+        <button
+          type="button"
+          id="github-login-btn"
+          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
+        >
+          <GithubIcon />
+          <span>GitHub Core</span>
         </button>
       </div>
 
-      <div className="auth-footer">
-        Don't have an account?{' '}
-        <Link to="/register">Get started</Link>
+      <div className="mt-5 text-center select-none">
+        <span className="font-sans text-xs font-light text-slate-500">
+          Don't have an authentication account?{" "}
+        </span>
+        <button
+          type="button"
+          onClick={() => navigate("/register")}
+          className="cursor-pointer text-xs font-bold text-brand-cyan transition-all duration-150 hover:text-brand-blue hover:underline underline-offset-4"
+        >
+          Create pathways
+        </button>
       </div>
     </div>
   )
