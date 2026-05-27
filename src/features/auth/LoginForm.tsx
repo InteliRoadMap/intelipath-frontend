@@ -230,7 +230,7 @@ export default function LoginForm() {
             </svg>
           ) : (
             <>
-              <span>Authenticate Session</span>
+              <span>Login</span>
               <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
             </>
           )}
@@ -277,7 +277,7 @@ export default function LoginForm() {
           onClick={() => navigate("/register")}
           className="cursor-pointer text-xs font-bold text-brand-cyan transition-all duration-150 hover:text-brand-blue hover:underline underline-offset-4"
         >
-          Create pathways
+          Create Account
         </button>
       </div>
     </div>

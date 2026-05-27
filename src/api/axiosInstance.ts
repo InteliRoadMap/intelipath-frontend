@@ -1,5 +1,7 @@
 import axios from "axios"
-import { API_BASE_URL } from "../shared/constants"
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1"
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -14,8 +16,8 @@ const axiosInstance = axios.create({
 // ─────────────────────────────────────────────
 axiosInstance.interceptors.request.use(
   (config) => {
-    console.group(  
-      ` [API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}` 
+    console.group(
+      ` [API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
     )
     console.log("Headers :", config.headers)
     if (config.data) {
@@ -29,7 +31,7 @@ axiosInstance.interceptors.request.use(
     return config
   },
   (error) => {
-    console.error("❌ [API REQUEST ERROR]", error)
+    console.error(" [API REQUEST ERROR]", error)
     return Promise.reject(error)
   }
 )

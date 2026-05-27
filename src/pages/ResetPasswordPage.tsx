@@ -12,7 +12,7 @@ const orbs = [
 export default function ResetPasswordPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-y-auto
-      bg-gradient-to-br from-[#0b132b] via-[#0a0f24] to-[#020617]
+      bg-linear-to-br from-[#0b132b] via-[#0a0f24] to-brand-deep
       font-sans text-slate-100">
 
       {/* Grid overlay */}
@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
           className="w-full max-w-lg"
         >
           {/* Glow behind card */}
-          <div className="absolute inset-0 -z-10 rounded-[24px] bg-brand-indigo/10 blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 -z-10 rounded-3xl bg-brand-indigo/10 blur-3xl pointer-events-none" />
 
           {/* Glass card */}
           <div className="relative rounded-2xl border border-white/[0.07]

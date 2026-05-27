@@ -90,9 +90,9 @@ export default function AbstractIllustration({
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center py-6 min-h-0">
-        <div className="absolute h-[250px] w-[450px] rounded-[40px] border border-brand-blue/10 bg-brand-blue/5 blur-3xl pointer-events-none" />
+        <div className="absolute h-62.5 w-112.5 rounded-[40px] border border-brand-blue/10 bg-brand-blue/5 blur-3xl pointer-events-none" />
 
-        <div className="relative aspect-[440/260] w-full max-w-[440px] overflow-visible select-none lg:p-2">
+        <div className="relative aspect-440/260 w-full max-w-110 overflow-visible select-none lg:p-2">
           <svg
             className="absolute inset-0 h-full w-full overflow-visible pointer-events-none"
             viewBox="0 0 440 260"
@@ -228,7 +228,7 @@ export default function AbstractIllustration({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.18 }}
-                className="absolute bottom-[-18px] left-[15%] right-[15%] z-50 flex flex-col gap-1 rounded-xl border border-brand-cyan/25 p-3 shadow-2xl glass-card pointer-events-none"
+                className="absolute -bottom-4.5 left-[15%] right-[15%] z-50 flex flex-col gap-1 rounded-xl border border-brand-cyan/25 p-3 shadow-2xl glass-card pointer-events-none"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-white">
@@ -257,7 +257,7 @@ export default function AbstractIllustration({
           </AnimatePresence>
         </div>
 
-        <div className="mt-8 flex w-full max-w-[360px] gap-3">
+        <div className="mt-8 flex w-full max-w-90 gap-3">
           <div className="flex flex-1 items-center gap-3 rounded-xl border-slate-800 p-3 glass-card">
             <div className="rounded-lg  border-brand-cyan/20 bg-brand-cyan/5 p-2 text-brand-cyan">
               <Sparkles className="h-4 w-4 animate-pulse" />
@@ -288,7 +288,7 @@ export default function AbstractIllustration({
         </div>
       </div>
 
-      <div className="z-10 flex-shrink-0">
+      <div className="z-10 shrink-0">
         {/*
        
         */}
@@ -298,7 +298,7 @@ export default function AbstractIllustration({
             aria-hidden="true"
           >
             <div className="flex items-center gap-2">
-              <span className="h-[2px] w-4 bg-brand-indigo" />
+              <span className="h-0.5 w-4 bg-brand-indigo" />
               <span className="text-xs font-mono font-semibold tracking-widest text-brand-cyan uppercase">
                 Adaptive Learning
               </span>
@@ -329,7 +329,7 @@ export default function AbstractIllustration({
                 <div className="h-4 pointer-events-none" aria-hidden="true" />
                 <h1 className="font-display text-2xl lg:text-[2rem] font-extrabold tracking-tight text-white leading-tight">
                   Shape Your Software Engineering{" "}
-                  <span className="bg-gradient-to-r from-brand-cyan to-brand-blue bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-brand-cyan to-brand-blue bg-clip-text text-transparent">
                     Journey
                   </span>
                 </h1>
@@ -349,7 +349,7 @@ export default function AbstractIllustration({
                 className="absolute inset-x-0 top-0 flex flex-col gap-3"
               >
                 <div className="flex items-center gap-2">
-                  <span className="h-[2px] w-4 bg-brand-indigo" />
+                  <span className="h-0.5 w-4 bg-brand-indigo" />
                   <span className="text-xs font-mono font-semibold tracking-widest text-brand-cyan uppercase">
                     Adaptive Learning
                   </span>
@@ -357,7 +357,7 @@ export default function AbstractIllustration({
                 <h1 className="font-display text-2xl lg:text-[2rem] font-extrabold tracking-tight text-white leading-tight">
                   Build Your Future <br />
                   With{" "}
-                  <span className="bg-gradient-to-r from-brand-cyan to-brand-indigo bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-brand-cyan to-brand-indigo bg-clip-text text-transparent">
                     InteliPath
                   </span>
                 </h1>
