@@ -3,6 +3,7 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig
 } from "axios"
+import { ENDPOINTS } from "../api/endpoints"
 
 //Types
 export interface ApiClientConfig {
@@ -192,16 +193,19 @@ export function createApiClient({
           const refreshToken = getRefreshToken()
           // Use a fresh axios instance to avoid infinite interceptor loops
           const refreshResponse = await axios.post(
-            `${baseURL}/auth/refresh-token`,
+            `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
             {
               refreshToken
             }
           )
 
-          const { accessToken } = refreshResponse.data
+          const { accessToken, expiresIn } = refreshResponse.data
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
+            if (expiresIn) {
+              localStorage.setItem("tokenExpiresIn", expiresIn)
+            }
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${accessToken}`
             }

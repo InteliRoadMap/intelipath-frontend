@@ -4,7 +4,6 @@ import { ENDPOINTS } from "./endpoints"
 /**
  * Authentication API Service
  * Handles user authentication flows: Login, Register, Password Reset.
- * Post : axios.post(url, body)
  */
 const authApi = {
   //[POST] Login

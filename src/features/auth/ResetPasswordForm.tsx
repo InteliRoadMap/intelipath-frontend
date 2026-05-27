@@ -35,6 +35,7 @@ export default function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
+  // ── Validate & submit ──────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -114,6 +115,7 @@ export default function ResetPasswordForm() {
     )
   }
 
+  // ── Main form ──────────────────────────────────────────────────────────
   return (
     <div className="w-full">
       {/* Header */}
