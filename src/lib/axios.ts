@@ -4,7 +4,7 @@ import axios, {
   InternalAxiosRequestConfig
 } from "axios"
 
-// ============ Types ============
+//Types
 export interface ApiClientConfig {
   baseURL?: string
   timeout?: number
@@ -20,7 +20,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
 }
 
-// ============ Config & State ============
+//  Config & State
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1"
 
@@ -47,7 +47,7 @@ const processQueue = (
   failedQueue = []
 }
 
-// ============ Auth Helpers (Default) ============
+//Auth Helpers & Token Management
 export const getStoredToken = () => localStorage.getItem("accessToken")
 const defaultGetRefreshToken = () => localStorage.getItem("refreshToken")
 
@@ -63,7 +63,7 @@ export const handleUnauthorized = (error?: AxiosError) => {
   localStorage.removeItem("refreshToken")
   localStorage.removeItem("user")
 
-  // We check window to avoid redirect loops
+  // check window to avoid redirect loops
   if (
     typeof window !== "undefined" &&
     !window.location.pathname.includes("/login")
@@ -72,7 +72,7 @@ export const handleUnauthorized = (error?: AxiosError) => {
   }
 }
 
-// ============ Factory Function ============
+//Factory Function
 export function createApiClient({
   baseURL = API_BASE_URL,
   timeout = 300000,
@@ -94,7 +94,7 @@ export function createApiClient({
   // Api request interceptor to log requests and attach auth token
   client.interceptors.request.use(
     (config) => {
-      // --- LOGGING ---
+      //LOGGING
       console.group(
         `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
       )
@@ -108,7 +108,7 @@ export function createApiClient({
       }
       console.groupEnd()
 
-      // --- ATTACH TOKEN ---
+      //ATTACH TOKEN
       const token = getToken()
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`
@@ -124,7 +124,7 @@ export function createApiClient({
   // 2. Response Interceptor: Handle Errors & Refresh Token & Beautiful Logging
   client.interceptors.response.use(
     (response) => {
-      // --- SUCCESS LOGGING ---
+      //SUCCESS LOGGING
       console.group(
         `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
         "color: #10b981; font-weight: bold"
@@ -140,7 +140,7 @@ export function createApiClient({
       const res = error.response
       const status = res?.status
 
-      // --- ERROR LOGGING ---
+      //ERROR LOGGING
       if (res) {
         console.group(
           `%c [API ERROR] ${res.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
@@ -160,7 +160,7 @@ export function createApiClient({
         console.groupEnd()
       }
 
-      // --- 403 Forbidden ---
+      // 403 Forbidden
       if (status === 403) {
         if (onForbidden) {
           onForbidden(error)
@@ -170,7 +170,7 @@ export function createApiClient({
         return Promise.reject(error)
       }
       //Refresh token when access token expired (401 Unauthorized)
-      // --- 401 Unauthorized (Token Expiry & Refresh Logic) ---
+      //401 Unauthorized (Token Expiry & Refresh Logic)
       if (status === 401 && originalRequest && !originalRequest._retry) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {

@@ -65,7 +65,7 @@ export default function Logo({
 
       {!iconOnly && (
         <div className="flex flex-col">
-          <span className="font-display text-3xl font-bold tracking-tight text-white">
+          <span className="font-display text-3xl font-bold tracking-tight text-inherit">
             Inteli
             <span className="bg-gradient-to-r from-brand-cyan to-brand-blue bg-clip-text text-transparent">
               Path

@@ -93,10 +93,10 @@ export default function ResetPasswordForm() {
           <ShieldCheck className="h-7 w-7 text-emerald-400" />
         </div>
         <div>
-          <h2 className="font-display text-2xl font-bold text-white mb-2">
+          <h2 className="font-display text-2xl font-bold text-slate-900 mb-2">
             Password Reset!
           </h2>
-          <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
+          <p className="text-sm text-slate-600 leading-relaxed max-w-xs">
             Your password has been successfully updated. You can now sign in
             with your new password.
           </p>
@@ -126,10 +126,10 @@ export default function ResetPasswordForm() {
         >
           <KeyRound className="h-5 w-5 text-brand-indigo" />
         </div>
-        <h2 className="font-display text-3xl font-bold tracking-tight text-white mb-2">
+        <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 mb-2">
           Reset Password
         </h2>
-        <p className="text-sm text-slate-400 font-light leading-relaxed">
+        <p className="text-sm text-slate-600 font-light leading-relaxed">
           Enter the OTP code sent to your email and choose a new password.
         </p>
       </div>
@@ -144,7 +144,7 @@ export default function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email — locked / read-only */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-400 tracking-wide">
+          <label className="text-xs font-semibold text-slate-600 tracking-wide">
             Email Address
           </label>
           <div className="relative">
@@ -173,7 +173,7 @@ export default function ResetPasswordForm() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="reset-otp"
-            className="text-xs font-semibold text-slate-400 tracking-wide"
+            className="text-xs font-semibold text-slate-600 tracking-wide"
           >
             OTP Code
           </label>
@@ -210,7 +210,7 @@ export default function ResetPasswordForm() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reset-newpass"
-              className="text-xs font-semibold text-slate-400 tracking-wide"
+              className="text-xs font-semibold text-slate-600 tracking-wide"
             >
               New Password
             </label>
@@ -257,7 +257,7 @@ export default function ResetPasswordForm() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reset-confirm"
-              className="text-xs font-semibold text-slate-400 tracking-wide"
+              className="text-xs font-semibold text-slate-600 tracking-wide"
             >
               Confirm Password
             </label>

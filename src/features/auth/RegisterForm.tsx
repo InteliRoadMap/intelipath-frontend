@@ -82,10 +82,10 @@ export default function RegisterForm() {
   return (
     <div className="w-full">
       <div className="mb-6 select-none">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-white mb-2">
+        <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 mb-2">
           Create Your Account
         </h2>
-        <p className="text-sm text-slate-400 font-light">
+        <p className="text-sm text-slate-600 font-light">
           Join thousands of students building their future with InteliPath
         </p>
       </div>
@@ -102,7 +102,7 @@ export default function RegisterForm() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="reg-name"
-            className="text-xs font-semibold text-slate-400 tracking-wide"
+            className="text-xs font-semibold text-slate-600 tracking-wide"
           >
             Full Name
           </label>
@@ -138,12 +138,12 @@ export default function RegisterForm() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="reg-email"
-            className="text-xs font-semibold text-white tracking-wide"
+            className="text-xs font-semibold text-slate-600 tracking-wide"
           >
             Email Address
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
               <Mail className="w-4 h-4" />
             </span>
             <input
@@ -173,7 +173,7 @@ export default function RegisterForm() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reg-pass"
-              className="text-xs font-semibold text-slate-400 tracking-wide"
+              className="text-xs font-semibold text-slate-600 tracking-wide"
             >
               Password
             </label>
@@ -220,7 +220,7 @@ export default function RegisterForm() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reg-confirm"
-              className="text-xs font-semibold text-slate-400 tracking-wide"
+              className="text-xs font-semibold text-slate-600 tracking-wide"
             >
               Confirm Password
             </label>
@@ -306,10 +306,9 @@ export default function RegisterForm() {
               )}
             </label>
 
-            {/* Text label */}
             <label
               htmlFor="terms-checkbox"
-              className="text-xs text-slate-400 hover:text-slate-300 transition-colors duration-200 cursor-pointer select-none leading-none pt-0.5"
+              className="text-xs text-slate-600 hover:text-slate-500 transition-colors duration-200 cursor-pointer select-none leading-none pt-0.5"
             >
               I agree to the{" "}
               <span className="text-brand-cyan font-medium hover:underline">
@@ -368,7 +367,7 @@ export default function RegisterForm() {
 
       {/* Footer */}
       <div className="text-center mt-6 select-none">
-        <span className="text-xm text-slate-500 font-light">
+        <span className="text-xm text-slate-600 font-light">
           Already have an account?{" "}
         </span>
         <button

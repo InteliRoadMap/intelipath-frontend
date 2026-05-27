@@ -82,30 +82,30 @@ a {
 }
 
 .glass-input {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0f172a !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-input::placeholder {
-  color: rgba(148, 163, 184, 0.6);
+  color: rgba(71, 85, 105, 0.6);
 }
 
 .glass-input:focus {
   outline: none;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border-color: #3b82f6;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
 .glass-input:-webkit-autofill,
 .glass-input:-webkit-autofill:hover,
 .glass-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
-  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.88) inset;
-  border-color: rgba(255, 255, 255, 0.12);
+  -webkit-text-fill-color: #0f172a;
+  caret-color: #0f172a;
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(0, 0, 0, 0.1);
   transition: background-color 9999s ease-out;
 }
 

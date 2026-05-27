@@ -4,7 +4,7 @@ import { API_BASE_URL, createApiClient, getStoredToken, handleUnauthorized } fro
  * Public Auth Client
  * - For APIs that do not require authentication (Login, Register, Forgot Password, etc.)
  * - No token attached.
- * - Does not trigger infinite redirects on unauthorized errors.
+ * Does not trigger infinite redirects on unauthorized errors.
  */
 export const publicClient = createApiClient({
   baseURL: API_BASE_URL,

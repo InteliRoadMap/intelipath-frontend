@@ -6,13 +6,13 @@ import { ENDPOINTS } from "./endpoints"
  * Handles user authentication flows: Login, Register, Password Reset.
  */
 const authApi = {
-  // ── [POST] Login ───────────────────────────────────────────────────────
+  //[POST] Login
   login: (email: string, password: string) => {
     console.log("[authApi.login] Đang đăng nhập với email:", email)
     return publicClient.post(ENDPOINTS.AUTH.LOGIN, { email, password })
   },
 
-  // ── [POST] Register ────────────────────────────────────────────────────
+  //[POST] Register
   register: (data: { email: string; password: string; fullName: string }) => {
     console.log("[authApi.register] Đang đăng ký tài khoản:", {
       email: data.email,
@@ -22,14 +22,14 @@ const authApi = {
     return publicClient.post(ENDPOINTS.AUTH.REGISTER, data)
   },
 
-  // ── [POST] Forgot Password ──────────────────────────────────────────────
+  //[POST] Forgot Password
   // Backend sends an OTP to the user's email
   forgotPassword: (email: string) => {
     console.log("[authApi.forgotPassword] Gửi OTP reset password đến:", email)
     return publicClient.post(ENDPOINTS.AUTH.FORGOT_PASSWORD, { email })
   },
 
-  // ── [POST] Reset Password ───────────────────────────────────────────────
+  //[POST] Reset Password
   resetPassword: (data: {
     email: string
     otp: string
@@ -43,7 +43,7 @@ const authApi = {
     })
   },
 
-  // ── [POST] Logout ───────────────────────────────────────────────────────
+  //[POST] Logout
   // Uses mainClient because logging out usually requires the authorization token
   logout: () => {
     console.log("[authApi.logout] Đang đăng xuất...")

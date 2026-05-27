@@ -57,10 +57,10 @@ export default function ForgotPasswordForm() {
   return (
     <div className="w-full">
       <div className="mb-8 select-none">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-white mb-2">
+        <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 mb-2">
           Forgot Password?
         </h2>
-        <p className="text-sm text-slate-400 font-light leading-relaxed">
+        <p className="text-sm text-slate-600 font-light leading-relaxed">
           Enter your registered email and we'll send you an{" "}
           <span className="text-brand-cyan font-medium">OTP code</span> to reset
           your password.
@@ -88,7 +88,7 @@ export default function ForgotPasswordForm() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="forgot-email"
-            className="text-xs font-semibold text-slate-400 tracking-wide"
+            className="text-xs font-semibold text-slate-600 tracking-wide"
           >
             Email Address
           </label>

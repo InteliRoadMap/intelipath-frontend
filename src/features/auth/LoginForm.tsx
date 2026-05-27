@@ -102,10 +102,10 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-5 select-none">
-        <h2 className="mb-2 font-display text-5xl font-bold tracking-tight text-white">
+        <h2 className="mb-2 font-display text-5xl font-bold tracking-tight text-slate-900">
           Welcome Back
         </h2>
-        <p className="font-sans text-sm font-light text-slate-400">
+        <p className="font-sans text-sm font-light text-slate-600">
           Continue your learning journey with{" "}
           <span className="font-medium text-brand-cyan">InteliPath</span>
         </p>
@@ -121,12 +121,12 @@ export default function LoginForm() {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="login-email"
-            className="text-xs font-semibold tracking-wide text-slate-400"
+            className="text-xs font-semibold tracking-wide text-slate-600"
           >
             Email Address
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
               <Mail className="h-4 w-4" />
             </span>
             <input
@@ -156,7 +156,7 @@ export default function LoginForm() {
           <div className="flex items-center justify-between">
             <label
               htmlFor="login-password"
-              className="text-xs font-semibold tracking-wide text-slate-400"
+              className="text-xs font-semibold tracking-wide text-slate-600"
             >
               Password
             </label>
@@ -246,10 +246,10 @@ export default function LoginForm() {
 
       <div className="relative my-4 select-none">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-800" />
+          <div className="w-full border-t border-slate-300" />
         </div>
         <div className="relative flex justify-center font-mono text-xs uppercase tracking-widest">
-          <span className="bg-[#080e27]/95 px-3.5 text-slate-500">
+          <span className="bg-white px-3.5 text-slate-500 rounded-full">
             Or connect secure key
           </span>
         </div>
@@ -259,7 +259,7 @@ export default function LoginForm() {
         <button
           type="button"
           id="google-login-btn"
-          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
+          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
         >
           <ChromeIcon />
           <span>Google </span>
@@ -267,7 +267,7 @@ export default function LoginForm() {
         <button
           type="button"
           id="github-login-btn"
-          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
+          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
         >
           <GithubIcon />
           <span>GitHub</span>
@@ -275,7 +275,7 @@ export default function LoginForm() {
       </div>
 
       <div className="mt-5 text-center select-none">
-        <span className="font-sans text-xm font-light text-slate-500">
+        <span className="font-sans text-xm font-light text-slate-600">
           Don't have an authentication account?{" "}
         </span>
         <button

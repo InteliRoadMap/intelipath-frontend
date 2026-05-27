@@ -12,11 +12,11 @@ const orbs = [
 export default function ResetPasswordPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-y-auto
-      bg-linear-to-br from-[#1e326b] via-[#172552] to-[#0e1736]
-      font-sans text-slate-100">
+      bg-linear-to-br from-blue-50 via-white to-blue-100
+      font-sans text-slate-900">
 
       {/* Grid overlay */}
-      <div className="absolute inset-0 z-0 grid-overlay pointer-events-none opacity-80" />
+      <div className="absolute inset-0 z-0 grid-overlay-light pointer-events-none opacity-60" />
 
       {/* Floating orbs */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -32,8 +32,8 @@ export default function ResetPasswordPage() {
       </div>
 
       {/* Header with Logo */}
-      <header className="relative z-30 flex w-full items-center px-3 py-3 select-none sm:px-4">
-        <Logo hideIcon />
+      <header className="relative z-30 flex w-full items-center px-6 py-6 xl:px-8">
+        <Logo hideIcon className="!text-slate-900" />
       </header>
 
       {/* Centered form card */}
@@ -45,12 +45,12 @@ export default function ResetPasswordPage() {
           className="w-full max-w-lg"
         >
           {/* Glow behind card */}
-          <div className="absolute inset-0 -z-10 rounded-3xl bg-brand-indigo/10 blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 -z-10 rounded-3xl bg-blue-300/30 blur-3xl pointer-events-none" />
 
           {/* Glass card */}
-          <div className="relative rounded-2xl border border-white/[0.07]
-            bg-[#071028]/60 backdrop-blur-[28px]
-            shadow-[0_0_60px_rgba(79,70,229,0.12)]
+          <div className="relative rounded-2xl border border-white/40
+            bg-white/70 backdrop-blur-[24px]
+            shadow-[0_8px_32px_rgba(0,100,200,0.1)]
             px-7 py-9 sm:px-10">
 
             {/* Subtle corner glow */}
