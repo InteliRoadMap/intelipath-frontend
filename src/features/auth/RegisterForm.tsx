@@ -67,7 +67,6 @@ export default function RegisterForm() {
       await authApi.register({ email, password, fullName })
     } catch (err: any) {
       if (!err?.response) {
-        // Mất mạng / server down → im lặng, không hiện gì
         return
       } else if (err.response.status === 409) {
         setErrors({ email: "This email is already registered." })
