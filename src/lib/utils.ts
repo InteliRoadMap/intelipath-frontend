@@ -14,10 +14,22 @@ export function isValidPassword(password) {
 export function getErrorMessage(error) {
   if (error.response) {
     const { status, data } = error.response
-    if (status === 400) return data.message || 'Invalid input'
-    if (status === 401) return 'Invalid email or password'
-    if (status === 409) return 'Email already exists'
-    return data.message || 'Something went wrong'
+    if (status === 400) {
+      console.log("Validation error:", data)
+      return data.message || "Invalid input"
+    }
+
+    if (status === 401) {
+      console.log("Unauthorized:", data)
+      return "Invalid email or password"
+    }
+    if (status === 409) {
+      console.log("Email already exists:", data)
+      return "Email already exists"
+    }
+    console.log("Unexpected error:", data)
+    return data.message || "Something went wrong"
   }
-  return 'Cannot connect to server'
+  console.log("Cannot connect to server")
+  return "Cannot connect to server"
 }

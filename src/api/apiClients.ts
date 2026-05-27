@@ -30,7 +30,9 @@ export const mainClient = createApiClient({
   onUnauthorized: handleUnauthorized
 })
 
-// Why cannot use axios client togheter?
-//ex: using const axiosClient = axios.create(...) and interceptor always attach token: Authorization: Bearer {token}
-// Problem: When user not login 'getStoredToken()' return null, if interceptor not handled carefully [attach token empty,trigger refresh token,infinite loop redirect login]
-// => solution: create 2 clients: 'publicClient' for public endpoints (login, register, forgot password) and 'mainClient' for protected endpoints (dashboard, user profile, etc.) to avoid token issues and infinite redirect loops on unauthorized errors.
+/**
+ * Why cannot use axios client togheter?
+ * Ex: using const axiosClient = axios.create(...) and interceptor always attach token: Authorization: Bearer {token}
+ * Problem: When user not login 'getStoredToken()' return null, if interceptor not handled carefully [attach token empty,trigger refresh token,infinite loop redirect login]
+ * => solution: create 2 clients: 'publicClient' for public endpoints (login, register, forgot password) and 'mainClient' for protected endpoints (dashboard, user profile, etc.) to avoid token issues and infinite redirect loops on unauthorized errors.
+ */
