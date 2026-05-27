@@ -71,10 +71,6 @@ export function AuthProvider({ children }) {
 
   const login = (responseData, email) => {
     const { accessToken, refreshToken, ...userFields } = responseData
-    
-    // [DEV TOOL HACK]: Ép kiểu cứng sang MENTOR để test (Bạn có thể xóa dòng này sau khi test xong)
-    userFields.role = 'MENTOR'
-    
     const userInfo = { ...userFields, email }
 
     // Sử dụng jwt-decode để bóc tách thông tin token ngay khi đăng nhập
