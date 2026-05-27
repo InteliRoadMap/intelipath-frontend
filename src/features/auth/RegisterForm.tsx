@@ -26,7 +26,7 @@ export default function RegisterForm() {
 
   const navigate = useNavigate()
 
-  // ── Real register logic — POST JSON { email, password, fullName } ──────
+  //register logic POST JSON { email, password, fullName }
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -286,7 +286,7 @@ export default function RegisterForm() {
               className={`w-4 h-4 rounded-sm border transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer select-none ${
                 agreeTerms
                   ? "bg-linear-to-br from-brand-indigo to-brand-blue border-brand-indigo"
-                  : "bg-slate-900/80 border-slate-700 hover:border-slate-500"
+                  : "bg-white/80 border-slate-700 hover:border-slate-500"
               }`}
             >
               {agreeTerms && (
