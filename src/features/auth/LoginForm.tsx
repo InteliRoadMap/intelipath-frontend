@@ -82,7 +82,13 @@ export default function LoginForm() {
       login(user)
       navigate("/dashboard")
     } catch (err) {
-      setErrors({ general: getErrorMessage(err) })
+      if (!err?.response) {
+        return
+      } else if (err.response.status === 409) {
+        setErrors({ email: "This email is already registered." })
+      } else {
+        setErrors({ general: getErrorMessage(err) })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -96,7 +102,7 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-5 select-none">
-        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-white">
+        <h2 className="mb-2 font-display text-5xl font-bold tracking-tight text-white">
           Welcome Back
         </h2>
         <p className="font-sans text-sm font-light text-slate-400">
@@ -269,7 +275,7 @@ export default function LoginForm() {
       </div>
 
       <div className="mt-5 text-center select-none">
-        <span className="font-sans text-xs font-light text-slate-500">
+        <span className="font-sans text-xm font-light text-slate-500">
           Don't have an authentication account?{" "}
         </span>
         <button

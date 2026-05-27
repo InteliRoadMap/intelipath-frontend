@@ -12,7 +12,7 @@ const orbs = [
 export default function ResetPasswordPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-y-auto
-      bg-linear-to-br from-[#0b132b] via-[#0a0f24] to-brand-deep
+      bg-linear-to-br from-[#1e326b] via-[#172552] to-[#0e1736]
       font-sans text-slate-100">
 
       {/* Grid overlay */}

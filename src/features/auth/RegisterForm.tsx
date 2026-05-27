@@ -266,8 +266,9 @@ export default function RegisterForm() {
 
         {/* Terms & Conditions Checkbox */}
         <div className="flex flex-col gap-1">
-          <label className="flex items-center gap-2.5 cursor-pointer group py-1 select-none">
+          <div className="flex flex-row items-center justify-start gap-2.5 py-1 w-full">
             <input
+              id="terms-checkbox"
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => {
@@ -276,14 +277,16 @@ export default function RegisterForm() {
                   setErrors({ ...errors, agreeTerms: undefined })
                 }
               }}
-              className="sr-only"
+              className="hidden"
             />
-            {/* Custom styled checkbox */}
-            <div
-              className={`w-4 h-4 rounded-md border transition-all duration-200 flex items-center justify-center shrink-0 ${
+
+            {/* Custom styled checkbox acting as label */}
+            <label
+              htmlFor="terms-checkbox"
+              className={`w-4 h-4 rounded-sm border transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer select-none ${
                 agreeTerms
                   ? "bg-linear-to-br from-brand-indigo to-brand-blue border-brand-indigo"
-                  : "bg-slate-900/80 border-slate-700 group-hover:border-slate-500"
+                  : "bg-slate-900/80 border-slate-700 hover:border-slate-500"
               }`}
             >
               {agreeTerms && (
@@ -301,18 +304,23 @@ export default function RegisterForm() {
                   />
                 </svg>
               )}
-            </div>
-            <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors duration-200">
+            </label>
+
+            {/* Text label */}
+            <label
+              htmlFor="terms-checkbox"
+              className="text-xs text-slate-400 hover:text-slate-300 transition-colors duration-200 cursor-pointer select-none leading-none pt-0.5"
+            >
               I agree to the{" "}
-              <span className="text-brand-cyan font-medium hover:underline cursor-pointer">
+              <span className="text-brand-cyan font-medium hover:underline">
                 Terms of Service
               </span>{" "}
               and{" "}
-              <span className="text-brand-cyan font-medium hover:underline cursor-pointer">
+              <span className="text-brand-cyan font-medium hover:underline">
                 Privacy Policy
               </span>
-            </span>
-          </label>
+            </label>
+          </div>
           {errors.agreeTerms && (
             <span className="text-rose-400 text-xs font-medium pl-1">
               * {errors.agreeTerms}
@@ -360,7 +368,7 @@ export default function RegisterForm() {
 
       {/* Footer */}
       <div className="text-center mt-6 select-none">
-        <span className="text-xs text-slate-500 font-light">
+        <span className="text-xm text-slate-500 font-light">
           Already have an account?{" "}
         </span>
         <button

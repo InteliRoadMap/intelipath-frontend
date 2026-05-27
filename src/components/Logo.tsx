@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 type LogoProps = {
   className?: string
   iconOnly?: boolean
@@ -10,7 +12,7 @@ export default function Logo({
   hideIcon = false
 }: LogoProps) {
   return (
-    <div className={`flex items-center gap-3 select-none ${className}`}>
+    <Link to="/" className={`flex items-center gap-3 select-none hover:opacity-90 transition-opacity ${className}`}>
       {!hideIcon && (
         <div className="relative flex h-10 w-10 items-center justify-center group">
           <div className="absolute inset-0 rounded-xl bg-brand-cyan/25 blur-md transition-all duration-500 group-hover:bg-brand-cyan/40" />
@@ -71,6 +73,6 @@ export default function Logo({
           </span>
         </div>
       )}
-    </div>
+    </Link>
   )
 }

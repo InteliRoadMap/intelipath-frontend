@@ -31,33 +31,29 @@ export default function ForgotPasswordForm() {
       // POST /api/v1/auth/forgot-password { email }
       await authApi.forgotPassword(email)
 
-      // 200 OK — email tồn tại, OTP đã gửi → chuyển thẳng sang reset-password
+      // 200 OK — email exists and OTP sent
       console.log("[ForgotPassword] OTP sent. Navigating to /reset-password...")
       navigate(`/reset-password?email=${encodeURIComponent(email)}`)
     } catch (err: any) {
       const status = err?.response?.status
 
       if (status === 404) {
-        // 404 — email không tồn tại trong hệ thống
+        // 404 — Email not found
         console.warn(
           "[ForgotPassword] Email not found (404). Redirecting to /login..."
         )
         setError(
           "Email not found. Please check your email or sign up for a new account."
         )
-
-        // Tự động về /login sau 2.5 giây để user đọc thông báo
-        setTimeout(() => navigate("/login"), 2500)
       } else {
-        // Lỗi khác (500, network, ...)
-        setError(getErrorMessage(err))
+        // Another error (500, network, ...)
+        // setError(getErrorMessage(err))
       }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // ── UI ──────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
       <div className="mb-8 select-none">

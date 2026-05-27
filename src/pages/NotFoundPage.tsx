@@ -100,7 +100,7 @@ export default function NotFoundPage() {
   }, [])
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-linear-to-br from-[#0b132b] via-[#0a0f24] to-brand-deep font-sans text-slate-100 select-none">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-linear-to-br from-[#1e326b] via-[#172552] to-[#0e1736] font-sans text-slate-100 select-none">
       {/* ── Grid overlay ── */}
       <div className="absolute inset-0 z-0 grid-overlay pointer-events-none opacity-80" />
 

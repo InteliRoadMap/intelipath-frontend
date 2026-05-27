@@ -10,91 +10,28 @@ type AuthLayoutProps = {
   view: AuthView
 }
 
-const floatingLights = [
-  {
-    id: 1,
-    width: 320,
-    height: 320,
-    color: "bg-brand-cyan/35",
-    initialX: "15%",
-    initialY: "20%",
-    duration: 16,
-    delay: 0
-  },
-  {
-    id: 2,
-    width: 450,
-    height: 450,
-    color: "bg-brand-indigo/35",
-    initialX: "70%",
-    initialY: "15%",
-    duration: 22,
-    delay: 1
-  },
-  {
-    id: 3,
-    width: 400,
-    height: 400,
-    color: "bg-brand-blue/30",
-    initialX: "45%",
-    initialY: "60%",
-    duration: 18,
-    delay: 3
-  },
-  {
-    id: 4,
-    width: 280,
-    height: 280,
-    color: "bg-brand-cyan/30",
-    initialX: "80%",
-    initialY: "75%",
-    duration: 14,
-    delay: 2
-  }
-]
+
 
 export default function AuthLayout({ children, view }: AuthLayoutProps) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-y-auto bg-linear-to-br from-[#0b132b] via-[#0a0f24] to-brand-deep font-sans text-slate-100">
+    <div className="relative flex min-h-screen flex-col overflow-y-auto bg-linear-to-br from-[#1e326b] via-[#172552] to-[#0e1736] font-sans text-slate-100">
       <div className="absolute inset-0 z-0 grid-overlay pointer-events-none opacity-90" />
 
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {floatingLights.map((light) => (
-          <motion.div
-            key={light.id}
-            className={`absolute rounded-full blur-[110px] ${light.color}`}
-            style={{
-              width: light.width,
-              height: light.height,
-              left: light.initialX,
-              top: light.initialY
-            }}
-            animate={{
-              x: [0, 60, -40, 0],
-              y: [0, -50, 40, 0],
-              scale: [1, 1.15, 0.9, 1]
-            }}
-            transition={{
-              duration: light.duration,
-              repeat: Infinity,
-              repeatType: "reverse",
-              ease: "easeInOut",
-              delay: light.delay
-            }}
-          />
-        ))}
+        <div className="absolute -left-1/4 -top-1/4 h-[150%] w-[150%] animate-[spin_120s_linear_infinite] rounded-full bg-gradient-radial from-brand-indigo/10 via-brand-cyan/5 to-transparent blur-3xl" />
+        <div className="absolute left-1/4 top-1/4 h-[80%] w-[80%] animate-[spin_90s_linear_infinite_reverse] rounded-full bg-gradient-radial from-brand-blue/15 via-transparent to-transparent blur-3xl" />
       </div>
 
-      <header className="relative z-30 flex w-full items-center px-3 py-3 select-none sm:px-4">
-        <Logo hideIcon />
+      <header className="relative z-30 flex w-full items-center px-6 py-6 xl:px-8">
+        <Logo hideIcon className="scale-95" />
       </header>
 
       <main className="relative z-20 mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4 py-4 xl:px-0">
-        <div className="relative">
+        <div className="relative w-full max-w-310">
           <div className="absolute inset-0 -z-10 rounded-3xl bg-blue-500/10 blur-3xl" />
           <div
             className="
-    grid h-191.25 w-screen max-w-310 grid-cols-1
+    grid min-h-[500px] md:h-191.25 w-full grid-cols-1
     overflow-hidden
     rounded-3xl
 
@@ -111,7 +48,7 @@ export default function AuthLayout({ children, view }: AuthLayoutProps) {
     md:grid-cols-12
   "
           >
-            <section className="h-80 w-full overflow-hidden border-b border-white/2.5 bg-linear-to-br from-slate-950 via-slate-900/10 to-slate-950 md:col-span-5 md:h-auto md:self-stretch md:border-b-0 md:border-r">
+            <section className="hidden md:flex w-full overflow-hidden border-r border-white/2.5 bg-linear-to-br from-slate-950 via-slate-900/10 to-slate-950 md:col-span-5 md:h-auto md:self-stretch">
               <AbstractIllustration view={view} />
             </section>
 
