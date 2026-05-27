@@ -23,20 +23,8 @@ const ChromeIcon = () => (
   </svg>
 )
 
-const GithubIcon = () => (
-  <svg
-    className="h-4 w-4 text-slate-300"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.88-.01-1.72-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.64-1.36-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.37 9.37 0 0 1 12 7.04c.85 0 1.7.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.17 10.17 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"
-    />
-  </svg>
-)
+
+
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -119,7 +107,7 @@ export default function LoginForm() {
             Email Address
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white">
               <Mail className="h-4 w-4" />
             </span>
             <input
@@ -255,16 +243,9 @@ export default function LoginForm() {
           className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
         >
           <ChromeIcon />
-          <span>Google Key</span>
+          <span>Google </span>
         </button>
-        <button
-          type="button"
-          id="github-login-btn"
-          className="flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-xs font-semibold text-slate-300 shadow-sm transition-all duration-200 hover:border-slate-700 hover:bg-slate-900/80 hover:text-white active:scale-[0.98]"
-        >
-          <GithubIcon />
-          <span>GitHub Core</span>
-        </button>
+       
       </div>
 
       <div className="mt-5 text-center select-none">

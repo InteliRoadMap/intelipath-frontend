@@ -125,11 +125,11 @@ export default function RegisterForm() {
 
         {/* Email */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="reg-email" className="text-xs font-semibold text-slate-400 tracking-wide">
+          <label htmlFor="reg-email" className="text-xs font-semibold text-white tracking-wide">
             Email Address
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white">
               <Mail className="w-4 h-4" />
             </span>
             <input

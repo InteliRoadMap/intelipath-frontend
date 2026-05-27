@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import WelcomePage from '../pages/WelcomePage'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import DashboardPage from '../pages/DashboardPage'
+import NotFoundPage from '../pages/NotFoundPage'
 import ProtectedRoute from '../components/ProtectedRoute'
 
 export const AppRoutes = () => {
@@ -25,8 +26,8 @@ export const AppRoutes = () => {
         }
       />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 — catch all unmatched routes */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

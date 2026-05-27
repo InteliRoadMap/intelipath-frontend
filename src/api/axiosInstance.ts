@@ -1,63 +1,81 @@
-import axios from 'axios'
-import { API_BASE_URL } from '../shared/constants'
+import axios from "axios"
+import { API_BASE_URL } from "../shared/constants"
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  withCredentials: true, // Gửi cookie (nếu có) cùng request để hỗ trợ authentication/session
   headers: {
-    'Content-Type': 'application/json'
+    "Content-Type": "application/json"
   }
 })
 
-// Request interceptor - attach access token (Commented out for session-based auth)
-/*
+// ─────────────────────────────────────────────
+// REQUEST interceptor — log mọi request gửi đi
+// ─────────────────────────────────────────────
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken')
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+    console.group(  
+      ` [API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}` 
+    )
+    console.log("Headers :", config.headers)
+    if (config.data) {
+      // Ẩn password khi log để bảo mật
+      const safeData = { ...config.data }
+      if (safeData.password) safeData.password = "••••••••"
+      if (safeData.confirmPassword) safeData.confirmPassword = "••••••••"
+      console.log("Body    :", safeData)
     }
+    console.groupEnd()
     return config
   },
-  (error) => Promise.reject(error)
-)
-*/
-
-// Response interceptor - handle 401 and auto refresh token (Commented out for session-based auth)
-/*
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      try {
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken
-          })
-          const { accessToken } = response.data
-
-          localStorage.setItem('accessToken', accessToken)
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
-
-          return axiosInstance(originalRequest)
-        }
-      } catch (refreshError) {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-        window.location.href = '/login'
-        return Promise.reject(refreshError)
-      }
-    }
-
+  (error) => {
+    console.error("❌ [API REQUEST ERROR]", error)
     return Promise.reject(error)
   }
 )
-*/
+
+// ─────────────────────────────────────────────
+// RESPONSE interceptor — log response hoặc lỗi
+// ─────────────────────────────────────────────
+axiosInstance.interceptors.response.use(
+  (response) => {
+    console.group(
+      `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
+      "color: #10b981; font-weight: bold"
+    )
+    console.log("Status  :", response.status, response.statusText)
+    console.log("Data    :", response.data)
+    console.groupEnd()
+    return response
+  },
+  (error) => {
+    const res = error.response
+    if (res) {
+      console.group(
+        `%c [API ERROR] ${res.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+        "color: #ef4444; font-weight: bold"
+      )
+      console.log("Status  :", res.status, res.statusText)
+      console.log("Message :", res.data?.message || res.data)
+      console.log("Full    :", res.data)
+      console.groupEnd()
+    } else {
+      // Network error / server không phản hồi
+      console.group(
+        "%c [API ERROR] Network / No Response",
+        "color: #ef4444; font-weight: bold"
+      )
+      console.log("Error   :", error.message)
+      console.log(
+        "Hint    :",
+        "Kiểm tra server đang chạy và BASE_URL đúng:",
+        import.meta.env.VITE_API_BASE_URL ||
+          "(fallback) http://localhost:8080/api/v1"
+      )
+      console.groupEnd()
+    }
+    return Promise.reject(error)
+  }
+)
 
 export default axiosInstance
