@@ -76,7 +76,7 @@ export default function AbstractIllustration({
   const [hoveredNode, setHoveredNode] = useState<number | null>(null)
 
   return (
-    <div className="relative flex h-full w-full select-none flex-col justify-start overflow-hidden bg-brand-dark/40 p-8 xl:p-12">
+    <div className="relative flex h-full w-full select-none flex-col overflow-hidden bg-brand-dark/40 p-8 xl:p-12">
       <div className="absolute inset-0 z-0 grid-overlay pointer-events-none opacity-60" />
       <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-indigo/15 blur-[100px] animate-glow-pulse pointer-events-none" />
       <div className="absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-brand-cyan/20 blur-[120px] animate-glow-pulse pointer-events-none [animation-delay:2s]" />
@@ -89,7 +89,7 @@ export default function AbstractIllustration({
         </div>
       </div>
 
-      <div className="relative z-10 my-auto flex flex-col items-center justify-center py-6">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center py-6 min-h-0">
         <div className="absolute h-[250px] w-[450px] rounded-[40px] border border-brand-blue/10 bg-brand-blue/5 blur-3xl pointer-events-none" />
 
         <div className="relative aspect-[440/260] w-full max-w-[440px] overflow-visible select-none lg:p-2">
@@ -288,9 +288,33 @@ export default function AbstractIllustration({
         </div>
       </div>
 
-      <div className="z-10 mt-auto">
-        {/* Fixed height: accommodates both login (~162px) and register (~194px) text */}
-        <div className="relative h-[200px] overflow-hidden">
+      <div className="z-10 flex-shrink-0">
+        {/*
+       
+        */}
+        <div className="relative">
+          <div
+            className="invisible pointer-events-none flex flex-col  gap-0 rounded-lg border border-brand-cyan/20 bg-brand-cyan/10 px-4 py-3 text-sm text-white"
+            aria-hidden="true"
+          >
+            <div className="flex items-center gap-2">
+              <span className="h-[2px] w-4 bg-brand-indigo" />
+              <span className="text-xs font-mono font-semibold tracking-widest text-brand-cyan uppercase">
+                Adaptive Learning
+              </span>
+            </div>
+            <h1 className="font-display text-2xl lg:text-[2rem] font-extrabold tracking-tight text-white leading-tight">
+              Build Your Future <br />
+              With InteliPath
+            </h1>
+            <p className="max-w-md text-sm font-light leading-relaxed text-slate-300">
+              Discover your ideal software engineering development track,
+              benchmark your skills, map milestones, and reach premium standard
+              career outcomes.
+            </p>
+          </div>
+
+          {/* ── Animated text overlay ── */}
           <AnimatePresence mode="wait">
             {view === "login" ? (
               <motion.div
@@ -301,11 +325,7 @@ export default function AbstractIllustration({
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 className="absolute inset-x-0 top-0 flex flex-col gap-3"
               >
-                {/*
-                  Invisible spacer — same height as register's accent label (text-xs = 16px line-height)
-                  + gap-3 (12px) = 28px total offset.
-                  This keeps h1 and p at the same Y as register view → no paragraph shift.
-                */}
+                {/* Spacer = accent label height → aligns h1 & p with register view */}
                 <div className="h-4 pointer-events-none" aria-hidden="true" />
                 <h1 className="font-display text-2xl lg:text-[2rem] font-extrabold tracking-tight text-white leading-tight">
                   Shape Your Software Engineering{" "}
@@ -351,7 +371,7 @@ export default function AbstractIllustration({
           </AnimatePresence>
         </div>
 
-        {/* Dots indicator — outside fixed-height box, always fully visible */}
+        {/* Dots — always below ghost, always fully visible */}
         <div className="mt-4 flex gap-2">
           <div
             className={`h-1 rounded-full transition-all duration-300 ${view === "login" ? "w-8 bg-brand-cyan" : "w-2 bg-slate-800"}`}
