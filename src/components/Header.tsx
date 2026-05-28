@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/AuthContext'
+import Logo from './Logo'
 // import '../styles/welcome.css'
 
 export default function Header() {
@@ -13,17 +14,19 @@ export default function Header() {
 
   return (
     <header className="welcome-header">
-      <Link to="/" className="header-logo">
-        InteliPath
-      </Link>
+      <Logo hideIcon className="!text-slate-900 scale-95 transform origin-left" />
 
       <nav className="welcome-nav">
         {isAuthenticated ? (
           <>
-            <span className="nav-text">Hi, {user?.name || user?.email || 'User'}</span>
+            <span className="nav-text">Hi, {user?.fullName || user?.name || 'User'}</span>
+            <Link to="/dashboard" className="header-btn-register" style={{ marginLeft: '16px' }}>
+              Dashboard
+            </Link>
             <button
               className="header-btn-signin"
               onClick={handleLogout}
+              style={{ marginLeft: '8px' }}
             >
               Logout
             </button>
@@ -38,9 +41,6 @@ export default function Header() {
             </Link>
           </>
         )}
-        <button className="dark-mode-toggle" title="Toggle dark mode">
-          🌙
-        </button>
       </nav>
     </header>
   )

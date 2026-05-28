@@ -78,8 +78,7 @@ export default function LoginForm() {
     setIsSubmitting(true)
     try {
       const response = await authApi.login(email, password)
-      const { user } = response.data
-      login(user)
+      login(response.data, email)
       navigate("/dashboard")
     } catch (err) {
       if (!err?.response) {

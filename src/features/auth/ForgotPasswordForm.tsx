@@ -11,6 +11,7 @@ export default function ForgotPasswordForm() {
 
   const navigate = useNavigate()
 
+  // ── Submit ──────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")

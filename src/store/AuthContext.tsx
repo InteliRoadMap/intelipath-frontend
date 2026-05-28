@@ -1,37 +1,38 @@
-import { createContext, useContext, useReducer, useEffect } from 'react'
-import authApi from '../api/authApi'
+import { createContext, useContext, useReducer, useEffect } from "react"
+import authApi from "../api/authApi"
+import { jwtDecode } from "jwt-decode"
 
 const AuthContext = createContext(undefined)
 
 const initialState = {
   user: null,
-  // accessToken: null,
-  // refreshToken: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   loading: true
 }
 
 function authReducer(state, action) {
   switch (action.type) {
-    case 'LOGIN':
+    case "LOGIN":
       return {
         ...state,
         user: action.payload.user,
-        // accessToken: action.payload.accessToken,
-        // refreshToken: action.payload.refreshToken,
+        accessToken: action.payload.accessToken,
+        refreshToken: action.payload.refreshToken,
         isAuthenticated: true,
         loading: false
       }
-    case 'LOGOUT':
+    case "LOGOUT":
       return {
         ...state,
         user: null,
-        // accessToken: null,
-        // refreshToken: null,
+        accessToken: null,
+        refreshToken: null,
         isAuthenticated: false,
         loading: false
       }
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return {
         ...state,
         loading: action.payload
@@ -46,53 +47,72 @@ export function AuthProvider({ children }) {
 
   // Restore auth state from localStorage on mount
   useEffect(() => {
-    // const accessToken = localStorage.getItem('accessToken')
-    // const refreshToken = localStorage.getItem('refreshToken')
-    const user = localStorage.getItem('user')
+    const accessToken = localStorage.getItem("accessToken")
+    const refreshToken = localStorage.getItem("refreshToken")
+    const user = localStorage.getItem("user")
 
     if (user) {
       try {
         dispatch({
-          type: 'LOGIN',
+          type: "LOGIN",
           payload: {
             user: JSON.parse(user),
-            // accessToken,
-            // refreshToken
+            accessToken,
+            refreshToken
           }
         })
       } catch {
-        dispatch({ type: 'SET_LOADING', payload: false })
+        dispatch({ type: "SET_LOADING", payload: false })
       }
     } else {
-      dispatch({ type: 'SET_LOADING', payload: false })
+      dispatch({ type: "SET_LOADING", payload: false })
     }
   }, [])
 
-  const login = (userData) => {
-    // localStorage.setItem('accessToken', accessToken)
-    // localStorage.setItem('refreshToken', refreshToken)
-    localStorage.setItem('user', JSON.stringify(userData))
+  const login = (responseData, email) => {
+    const { accessToken, refreshToken, ...userFields } = responseData
+    const userInfo = { ...userFields, email }
+// userFields.role = 'MENTOR'
+//   const userInfo = { ...userFields, email }
+    // Sử dụng jwt-decode để bóc tách thông tin token ngay khi đăng nhập
+    if (accessToken) {
+      try {
+        const decodedInfo = jwtDecode(accessToken)
+        console.log("[JWT Decode] Giải mã Token thành công!")
+        console.log(
+          "Token này sẽ hết hạn vào lúc:",
+          new Date(decodedInfo.exp * 1000).toLocaleString()
+        )
+      } catch (err) {
+        console.error("Không thể giải mã Token:", err)
+      }
+    }
+
+    localStorage.setItem("accessToken", accessToken)
+    localStorage.setItem("refreshToken", refreshToken)
+    localStorage.setItem("user", JSON.stringify(userInfo))
 
     dispatch({
-      type: 'LOGIN',
-      payload: { user: userData }
+      type: "LOGIN",
+      payload: { user: userInfo, accessToken, refreshToken }
     })
   }
 
   const logout = async () => {
     try {
-      // const refreshToken = localStorage.getItem('refreshToken')
-      // if (refreshToken) {
-      //   await authApi.logout(refreshToken)
-      // }
-      await authApi.logout()
+      const refreshToken = localStorage.getItem("refreshToken")
+      if (refreshToken) {
+        await authApi.logout() //refreshToken here
+      } else {
+        await authApi.logout()
+      }
     } catch (error) {
-      console.error('Logout API error:', error)
+      console.error("Logout API error:", error)
     } finally {
-      // localStorage.removeItem('accessToken')
-      // localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
-      dispatch({ type: 'LOGOUT' })
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      dispatch({ type: "LOGOUT" })
     }
   }
 
@@ -102,18 +122,14 @@ export function AuthProvider({ children }) {
     logout
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }

@@ -11,9 +11,10 @@ export function isValidPassword(password) {
 }
 
 // Get error message from API response
-export function getErrorMessage(error) {
+export function getErrorMessage(error: any) {
   if (error.response) {
     const { status, data } = error.response
+
     if (status === 400) {
       console.log("Validation error:", data)
       return data.message || "Invalid input"
@@ -26,6 +27,16 @@ export function getErrorMessage(error) {
     if (status === 409) {
       console.log("Email already exists:", data)
       return "Email already exists"
+    }
+
+    if (status === 403) {
+      console.log("Account suspended:", data)
+      return data?.message || "Account is suspended"
+    }
+
+    if (status === 404) {
+      console.log("Email not found:", data)
+      return data?.message || "Email not found"
     }
     console.log("Unexpected error:", data)
     return data.message || "Something went wrong"

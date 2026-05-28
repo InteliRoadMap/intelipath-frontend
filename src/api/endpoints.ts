@@ -8,7 +8,7 @@ export const ENDPOINTS = {
     LOGOUT: '/auth/logout',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
-    REFRESH_TOKEN: '/auth/refresh-token'
+    REFRESH_TOKEN: '/auth/refresh'
   }
   // Add other feature endpoints here as the project grows...
 } as const;
