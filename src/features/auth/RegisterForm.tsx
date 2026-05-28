@@ -22,6 +22,7 @@ export default function RegisterForm() {
     agreeTerms?: string
     general?: string
   }>({})
+  const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const navigate = useNavigate()
@@ -30,6 +31,7 @@ export default function RegisterForm() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
+    setSuccessMessage("")
 
     const currentErrors: typeof errors = {}
 
@@ -65,11 +67,18 @@ export default function RegisterForm() {
     try {
       // POST /api/v1/auth/register — JSON body: { email, password, fullName }
       await authApi.register({ email, password, fullName })
+      setSuccessMessage("Register successfully! You can now sign in.")
+      // Clear form
+      setFullName("")
+      setEmail("")
+      setPassword("")
+      setConfirmPassword("")
+      setAgreeTerms(false)
     } catch (err: any) {
       if (!err?.response) {
         return
-      } else if (err.response.status === 409) {
-        setErrors({ email: "This email is already registered." })
+      } else if (err.response.status === 400) {
+        setErrors({ general: err.response.data?.message || "Email already exists or invalid input." })
       } else {
         setErrors({ general: getErrorMessage(err) })
       }
@@ -93,6 +102,13 @@ export default function RegisterForm() {
       {errors.general && (
         <div className="mb-5 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
           {errors.general}
+        </div>
+      )}
+
+      {/* Success banner */}
+      {successMessage && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-sm font-medium">
+          {successMessage}
         </div>
       )}
 

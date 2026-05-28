@@ -14,7 +14,17 @@ import {
 } from 'lucide-react';
 import Logo from '../components/Logo';
 
-export default function MentorDashboard({ user, onLogout }: any) {
+import { useAuth } from '../store/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+export default function MentorDashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
       
@@ -45,7 +55,7 @@ export default function MentorDashboard({ user, onLogout }: any) {
             Settings
           </a>
           <button 
-            onClick={onLogout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl font-medium transition-colors"
           >
             <LogOut size={20} />
@@ -64,7 +74,7 @@ export default function MentorDashboard({ user, onLogout }: any) {
               <Bell size={22} />
               <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
             </button>
-            <div className="flex items-center gap-3 pl-6 border-l border-slate-200 group cursor-pointer" onClick={onLogout} title="Click to Logout">
+            <div className="flex items-center gap-3 pl-6 border-l border-slate-200 group cursor-pointer" onClick={handleLogout} title="Click to Logout">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-900 group-hover:text-rose-500 transition-colors">{user?.name || user?.fullName || 'Mentor'}</p>
                 <p className="text-xs font-medium text-slate-500 capitalize">{user?.role || 'Mentor'}</p>

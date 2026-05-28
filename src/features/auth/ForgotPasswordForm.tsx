@@ -40,14 +40,13 @@ export default function ForgotPasswordForm() {
       if (status === 404) {
         // 404 — Email not found
         console.warn(
-          "[ForgotPassword] Email not found (404). Redirecting to /login..."
+          "[ForgotPassword] Email not found (404)."
         )
         setError(
-          "Email not found. Please check your email or sign up for a new account."
+          err.response?.data?.message || "Email not found. Please check your email or sign up for a new account."
         )
       } else {
-        // Another error (500, network, ...)
-        // setError(getErrorMessage(err))
+        setError(getErrorMessage(err))
       }
     } finally {
       setIsSubmitting(false)

@@ -76,6 +76,7 @@ export const handleUnauthorized = (error?: AxiosError) => {
 
   localStorage.removeItem("accessToken")
   localStorage.removeItem("refreshToken")
+  localStorage.removeItem("tokenExpiresIn")
   localStorage.removeItem("user")
 
   // check window to avoid redirect loops
@@ -214,8 +215,7 @@ export function createApiClient({
             // Because client has interceptor that attach token,
             // if refresh token also expired  → infinite loop 401 → refresh again
             // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
-            `${baseURL}/auth/refresh-token`,
-
+            `${baseURL}/auth/refresh`,
             {
               refreshToken
             }
