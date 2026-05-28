@@ -26,7 +26,7 @@ export default function RegisterForm() {
 
   const navigate = useNavigate()
 
-  // ── Real register logic — POST JSON { email, password, fullName } ──────
+  //register logic POST JSON { email, password, fullName }
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -78,7 +78,6 @@ export default function RegisterForm() {
     }
   }
 
-  // ── UI ────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
       <div className="mb-6 select-none">
