@@ -77,8 +77,8 @@ export default function RegisterForm() {
     } catch (err: any) {
       if (!err?.response) {
         return
-      } else if (err.response.status === 409) {
-        setErrors({ email: "This email is already registered." })
+      } else if (err.response.status === 400) {
+        setErrors({ general: err.response.data?.message || "Email already exists or invalid input." })
       } else {
         setErrors({ general: getErrorMessage(err) })
       }
