@@ -76,7 +76,7 @@ export default function AbstractIllustration({
   const [hoveredNode, setHoveredNode] = useState<number | null>(null)
 
   return (
-    <div className="relative flex h-full w-full select-none flex-col overflow-hidden bg-transparent p-8 xl:p-12">
+    <div className="relative flex h-full w-full select-none flex-col overflow-hidden bg-transparent p-5 lg:p-8 xl:p-10">
       <div className="absolute inset-0 z-0 grid-overlay pointer-events-none opacity-60" />
       <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-indigo/15 blur-[100px] animate-glow-pulse pointer-events-none" />
       <div className="absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-brand-cyan/20 blur-[120px] animate-glow-pulse pointer-events-none [animation-delay:2s]" />
@@ -89,10 +89,10 @@ export default function AbstractIllustration({
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center py-6 min-h-0">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center py-2 min-h-0">
         <div className="absolute h-62.5 w-112.5 rounded-[40px] border border-brand-blue/10 bg-brand-blue/5 blur-3xl pointer-events-none" />
 
-        <div className="relative aspect-440/260 w-full max-w-110 overflow-visible select-none lg:p-2">
+        <div className="relative aspect-[440/260] w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[440px] overflow-visible select-none lg:p-2">
           <svg
             className="absolute inset-0 h-full w-full overflow-visible pointer-events-none"
             viewBox="0 0 440 260"
@@ -257,7 +257,7 @@ export default function AbstractIllustration({
           </AnimatePresence>
         </div>
 
-        <div className="mt-8 flex w-full max-w-90 gap-3">
+        <div className="mt-4 lg:mt-8 flex w-full max-w-90 gap-3">
           <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white/70 p-3 shadow-sm backdrop-blur-sm">
             <div className="rounded-lg  border border-brand-cyan/20 bg-brand-cyan/5 p-2 text-brand-cyan">
               <Sparkles className="h-4 w-4 animate-pulse" />

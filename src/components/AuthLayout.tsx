@@ -14,7 +14,7 @@ type AuthLayoutProps = {
 
 export default function AuthLayout({ children, view }: AuthLayoutProps) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-y-auto bg-linear-to-br from-blue-50 via-white to-blue-100 font-sans text-slate-900">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-linear-to-br from-blue-50 via-white to-blue-100 font-sans text-slate-900">
       <div className="absolute inset-0 z-0 grid-overlay-light pointer-events-none opacity-60" />
 
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -31,20 +31,14 @@ export default function AuthLayout({ children, view }: AuthLayoutProps) {
           <div className="absolute inset-0 -z-10 rounded-3xl bg-blue-300/30 blur-3xl" />
           <div
             className="
-    grid min-h-[500px] md:h-191.25 w-full grid-cols-1
+    grid min-h-[550px] md:h-[75vh] md:max-h-[765px] w-full grid-cols-1
     overflow-hidden
     rounded-3xl
-
-     border-white/40 
-
+    border border-white/40 
     bg-white/70
-
     shadow-[0_8px_32px_rgba(0,100,200,0.1)]
-
     backdrop-blur-[24px]
-
     transition-all duration-500
-
     md:grid-cols-12
   "
           >
