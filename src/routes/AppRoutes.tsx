@@ -8,6 +8,10 @@ import DashboardPage from "../pages/DashboardPage"
 import NotFoundPage from "../pages/NotFoundPage"
 import ProtectedRoute from "../components/ProtectedRoute"
 
+import StudentDashboard from "../pages/StudentDashboard"
+import CounselorDashboard from "../pages/CounselorDashboard"
+import MentorDashboard from "../pages/MentorDashboard"
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -24,6 +28,30 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student"
+        element={
+          <ProtectedRoute>
+            <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/counselor"
+        element={
+          <ProtectedRoute>
+            <CounselorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/mentor"
+        element={
+          <ProtectedRoute>
+            <MentorDashboard />
           </ProtectedRoute>
         }
       />

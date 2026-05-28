@@ -74,8 +74,12 @@ export default function ResetPasswordForm() {
         newPassword
       })
       setSuccess(true)
-    } catch (err) {
-      setErrors({ general: getErrorMessage(err) })
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        setErrors({ general: err.response.data?.message || "Email not found, or OTP invalid/expired." })
+      } else {
+        setErrors({ general: getErrorMessage(err) })
+      }
     } finally {
       setIsSubmitting(false)
     }

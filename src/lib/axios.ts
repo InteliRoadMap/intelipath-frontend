@@ -3,8 +3,22 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig
 } from "axios"
+
+//The central system manages all API requests
+/**
+ * Call Api
+ * Attach Token
+ * Handle Errors
+ * Refresh Token
+ * Beautiful Logging
+ * Redirect to login on unauthorized
+ * logging request/response
+ */
+
 import { ENDPOINTS } from "../api/endpoints"
 
+// Every request use client also go through interceptor
+// client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller
 //Types
 export interface ApiClientConfig {
   baseURL?: string
@@ -18,7 +32,7 @@ export interface ApiClientConfig {
 }
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean
+  _retry?: boolean //prevent infinite retry loops
 }
 
 //  Config & State
@@ -62,6 +76,7 @@ export const handleUnauthorized = (error?: AxiosError) => {
 
   localStorage.removeItem("accessToken")
   localStorage.removeItem("refreshToken")
+  localStorage.removeItem("tokenExpiresIn")
   localStorage.removeItem("user")
 
   // check window to avoid redirect loops
@@ -74,14 +89,15 @@ export const handleUnauthorized = (error?: AxiosError) => {
 }
 
 //Factory Function
+//Create Axios Client Facctoty
 export function createApiClient({
   baseURL = API_BASE_URL,
   timeout = 300000,
   headers = {},
   withCredentials = true,
-  getToken = getStoredToken,
+  getToken = getStoredToken, //Get access token from localStorage
   getRefreshToken = defaultGetRefreshToken,
-  onUnauthorized = handleUnauthorized,
+  onUnauthorized = handleUnauthorized, //Token expired → logout user
   onForbidden
 }: ApiClientConfig = {}): AxiosInstance {
   const client = axios.create({
@@ -93,6 +109,7 @@ export function createApiClient({
 
   // 1. Request Interceptor: Attach Token & Beautiful Logging
   // Api request interceptor to log requests and attach auth token
+  // Request start -> run request interceptor ->  attach token if available -> send request
   client.interceptors.request.use(
     (config) => {
       //LOGGING
@@ -172,10 +189,11 @@ export function createApiClient({
       }
       //Refresh token when access token expired (401 Unauthorized)
       //401 Unauthorized (Token Expiry & Refresh Logic)
+      // Flow : Api call → 401 Unauthorized → Using refresh Token -> Backend returns new access token → Retry original request with new token
       if (status === 401 && originalRequest && !originalRequest._retry) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {
-            failedQueue.push({ resolve, reject })
+            failedQueue.push({ resolve, reject }) // Queue requests while refreshing token
           })
             .then((token) => {
               if (originalRequest.headers) {
@@ -186,14 +204,18 @@ export function createApiClient({
             .catch((err) => Promise.reject(err))
         }
 
-        originalRequest._retry = true
-        isRefreshing = true
+        originalRequest._retry = true // Mark request as retry to prevent infinite loops
+        isRefreshing = true // Set refreshing flag to prevent multiple refresh attempts
 
         try {
           const refreshToken = getRefreshToken()
           // Use a fresh axios instance to avoid infinite interceptor loops
           const refreshResponse = await axios.post(
-            `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+            //Why cannot use client here?
+            // Because client has interceptor that attach token,
+            // if refresh token also expired  → infinite loop 401 → refresh again
+            // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
+            `${baseURL}/auth/refresh`,
             {
               refreshToken
             }
@@ -209,7 +231,7 @@ export function createApiClient({
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${accessToken}`
             }
-            processQueue(null, accessToken)
+            processQueue(null, accessToken) // Retry queued requests with new token
             return client(originalRequest)
           } else {
             throw new Error("No access token returned from refresh endpoint.")

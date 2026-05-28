@@ -79,7 +79,15 @@ export default function LoginForm() {
     try {
       const response = await authApi.login(email, password)
       login(response.data, email)
-      navigate("/dashboard")
+      
+      const role = response.data.role?.toUpperCase() || "STUDENT"
+      if (role === "MENTOR") {
+        navigate("/dashboard/mentor")
+      } else if (role === "COUNSELOR") {
+        navigate("/dashboard/counselor")
+      } else {
+        navigate("/dashboard/student")
+      }
     } catch (err) {
       if (!err?.response) {
         return
