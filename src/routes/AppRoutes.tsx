@@ -11,6 +11,7 @@ import ProtectedRoute from "../components/ProtectedRoute"
 import StudentDashboard from "../pages/StudentDashboard"
 import CounselorDashboard from "../pages/CounselorDashboard"
 import MentorDashboard from "../pages/MentorDashboard"
+import AdminDashboard from "../pages/AdminDashboard"
 
 export const AppRoutes = () => {
   return (
@@ -52,6 +53,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MentorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />

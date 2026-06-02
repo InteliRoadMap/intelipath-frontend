@@ -6,7 +6,9 @@ export default function DashboardPage() {
 
   const role = user?.role?.toUpperCase() || 'STUDENT'
 
-  if (role === 'MENTOR') {
+  if (role === 'ADMIN') {
+    return <Navigate to="/dashboard/admin" replace />
+  } else if (role === 'MENTOR') {
     return <Navigate to="/dashboard/mentor" replace />
   } else if (role === 'COUNSELOR') {
     return <Navigate to="/dashboard/counselor" replace />
