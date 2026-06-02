@@ -128,8 +128,15 @@ export function createApiClient({
 
       //ATTACH TOKEN
       const token = getToken()
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`
+      const refreshToken = getRefreshToken()
+      
+      if (config.headers) {
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
+        if (refreshToken) {
+          config.headers['x-refresh-token'] = refreshToken
+        }
       }
       return config
     },

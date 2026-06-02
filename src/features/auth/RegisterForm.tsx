@@ -27,7 +27,7 @@ export default function RegisterForm() {
 
   const navigate = useNavigate()
 
-  // ── Real register logic — POST JSON { email, password, fullName } ──────
+  //register logic POST JSON { email, password, fullName }
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -68,7 +68,8 @@ export default function RegisterForm() {
       // POST /api/v1/auth/register — JSON body: { email, password, fullName }
       await authApi.register({ email, password, fullName })
       setSuccessMessage("Register successfully! You can now sign in.")
-      // Clear form
+      navigate("/login")
+
       setFullName("")
       setEmail("")
       setPassword("")
@@ -78,7 +79,11 @@ export default function RegisterForm() {
       if (!err?.response) {
         return
       } else if (err.response.status === 400) {
-        setErrors({ general: err.response.data?.message || "Email already exists or invalid input." })
+        setErrors({
+          general:
+            err.response.data?.message ||
+            "Email already exists or invalid input."
+        })
       } else {
         setErrors({ general: getErrorMessage(err) })
       }
@@ -87,7 +92,6 @@ export default function RegisterForm() {
     }
   }
 
-  // ── UI ────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
       <div className="mb-6 select-none">
