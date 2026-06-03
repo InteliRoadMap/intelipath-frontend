@@ -1,21 +1,22 @@
 import { Routes, Route } from "react-router-dom"
 import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
 import { ProtectedRoute } from "@/routes"
+import { ROUTES } from "@/shared"
 
 export const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<WelcomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+      <Route path={ROUTES.HOME} element={<WelcomePage />} />
+      <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+      <Route path={ROUTES.OAUTH_CALLBACK} element={<OAuthCallbackPage />} />
 
       {/* Protected Routes */}
       <Route
-        path="/dashboard"
+        path={ROUTES.DASHBOARD}
         element={
           <ProtectedRoute>
             <DashboardPage />
@@ -23,7 +24,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/dashboard/student"
+        path={ROUTES.DASHBOARD_STUDENT}
         element={
           <ProtectedRoute>
             <StudentDashboard />
@@ -31,7 +32,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/dashboard/counselor"
+        path={ROUTES.DASHBOARD_COUNSELOR}
         element={
           <ProtectedRoute>
             <CounselorDashboard />
@@ -39,7 +40,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/dashboard/mentor"
+        path={ROUTES.DASHBOARD_MENTOR}
         element={
           <ProtectedRoute>
             <MentorDashboard />
@@ -47,7 +48,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/dashboard/admin"
+        path={ROUTES.DASHBOARD_ADMIN}
         element={
           <ProtectedRoute>
             <AdminDashboard />

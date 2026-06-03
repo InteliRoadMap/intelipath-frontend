@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context'
 import Logo from './Logo'
+import { ROUTES } from '@/shared'
 // import '../styles/welcome.css'
 
 export default function Header() {
@@ -9,7 +10,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/login')
+    navigate(ROUTES.LOGIN)
   }
 
   return (
@@ -20,7 +21,7 @@ export default function Header() {
         {isAuthenticated ? (
           <>
             <span className="nav-text">Hi, {user?.fullName || user?.name || 'User'}</span>
-            <Link to="/dashboard" className="header-btn-register" style={{ marginLeft: '16px' }}>
+            <Link to={ROUTES.DASHBOARD} className="header-btn-register" style={{ marginLeft: '16px' }}>
               Dashboard
             </Link>
             <button
@@ -33,7 +34,7 @@ export default function Header() {
           </>
         ) : (
           <>
-            <Link to="/login" className="header-btn-signin">
+            <Link to={ROUTES.LOGIN} className="header-btn-signin">
               Sign In
             </Link>
           </>

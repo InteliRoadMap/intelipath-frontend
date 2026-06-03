@@ -3,6 +3,7 @@ import { Mail, ArrowLeft, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/api";
 import { isValidEmail, getErrorMessage } from "@/lib";
+import { ROUTES } from "@/shared";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
@@ -164,7 +165,7 @@ export default function ForgotPasswordForm() {
       {/* Back to login */}
       <div className="text-center mt-8">
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate(ROUTES.LOGIN)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold
             text-slate-500 hover:text-brand-cyan transition-colors duration-150 cursor-pointer"
         >

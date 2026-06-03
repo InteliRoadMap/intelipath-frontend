@@ -1,18 +1,19 @@
 import { useAuth } from '@/context'
 import { Navigate } from 'react-router-dom'
+import { ROLES, ROUTES } from '@/shared'
 
 export default function DashboardPage() {
   const { user } = useAuth()
 
-  const role = user?.role?.toUpperCase() || 'STUDENT'
+  const role = user?.role?.toUpperCase() || ROLES.STUDENT
 
-  if (role === 'ADMIN') {
-    return <Navigate to="/dashboard/admin" replace />
-  } else if (role === 'MENTOR') {
-    return <Navigate to="/dashboard/mentor" replace />
-  } else if (role === 'COUNSELOR') {
-    return <Navigate to="/dashboard/counselor" replace />
+  if (role === ROLES.ADMIN) {
+    return <Navigate to={ROUTES.DASHBOARD_ADMIN} replace />
+  } else if (role === ROLES.MENTOR) {
+    return <Navigate to={ROUTES.DASHBOARD_MENTOR} replace />
+  } else if (role === ROLES.COUNSELOR) {
+    return <Navigate to={ROUTES.DASHBOARD_COUNSELOR} replace />
   } else {
-    return <Navigate to="/dashboard/student" replace />
+    return <Navigate to={ROUTES.DASHBOARD_STUDENT} replace />
   }
 }

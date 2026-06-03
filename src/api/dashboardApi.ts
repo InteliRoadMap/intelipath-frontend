@@ -1,4 +1,5 @@
 import { mainClient } from "./apiClients"
+import { ENDPOINTS } from "./endpoints"
 
 /**
  * Dashboard API Service
@@ -6,31 +7,31 @@ import { mainClient } from "./apiClients"
  */
 const dashboardApi = {
   getRoadmapProgress: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/roadmap-progress')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.ROADMAP_PROGRESS)
   },
   
   getSkillGaps: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/skill-gaps')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.SKILL_GAPS)
   },
 
   getMentorFeedback: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/mentor-feedback')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK)
   },
 
   getSkillComparison: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/skill-comparison')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.SKILL_COMPARISON)
   },
 
   getRecommendations: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/recommendations')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.RECOMMENDATIONS)
   },
 
   getMarketDemand: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/market-demand')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MARKET_DEMAND)
   },
   
   getAiHistory: async () => {
-    return await mainClient.get('/api/v1/student/dashboard/ai-history')
+    return await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.AI_HISTORY)
   }
 }
 

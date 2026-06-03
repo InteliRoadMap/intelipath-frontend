@@ -2,6 +2,10 @@ import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useAuth } from "@/context"
 import { jwtDecode } from "jwt-decode"
+import { ROLES, ROUTES } from "@/shared"
+
+const LOGIN_OAUTH_FAILED = `${ROUTES.LOGIN}?error=oauth_failed`
+const LOGIN_NO_TOKEN = `${ROUTES.LOGIN}?error=no_token`
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams()
@@ -11,7 +15,7 @@ export default function OAuthCallbackPage() {
   useEffect(() => {
     const error = searchParams.get("error")
     if (error) {
-      navigate("/login?error=oauth_failed")
+      navigate(LOGIN_OAUTH_FAILED)
       return
     }
 
@@ -19,7 +23,7 @@ export default function OAuthCallbackPage() {
     const refreshToken = searchParams.get("refreshToken")
 
     if (!token) {
-      navigate("/login?error=no_token")
+      navigate(LOGIN_NO_TOKEN)
       return
     }
 
@@ -30,15 +34,15 @@ export default function OAuthCallbackPage() {
 
       login({ accessToken: token, refreshToken, expiresIn })
         .then(() => {
-          const userRole = role?.toUpperCase() || "STUDENT"
-          if (userRole === "ADMIN") navigate("/dashboard/admin")
-          else if (userRole === "COUNSELOR") navigate("/dashboard/counselor")
-          else if (userRole === "MENTOR") navigate("/dashboard/mentor")
-          else navigate("/dashboard/student")
+          const userRole = role?.toUpperCase() || ROLES.STUDENT
+          if (userRole === ROLES.ADMIN) navigate(ROUTES.DASHBOARD_ADMIN)
+          else if (userRole === ROLES.COUNSELOR) navigate(ROUTES.DASHBOARD_COUNSELOR)
+          else if (userRole === ROLES.MENTOR) navigate(ROUTES.DASHBOARD_MENTOR)
+          else navigate(ROUTES.DASHBOARD_STUDENT)
         })
-        .catch(() => navigate("/login?error=oauth_failed"))
+        .catch(() => navigate(LOGIN_OAUTH_FAILED))
     } catch {
-      navigate("/login?error=oauth_failed")
+      navigate(LOGIN_OAUTH_FAILED)
     }
   }, [])
 

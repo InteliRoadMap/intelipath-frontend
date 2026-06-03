@@ -16,6 +16,8 @@ import axios, {
  */
 
 import { ENDPOINTS } from "../api/endpoints"
+import { API_BASE_URL } from "@/config/appConfig"
+import { ROUTES } from "@/shared"
 
 // Every request use client also go through interceptor
 // client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller
@@ -34,10 +36,6 @@ export interface ApiClientConfig {
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean //prevent infinite retry loops
 }
-
-//  Config & State
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1"
 
 let isRefreshing = false
 
@@ -82,9 +80,9 @@ export const handleUnauthorized = (error?: AxiosError) => {
   // check window to avoid redirect loops
   if (
     typeof window !== "undefined" &&
-    !window.location.pathname.includes("/login")
+    !window.location.pathname.includes(ROUTES.LOGIN)
   ) {
-    window.location.href = "/login"
+    window.location.href = ROUTES.LOGIN
   }
 }
 
@@ -223,7 +221,7 @@ export function createApiClient({
             // Because client has interceptor that attach token,
             // if refresh token also expired  → infinite loop 401 → refresh again
             // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
-            `${baseURL}/auth/refresh`,
+            `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
             {
               refreshToken
             }

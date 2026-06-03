@@ -4,6 +4,7 @@ import { Logo } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '@/api';
+import { ROUTES } from '@/shared';
 
 // Component: Total Users Metric
 const TotalUsersWidget = () => {
@@ -266,7 +267,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
   };
 
   return (

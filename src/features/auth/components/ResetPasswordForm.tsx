@@ -12,6 +12,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { authApi } from "@/api";
 import { isValidPassword, getErrorMessage } from "@/lib";
+import { ROUTES } from "@/shared";
 
 export default function ResetPasswordForm() {
   const [searchParams] = useSearchParams()
@@ -106,7 +107,7 @@ export default function ResetPasswordForm() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate(ROUTES.LOGIN)}
           className="w-full max-w-xs py-3.5 px-4 rounded-xl text-sm font-semibold text-white
             flex items-center justify-center gap-2
             bg-gradient-to-r from-brand-electric via-brand-blue to-brand-cyan
@@ -355,7 +356,7 @@ export default function ResetPasswordForm() {
       {/* Footer */}
       <div className="text-center mt-6">
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate(ROUTES.LOGIN)}
           className="inline-flex items-center gap-1.5 text-xs font-semibold
             text-slate-500 hover:text-brand-cyan transition-colors duration-150 cursor-pointer"
         >

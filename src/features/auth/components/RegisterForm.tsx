@@ -3,6 +3,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/api";
 import { isValidEmail, isValidPassword, getErrorMessage } from "@/lib";
+import { ROUTES } from "@/shared";
 
 export default function RegisterForm() {
   const [fullName, setFullName] = useState("")
@@ -68,7 +69,7 @@ export default function RegisterForm() {
       // POST /api/v1/auth/register — JSON body: { email, password, fullName }
       await authApi.register({ email, password, fullName })
       setSuccessMessage("Register successfully! You can now sign in.")
-      navigate("/login")
+      navigate(ROUTES.LOGIN)
 
       setFullName("")
       setEmail("")
@@ -391,7 +392,7 @@ export default function RegisterForm() {
           Already have an account?{" "}
         </span>
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate(ROUTES.LOGIN)}
           className="text-xs font-bold text-brand-cyan hover:text-brand-blue hover:underline underline-offset-4 transition-all duration-150 cursor-pointer"
         >
           Sign in

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import { motion } from "motion/react"
 import { useNavigate } from "react-router-dom"
 import { Home, ArrowLeft, Compass, MapPin } from "lucide-react"
+import { ROUTES } from "@/shared"
 
 /* ── Floating orbs config (mirrors AuthLayout aesthetic) ── */
 const orbs = [
@@ -277,12 +278,12 @@ export default function NotFoundPage() {
           {[
             {
               label: "Sign In",
-              path: "/login",
+              path: ROUTES.LOGIN,
               icon: <Compass className="w-3.5 h-3.5" />
             },
             {
               label: "Register",
-              path: "/register",
+              path: ROUTES.REGISTER,
               icon: <MapPin className="w-3.5 h-3.5" />
             }
           ].map((link) => (

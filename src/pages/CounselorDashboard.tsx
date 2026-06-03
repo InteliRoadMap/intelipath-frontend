@@ -6,7 +6,8 @@ import {
 import { Logo } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
-import counselorApi from '../api/counselorApi';
+import counselorApi from '@/api/counselorApi';
+import { ROUTES } from '@/shared';
 
 // -- WIDGETS --
 
@@ -332,7 +333,7 @@ export default function CounselorDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
   };
 
   return (

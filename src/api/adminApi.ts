@@ -1,4 +1,5 @@
 import { mainClient } from "./apiClients"
+import { ENDPOINTS } from "./endpoints"
 
 /**
  * Admin API Service
@@ -6,19 +7,19 @@ import { mainClient } from "./apiClients"
  */
 const adminApi = {
   getTotalUsers: async () => {
-    return await mainClient.get('/api/v1/admin/dashboard/metrics/users')
+    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_USERS)
   },
   
   getTotalCourses: async () => {
-    return await mainClient.get('/api/v1/admin/dashboard/metrics/courses')
+    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_COURSES)
   },
 
   getSystemHealth: async () => {
-    return await mainClient.get('/api/v1/admin/dashboard/metrics/health')
+    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_HEALTH)
   },
 
   getUsersList: async () => {
-    return await mainClient.get('/api/v1/admin/dashboard/users')
+    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.USERS)
   }
 }
 

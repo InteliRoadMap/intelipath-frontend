@@ -3,10 +3,11 @@ import {
   Bell, Settings, LogOut, LayoutDashboard, MessageSquare, IdCard,
   Star, Gauge, Users, Mail, Calendar, Layers, Lightbulb, ChevronRight
 } from 'lucide-react';
-import { Logo } from '../components/ui';
+import { Logo } from '@/components/ui';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
-import mentorApi from '../api/mentorApi';
+import mentorApi from '@/api/mentorApi';
+import { ROUTES } from '@/shared';
 
 // -- WIDGETS --
 
@@ -225,7 +226,7 @@ export default function MentorDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
   };
 
   return (

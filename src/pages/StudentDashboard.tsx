@@ -4,6 +4,7 @@ import { Logo } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi } from '@/api';
+import { ROUTES } from '@/shared';
 
 // --- Individual Widgets ---
 
@@ -304,7 +305,7 @@ export default function StudentDashboard() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
   };
 
   return (

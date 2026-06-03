@@ -13,6 +13,21 @@ export const ENDPOINTS = {
   USERS: {
     ME: '/user/me',
   },
+  STUDENT_DASHBOARD: {
+    ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',
+    SKILL_GAPS: '/student/dashboard/skill-gaps',
+    MENTOR_FEEDBACK: '/student/dashboard/mentor-feedback',
+    SKILL_COMPARISON: '/student/dashboard/skill-comparison',
+    RECOMMENDATIONS: '/student/dashboard/recommendations',
+    MARKET_DEMAND: '/student/dashboard/market-demand',
+    AI_HISTORY: '/student/dashboard/ai-history',
+  },
+  ADMIN_DASHBOARD: {
+    METRICS_USERS: '/admin/dashboard/metrics/users',
+    METRICS_COURSES: '/admin/dashboard/metrics/courses',
+    METRICS_HEALTH: '/admin/dashboard/metrics/health',
+    USERS: '/admin/dashboard/users',
+  },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: '/counselor/dashboard/metrics/students',
     METRICS_PROGRESS: '/counselor/dashboard/metrics/progress',
