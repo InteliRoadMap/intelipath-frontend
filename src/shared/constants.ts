@@ -4,12 +4,13 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
-  OAUTH_CALLBACK: '/auth/callback',
+  OAUTH_CALLBACK: '/oauth2/redirect',
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_ADMIN: '/dashboard/admin',
+  PROFILE_SETTINGS: '/profile-settings',
 } as const
 
 export const ROLES = {
