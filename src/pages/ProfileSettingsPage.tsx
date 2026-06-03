@@ -25,7 +25,8 @@ interface ProfileData {
   university: string
   major: string
   year_of_admission: string
-  githubProfile?: string
+  github?: string
+
 }
 
 // 2. Static Data
@@ -39,7 +40,7 @@ const EMPTY_PROFILE: ProfileData = {
   university: "",
   major: "Software Engineering",
   year_of_admission: "",
-  githubProfile: ""
+  github: ""
 }
 
 // 3. Main Component: ProfileSettingsPage
@@ -60,7 +61,7 @@ export default function ProfileSettingsPage() {
     setError(null)
 
     try {
-      const studentRes = await updateApi.getStudentProfile()
+      const studentRes = await updateApi.getUserInfo()
       const data = studentRes.data
 
       setProfileData({
@@ -125,7 +126,7 @@ export default function ProfileSettingsPage() {
   const displayInitial = profileData.fullName?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
-    (profileData.githubProfile?.split('/').filter(Boolean).pop()) ||
+    profileData.github ||
     profileData.fullName.split(" ").join("").toLowerCase() ||
     "user"
 

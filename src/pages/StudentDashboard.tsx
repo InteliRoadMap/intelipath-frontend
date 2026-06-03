@@ -631,6 +631,7 @@ export default function StudentDashboard() {
           <button className="text-slate-400 hover:text-slate-600 transition-colors">
             <Search size={20} />
           </button>
+
           <button 
             onClick={() => navigate(ROUTES.PROFILE_SETTINGS)}
             className="text-slate-400 hover:text-slate-600 transition-colors"
