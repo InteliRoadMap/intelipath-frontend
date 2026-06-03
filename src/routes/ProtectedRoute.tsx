@@ -4,8 +4,13 @@ import { useAuth } from '@/context'
 import { Spinner } from 'react-bootstrap'
 import { ROUTES } from '@/shared'
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth()
+interface ProtectedRouteProps {
+  children: React.ReactNode
+  allowedRoles?: string[]
+}
+
+export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+  const { isAuthenticated, loading, user } = useAuth()
 
   if (loading) {
     return (
@@ -17,6 +22,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />
+  }
+
+  if (allowedRoles?.length) {
+    const userRole = user?.role?.toUpperCase()
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return <Navigate to={ROUTES.DASHBOARD} replace />
+    }
   }
 
   return children
