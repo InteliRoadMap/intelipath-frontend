@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Settings, ChevronRight, Send, Download, Check, MapPin, Lock, Info, ExternalLink, Network, Box, AlertTriangle, LogOut, LayoutDashboard, Map, Bot, TrendingUp } from 'lucide-react';
-import { Logo } from '@/components';
+import { ChevronRight, Send, Download, Check, MapPin, Lock, Info, ExternalLink, Network, Box, AlertTriangle, LayoutDashboard, Map, Bot, TrendingUp } from 'lucide-react';
+import { DashboardUserActions, Logo } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi } from '@/api';
@@ -301,7 +301,6 @@ const MarketDemandWidget = () => {
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -336,41 +335,8 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 relative">
-          <button className="text-slate-400 hover:text-slate-600 transition-colors"><Search size={20} /></button>
-          <button className="text-slate-400 hover:text-slate-600 transition-colors"><Settings size={20} /></button>
-          {/* User Profile Area */}
-          <div className="flex items-center gap-3 pl-0 sm:pl-6 sm:border-l border-slate-200 cursor-pointer group relative" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-            <div className="text-right hidden sm:block">
-              <p className="text-[13px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors">{user?.fullName || user?.name || 'Student'}</p>
-              <p className="text-[11px] font-medium text-slate-500 capitalize">{user?.role || 'Student'}</p>
-            </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 group-hover:border-[#00838f] group-hover:shadow-sm transition-all">
-              <div className="w-full h-full bg-[#00838f] flex items-center justify-center text-white text-[14px] font-bold">
-                {(user?.fullName?.trim().split(' ').pop() || user?.name || 'S')[0].toUpperCase()}
-              </div>
-            </div>
-
-            {isDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
-                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <button className="w-full text-left px-4 py-2.5 text-[14px] text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium">
-                    <Settings size={16} className="text-slate-400" />
-                    Settings
-                  </button>
-                  <div className="h-[1px] bg-slate-100 my-1"></div>
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-[14px] text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-3 font-bold"
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        <div className="relative">
+          <DashboardUserActions user={user} onLogout={handleLogout} />
         </div>
       </nav>
 

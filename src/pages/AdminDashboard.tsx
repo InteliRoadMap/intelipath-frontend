@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Search, Settings, ChevronRight, Bell, LogOut, Users, GraduationCap, Activity, Plus, ChevronLeft, MoreVertical, Edit2, Trash2, LayoutDashboard } from 'lucide-react';
-import { Logo } from '@/components';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, Settings, ChevronRight, Users, GraduationCap, Activity, Plus, ChevronLeft, Edit2, Trash2, LayoutDashboard } from 'lucide-react';
+import { DashboardUserActions, Logo } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '@/api';
-import { ROUTES } from '@/shared';
+import { ROLES, ROUTES } from '@/shared';
 
 // Component: Total Users Metric
 const TotalUsersWidget = () => {
@@ -137,16 +137,124 @@ const SystemHealthWidget = () => {
 };
 
 // Component: User Management Table
+const USERS_PER_PAGE = 10;
+const ADMIN_ROLE_OPTIONS = [
+  ROLES.STUDENT,
+  ROLES.COUNSELOR,
+  ROLES.MENTOR,
+  ROLES.ADMIN
+];
+
 const UserManagementWidget = () => {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [roleError, setRoleError] = useState('');
+  const [isSavingRole, setIsSavingRole] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   useEffect(() => { 
     adminApi.getUsersList().then(res => {
-      setData(res);
+      setData(Array.isArray(res) ? res : []);
       setIsLoading(false);
     }).catch(() => setIsLoading(false));
   }, []);
+
+  const filteredUsers = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    if (!keyword) return data;
+
+    return data.filter((user) => {
+      const name = String(user.name || '').toLowerCase();
+      return name.includes(keyword);
+    });
+  }, [data, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * USERS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+  const visibleStart = filteredUsers.length ? startIndex + 1 : 0;
+  const visibleEnd = Math.min(startIndex + USERS_PER_PAGE, filteredUsers.length);
+  const firstVisiblePage = Math.max(1, Math.min(safeCurrentPage - 2, totalPages - 4));
+  const visiblePages = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => firstVisiblePage + index
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const openRoleEditor = (user: any) => {
+    setEditingUser(user);
+    setSelectedRole(String(user.role || ROLES.STUDENT).toUpperCase());
+    setRoleError('');
+  };
+
+  const closeRoleEditor = () => {
+    setEditingUser(null);
+    setSelectedRole('');
+    setRoleError('');
+  };
+
+  const handleSaveRole = async () => {
+    if (!editingUser || !selectedRole) return;
+
+    setIsSavingRole(true);
+    setRoleError('');
+
+    try {
+      const updatedUser = await adminApi.updateUserRole(editingUser.id, selectedRole);
+      setData((users) =>
+        users.map((user) =>
+          user.id === editingUser.id
+            ? { ...user, ...updatedUser, role: updatedUser?.role || selectedRole }
+            : user
+        )
+      );
+      closeRoleEditor();
+    } catch {
+      setRoleError('Could not update user role. Please try again.');
+    } finally {
+      setIsSavingRole(false);
+    }
+  };
+
+  const openDeleteConfirm = (user: any) => {
+    setDeletingUser(user);
+    setDeleteError('');
+  };
+
+  const closeDeleteConfirm = () => {
+    if (isDeletingUser) return;
+    setDeletingUser(null);
+    setDeleteError('');
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    setIsDeletingUser(true);
+    setDeleteError('');
+
+    try {
+      await adminApi.deleteUser(deletingUser.id);
+      setData((users) => users.filter((user) => user.id !== deletingUser.id));
+      setDeletingUser(null);
+    } catch {
+      setDeleteError('Could not delete this account. Please try again.');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-8">
@@ -158,6 +266,11 @@ const UserManagementWidget = () => {
           <input 
             type="text" 
             placeholder="Search users..." 
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full sm:w-64 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-[13px] outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all"
           />
         </div>
@@ -188,39 +301,52 @@ const UserManagementWidget = () => {
                   <div className="flex justify-end"><div className="h-4 w-8 bg-slate-100 animate-pulse rounded"></div></div>
                 </div>
               ))
-            ) : data && data.length > 0 ? (
+            ) : paginatedUsers.length > 0 ? (
               // Data State
-              data.map((user: any) => (
+              paginatedUsers.map((user: any) => {
+                const displayName = user.name || 'Unknown User';
+                const displayRole = user.role || 'Unknown';
+                const roleLabel = String(displayRole).toUpperCase();
+
+                return (
                 <div key={user.id} className="grid grid-cols-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors group">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-[#00838f] flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
-                      {user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
+                      {displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-[14px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors">{user.name}</span>
+                    <span className="text-[14px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors">{displayName}</span>
                   </div>
                   <div>
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
-                      user.role === 'Instructor' ? 'bg-[#e0f2fe] text-[#0369a1]' : 
-                      user.role === 'Admin' ? 'bg-[#fce7f3] text-[#be185d]' : 
+                      roleLabel === 'MENTOR' ? 'bg-[#e0f2fe] text-[#0369a1]' : 
+                      roleLabel === 'ADMIN' ? 'bg-[#fce7f3] text-[#be185d]' : 
                       'bg-[#f1f5f9] text-slate-600'
                     }`}>
-                      {user.role}
+                      {displayRole}
                     </span>
                   </div>
                   <div className="text-[14px] text-slate-500">{user.joinedDate}</div>
-                  <div className="text-right flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-slate-400 hover:text-[#00838f] hover:bg-[#e0f2fe] rounded-md transition-colors" title="Edit">
-                      <Edit2 size={15} />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      className="inline-flex min-w-[88px] items-center justify-center gap-1.5 rounded-lg border border-[#bae6fd] bg-[#e0f2fe] px-3 py-2 text-[12px] font-bold text-[#006064] shadow-sm transition-all hover:border-[#7dd3fc] hover:bg-[#bae6fd]"
+                      title="Edit role"
+                      onClick={() => openRoleEditor(user)}
+                    >
+                      <Edit2 size={14} />
+                      Edit role
                     </button>
-                    <button className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors" title="Delete">
-                      <Trash2 size={15} />
-                    </button>
-                    <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors">
-                      <MoreVertical size={15} />
+                    <button
+                      className="inline-flex min-w-[76px] items-center justify-center gap-1.5 rounded-lg border border-rose-100 bg-white px-3 py-2 text-[12px] font-bold text-rose-600 shadow-sm transition-all hover:border-rose-200 hover:bg-rose-50"
+                      title="Delete account"
+                      onClick={() => openDeleteConfirm(user)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
                     </button>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               // Empty State
               <div className="h-[280px] flex flex-col items-center justify-center text-slate-400">
@@ -238,23 +364,133 @@ const UserManagementWidget = () => {
       {/* Pagination Footer */}
       <div className="bg-[#f8fafc] border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-[12px] text-slate-500 font-medium">
-          Showing {data?.length ? `1 to ${data.length}` : '0'} users
+          Showing {filteredUsers.length ? `${visibleStart} to ${visibleEnd}` : '0'} of {filteredUsers.length} users
         </span>
         <div className="flex items-center gap-1.5">
-          <button className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-md bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50" disabled>
+          <button
+            className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-md bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50"
+            disabled={safeCurrentPage === 1 || filteredUsers.length === 0}
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          >
             <ChevronLeft size={14} />
           </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-[#006064] rounded-md bg-[#006064] text-white text-[13px] font-bold shadow-sm">
-            1
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-md bg-white text-slate-600 text-[13px] font-bold hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50" disabled={!data || data.length === 0}>
-            2
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-md bg-white text-slate-600 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50" disabled={!data || data.length === 0}>
+          {visiblePages.map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              disabled={filteredUsers.length === 0}
+              className={`w-8 h-8 flex items-center justify-center border rounded-md text-[13px] font-bold transition-all disabled:opacity-50 ${
+                page === safeCurrentPage
+                  ? 'border-[#006064] bg-[#006064] text-white shadow-sm'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-md bg-white text-slate-600 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50"
+            disabled={safeCurrentPage === totalPages || filteredUsers.length === 0}
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+          >
             <ChevronRight size={14} />
           </button>
         </div>
       </div>
+
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+          <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h3 className="text-[16px] font-bold text-slate-900">Edit user role</h3>
+              <p className="mt-1 text-[13px] text-slate-500">{editingUser.name}</p>
+            </div>
+
+            <div className="px-6 py-5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                Role
+              </label>
+              <select
+                value={selectedRole}
+                onChange={(event) => setSelectedRole(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[14px] font-semibold text-slate-800 outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
+              >
+                {ADMIN_ROLE_OPTIONS.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+
+              {roleError && (
+                <p className="mt-3 text-[13px] font-medium text-rose-600">{roleError}</p>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeRoleEditor}
+                disabled={isSavingRole}
+                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveRole}
+                disabled={isSavingRole}
+                className="px-4 py-2 rounded-lg bg-[#006064] text-[13px] font-bold text-white hover:bg-[#00838f] disabled:opacity-60"
+              >
+                {isSavingRole ? 'Saving...' : 'Save role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+          <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h3 className="text-[16px] font-bold text-slate-900">Delete account</h3>
+              <p className="mt-1 text-[13px] text-slate-500">
+                This action will permanently delete this user account.
+              </p>
+            </div>
+
+            <div className="px-6 py-5">
+              <div className="rounded-lg border border-rose-100 bg-rose-50 px-4 py-3">
+                <p className="text-[13px] font-bold text-rose-700">{deletingUser.name}</p>
+                <p className="mt-1 text-[12px] text-rose-600">Role: {deletingUser.role}</p>
+              </div>
+
+              {deleteError && (
+                <p className="mt-3 text-[13px] font-medium text-rose-600">{deleteError}</p>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDeleteConfirm}
+                disabled={isDeletingUser}
+                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={isDeletingUser}
+                className="px-4 py-2 rounded-lg bg-rose-600 text-[13px] font-bold text-white hover:bg-rose-700 disabled:opacity-60"
+              >
+                {isDeletingUser ? 'Deleting...' : 'Delete account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -263,7 +499,6 @@ const UserManagementWidget = () => {
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -297,41 +532,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-6 relative">
-          <button className="text-slate-400 hover:text-slate-600 transition-colors hidden sm:block"><Bell size={20} /></button>
-          <button className="text-slate-400 hover:text-slate-600 transition-colors hidden sm:block"><Settings size={20} /></button>
-          {/* User Profile Area */}
-          <div className="flex items-center gap-3 pl-0 sm:pl-6 sm:border-l border-slate-200 cursor-pointer group relative" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-            <div className="text-right hidden sm:block">
-              <p className="text-[13px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors">{user?.fullName || user?.name || 'Admin'}</p>
-              <p className="text-[11px] font-medium text-slate-500 uppercase">ADMIN</p>
-            </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 group-hover:border-[#00838f] group-hover:shadow-sm transition-all">
-              <div className="w-full h-full bg-[#00838f] flex items-center justify-center text-white text-[14px] font-bold">
-                {(user?.fullName?.trim().split(' ').pop() || user?.name || 'A')[0].toUpperCase()}
-              </div>
-            </div>
-
-            {isDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
-                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <button className="w-full text-left px-4 py-2.5 text-[14px] text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium">
-                    <Settings size={16} className="text-slate-400" />
-                    Settings
-                  </button>
-                  <div className="h-[1px] bg-slate-100 my-1"></div>
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-[14px] text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-3 font-bold"
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        <div className="relative">
+          <DashboardUserActions user={user} onLogout={handleLogout} />
         </div>
       </nav>
 

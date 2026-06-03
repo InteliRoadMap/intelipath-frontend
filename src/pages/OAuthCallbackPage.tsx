@@ -29,6 +29,13 @@ export default function OAuthCallbackPage() {
 
     try {
       const decoded = jwtDecode(token) as any
+      if (import.meta.env.DEV) {
+        console.group("[AUTH CALLBACK] OAuth tokens received")
+        console.log("accessToken:", token)
+        console.log("refreshToken:", refreshToken)
+        console.log("decoded:", decoded)
+        console.groupEnd()
+      }
       const role = decoded.role
       const expiresIn = decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined
 

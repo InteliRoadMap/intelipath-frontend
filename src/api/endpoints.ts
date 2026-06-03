@@ -27,6 +27,8 @@ export const ENDPOINTS = {
     METRICS_COURSES: '/admin/dashboard/metrics/courses',
     METRICS_HEALTH: '/admin/dashboard/metrics/health',
     USERS: '/admin/dashboard/users',
+    USER: (userId: string) => `/admin/dashboard/users/${userId}`,
+    USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
   },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: '/counselor/dashboard/metrics/students',

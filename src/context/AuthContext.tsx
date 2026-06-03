@@ -144,6 +144,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => {
     const { accessToken, refreshToken, expiresIn } = responseData
 
+    if (import.meta.env.DEV) {
+      console.group("[AUTH LOGIN] Saving tokens")
+      console.log("accessToken:", accessToken)
+      console.log("refreshToken:", refreshToken)
+      console.log("expiresIn:", expiresIn)
+      console.groupEnd()
+    }
+
     localStorage.setItem("accessToken", accessToken)
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken)
     if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
