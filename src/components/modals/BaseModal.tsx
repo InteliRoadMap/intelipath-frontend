@@ -39,7 +39,7 @@ export default function BaseModal({
       
       {/* Modal Container */}
       <div 
-        className={`relative w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-[0_20px_60px_rgba(13,80,96,0.15)] overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200 ${className}`}
+        className={`relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-3xl shadow-[0_20px_60px_rgba(13,80,96,0.15)] overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200 ${className}`}
       >
         {/* Subtle glow effect behind the modal */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-cyan/10 blur-[80px] rounded-full pointer-events-none"></div>
@@ -54,7 +54,7 @@ export default function BaseModal({
           </button>
         )}
         
-        <div className="relative z-10">
+        <div className="relative z-10 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

@@ -9,7 +9,11 @@ interface AuthContextType {
   refreshToken: string | null
   loading: boolean
   isAuthenticated: boolean
-  login: (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => Promise<void>
+  login: (responseData: {
+    accessToken: string
+    refreshToken: string | null
+    expiresIn?: string
+  }) => Promise<void>
   logout: () => Promise<void>
   updateUser: (updatedFields: Partial<User>) => void
 }
@@ -25,7 +29,10 @@ const initialState: AuthState = {
 }
 
 type AuthAction =
-  | { type: "LOGIN"; payload: { user: User; accessToken: string; refreshToken: string | null } }
+  | {
+      type: "LOGIN"
+      payload: { user: User; accessToken: string; refreshToken: string | null }
+    }
   | { type: "LOGOUT" }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "UPDATE_TOKEN"; payload: { accessToken: string } }
@@ -82,7 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const setupRefreshTimer = (expiresInStr: string, currentRefreshToken: string) => {
+  const setupRefreshTimer = (
+    expiresInStr: string,
+    currentRefreshToken: string
+  ) => {
     clearRefreshTimer()
     if (!expiresInStr || !currentRefreshToken) return
 
@@ -148,7 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const login = async (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => {
+  const login = async (responseData: {
+    accessToken: string
+    refreshToken: string | null
+    expiresIn?: string
+  }) => {
     const { accessToken, refreshToken, expiresIn } = responseData
 
     localStorage.setItem("accessToken", accessToken)
@@ -160,7 +174,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userInfo = profileRes.data
 
       localStorage.setItem("user", JSON.stringify(userInfo))
-      dispatch({ type: "LOGIN", payload: { user: userInfo, accessToken, refreshToken } })
+      dispatch({
+        type: "LOGIN",
+        payload: { user: userInfo, accessToken, refreshToken }
+      })
 
       if (expiresIn && refreshToken) {
         setupRefreshTimer(expiresIn, refreshToken)
@@ -189,10 +206,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateUser = (updatedFields: Partial<User>) => {
-    if (!state.user) return;
-    const updatedUser = { ...state.user, ...updatedFields };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    dispatch({ type: "UPDATE_USER", payload: { user: updatedUser } });
+    if (!state.user) return
+    const updatedUser = { ...state.user, ...updatedFields }
+    localStorage.setItem("user", JSON.stringify(updatedUser))
+    dispatch({ type: "UPDATE_USER", payload: { user: updatedUser } })
   }
 
   const value = {

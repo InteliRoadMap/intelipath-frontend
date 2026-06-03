@@ -527,17 +527,12 @@ export default function StudentDashboard() {
     let isMounted = true
     // Check if missing data -> show form
     const checkMissingData = async () => {
-      const skipProfile = localStorage.getItem("hasCompletedProfileSetup") === "true"
-      const skipAssessment = localStorage.getItem("hasCompletedAssessment") === "true"
-
-      if (skipProfile && skipAssessment) return
-
       try {
         const { default: updateApi } = await import("@/api/updateApi")
         const { default: skillApi } = await import("@/api/skillApi")
 
         const [profileRes, skillsRes] = await Promise.all([
-          updateApi.getStudentProfile().catch(() => ({ data: null })),
+          updateApi.getUserInfo().catch(() => ({ data: null })),
           skillApi.getSkills().catch(() => ({ data: [] }))
         ])
 
@@ -547,20 +542,16 @@ export default function StudentDashboard() {
         const skills = skillsRes.data
 
         const isProfileMissing =
-          !profile?.university || !profile?.year_of_admission || !profile?.major
+          !profile?.university || (!profile?.year_of_admission && !profile?.yearOfAdmission) || !profile?.major
 
-        if (!skipProfile && isProfileMissing) {
+        if (isProfileMissing) {
           setActiveModal("onboarding")
-        } else if (!skipAssessment && (
+        } else if (
           !skills ||
           skills.length === 0 ||
           (skills.skills && skills.skills.length === 0)
-        )) {
-          localStorage.setItem("hasCompletedProfileSetup", "true")
+        ) {
           setActiveModal("assessment")
-        } else {
-          localStorage.setItem("hasCompletedProfileSetup", "true")
-          localStorage.setItem("hasCompletedAssessment", "true")
         }
       } catch (error) {
         console.error("Failed to check missing data:", error)
@@ -579,12 +570,10 @@ export default function StudentDashboard() {
   }
 
   const handleOnboardingClose = () => {
-    localStorage.setItem("hasCompletedProfileSetup", "true")
     setActiveModal("assessment")
   }
 
   const handleAssessmentClose = () => {
-    localStorage.setItem("hasCompletedAssessment", "true")
     setActiveModal(null)
   }
 

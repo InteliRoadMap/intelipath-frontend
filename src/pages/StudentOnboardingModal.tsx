@@ -1,5 +1,3 @@
-import { useState } from "react"
-import { isAxiosError } from "axios"
 import BaseModal from "../components/modals/BaseModal"
 import {
   User,
@@ -11,127 +9,42 @@ import {
   ArrowRight,
   ChevronDown
 } from "lucide-react"
-import updateApi from "../api/updateApi"
-import { getErrorMessage } from "../lib/utils"
-import { useAuth } from "../context/AuthContext"
-
-// 1. Types & Interfaces
+import { useStudentOnboarding } from "../hooks/useStudentOnboarding"
 
 interface StudentOnboardingModalProps {
   isOpen: boolean
   onClose?: () => void
 }
 
-interface OnboardingErrors {
-  fullName?: string
-  yob?: string
-  bio?: string
-  university?: string
-  yearOfAdmission?: string
-  general?: string
-}
-
-// 2. Main Component: StudentOnboardingModal
-
 export default function StudentOnboardingModal({
   isOpen,
   onClose
 }: StudentOnboardingModalProps) {
-  // --- Hooks & State ---
-  const { user } = useAuth() // Get the user data include:{name, email, role, fullName, yob, bio, university, yearOfAdmission, major}
-
-  const [fullName, setFullName] = useState(user?.fullName || "")
-  const [yob, setyob] = useState("")
-  const [bio, setBio] = useState("")
-  const [university, setUniversity] = useState("")
-  const [yearOfAdmission, setYearOfAdmission] = useState("")
-  const [major, setMajor] = useState("Software Engineering")
-  const [isSaving, setIsSaving] = useState(false)
-  const [errors, setErrors] = useState<OnboardingErrors>({})
-  const [step, setStep] = useState(1)
-
-  // --- API Calls & Handlers ---
-
-  // Move To Academic Step
-  const handleNext = () => {
-    if (!fullName.trim()) {
-      setErrors({ fullName: "Full Name is required" })
-      return
-    }
-    setErrors({})
-    setStep(2)
-  }
-
-  // Save Onboarding Data
-  const handleSave = async () => {
-    setErrors({})
-    setIsSaving(true)
-
-    const currentErrors: typeof errors = {}
-
-    if (Object.keys(currentErrors).length > 0) {
-      setErrors(currentErrors)
-      setIsSaving(false)
-      return
-    }
-
-    try {
-      // PATCH /api/v1/user/profile — JSON body: {fullName, yob, bio}
-      await updateApi.fillFormUser({
-        fullName,
-        yob,
-        bio
-      })
-
-      // PATCH /student/profile — JSON body: { university, yearOfAdmission, major }
-      await updateApi.fillFormUserAcademic({
-        university,
-        yearOfAdmission: yearOfAdmission,
-        major // hardcoded "Software Engineering" — vẫn cần gửi để Backend lưu
-      })
-
-      setStep(1)
-
-      handleClose()
-    } catch (err) {
-      if (!isAxiosError(err) || !err.response) {
-        setErrors({
-          general: "Network error."
-        })
-      } else if (err.response.status === 400) {
-        setErrors({
-          general: err.response.data?.message || "Invalid input."
-        })
-      } else {
-        setErrors({
-          general: getErrorMessage(err)
-        })
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  // Reset Modal State
-  const handleClose = () => {
-    setFullName("")
-    setyob("")
-    setBio("")
-    setUniversity("")
-    setYearOfAdmission("")
-    setMajor("")
-    setErrors({})
-    setStep(1)
-    setIsSaving(false)
-    onClose?.()
-  }
-
-  // --- Render logic ---
+  const {
+    user,
+    fullName,
+    setFullName,
+    yob,
+    setyob,
+    bio,
+    setBio,
+    university,
+    setUniversity,
+    yearOfAdmission,
+    setYearOfAdmission,
+    major,
+    isSaving,
+    errors,
+    step,
+    setStep,
+    handleNext,
+    handleSave,
+    handleClose
+  } = useStudentOnboarding(isOpen, onClose)
 
   return (
     <BaseModal isOpen={isOpen} onClose={handleClose} hideCloseButton={true}>
       <div className="p-8 sm:p-10 text-slate-900 w-full max-w-3xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col gap-3 mb-8">
           <div className="mb-2 flex items-center select-none">
             <span className="font-display text-3xl font-bold tracking-tight text-slate-900">
@@ -154,18 +67,16 @@ export default function StudentOnboardingModal({
             </p>
           </div>
         </div>
-        {/* General API error banner */}
+
         {errors.general && (
           <div className="mb-5 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
             {errors.general}
           </div>
         )}
 
-        {/* Content Step 1 */}
         {step === 1 && (
           <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Full Name */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <User className="w-3.5 h-3.5 text-brand-blue" />
@@ -185,7 +96,6 @@ export default function StudentOnboardingModal({
                 )}
               </div>
 
-              {/* Email */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <Mail className="w-3.5 h-3.5 text-brand-blue" />
@@ -201,7 +111,6 @@ export default function StudentOnboardingModal({
               </div>
             </div>
 
-            {/* Year of Birth */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                 <Calendar className="w-3.5 h-3.5 text-brand-blue" />
@@ -215,7 +124,6 @@ export default function StudentOnboardingModal({
               />
             </div>
 
-            {/* Bio */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                 <Book className="w-3.5 h-3.5 text-brand-blue" />
@@ -232,10 +140,8 @@ export default function StudentOnboardingModal({
           </div>
         )}
 
-        {/* Content Step 2 */}
         {step === 2 && (
           <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-            {/* University */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                 <Building2 className="w-3.5 h-3.5 text-brand-blue" />
@@ -251,7 +157,6 @@ export default function StudentOnboardingModal({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Year of Admission */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <Calendar className="w-3.5 h-3.5 text-brand-blue" />
@@ -265,7 +170,6 @@ export default function StudentOnboardingModal({
                 />
               </div>
 
-              {/* Major */}
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <GraduationCap className="w-3.5 h-3.5 text-brand-blue" />
@@ -290,7 +194,6 @@ export default function StudentOnboardingModal({
           </div>
         )}
 
-        {/* Footer */}
         <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center gap-4">
           <div className="flex gap-1">
             <div

@@ -1,150 +1,24 @@
-import { useEffect, useState } from "react"
 import { Check, Search, Sparkles, X } from "lucide-react"
-
-import skillApi from "../api/skillApi"
 import BaseModal from "../components/modals/BaseModal"
-import { useAuth } from "../context/AuthContext"
-
-// 1. Types & Interfaces
+import { useSkillAssessment } from "../hooks/useSkillAssessment"
 
 interface SkillsModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-interface Skill {
-  skillId: string
-  skillName: string
-  category?: string
-}
-
-// 2. Helper Functions
-
-/**
- * Normalize API response skill data to Skill type array
- */
-const normalizeSkills = (data: unknown): Skill[] => {
-  if (Array.isArray(data)) return data as Skill[]
-  if (
-    data &&
-    typeof data === "object" &&
-    "skills" in data &&
-    Array.isArray((data as { skills: unknown }).skills)
-  ) {
-    return (data as { skills: Skill[] }).skills
-  }
-  return []
-}
-
-// 3. Main Component: SkillAssessmentModal
-
 export default function SkillsModal({ isOpen, onClose }: SkillsModalProps) {
-  // --- Hooks & State ---
-  const { user } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [skills, setSkills] = useState<Skill[]>([])
-  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([])
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-
-  // --- API Calls & Handlers ---
-
-  // Load Student Skills
-  useEffect(() => {
-    if (!isOpen) return
-
-    let isMounted = true
-
-    const fetchSkills = async () => {
-      setIsLoading(true)
-      try {
-        const res = await skillApi.getSkills()
-        if (isMounted) {
-          setSkills(normalizeSkills(res.data))
-        }
-      } catch (error) {
-        console.error("Error to get list of skills:", error)
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    fetchSkills()
-
-    return () => {
-      isMounted = false
-    }
-  }, [isOpen])
-
-  // Filter Skills By Search Query
-  useEffect(() => {
-    if (!isOpen) return
-
-    const trimmedQuery = searchQuery.trim()
-    if (!trimmedQuery) return
-
-    let isMounted = true
-    const filterSkills = async () => {
-      setIsLoading(true)
-      try {
-        const res = await skillApi.filterSkills(trimmedQuery)
-        if (isMounted) {
-          setSkills(normalizeSkills(res.data))
-        }
-      } catch (error) {
-        console.error("Error to filter skill:", error)
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    filterSkills()
-
-    return () => {
-      isMounted = false
-    }
-  }, [isOpen, searchQuery])
-
-  // Toggle Selected Skill
-  const toggleSkill = (skillId: string) => {
-    setSelectedSkillIds((prev) =>
-      prev.includes(skillId)
-        ? prev.filter((id) => id !== skillId)
-        : [...prev, skillId]
-    )
-  }
-
-  // Save Selected Skills
-  const handleSave = async () => {
-    if (selectedSkillIds.length === 0) {
-      onClose()
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      const skillList = skills
-        .filter((skill) => selectedSkillIds.includes(skill.skillId))
-        .map((skill) => ({
-          skillId: skill.skillId,
-          skillName: skill.skillName,
-          category: skill.category || ""
-        }))
-
-      await skillApi.selectSkills({ skillList })
-      onClose()
-    } catch (error) {
-      console.error("Error to save skills:", error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  // --- Render logic ---
+  const {
+    user,
+    searchQuery,
+    setSearchQuery,
+    skills,
+    selectedSkillIds,
+    isSaving,
+    isLoading,
+    toggleSkill,
+    handleSave
+  } = useSkillAssessment(isOpen, onClose)
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} hideCloseButton={false}>
