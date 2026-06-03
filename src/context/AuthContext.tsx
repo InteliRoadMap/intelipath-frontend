@@ -11,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => Promise<void>
   logout: () => Promise<void>
+  updateUser: (updatedFields: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,6 +29,7 @@ type AuthAction =
   | { type: "LOGOUT" }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "UPDATE_TOKEN"; payload: { accessToken: string } }
+  | { type: "UPDATE_USER"; payload: { user: User } }
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -58,6 +60,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         accessToken: action.payload.accessToken
+      }
+    case "UPDATE_USER":
+      return {
+        ...state,
+        user: action.payload.user
       }
     default:
       return state
@@ -181,10 +188,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateUser = (updatedFields: Partial<User>) => {
+    if (!state.user) return;
+    const updatedUser = { ...state.user, ...updatedFields };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    dispatch({ type: "UPDATE_USER", payload: { user: updatedUser } });
+  }
+
   const value = {
     ...state,
     login,
-    logout
+    logout,
+    updateUser
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

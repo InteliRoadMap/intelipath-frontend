@@ -1,3 +1,5 @@
-export { default as Logo } from './Logo'
-export { default as Header } from './Header'
-export { default as AbstractIllustration } from './AbstractIllustration'
+export { default as Logo } from "./Logo"
+export { default as Header } from "./Header"
+export { default as AbstractIllustration } from "./AbstractIllustration"
+export { default as ProtectedRoute } from "./ProtectedRoute"
+export { default as Topbar } from "./Topbar"
