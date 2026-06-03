@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../store/AuthContext'
+import { useAuth } from '@/context'
 import Logo from './Logo'
 // import '../styles/welcome.css'
 
@@ -35,9 +35,6 @@ export default function Header() {
           <>
             <Link to="/login" className="header-btn-signin">
               Sign In
-            </Link>
-            <Link to="/register" className="header-btn-register">
-              Register
             </Link>
           </>
         )}

@@ -1,4 +1,4 @@
-import { publicClient } from "./apiClients"
+import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
 
 /**
@@ -7,35 +7,35 @@ import { ENDPOINTS } from "./endpoints"
  */
 const counselorApi = {
   getStudentsMetric: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
   },
   
   getProgressMetric: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
   },
 
   getAtRiskMetric: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
   },
 
   getEngagementMetric: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT)
   },
 
   getLearningActivity: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
   },
 
   getSkillDistribution: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.SKILL_DISTRIBUTION)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.SKILL_DISTRIBUTION)
   },
   
   getRecentActivity: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.RECENT_ACTIVITY)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.RECENT_ACTIVITY)
   },
   
   getTopStudents: async () => {
-    return await publicClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.TOP_STUDENTS)
+    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.TOP_STUDENTS)
   }
 }
 

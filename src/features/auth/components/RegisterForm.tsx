@@ -1,8 +1,8 @@
 import React, { useState } from "react"
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import authApi from "../../api/authApi"
-import { isValidEmail, isValidPassword, getErrorMessage } from "../../lib/utils"
+import { authApi } from "@/api";
+import { isValidEmail, isValidPassword, getErrorMessage } from "@/lib";
 
 export default function RegisterForm() {
   const [fullName, setFullName] = useState("")

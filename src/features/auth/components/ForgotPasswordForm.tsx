@@ -1,8 +1,8 @@
 import React, { useState } from "react"
 import { Mail, ArrowLeft, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import authApi from "../../api/authApi"
-import { isValidEmail, getErrorMessage } from "../../lib/utils"
+import { authApi } from "@/api";
+import { isValidEmail, getErrorMessage } from "@/lib";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("")

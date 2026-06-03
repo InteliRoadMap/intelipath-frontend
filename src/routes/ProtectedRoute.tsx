@@ -1,8 +1,9 @@
+import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../store/AuthContext'
+import { useAuth } from '@/context'
 import { Spinner } from 'react-bootstrap'
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
 
   if (loading) {

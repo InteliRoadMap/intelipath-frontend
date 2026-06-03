@@ -1,17 +1,6 @@
 import { Routes, Route } from "react-router-dom"
-import WelcomePage from "../pages/WelcomePage"
-import LoginPage from "../pages/LoginPage"
-import RegisterPage from "../pages/RegisterPage"
-import ForgotPasswordPage from "../pages/ForgotPasswordPage"
-import ResetPasswordPage from "../pages/ResetPasswordPage"
-import DashboardPage from "../pages/DashboardPage"
-import NotFoundPage from "../pages/NotFoundPage"
-import ProtectedRoute from "../components/ProtectedRoute"
-
-import StudentDashboard from "../pages/StudentDashboard"
-import CounselorDashboard from "../pages/CounselorDashboard"
-import MentorDashboard from "../pages/MentorDashboard"
-import AdminDashboard from "../pages/AdminDashboard"
+import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
+import { ProtectedRoute } from "@/routes"
 
 export const AppRoutes = () => {
   return (
@@ -22,6 +11,7 @@ export const AppRoutes = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
       {/* Protected Routes */}
       <Route

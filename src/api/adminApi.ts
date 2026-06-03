@@ -1,4 +1,4 @@
-import { publicClient } from "./apiClients"
+import { mainClient } from "./apiClients"
 
 /**
  * Admin API Service
@@ -6,19 +6,19 @@ import { publicClient } from "./apiClients"
  */
 const adminApi = {
   getTotalUsers: async () => {
-    return await publicClient.get('/api/v1/admin/dashboard/metrics/users')
+    return await mainClient.get('/api/v1/admin/dashboard/metrics/users')
   },
   
   getTotalCourses: async () => {
-    return await publicClient.get('/api/v1/admin/dashboard/metrics/courses')
+    return await mainClient.get('/api/v1/admin/dashboard/metrics/courses')
   },
 
   getSystemHealth: async () => {
-    return await publicClient.get('/api/v1/admin/dashboard/metrics/health')
+    return await mainClient.get('/api/v1/admin/dashboard/metrics/health')
   },
 
   getUsersList: async () => {
-    return await publicClient.get('/api/v1/admin/dashboard/users')
+    return await mainClient.get('/api/v1/admin/dashboard/users')
   }
 }
 

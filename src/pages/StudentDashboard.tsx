@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Settings, ChevronRight, Send, Download, Check, MapPin, Lock, Info, ExternalLink, Network, Box, AlertTriangle, LogOut, LayoutDashboard, Map, Bot, TrendingUp } from 'lucide-react';
-import Logo from '../components/Logo';
-import { useAuth } from '../store/AuthContext';
+import { Logo } from '@/components';
+import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
-import dashboardApi from '../api/dashboardApi';
+import { dashboardApi } from '@/api';
 
 // --- Individual Widgets ---
 

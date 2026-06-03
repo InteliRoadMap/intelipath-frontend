@@ -3,8 +3,8 @@ import {
   Bell, Settings, LogOut, LayoutDashboard, MessageSquare, IdCard,
   Star, Gauge, Users, Mail, Calendar, Layers, Lightbulb, ChevronRight
 } from 'lucide-react';
-import Logo from '../components/Logo';
-import { useAuth } from '../store/AuthContext';
+import { Logo } from '../components/ui';
+import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import mentorApi from '../api/mentorApi';
 

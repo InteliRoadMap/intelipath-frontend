@@ -1,10 +1,21 @@
 import { createContext, useContext, useReducer, useEffect, useRef } from "react"
-import authApi from "../api/authApi"
-import { jwtDecode } from "jwt-decode"
+import authApi from "@/api/authApi"
+import { userApi } from "@/api"
+import { User, AuthState } from "@/features/auth"
 
-const AuthContext = createContext<any>(undefined)
+interface AuthContextType {
+  user: User | null
+  accessToken: string | null
+  refreshToken: string | null
+  loading: boolean
+  isAuthenticated: boolean
+  login: (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => Promise<void>
+  logout: () => Promise<void>
+}
 
-const initialState = {
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+const initialState: AuthState = {
   user: null,
   accessToken: null,
   refreshToken: null,
@@ -12,7 +23,13 @@ const initialState = {
   loading: true
 }
 
-function authReducer(state: any, action: any) {
+type AuthAction =
+  | { type: "LOGIN"; payload: { user: User; accessToken: string; refreshToken: string | null } }
+  | { type: "LOGOUT" }
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "UPDATE_TOKEN"; payload: { accessToken: string } }
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "LOGIN":
       return {
@@ -63,47 +80,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!expiresInStr || !currentRefreshToken) return
 
     try {
-      // Parse local date time string from API (e.g., "2024-05-28T12:00:00")
       const expireTime = new Date(expiresInStr).getTime()
       const currentTime = new Date().getTime()
-      // Refresh 1 minute before expiration
       let timeUntilRefresh = expireTime - currentTime - 1000
-      
       if (timeUntilRefresh <= 0) {
-        timeUntilRefresh = 0 
+        timeUntilRefresh = 0
       }
-
-      console.log(`[AuthContext] Đặt lịch refresh token sau ${Math.round(timeUntilRefresh / 1000)}s`)
 
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
-          console.log("[AuthContext] Bắt đầu refresh token chủ động...")
           const response = await authApi.refreshToken(currentRefreshToken)
           const { accessToken, expiresIn } = response.data
-          
+
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
             if (expiresIn) {
               localStorage.setItem("tokenExpiresIn", expiresIn)
             }
-            dispatch({
-              type: "UPDATE_TOKEN",
-              payload: { accessToken }
-            })
+            dispatch({ type: "UPDATE_TOKEN", payload: { accessToken } })
             setupRefreshTimer(expiresIn, currentRefreshToken)
           }
         } catch (error) {
-          console.error("[AuthContext] Lỗi khi refresh token:", error)
-          // If refresh fails proactively, log out the user
+          console.error("[Auth] Token refresh failed:", error)
           logout()
         }
       }, timeUntilRefresh)
     } catch (e) {
-      console.error("[AuthContext] Lỗi cài đặt timer refresh token:", e)
+      console.error("[Auth] Failed to schedule token refresh:", e)
     }
   }
 
-  // Restore auth state from localStorage on mount
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken")
     const refreshToken = localStorage.getItem("refreshToken")
@@ -123,58 +129,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (expiresIn && refreshToken) {
           setupRefreshTimer(expiresIn, refreshToken)
         }
-      } catch (err) {
-        console.error("Failed to parse user from localStorage:", err)
+      } catch {
         dispatch({ type: "SET_LOADING", payload: false })
       }
     } else {
       dispatch({ type: "SET_LOADING", payload: false })
     }
-    
+
     return () => {
       clearRefreshTimer()
     }
   }, [])
 
-  const login = (responseData: any, email: string) => {
-    const { accessToken, refreshToken, expiresIn, id, fullName, role } = responseData
-    const userInfo = { email, id, fullName, role }
-
-    if (accessToken) {
-      try {
-        const decodedInfo = jwtDecode(accessToken)
-        console.log("[JWT Decode] Giải mã Token thành công!")
-        console.log(
-          "Token này sẽ hết hạn vào lúc:",
-          new Date(decodedInfo.exp! * 1000).toLocaleString()
-        )
-      } catch (err) {
-        console.error("Không thể giải mã Token:", err)
-      }
-    }
+  const login = async (responseData: { accessToken: string; refreshToken: string | null; expiresIn?: string }) => {
+    const { accessToken, refreshToken, expiresIn } = responseData
 
     localStorage.setItem("accessToken", accessToken)
-    localStorage.setItem("refreshToken", refreshToken)
-    if (expiresIn) {
-      localStorage.setItem("tokenExpiresIn", expiresIn)
-    }
-    localStorage.setItem("user", JSON.stringify(userInfo))
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken)
+    if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
 
-    dispatch({
-      type: "LOGIN",
-      payload: { user: userInfo, accessToken, refreshToken }
-    })
+    try {
+      const profileRes = await userApi.getMe()
+      const userInfo = profileRes.data
 
-    if (expiresIn && refreshToken) {
-      setupRefreshTimer(expiresIn, refreshToken)
+      localStorage.setItem("user", JSON.stringify(userInfo))
+      dispatch({ type: "LOGIN", payload: { user: userInfo, accessToken, refreshToken } })
+
+      if (expiresIn && refreshToken) {
+        setupRefreshTimer(expiresIn, refreshToken)
+      }
+    } catch (error) {
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("tokenExpiresIn")
+      throw error
     }
   }
 
   const logout = async () => {
     try {
       await authApi.logout()
-    } catch (error) {
-      console.error("Logout API error:", error)
+    } catch {
+      // Ignore logout API errors — clear local state regardless
     } finally {
       clearRefreshTimer()
       localStorage.removeItem("accessToken")
@@ -194,7 +190,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

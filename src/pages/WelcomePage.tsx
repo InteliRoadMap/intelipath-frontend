@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import Header from '../components/Header'
+import { Header } from '../components/ui'
 import leftArm from '../assets/robot/left-arm.png'
 import head from '../assets/robot/head.png'
 import rightArm from '../assets/robot/right-arm.png'

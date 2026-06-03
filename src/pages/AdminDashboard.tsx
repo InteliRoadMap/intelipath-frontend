@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Settings, ChevronRight, Bell, LogOut, Users, GraduationCap, Activity, Plus, ChevronLeft, MoreVertical, Edit2, Trash2, LayoutDashboard } from 'lucide-react';
-import Logo from '../components/Logo';
-import { useAuth } from '../store/AuthContext';
+import { Logo } from '@/components';
+import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
-import adminApi from '../api/adminApi';
+import { adminApi } from '@/api';
 
 // Component: Total Users Metric
 const TotalUsersWidget = () => {

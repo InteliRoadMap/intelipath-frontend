@@ -112,19 +112,19 @@ export function createApiClient({
   // Request start -> run request interceptor ->  attach token if available -> send request
   client.interceptors.request.use(
     (config) => {
-      //LOGGING
-      console.group(
-        `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
-      )
-      console.log("Headers :", config.headers)
-      if (config.data) {
-        // Hide password in logs for security
-        const safeData = { ...config.data }
-        if (safeData.password) safeData.password = "••••••••"
-        if (safeData.confirmPassword) safeData.confirmPassword = "••••••••"
-        console.log("Body    :", safeData)
+      if (import.meta.env.DEV) {
+        console.group(
+          `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
+        )
+        console.log("Headers :", config.headers)
+        if (config.data) {
+          const safeData = { ...config.data }
+          if (safeData.password) safeData.password = "••••••••"
+          if (safeData.confirmPassword) safeData.confirmPassword = "••••••••"
+          console.log("Body    :", safeData)
+        }
+        console.groupEnd()
       }
-      console.groupEnd()
 
       //ATTACH TOKEN
       const token = getToken()
@@ -149,15 +149,15 @@ export function createApiClient({
   // 2. Response Interceptor: Handle Errors & Refresh Token & Beautiful Logging
   client.interceptors.response.use(
     (response) => {
-      //SUCCESS LOGGING
-      console.group(
-        `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
-        "color: #10b981; font-weight: bold"
-      )
-      console.log("Status  :", response.status, response.statusText)
-      console.log("Data    :", response.data)
-      console.groupEnd()
-
+      if (import.meta.env.DEV) {
+        console.group(
+          `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
+          "color: #10b981; font-weight: bold"
+        )
+        console.log("Status  :", response.status, response.statusText)
+        console.log("Data    :", response.data)
+        console.groupEnd()
+      }
       return response
     },
     async (error: AxiosError) => {
@@ -165,24 +165,25 @@ export function createApiClient({
       const res = error.response
       const status = res?.status
 
-      //ERROR LOGGING
-      if (res) {
-        console.group(
-          `%c [API ERROR] ${res.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
-          "color: #ef4444; font-weight: bold"
-        )
-        console.log("Status  :", res.status, res.statusText)
-        console.log("Message :", (res.data as any)?.message || res.data)
-        console.log("Full    :", res.data)
-        console.groupEnd()
-      } else {
-        console.group(
-          "%c [API ERROR] Network / No Response",
-          "color: #ef4444; font-weight: bold"
-        )
-        console.log("Error   :", error.message)
-        console.log("Hint    :", "Check if backend is running at:", baseURL)
-        console.groupEnd()
+      if (import.meta.env.DEV) {
+        if (res) {
+          console.group(
+            `%c [API ERROR] ${res.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
+            "color: #ef4444; font-weight: bold"
+          )
+          console.log("Status  :", res.status, res.statusText)
+          console.log("Message :", (res.data as any)?.message || res.data)
+          console.log("Full    :", res.data)
+          console.groupEnd()
+        } else {
+          console.group(
+            "%c [API ERROR] Network / No Response",
+            "color: #ef4444; font-weight: bold"
+          )
+          console.log("Error   :", error.message)
+          console.log("Hint    :", "Check if backend is running at:", baseURL)
+          console.groupEnd()
+        }
       }
 
       // 403 Forbidden

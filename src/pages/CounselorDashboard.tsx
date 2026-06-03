@@ -3,8 +3,8 @@ import {
   Search, Settings, Bell, LogOut, Users, TrendingUp, AlertTriangle, Zap,
   ChevronDown, MessageSquare, CheckCircle, ExternalLink, Calendar, Activity, LayoutDashboard
 } from 'lucide-react';
-import Logo from '../components/Logo';
-import { useAuth } from '../store/AuthContext';
+import { Logo } from '@/components';
+import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import counselorApi from '../api/counselorApi';
 

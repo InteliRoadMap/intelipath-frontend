@@ -257,35 +257,7 @@ export default function AbstractIllustration({
           </AnimatePresence>
         </div>
 
-        <div className="mt-4 lg:mt-8 flex w-full max-w-90 gap-3">
-          <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white/70 p-3 shadow-sm backdrop-blur-sm">
-            <div className="rounded-lg  border border-brand-cyan/20 bg-brand-cyan/5 p-2 text-brand-cyan">
-              <Sparkles className="h-4 w-4 animate-pulse" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">
-                AI Match Score
-              </span>
-              <span className="text-sm font-semibold text-slate-900">
-                94.8% Match
-              </span>
-            </div>
-          </div>
 
-          <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white/70 p-3 shadow-sm backdrop-blur-sm">
-            <div className="rounded-lg border border-brand-indigo/20 bg-brand-indigo/5 p-2 text-brand-blue">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">
-                Target Role
-              </span>
-              <span className="text-sm font-semibold text-slate-900">
-                Full Stack AI
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="z-10 shrink-0">

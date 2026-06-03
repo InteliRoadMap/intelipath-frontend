@@ -1,4 +1,4 @@
-import { publicClient } from "./apiClients"
+import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
 
 /**
@@ -7,27 +7,27 @@ import { ENDPOINTS } from "./endpoints"
  */
 const mentorApi = {
   getWelcomeAlert: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.WELCOME_ALERT)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.WELCOME_ALERT)
   },
   
   getRatingMetric: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_RATING)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_RATING)
   },
 
   getResponseTimeMetric: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_RESPONSE_TIME)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_RESPONSE_TIME)
   },
 
   getMenteesMetric: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_MENTEES)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS_MENTEES)
   },
 
   getPendingReviews: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.PENDING_REVIEWS)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.PENDING_REVIEWS)
   },
 
   getInsight: async () => {
-    return await publicClient.get(ENDPOINTS.MENTOR_DASHBOARD.INSIGHT)
+    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.INSIGHT)
   }
 }
 

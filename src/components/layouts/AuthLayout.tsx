@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react"
 import type { ReactNode } from "react"
-import AbstractIllustration from "./AbstractIllustration"
-import Logo from "./Logo"
+import AbstractIllustration from "@/components/ui/AbstractIllustration"
+import Logo from "@/components/ui/Logo"
 
 type AuthView = "login" | "register" | "forgot-password"
 

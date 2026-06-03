@@ -10,8 +10,8 @@ import {
   ShieldCheck
 } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import authApi from "../../api/authApi"
-import { getErrorMessage } from "../../lib/utils"
+import { authApi } from "@/api";
+import { isValidPassword, getErrorMessage } from "@/lib";
 
 export default function ResetPasswordForm() {
   const [searchParams] = useSearchParams()
