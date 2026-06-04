@@ -19,7 +19,34 @@ const authApi = {
   },
 
   refreshToken: async (refreshToken: string) => {
-    return await publicClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken })
+    if (import.meta.env.DEV) {
+      console.group("[AUTH REFRESH] Sending refresh token to backend")
+      console.log("endpoint:", ENDPOINTS.AUTH.REFRESH_TOKEN)
+      console.log("refreshToken:", refreshToken)
+      console.groupEnd()
+    }
+
+    const response = await publicClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken })
+
+    if (!response.data?.accessToken) {
+      const contentType = response.headers["content-type"]
+      const receivedHtml =
+        typeof response.data === "string" &&
+        response.data.trimStart().toLowerCase().startsWith("<!doctype html")
+
+      console.error("[AUTH REFRESH] Invalid backend response", {
+        endpoint: ENDPOINTS.AUTH.REFRESH_TOKEN,
+        contentType,
+        receivedHtml,
+        hint: receivedHtml
+          ? "Backend redirected /auth/refresh to /login. Permit the refresh endpoint in SecurityConfig."
+          : "Backend response must contain accessToken."
+      })
+
+      throw new Error("Backend did not return a new access token.")
+    }
+
+    return response
   },
 
   logout: async () => {

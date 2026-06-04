@@ -126,14 +126,10 @@ export function createApiClient({
 
       //ATTACH TOKEN
       const token = getToken()
-      const refreshToken = getRefreshToken()
       
       if (config.headers) {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
-        }
-        if (refreshToken) {
-          config.headers['x-refresh-token'] = refreshToken
         }
       }
       return config
@@ -186,11 +182,7 @@ export function createApiClient({
 
       // 403 Forbidden
       if (status === 403) {
-        if (onForbidden) {
-          onForbidden(error)
-        } else {
-          onUnauthorized(error)
-        }
+        onForbidden?.(error)
         return Promise.reject(error)
       }
       //Refresh token when access token expired (401 Unauthorized)
@@ -215,6 +207,18 @@ export function createApiClient({
 
         try {
           const refreshToken = getRefreshToken()
+          if (!refreshToken) {
+            throw new Error("Refresh token is missing.")
+          }
+
+          if (import.meta.env.DEV) {
+            console.group("[AUTH REFRESH] Retrying request after 401")
+            console.log("endpoint:", `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`)
+            console.log("refreshToken:", refreshToken)
+            console.log("originalRequest:", originalRequest.url)
+            console.groupEnd()
+          }
+
           // Use a fresh axios instance to avoid infinite interceptor loops
           const refreshResponse = await axios.post(
             //Why cannot use client here?
@@ -227,10 +231,17 @@ export function createApiClient({
             }
           )
 
-          const { accessToken, expiresIn } = refreshResponse.data
+          const {
+            accessToken,
+            refreshToken: rotatedRefreshToken,
+            expiresIn
+          } = refreshResponse.data
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
+            if (rotatedRefreshToken) {
+              localStorage.setItem("refreshToken", rotatedRefreshToken)
+            }
             if (expiresIn) {
               localStorage.setItem("tokenExpiresIn", expiresIn)
             }
@@ -240,6 +251,18 @@ export function createApiClient({
             processQueue(null, accessToken) // Retry queued requests with new token
             return client(originalRequest)
           } else {
+            const receivedHtml =
+              typeof refreshResponse.data === "string" &&
+              refreshResponse.data.trimStart().toLowerCase().startsWith("<!doctype html")
+
+            console.error("[AUTH REFRESH] Invalid backend response", {
+              endpoint: `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+              receivedHtml,
+              hint: receivedHtml
+                ? "Backend redirected /auth/refresh to /login. Permit the refresh endpoint in SecurityConfig."
+                : "Backend response must contain accessToken."
+            })
+
             throw new Error("No access token returned from refresh endpoint.")
           }
         } catch (refreshError) {

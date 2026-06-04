@@ -12,12 +12,20 @@ export const ENDPOINTS = {
   },
   USERS: {
     ME: '/user/me',
+    PROFILE: '/user/profile',
+  },
+  STUDENT: {
+    PROFILE: '/student/profile',
+    SKILLS: '/student/skills',
+    SELECT_SKILLS: '/student/skills/select',
+  },
+  ROADMAP: {
+    COMPARE_SKILLS: '/roadmap/skills/compare',
   },
   STUDENT_DASHBOARD: {
     ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',
     SKILL_GAPS: '/student/dashboard/skill-gaps',
     MENTOR_FEEDBACK: '/student/dashboard/mentor-feedback',
-    SKILL_COMPARISON: '/student/dashboard/skill-comparison',
     RECOMMENDATIONS: '/student/dashboard/recommendations',
     MARKET_DEMAND: '/student/dashboard/market-demand',
     AI_HISTORY: '/student/dashboard/ai-history',

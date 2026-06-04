@@ -61,6 +61,20 @@ a {
   color: inherit;
 }
 
+@keyframes ai-mentor-wiggle {
+  0%, 100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(3deg);
+  }
+}
+
+.ai-mentor-float {
+  animation: ai-mentor-wiggle 2.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* ===================== */
 /* GLASS UTILITIES       */
 /* ===================== */
