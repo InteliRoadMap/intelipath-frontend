@@ -69,9 +69,13 @@ export const getSkillErrorMessage = (error: unknown): string => {
 }
 
 const skillApi = {
-  getSelectedSkills: async (): Promise<SkillItem[]> => {
+  getSkills: async (): Promise<SkillResponse> => {
     const response = await mainClient.get<SkillResponse>(ENDPOINTS.STUDENT.SKILLS)
-    return normalizeSkillResponse(response.data).selectedSkills
+    return normalizeSkillResponse(response.data)
+  },
+
+  getSelectedSkills: async (): Promise<SkillItem[]> => {
+    return (await skillApi.getSkills()).selectedSkills
   },
 
   searchSkills: async (search: string): Promise<SkillItem[]> => {

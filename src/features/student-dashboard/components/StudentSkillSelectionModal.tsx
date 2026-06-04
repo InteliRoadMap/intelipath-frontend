@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, Search } from 'lucide-react'
 import skillApi, { getSkillErrorMessage, type SkillItem } from '@/api/skillApi'
 import { BaseModal } from '@/components/modals'
@@ -18,42 +18,34 @@ export default function StudentSkillSelectionModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
 
-    skillApi.getSelectedSkills()
-      .then((selectedSkills) => {
+    skillApi.getSkills()
+      .then(({ selectedSkills, skills: availableSkills }) => {
+        setError('')
+        setQuery('')
         setSelectedIds(selectedSkills.map((skill) => skill.skillId))
-        setSkills([])
+        setSkills(availableSkills)
       })
-      .catch((requestError) => setError(getSkillErrorMessage(requestError)))
+      .catch((requestError) => {
+        setSkills([])
+        setError(getSkillErrorMessage(requestError))
+      })
       .finally(() => setIsLoading(false))
   }, [isOpen])
 
-  useEffect(() => {
-    if (!isOpen) return
+  const visibleSkills = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase()
+    if (!normalizedQuery) return skills
 
-    const normalizedQuery = query.trim()
-    if (!normalizedQuery) return
-
-    const timeoutId = window.setTimeout(async () => {
-      setIsLoading(true)
-      setError('')
-      try {
-        setSkills(await skillApi.searchSkills(normalizedQuery))
-      } catch (requestError) {
-        setSkills([])
-        setError(getSkillErrorMessage(requestError))
-      } finally {
-        setIsLoading(false)
-      }
-    }, 300)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [isOpen, query])
+    return skills.filter((skill) =>
+      skill.skillName.toLocaleLowerCase().includes(normalizedQuery),
+    )
+  }, [query, skills])
 
   const toggleSkill = (skill: SkillItem) => {
     const isSelected = selectedIds.includes(skill.skillId)
@@ -104,15 +96,8 @@ export default function StudentSkillSelectionModal({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             value={query}
-            onChange={(event) => {
-              const nextQuery = event.target.value
-              setQuery(nextQuery)
-              if (!nextQuery.trim()) {
-                setSkills([])
-                setError('')
-              }
-            }}
-            placeholder="Search by category or career..."
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search skills by name..."
             className="w-full rounded-md border border-slate-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/15"
           />
         </div>
@@ -120,17 +105,13 @@ export default function StudentSkillSelectionModal({
         <div className="mt-4 min-h-52 max-h-72 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-4">
           {isLoading ? (
             <p className="py-16 text-center text-sm text-slate-500">Loading skills...</p>
-          ) : !query.trim() ? (
+          ) : visibleSkills.length === 0 ? (
             <p className="py-16 text-center text-sm text-slate-500">
-              Search by category or career, for example Frontend or Backend.
-            </p>
-          ) : skills.length === 0 ? (
-            <p className="py-16 text-center text-sm text-slate-500">
-              No skills found for "{query.trim()}".
+              {query.trim() ? `No skills found for "${query.trim()}".` : 'No skills available.'}
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => {
+              {visibleSkills.map((skill) => {
                 const selected = selectedIds.includes(skill.skillId)
                 return (
                   <button

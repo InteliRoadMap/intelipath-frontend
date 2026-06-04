@@ -1,7 +1,6 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/context'
-import { Spinner } from 'react-bootstrap'
 import { ROUTES } from '@/shared'
 
 interface ProtectedRouteProps {
@@ -14,8 +13,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" variant="primary" />
+      <div className="grid min-h-screen place-items-center bg-slate-50">
+        <div
+          aria-label="Loading session"
+          className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-cyan-700"
+        />
       </div>
     )
   }

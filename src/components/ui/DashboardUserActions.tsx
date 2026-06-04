@@ -1,13 +1,14 @@
-import { Bell, LogOut, Settings } from 'lucide-react'
+import { Bell, GearSix, SignOut } from '@phosphor-icons/react'
+import type { User } from '@/features/auth'
 
 interface DashboardUserActionsProps {
-  user: any
+  user: User | null
   onLogout: () => void
   onSettings?: () => void
 }
 
 export default function DashboardUserActions({ user, onLogout, onSettings }: DashboardUserActionsProps) {
-  const fullName = user?.fullName || user?.name || 'User'
+  const fullName = user?.fullName || 'User'
   const email = user?.email || 'No email'
   const role = String(user?.role || 'USER').toUpperCase()
   const initial = fullName.trim()[0]?.toUpperCase() || 'U'
@@ -20,7 +21,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
           className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Notifications"
         >
-          <Bell size={18} />
+          <Bell size={18} weight="duotone" />
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-rose-500" />
         </button>
         <button
@@ -29,7 +30,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Settings"
         >
-          <Settings size={18} />
+          <GearSix size={18} weight="duotone" />
         </button>
         <button
           type="button"
@@ -37,7 +38,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
           title="Logout"
         >
-          <LogOut size={18} />
+          <SignOut size={18} weight="duotone" />
         </button>
       </div>
 
