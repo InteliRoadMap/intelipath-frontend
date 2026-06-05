@@ -203,7 +203,7 @@ function NotifFullPage({
           className="flex items-center gap-2 rounded-xl px-8 py-2.5 text-[14px] font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
         >
           <ArrowLeft size={16} />
-          Collapse
+          Back
         </button>
       </div>
 
@@ -327,7 +327,10 @@ export default function NotificationPanel() {
           notifications={notifications}
           onRead={markRead}
           onReadAll={markAllRead}
-          onClose={() => setIsFullPage(false)}
+          onClose={() => {
+            setIsFullPage(false)
+            setIsDropdownOpen(true)
+          }}
         />
       )}
 

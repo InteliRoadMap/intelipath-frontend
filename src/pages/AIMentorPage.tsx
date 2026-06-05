@@ -1,5 +1,8 @@
 import { useState } from "react"
-import { Topbar } from "@/components/ui"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useAuth } from "@/context"
+import { ROUTES } from "@/shared"
+import { DashboardUserActions, Logo } from "@/components"
 import { 
   Bot, 
   MessageSquare, 
@@ -12,17 +15,64 @@ import {
   ChevronRight,
   Info,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  LayoutDashboard,
+  Map
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
 
 export default function AIMentorPage() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [inputValue, setInputValue] = useState("")
 
+  const handleLogout = async () => {
+    await logout()
+    navigate(ROUTES.LOGIN)
+  }
+
+  const navItems = [
+    { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
+    { label: "My Roadmap", icon: Map, path: ROUTES.STUDENT_ROADMAP || "/roadmap/student" },
+    { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
+    { label: "Market Pulse", icon: TrendingUp, path: "/market" }
+  ]
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white text-slate-900 font-sans">
-      <Topbar userRole="Student" />
+      <nav className="shrink-0 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
+        <div className="flex items-center gap-6 md:gap-12">
+          <Logo hideIcon className="scale-90 origin-left" />
+
+          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || (item.path === ROUTES.DASHBOARD && location.pathname === "/")
+              return (
+                <a
+                  key={item.label}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate(item.path)
+                  }}
+                  className={`flex items-center gap-2 py-4 -mb-3.5 transition-colors ${
+                    isActive
+                      ? "border-b-[3px] border-[#00838f] text-[#00838f]"
+                      : "hover:text-slate-800"
+                  }`}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </a>
+              )
+            })}
+          </div>
+        </div>
+
+        <DashboardUserActions user={user} onLogout={handleLogout} />
+      </nav>
 
       <main className="flex-1 flex overflow-hidden relative">
         {/* LEFT SIDEBAR (ChatGPT Style) */}

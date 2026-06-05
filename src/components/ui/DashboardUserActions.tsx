@@ -1,5 +1,6 @@
 import { Bell, GearSix, SignOut } from '@phosphor-icons/react'
 import type { User } from '@/features/auth'
+import NotificationPanel from './NotificationPanel'
 
 interface DashboardUserActionsProps {
   user: User | null
@@ -16,14 +17,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
   return (
     <div className="flex min-w-0 items-center gap-3 lg:gap-4">
       <div className="flex items-center gap-1.5 border-r border-slate-200 pr-3 lg:gap-2 lg:pr-4">
-        <button
-          type="button"
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
-          title="Notifications"
-        >
-          <Bell size={18} weight="duotone" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-rose-500" />
-        </button>
+        <NotificationPanel />
         <button
           type="button"
           onClick={onSettings}
