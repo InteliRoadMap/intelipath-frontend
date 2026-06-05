@@ -1,61 +1,107 @@
-import { mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
+import { isAxiosError } from 'axios'
+import { mainClient } from './apiClients'
+import { ENDPOINTS } from './endpoints'
+
+export interface SkillItem {
+  skillId: string
+  skillName: string
+  category: string
+  career: string
+}
+
+export interface RequiredSkill {
+  skill: SkillItem
+  importanceLevel: string
+}
+
+export interface SkillResponse {
+  selectedSkills: SkillItem[]
+  skills: SkillItem[]
+  requiredSkills: RequiredSkill[]
+  missingSkills: SkillItem[]
+}
 
 export interface SelectSkillsPayload {
-  // studentId không cần gửi — backend tự đọc từ JWT Token
-  skillList: Array<{
-    // Required: Danh sách skill đã chọn
-    skillId: string
-    skillName: string
-    category: string
-  }>
+  skillIds: string[]
+}
+
+const emptySkillResponse = (): SkillResponse => ({
+  selectedSkills: [],
+  skills: [],
+  requiredSkills: [],
+  missingSkills: [],
+})
+
+const normalizeSkillResponse = (data: unknown): SkillResponse => {
+  if (!data || typeof data !== 'object') return emptySkillResponse()
+
+  const response = 'data' in data && data.data && typeof data.data === 'object'
+    ? data.data
+    : data
+  const dto = response as Partial<SkillResponse>
+
+  return {
+    selectedSkills: Array.isArray(dto.selectedSkills) ? dto.selectedSkills : [],
+    skills: Array.isArray(dto.skills) ? dto.skills : [],
+    requiredSkills: Array.isArray(dto.requiredSkills) ? dto.requiredSkills : [],
+    missingSkills: Array.isArray(dto.missingSkills) ? dto.missingSkills : [],
+  }
+}
+
+export const getSkillErrorMessage = (error: unknown): string => {
+  if (!isAxiosError(error)) return 'Cannot connect to server.'
+
+  const backendMessage = typeof error.response?.data === 'object' && error.response?.data
+    ? (error.response.data as { message?: string }).message
+    : undefined
+
+  switch (error.response?.status) {
+    case 400:
+      return backendMessage || 'Select at least one valid skill.'
+    case 401:
+    case 403:
+      return backendMessage || 'Your session or role is not authorized to select skills.'
+    case 404:
+      return backendMessage || 'One or more selected skills no longer exist.'
+    default:
+      return backendMessage || 'Unable to update selected skills.'
+  }
 }
 
 const skillApi = {
-  /**
-   * [GET] Lấy danh sách skill của sinh viên hiện tại
-   * → GET /student/skills
-   * Không cần truyền student_id — backend tự đọc từ JWT Token
-   */
-  getSkills: async () => {
-    try {
-      return await mainClient.get(ENDPOINTS.STUDENT.SKILLS)
-    } catch (error) {
-      console.error("[skillApi.getSkills] Lỗi:", error)
-      throw error
-    }
+  getSkills: async (): Promise<SkillResponse> => {
+    const response = await mainClient.get<SkillResponse>(ENDPOINTS.STUDENT.SKILLS)
+    return normalizeSkillResponse(response.data)
   },
 
-  /**
-   * [GET] Lấy danh sách skill lọc theo category
-   * → GET /student/skills/{category}
-   * Không cần student_id — backend tự đọc từ JWT Token
-   */
-  filterSkills: async (category: string) => {
-    try {
-      return await mainClient.get(
-        `${ENDPOINTS.STUDENT.FILTER_SKILLS}/${category}`
-      )
-    } catch (error) {
-      console.error("[skillApi.filterSkills] Lỗi:", error)
-      throw error
-    }
+  getSelectedSkills: async (): Promise<SkillItem[]> => {
+    return (await skillApi.getSkills()).selectedSkills
   },
 
-  /**
-   * [POST] Sinh viên xác nhận và lưu danh sách kỹ năng đã chọn
-   * → POST /student/skills/select
-   * Body: { skillList: [{ skillId, name, category }] }
-   * Không cần studentId — backend tự đọc từ JWT Token
-   */
-  selectSkills: async (data: SelectSkillsPayload) => {
-    try {
-      return await mainClient.post(ENDPOINTS.STUDENT.SELECT_SKILLS, data)
-    } catch (error) {
-      console.error("[skillApi.selectSkills] Lỗi:", error)
-      throw error
+  searchSkills: async (search: string): Promise<SkillItem[]> => {
+    const response = await mainClient.get<SkillResponse>(
+      `${ENDPOINTS.STUDENT.SKILLS}/${encodeURIComponent(search)}`,
+    )
+    return normalizeSkillResponse(response.data).skills
+  },
+
+  selectSkills: async (skillIds: string[]): Promise<SkillItem[]> => {
+    const payload: SelectSkillsPayload = {
+      skillIds: [...new Set(skillIds)],
     }
-  }
+    const response = await mainClient.post<SkillResponse>(
+      ENDPOINTS.STUDENT.SELECT_SKILLS,
+      payload,
+    )
+    return normalizeSkillResponse(response.data).selectedSkills
+  },
+
+  compareRoadmapSkills: async (): Promise<SkillResponse> => {
+    const response = await mainClient.post<SkillResponse>(
+      ENDPOINTS.ROADMAP.COMPARE_SKILLS,
+    )
+    return normalizeSkillResponse(response.data)
+  },
 }
 
 export default skillApi

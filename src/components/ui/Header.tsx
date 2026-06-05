@@ -20,7 +20,7 @@ export default function Header() {
       <nav className="welcome-nav">
         {isAuthenticated ? (
           <>
-            <span className="nav-text">Hi, {user?.fullName || user?.name || 'User'}</span>
+            <span className="nav-text">Hi, {user?.fullName || 'User'}</span>
             <Link to={ROUTES.DASHBOARD} className="header-btn-register" style={{ marginLeft: '16px' }}>
               Dashboard
             </Link>

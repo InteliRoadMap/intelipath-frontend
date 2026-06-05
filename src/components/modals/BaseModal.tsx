@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 
 interface BaseModalProps {
-  isOpen: boolean;
-  onClose?: () => void;
-  children: React.ReactNode;
-  className?: string;
-  hideCloseButton?: boolean;
+  isOpen: boolean
+  onClose?: () => void
+  children: ReactNode
+  className?: string
+  hideCloseButton?: boolean
 }
 
 export default function BaseModal({
@@ -17,47 +17,34 @@ export default function BaseModal({
   hideCloseButton = false,
 }: BaseModalProps) {
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+    if (!isOpen) return
 
-  if (!isOpen) return null;
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Modal Container */}
-      <div 
-        className={`relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-3xl shadow-[0_20px_60px_rgba(13,80,96,0.15)] overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200 ${className}`}
-      >
-        {/* Subtle glow effect behind the modal */}
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-cyan/10 blur-[80px] rounded-full pointer-events-none"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-blue/5 blur-[80px] rounded-full pointer-events-none"></div>
-
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
+      <div className={`relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl ${className}`}>
         {!hideCloseButton && onClose && (
-          <button 
+          <button
+            type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-900 transition-colors z-20 border border-slate-200"
+            aria-label="Close"
+            className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
           >
             <X size={18} />
           </button>
         )}
-        
-        <div className="relative z-10 overflow-y-auto flex-1">
-          {children}
-        </div>
+        {children}
       </div>
     </div>
-  );
+  )
 }

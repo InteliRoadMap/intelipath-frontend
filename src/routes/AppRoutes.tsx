@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom"
 import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage, ProfileSettingsPage } from "@/pages"
 import { ProtectedRoute } from "@/routes"
-import { ROUTES } from "@/shared"
+import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {
   return (
@@ -26,7 +26,7 @@ export const AppRoutes = () => {
       <Route
         path={ROUTES.DASHBOARD_STUDENT}
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
             <StudentDashboard />
           </ProtectedRoute>
         }
@@ -34,7 +34,7 @@ export const AppRoutes = () => {
       <Route
         path={ROUTES.DASHBOARD_COUNSELOR}
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
             <CounselorDashboard />
           </ProtectedRoute>
         }
@@ -42,7 +42,7 @@ export const AppRoutes = () => {
       <Route
         path={ROUTES.DASHBOARD_MENTOR}
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorDashboard />
           </ProtectedRoute>
         }
@@ -50,7 +50,7 @@ export const AppRoutes = () => {
       <Route
         path={ROUTES.DASHBOARD_ADMIN}
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
             <AdminDashboard />
           </ProtectedRoute>
         }

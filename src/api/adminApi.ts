@@ -1,5 +1,12 @@
 import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
+import type {
+  AdminCourseMetric,
+  AdminRole,
+  AdminSystemHealth,
+  AdminUserListItem,
+  AdminUserMetric
+} from "@/features/admin/admin.types"
 
 /**
  * Admin API Service
@@ -7,19 +14,32 @@ import { ENDPOINTS } from "./endpoints"
  */
 const adminApi = {
   getTotalUsers: async () => {
-    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_USERS)
+    const response = await mainClient.get<AdminUserMetric>(ENDPOINTS.ADMIN_DASHBOARD.METRICS_USERS)
+    return response.data
   },
   
   getTotalCourses: async () => {
-    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_COURSES)
+    const response = await mainClient.get<AdminCourseMetric>(ENDPOINTS.ADMIN_DASHBOARD.METRICS_COURSES)
+    return response.data
   },
 
   getSystemHealth: async () => {
-    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.METRICS_HEALTH)
+    const response = await mainClient.get<AdminSystemHealth>(ENDPOINTS.ADMIN_DASHBOARD.METRICS_HEALTH)
+    return response.data
   },
 
   getUsersList: async () => {
-    return await mainClient.get(ENDPOINTS.ADMIN_DASHBOARD.USERS)
+    const response = await mainClient.get<AdminUserListItem[]>(ENDPOINTS.ADMIN_DASHBOARD.USERS)
+    return response.data
+  },
+
+  updateUserRole: async (userId: string, role: AdminRole) => {
+    const response = await mainClient.patch<AdminUserListItem>(ENDPOINTS.ADMIN_DASHBOARD.USER_ROLE(userId), { role })
+    return response.data
+  },
+
+  deleteUser: async (userId: string) => {
+    await mainClient.delete(ENDPOINTS.ADMIN_DASHBOARD.USER(userId))
   }
 }
 

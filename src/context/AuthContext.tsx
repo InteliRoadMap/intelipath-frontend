@@ -2,6 +2,13 @@ import { createContext, useContext, useReducer, useEffect, useRef } from "react"
 import authApi from "@/api/authApi"
 import { userApi } from "@/api"
 import { User, AuthState } from "@/features/auth"
+import { jwtDecode } from "jwt-decode"
+
+interface LoginTokens {
+  accessToken: string
+  refreshToken: string | null
+  expiresIn?: string
+}
 
 interface AuthContextType {
   user: User | null
@@ -9,11 +16,7 @@ interface AuthContextType {
   refreshToken: string | null
   loading: boolean
   isAuthenticated: boolean
-  login: (responseData: {
-    accessToken: string
-    refreshToken: string | null
-    expiresIn?: string
-  }) => Promise<void>
+  login: (responseData: LoginTokens) => Promise<void>
   logout: () => Promise<void>
   updateUser: (updatedFields: Partial<User>) => void
 }
@@ -35,7 +38,10 @@ type AuthAction =
     }
   | { type: "LOGOUT" }
   | { type: "SET_LOADING"; payload: boolean }
-  | { type: "UPDATE_TOKEN"; payload: { accessToken: string } }
+  | {
+      type: "UPDATE_TOKENS"
+      payload: { accessToken: string; refreshToken: string | null }
+    }
   | { type: "UPDATE_USER"; payload: { user: User } }
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -63,10 +69,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         ...state,
         loading: action.payload
       }
-    case "UPDATE_TOKEN":
+    case "UPDATE_TOKENS":
       return {
         ...state,
-        accessToken: action.payload.accessToken
+        accessToken: action.payload.accessToken,
+        refreshToken: action.payload.refreshToken
       }
     case "UPDATE_USER":
       return {
@@ -82,6 +89,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
   const refreshTimerRef = useRef<number | null>(null)
 
+  const clearStoredAuth = () => {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+    localStorage.removeItem("tokenExpiresIn")
+    localStorage.removeItem("user")
+  }
+
+  const getExpirationTime = (
+    accessToken: string,
+    expiresIn?: string | null
+  ) => {
+    if (expiresIn) {
+      const parsedExpiration = new Date(expiresIn).getTime()
+      if (Number.isFinite(parsedExpiration)) return parsedExpiration
+    }
+
+    try {
+      const decoded = jwtDecode<{ exp?: number }>(accessToken)
+      return decoded.exp ? decoded.exp * 1000 : null
+    } catch {
+      return null
+    }
+  }
+
   const clearRefreshTimer = () => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current)
@@ -90,32 +121,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const setupRefreshTimer = (
-    expiresInStr: string,
-    currentRefreshToken: string
+    currentAccessToken: string,
+    currentRefreshToken: string,
+    expiresIn?: string | null
   ) => {
     clearRefreshTimer()
-    if (!expiresInStr || !currentRefreshToken) return
+    const expireTime = getExpirationTime(currentAccessToken, expiresIn)
+    if (!expireTime || !currentRefreshToken) {
+      if (import.meta.env.DEV) {
+        console.warn("[AUTH REFRESH] Cannot schedule refresh", {
+          hasExpirationTime: Boolean(expireTime),
+          hasRefreshToken: Boolean(currentRefreshToken)
+        })
+      }
+      return
+    }
 
     try {
-      const expireTime = new Date(expiresInStr).getTime()
       const currentTime = new Date().getTime()
-      let timeUntilRefresh = expireTime - currentTime - 1000
+      let timeUntilRefresh = expireTime - currentTime - 30_000
       if (timeUntilRefresh <= 0) {
         timeUntilRefresh = 0
+      }
+
+      if (import.meta.env.DEV) {
+        console.group("[AUTH REFRESH] Refresh scheduled")
+        console.log("refreshToken:", currentRefreshToken)
+        console.log("accessTokenExpiresAt:", new Date(expireTime).toISOString())
+        console.log(
+          "refreshAt:",
+          new Date(currentTime + timeUntilRefresh).toISOString()
+        )
+        console.log("refreshInSeconds:", Math.round(timeUntilRefresh / 1000))
+        console.groupEnd()
       }
 
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const response = await authApi.refreshToken(currentRefreshToken)
-          const { accessToken, expiresIn } = response.data
+          const {
+            accessToken,
+            refreshToken: rotatedRefreshToken,
+            expiresIn: nextExpiresIn
+          } = response.data
+          const nextRefreshToken = rotatedRefreshToken || currentRefreshToken
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
-            if (expiresIn) {
-              localStorage.setItem("tokenExpiresIn", expiresIn)
+            localStorage.setItem("refreshToken", nextRefreshToken)
+            if (nextExpiresIn) {
+              localStorage.setItem("tokenExpiresIn", nextExpiresIn)
             }
-            dispatch({ type: "UPDATE_TOKEN", payload: { accessToken } })
-            setupRefreshTimer(expiresIn, currentRefreshToken)
+            dispatch({
+              type: "UPDATE_TOKENS",
+              payload: { accessToken, refreshToken: nextRefreshToken }
+            })
+            setupRefreshTimer(accessToken, nextRefreshToken, nextExpiresIn)
           }
         } catch (error) {
           console.error("[Auth] Token refresh failed:", error)
@@ -128,42 +189,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken")
-    const refreshToken = localStorage.getItem("refreshToken")
-    const expiresIn = localStorage.getItem("tokenExpiresIn")
-    const user = localStorage.getItem("user")
+    let active = true
 
-    if (user && accessToken) {
+    const restoreSession = async () => {
+      const storedAccessToken = localStorage.getItem("accessToken")
+      const storedRefreshToken = localStorage.getItem("refreshToken")
+      const storedExpiresIn = localStorage.getItem("tokenExpiresIn")
+      const storedUser = localStorage.getItem("user")
+
+      if (!storedUser || !storedAccessToken) {
+        if (active) dispatch({ type: "SET_LOADING", payload: false })
+        return
+      }
+
       try {
+        let accessToken = storedAccessToken
+        let refreshToken = storedRefreshToken
+        let expiresIn = storedExpiresIn
+        const expirationTime = getExpirationTime(accessToken, expiresIn)
+
+        if (expirationTime && expirationTime <= Date.now() + 30_000) {
+          if (!refreshToken) throw new Error("Refresh token is missing")
+
+          const response = await authApi.refreshToken(refreshToken)
+          accessToken = response.data.accessToken
+          refreshToken = response.data.refreshToken || refreshToken
+          expiresIn = response.data.expiresIn || null
+
+          if (!accessToken) throw new Error("Access token refresh failed")
+
+          localStorage.setItem("accessToken", accessToken)
+          localStorage.setItem("refreshToken", refreshToken)
+          if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
+          else localStorage.removeItem("tokenExpiresIn")
+        }
+
+        const profileResponse = await userApi.getMe()
+        const user = profileResponse.data
+        if (!active) return
+
+        accessToken = localStorage.getItem("accessToken") || accessToken
+        refreshToken = localStorage.getItem("refreshToken") || refreshToken
+        expiresIn = localStorage.getItem("tokenExpiresIn") || expiresIn
+
+        localStorage.setItem("user", JSON.stringify(user))
         dispatch({
           type: "LOGIN",
           payload: {
-            user: JSON.parse(user),
+            user,
             accessToken,
             refreshToken
           }
         })
-        if (expiresIn && refreshToken) {
-          setupRefreshTimer(expiresIn, refreshToken)
-        }
-      } catch {
-        dispatch({ type: "SET_LOADING", payload: false })
+
+        if (refreshToken)
+          setupRefreshTimer(accessToken, refreshToken, expiresIn)
+      } catch (error) {
+        console.error("[Auth] Failed to restore session:", error)
+        clearStoredAuth()
+        if (active) dispatch({ type: "LOGOUT" })
       }
-    } else {
-      dispatch({ type: "SET_LOADING", payload: false })
     }
 
+    void restoreSession()
+
     return () => {
+      active = false
       clearRefreshTimer()
     }
   }, [])
 
-  const login = async (responseData: {
-    accessToken: string
-    refreshToken: string | null
-    expiresIn?: string
-  }) => {
+  const login = async (responseData: LoginTokens) => {
     const { accessToken, refreshToken, expiresIn } = responseData
+
+    if (import.meta.env.DEV) {
+      console.group("[AUTH SESSION] Tokens received after login")
+      console.log("hasAccessToken:", Boolean(accessToken))
+      console.log("refreshToken:", refreshToken)
+      console.log(
+        "accessTokenExpiresAt:",
+        getExpirationTime(accessToken, expiresIn)
+          ? new Date(getExpirationTime(accessToken, expiresIn)!).toISOString()
+          : null
+      )
+      console.groupEnd()
+    }
 
     localStorage.setItem("accessToken", accessToken)
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken)
@@ -179,13 +289,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         payload: { user: userInfo, accessToken, refreshToken }
       })
 
-      if (expiresIn && refreshToken) {
-        setupRefreshTimer(expiresIn, refreshToken)
-      }
+      if (refreshToken) setupRefreshTimer(accessToken, refreshToken, expiresIn)
     } catch (error) {
-      localStorage.removeItem("accessToken")
-      localStorage.removeItem("refreshToken")
-      localStorage.removeItem("tokenExpiresIn")
+      clearStoredAuth()
       throw error
     }
   }
@@ -197,10 +303,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore logout API errors — clear local state regardless
     } finally {
       clearRefreshTimer()
-      localStorage.removeItem("accessToken")
-      localStorage.removeItem("refreshToken")
-      localStorage.removeItem("tokenExpiresIn")
-      localStorage.removeItem("user")
+      clearStoredAuth()
       dispatch({ type: "LOGOUT" })
     }
   }

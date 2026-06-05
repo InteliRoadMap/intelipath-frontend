@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  Bell, Settings, LogOut, LayoutDashboard, MessageSquare, IdCard,
+  LayoutDashboard, MessageSquare, IdCard,
   Star, Gauge, Users, Mail, Calendar, Layers, Lightbulb, ChevronRight
 } from 'lucide-react';
-import { Logo } from '@/components/ui';
+import { DashboardUserActions, Logo } from '@/components/ui';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import mentorApi from '@/api/mentorApi';
@@ -222,7 +222,6 @@ const MentorInsightWidget = () => {
 export default function MentorDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -252,44 +251,8 @@ export default function MentorDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-6 relative">
-          <button className="text-slate-400 hover:text-slate-600 transition-colors hidden sm:block relative">
-            <Bell size={20} />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-          </button>
-          
-          {/* User Profile Area */}
-          <div className="flex items-center gap-3 pl-0 sm:pl-6 sm:border-l border-slate-200 cursor-pointer group" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-            <div className="text-right hidden sm:block">
-              <p className="text-[13px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors">{user?.fullName || user?.name || 'Dr. Sarah'}</p>
-              <p className="text-[11px] font-medium text-slate-500">Mentor</p>
-            </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 group-hover:border-[#00838f] group-hover:shadow-sm transition-all relative">
-              <div className="w-full h-full bg-[#006064] flex items-center justify-center text-white text-[14px] font-bold">
-                {(user?.fullName?.trim().split(' ').pop() || user?.name || 'S')[0].toUpperCase()}
-              </div>
-            </div>
-
-            {isDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); }}></div>
-                <div className="absolute top-full right-0 mt-3 w-48 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <button className="w-full text-left px-4 py-2.5 text-[14px] text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium">
-                    <Settings size={16} className="text-slate-400" />
-                    Settings
-                  </button>
-                  <div className="h-[1px] bg-slate-100 my-1"></div>
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-[14px] text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-3 font-bold"
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        <div className="relative">
+          <DashboardUserActions user={user} onLogout={handleLogout} />
         </div>
       </nav>
 

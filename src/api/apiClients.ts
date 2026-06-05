@@ -7,7 +7,8 @@ import { API_BASE_URL } from '@/config/appConfig';
  */
 export const publicClient = createApiClient({
   baseURL: API_BASE_URL,
-  getToken: () => null, 
+  getToken: () => null,
+  getRefreshToken: () => null,
   onUnauthorized: () => {} 
 });
 
