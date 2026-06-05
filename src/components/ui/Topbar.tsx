@@ -10,6 +10,7 @@ import {
   Users
 } from "lucide-react"
 import Logo from "@/components/ui/Logo"
+import NotificationPanel from "./NotificationPanel"
 import { useAuth } from "@/context"
 import { useNavigate, useLocation } from "react-router-dom"
 
@@ -114,10 +115,7 @@ export default function Topbar({ userRole }: TopbarProps) {
         >
           <Settings size={20} />
         </button>
-        <button className="relative w-10 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-        </button>
+        <NotificationPanel />
         <div
           className="flex items-center gap-3 pl-4 sm:pl-6 ml-2 border-l border-slate-200 group cursor-pointer"
           onClick={handleLogout}

@@ -11,6 +11,7 @@ export const ROUTES = {
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_ADMIN: '/dashboard/admin',
   PROFILE_SETTINGS: '/profile-settings',
+  AI_MENTOR: '/mentor',
 } as const
 
 export const ROLES = {
