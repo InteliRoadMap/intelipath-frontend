@@ -19,6 +19,16 @@ import {
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 
+const studentSections = [
+  { id: "overview", label: "Overview" },
+  { id: "roadmap", label: "Roadmap Progress" },
+  { id: "skill-gaps", label: "Skill Gaps" },
+  { id: "market-demand", label: "Market Demand" },
+  { id: "mentor-feedback", label: "Mentor Feedback" },
+  { id: "skill-comparison", label: "Skill Comparison" },
+  { id: "priority-learning", label: "Priority Learning" }
+]
+
 export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -59,21 +69,95 @@ export default function StudentDashboardView() {
         <DashboardUserActions user={user} onLogout={handleLogout} />
       </nav>
 
-      <main className="mx-auto max-w-[1440px] px-4 pt-6 md:px-6 xl:px-8">
-        <StudentWelcomeHeader />
+      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
+        <aside className="hidden xl:block">
+          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
+            <p className="mb-4 text-[13px] font-medium text-slate-400">Sections</p>
+            <nav className="space-y-1.5">
+              {studentSections.map((section, index) => (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className={`block rounded-md px-3 py-2 text-[14px] font-semibold transition-colors ${
+                    index === 0
+                      ? "bg-slate-100 text-slate-950"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                  }`}
+                >
+                  {section.label}
+                </a>
+              ))}
+            </nav>
+            <div className="mt-8 border-t border-slate-100 pt-5">
+              <p className="mb-3 text-[13px] font-medium text-slate-300">Actions</p>
+              <button
+                type="button"
+                onClick={() => setIsAiMentorOpen(true)}
+                className="block rounded-md px-3 py-2 text-left text-[14px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              >
+                Ask AI Mentor
+              </button>
+            </div>
+          </div>
+        </aside>
 
-        <div className="flex min-w-0 flex-col gap-5 xl:gap-6">
-          <RoadmapProgressWidget />
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:gap-6">
-            <SkillGapsWidget />
-            <MarketDemandWidget />
+        <div className="min-w-0">
+          <section id="overview" className="scroll-mt-28">
+            <StudentWelcomeHeader />
+          </section>
+
+          <div className="flex min-w-0 flex-col gap-5 xl:gap-6">
+            <section id="roadmap" className="scroll-mt-28">
+              <RoadmapProgressWidget />
+            </section>
+            <section id="skill-gaps" className="scroll-mt-28">
+              <SkillGapsWidget />
+            </section>
+            <section id="market-demand" className="scroll-mt-28">
+              <MarketDemandWidget />
+            </section>
+            <section id="mentor-feedback" className="scroll-mt-28">
+              <MentorFeedbackWidget />
+            </section>
+            <section id="skill-comparison" className="scroll-mt-28">
+              <SkillComparisonWidget />
+            </section>
+            <section id="priority-learning" className="scroll-mt-28">
+              <PriorityLearningWidget />
+            </section>
           </div>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:gap-6">
-            <MentorFeedbackWidget />
-            <SkillComparisonWidget />
-          </div>
-          <PriorityLearningWidget />
         </div>
+
+        <aside className="hidden 2xl:block">
+          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
+            <p className="mb-4 text-[13px] font-semibold text-slate-700">On This Page</p>
+            <nav className="space-y-2.5">
+              {studentSections.slice(1).map((section) => (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className="block text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-950"
+                >
+                  {section.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="mt-10 rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+              <h3 className="text-[16px] font-bold leading-snug text-slate-950">Need roadmap guidance?</h3>
+              <p className="mt-3 text-[13px] leading-6 text-slate-500">
+                Review mentor history and ask for the next learning move.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsAiMentorOpen(true)}
+                className="mt-5 rounded-md border border-slate-200 bg-white px-3 py-2 text-[13px] font-semibold text-slate-900 transition-colors hover:bg-slate-50"
+              >
+                Open AI Mentor
+              </button>
+            </div>
+          </div>
+        </aside>
       </main>
 
       <button
@@ -100,7 +184,9 @@ export default function StudentDashboardView() {
       )}
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
-      <StudentSkillSelectionModal isOpen={activeSetupStep === "skills"} onComplete={completeSetup} />
+      {activeSetupStep === "skills" && (
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+      )}
     </div>
   )
 }
