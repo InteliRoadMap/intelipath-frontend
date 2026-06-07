@@ -185,7 +185,7 @@ export default function StudentSkillSelectionModal({
                           key={skill.skillId}
                           type="button"
                           onClick={() => toggleSkill(skill)}
-                          className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
                             selected
                               ? 'border-cyan-700 bg-cyan-700 text-white'
                               : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-600 hover:text-cyan-700'

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
 import {
   ArrowRight,
   ArrowsClockwise,
@@ -15,16 +17,17 @@ import {
   TreeStructure
 } from "@phosphor-icons/react"
 import { careerApi, roadmapApi, updateApi } from "@/api"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Skeleton } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import type { CareerRole, RoadmapNode, RoadmapNodeStatus, StudentRoadmap } from "../types"
-import { AiMentorHistoryWidget } from "./StudentDashboardWidgets"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentTopNav from "./StudentTopNav"
+
+gsap.registerPlugin(useGSAP)
 
 type RoadmapNodeWithDepth = RoadmapNode & {
   depth: number
@@ -115,29 +118,11 @@ const getProfileCareerName = (profile: StudentProfileResponse | null) =>
   profile?.career?.career_name ||
   profile?.career?.name
 
-const RoadmapSkeleton = () => (
-  <div className="grid gap-4 lg:grid-cols-3">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <Card key={index} className="h-[190px]">
-        <CardHeader className="gap-3">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-7 w-3/4" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-8 w-full" />
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-)
-
 const RoadmapNodeCard = ({ node }: { node: RoadmapNodeWithDepth }) => {
   const config = statusConfig[node.status]
 
   return (
-    <Card className={`relative min-h-[190px] transition-shadow hover:shadow-md ${config.cardClass}`}>
+    <Card className={`roadmap-gsap-card relative min-h-[190px] transition-shadow hover:shadow-md ${config.cardClass}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2 text-slate-500">
@@ -261,7 +246,7 @@ const CareerSelector = ({
                 key={career.careerId}
                 type="button"
                 onClick={() => onSelectCareer(career.careerId)}
-                className={`min-h-[138px] rounded-lg border bg-white p-4 text-left transition-all hover:border-cyan-300 hover:shadow-sm ${
+                className={`cursor-pointer min-h-[138px] rounded-lg border bg-white p-4 text-left transition-all hover:border-cyan-300 hover:shadow-sm ${
                   isSelected ? "border-[#00838f] ring-2 ring-[#00838f]/15" : "border-slate-200"
                 }`}
               >
@@ -307,7 +292,7 @@ const CareerSelector = ({
 export default function StudentRoadmapPageView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [isAiMentorOpen, setIsAiMentorOpen] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerSearch, setCareerSearch] = useState("")
   const [selectedCareerId, setSelectedCareerId] = useState("")
@@ -430,22 +415,73 @@ export default function StudentRoadmapPageView() {
   }
 
   const showCareerSelector = !currentCareerId || isChangingCareer
+  const showRoadmapSidebar = !isInitialLoading && !showCareerSelector
 
   const handleLogout = async () => {
     await logout()
     navigate(ROUTES.LOGIN)
   }
 
+  useGSAP(() => {
+    const media = gsap.matchMedia()
+
+    media.add(
+      {
+        reduceMotion: "(prefers-reduced-motion: reduce)",
+        desktop: "(min-width: 1024px)"
+      },
+      (context) => {
+        const conditions = context.conditions as { reduceMotion?: boolean; desktop?: boolean }
+        if (conditions.reduceMotion) return
+
+        gsap.from(".roadmap-gsap-panel", {
+          y: 20,
+          autoAlpha: 0,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: "power3.out"
+        })
+
+        gsap.from(".roadmap-gsap-card", {
+          y: 18,
+          autoAlpha: 0,
+          duration: 0.45,
+          stagger: 0.04,
+          ease: "power2.out",
+          delay: 0.12
+        })
+
+        gsap.to(".roadmap-gsap-robot", {
+          y: conditions.desktop ? -8 : -5,
+          rotation: 2,
+          duration: 1.9,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true
+        })
+      }
+    )
+
+    return () => media.revert()
+  }, { scope: pageRef, dependencies: [showCareerSelector, levels.length], revertOnUpdate: true })
+
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
+    <div ref={pageRef} className="relative min-h-screen bg-[#f8fafc] pb-20 pt-[74px] font-sans text-slate-900">
+      {(isInitialLoading || isRoadmapLoading) && <RouteProgressBar />}
+
       <StudentTopNav
         user={user}
         onLogout={handleLogout}
-        onOpenAiMentor={() => setIsAiMentorOpen(true)}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="hidden xl:block">
+      <main
+        className={`mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 ${
+          showRoadmapSidebar ? "xl:grid-cols-[220px_minmax(0,1fr)]" : ""
+        }`}
+      >
+        {showRoadmapSidebar && (
+        <aside className="roadmap-gsap-panel hidden xl:block">
           <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
             <p className="mb-4 text-[13px] font-medium text-slate-400">Roadmap</p>
             <nav className="space-y-1.5">
@@ -472,12 +508,13 @@ export default function StudentRoadmapPageView() {
             </nav>
           </div>
         </aside>
+        )}
 
         <section className="min-w-0">
           {isInitialLoading ? (
-            <RoadmapSkeleton />
+            null
           ) : showCareerSelector ? (
-            <div id="choose-career" className="scroll-mt-28">
+            <div id="choose-career" className="roadmap-gsap-panel scroll-mt-28">
               <CareerSelector
                 careers={careers}
                 selectedCareerId={selectedCareerId}
@@ -497,7 +534,7 @@ export default function StudentRoadmapPageView() {
             </div>
           ) : (
             <>
-          <div id="overview" className="mb-6 scroll-mt-28 rounded-lg border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div id="overview" className="roadmap-gsap-panel mb-6 scroll-mt-28 rounded-lg border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
                 <p className="mb-2 flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
@@ -545,17 +582,15 @@ export default function StudentRoadmapPageView() {
             </div>
           </div>
 
-          {isRoadmapLoading ? (
-            <RoadmapSkeleton />
-          ) : errorMessage || !levels.length ? (
-            <Card className="grid min-h-[360px] place-items-center p-8 text-center">
+          {isRoadmapLoading ? null : errorMessage || !levels.length ? (
+            <Card className="roadmap-gsap-panel grid min-h-[360px] place-items-center p-8 text-center">
               <div className="max-w-md">
                 <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-lg bg-cyan-50 text-cyan-700">
                   <TreeStructure size={24} weight="duotone" />
                 </div>
                 <h2 className="text-[22px] font-bold text-slate-950">Roadmap data is not available yet.</h2>
                 <p className="mt-3 text-[14px] leading-6 text-slate-500">
-                  Backend should return nodes for <span className="font-semibold text-slate-700">GET /student/roadmap</span> after target career is selected.
+                  Generated roadmap nodes will appear here after your target career data is available.
                 </p>
                 <Button type="button" variant="outline" className="mt-5" onClick={loadRoadmap}>
                   <ArrowsClockwise size={16} weight="bold" />
@@ -564,7 +599,7 @@ export default function StudentRoadmapPageView() {
               </div>
             </Card>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="roadmap-gsap-panel overflow-x-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="grid min-w-[960px] auto-cols-[minmax(280px,1fr)] grid-flow-col gap-5">
                 {levels.map((level, index) => (
                   <section key={level} id={`level-${level}`} className="scroll-mt-28">
@@ -599,26 +634,12 @@ export default function StudentRoadmapPageView() {
 
       <button
         type="button"
-        onClick={() => setIsAiMentorOpen(true)}
-        className="ai-mentor-float fixed bottom-5 right-4 z-50 flex h-20 w-20 items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28"
+        onClick={() => navigate(ROUTES.AI_MENTOR)}
+        className="ai-mentor-float roadmap-gsap-robot fixed bottom-5 right-4 z-50 flex h-20 w-20 cursor-pointer items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28"
         title="Ask AI Mentor"
       >
         <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain drop-shadow-xl" />
       </button>
-
-      {isAiMentorOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close AI Mentor"
-            onClick={() => setIsAiMentorOpen(false)}
-            className="fixed inset-0 z-[60] bg-slate-950/25 backdrop-blur-[1px]"
-          />
-          <aside className="fixed inset-x-3 bottom-3 top-20 z-[70] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(680px,calc(100vh-3rem))] sm:w-[420px]">
-            <AiMentorHistoryWidget onClose={() => setIsAiMentorOpen(false)} />
-          </aside>
-        </>
-      )}
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (

@@ -195,7 +195,12 @@ function UserManagement() {
 
   const filteredUsers = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase()
-    return keyword ? users.filter((user) => user.name.toLowerCase().includes(keyword)) : users
+    return keyword
+      ? users.filter((user) =>
+        user.name.toLowerCase().includes(keyword) ||
+        (user.email || "").toLowerCase().includes(keyword)
+      )
+      : users
   }, [users, searchQuery])
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE))
@@ -271,7 +276,7 @@ function UserManagement() {
                   setSearchQuery(event.target.value)
                   setCurrentPage(1)
                 }}
-                placeholder="Search users by name"
+                placeholder="Search users by name or email"
                 className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus:border-0 focus:ring-0"
               />
             </div>
@@ -313,7 +318,9 @@ function UserManagement() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-950">{user.name}</p>
-                        <p className="text-xs text-slate-400">ID: {user.id.slice(0, 8)}</p>
+                        <p className="max-w-[260px] truncate text-xs text-slate-400">
+                          {user.email || `ID: ${user.id.slice(0, 8)}`}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -338,7 +345,7 @@ function UserManagement() {
               <div>
                 <MagnifyingGlass className="mx-auto text-slate-300" size={32} weight="duotone" />
                 <p className="mt-3 text-sm font-semibold text-slate-700">No users found</p>
-                <p className="mt-1 text-xs text-slate-500">Try another name.</p>
+                <p className="mt-1 text-xs text-slate-500">Try another name or email.</p>
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_STUDENT_ROADMAP: '/dashboard/student/roadmap',
+  AI_MENTOR: '/dashboard/student/ai-mentor',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_ADMIN: '/dashboard/admin',

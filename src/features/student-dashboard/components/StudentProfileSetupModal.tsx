@@ -225,7 +225,7 @@ export default function StudentProfileSetupModal({
           <button
             type="button"
             onClick={goToProfileStep}
-            className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 ${
+            className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 ${
               step === 1 ? 'invisible' : ''
             }`}
           >
@@ -236,7 +236,7 @@ export default function StudentProfileSetupModal({
             type="button"
             onClick={step === 1 ? goToAcademicStep : handleSave}
             disabled={isSaving}
-            className="flex min-w-40 items-center justify-center gap-2 rounded-md bg-[#006064] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#007c82] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-w-40 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#006064] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#007c82] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Saving...' : step === 1 ? 'Continue' : 'Save and continue'}
             {!isSaving && <ArrowRight size={16} />}

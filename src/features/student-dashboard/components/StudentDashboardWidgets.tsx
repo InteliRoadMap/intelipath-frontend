@@ -38,6 +38,30 @@ const LoadingState = ({ rows = 3 }: { rows?: number }) => (
   </div>
 )
 
+const EmptyState = ({
+  icon,
+  title,
+  description
+}: {
+  icon?: React.ReactNode
+  title: string
+  description?: string
+}) => (
+  <div className="grid min-h-[150px] place-items-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center">
+    <div>
+      {icon && (
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm">
+          {icon}
+        </div>
+      )}
+      <p className="text-[14px] font-bold text-slate-700">{title}</p>
+      {description && (
+        <p className="mx-auto mt-1 max-w-md text-[12px] leading-5 text-slate-500">{description}</p>
+      )}
+    </div>
+  </div>
+)
+
 const WidgetHeader = ({
   title,
   description,
@@ -113,10 +137,10 @@ export const RoadmapProgressWidget = () => {
           icon={<Map size={18} />}
         />
         <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-[13px] font-semibold">
-          <button className="rounded-md bg-[#4fc3f7] px-4 py-1.5 text-white shadow-sm">
+          <button className="cursor-pointer rounded-md bg-[#4fc3f7] px-4 py-1.5 text-white shadow-sm">
             Foundations
           </button>
-          <button className="rounded-md px-4 py-1.5 text-slate-500 hover:text-slate-700">
+          <button className="cursor-pointer rounded-md px-4 py-1.5 text-slate-500 hover:text-slate-700">
             Advanced
           </button>
         </div>
@@ -126,7 +150,11 @@ export const RoadmapProgressWidget = () => {
         {status === "loading" ? (
           <LoadingState rows={4} />
         ) : status === "error" ? (
-          <LoadingState rows={4} />
+          <EmptyState
+            icon={<Map size={18} />}
+            title="No roadmap progress yet"
+            description="Progress will appear after backend returns roadmap milestones."
+          />
         ) : data?.steps?.length ? (
           <div className="relative mb-8 flex items-start justify-between overflow-x-auto px-4 pb-2">
             <div className="absolute left-8 right-8 top-[14px] z-0 h-[2px] bg-slate-200" />
@@ -171,7 +199,11 @@ export const RoadmapProgressWidget = () => {
             ))}
           </div>
         ) : (
-          <LoadingState rows={4} />
+          <EmptyState
+            icon={<Map size={18} />}
+            title="No roadmap progress yet"
+            description="Choose a target career or wait for roadmap data from backend."
+          />
         )}
 
         {status === "success" && data?.aiTip && (
@@ -206,7 +238,7 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
           icon={<AlertTriangle size={18} strokeWidth={2.5} />}
         />
         {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X size={18} />
           </button>
         )}
@@ -216,7 +248,11 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
         {status === "loading" ? (
           <LoadingState />
         ) : status === "error" ? (
-          <LoadingState />
+          <EmptyState
+            icon={<AlertTriangle size={18} />}
+            title="No skill gaps yet"
+            description="Skill gap data will appear after required and selected skills are available."
+          />
         ) : data && data.length > 0 ? (
           data.map((gap) => (
             <div
@@ -246,11 +282,15 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
             </div>
           ))
         ) : (
-          <LoadingState />
+          <EmptyState
+            icon={<AlertTriangle size={18} />}
+            title="No skill gaps yet"
+            description="There is no gap data to show right now."
+          />
         )}
       </div>
 
-      <button className="mt-5 w-full rounded-xl border border-slate-200 py-2.5 text-[14px] font-bold text-[#006064] transition-colors hover:bg-slate-50">
+      <button className="mt-5 w-full cursor-pointer rounded-xl border border-slate-200 py-2.5 text-[14px] font-bold text-[#006064] transition-colors hover:bg-slate-50">
         Download Detailed Report
       </button>
     </div>
@@ -278,7 +318,11 @@ export const MentorFeedbackWidget = () => {
         {status === "loading" ? (
           <LoadingState />
         ) : status === "error" ? (
-          <LoadingState />
+          <EmptyState
+            icon={<Bot size={18} />}
+            title="No mentor feedback yet"
+            description="Mentor notes will appear here after backend returns feedback."
+          />
         ) : data && data.length > 0 ? (
           data.map((feedback) => (
             <div key={feedback.id} className="relative pl-4">
@@ -293,7 +337,11 @@ export const MentorFeedbackWidget = () => {
             </div>
           ))
         ) : (
-          <LoadingState />
+          <EmptyState
+            icon={<Bot size={18} />}
+            title="No mentor feedback yet"
+            description="There is no mentor feedback to show right now."
+          />
         )}
       </div>
     </div>
@@ -337,7 +385,11 @@ export const SkillComparisonWidget = () => {
         {status === "loading" ? (
           <LoadingState />
         ) : status === "error" ? (
-          <LoadingState />
+          <EmptyState
+            icon={<TrendingUp size={18} />}
+            title="No skill comparison yet"
+            description="Comparison needs selected skills and required skills from backend."
+          />
         ) : data?.requiredSkills.length ? (
           data.requiredSkills.map(({ skill, importanceLevel }) => {
             const current = missingIds.has(skill.skillId)
@@ -350,7 +402,7 @@ export const SkillComparisonWidget = () => {
               <div className="mb-2 flex items-end justify-between">
                 <span className="text-[12px] font-bold text-slate-800">{skill.skillName}</span>
                 <span className="text-[11px] font-semibold text-slate-400">
-                  {current}% / 100% · {importanceLevel}
+                  {current}% / 100% - {importanceLevel}
                 </span>
               </div>
               <div className="relative flex h-2 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
@@ -360,7 +412,11 @@ export const SkillComparisonWidget = () => {
             </div>
           )})
         ) : (
-          <LoadingState />
+          <EmptyState
+            icon={<TrendingUp size={18} />}
+            title="No skill comparison yet"
+            description="Required skill data has not been returned yet."
+          />
         )}
       </div>
     </div>
@@ -383,7 +439,7 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
         <button
           type="button"
           onClick={onClose}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           title="Close AI Mentor"
         >
           <X size={18} />
@@ -394,7 +450,11 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
         {status === "loading" ? (
           <LoadingState />
         ) : status === "error" ? (
-          <LoadingState />
+          <EmptyState
+            icon={<Bot size={18} />}
+            title="No AI mentor history yet"
+            description="Saved AI conversations will appear after backend stores chat sessions."
+          />
         ) : data && data.length > 0 ? (
           data.map((item, index) => (
             <div
@@ -409,7 +469,11 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
             </div>
           ))
         ) : (
-          <LoadingState />
+          <EmptyState
+            icon={<Bot size={18} />}
+            title="No AI mentor history yet"
+            description="There are no saved conversations to show right now."
+          />
         )}
       </div>
 
@@ -419,7 +483,7 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
           placeholder="Ask your AI Mentor..."
           className="w-full rounded-xl border border-slate-200 bg-[#f8fafc] py-3 pl-4 pr-12 text-[13px] outline-none transition-colors focus:border-[#00838f]"
         />
-        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00838f] hover:text-[#006064]">
+        <button className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#00838f] hover:text-[#006064]">
           <Send size={16} />
         </button>
       </div>
@@ -447,7 +511,11 @@ export const PriorityLearningWidget = () => {
           </div>
         ) : status === "error" ? (
           <div className="md:col-span-2">
-            <LoadingState rows={4} />
+            <EmptyState
+              icon={<Network size={18} />}
+              title="No priority learning yet"
+              description="Recommendations will appear when backend returns learning actions."
+            />
           </div>
         ) : data && data.length > 0 ? (
           data.map((item) => (
@@ -463,10 +531,10 @@ export const PriorityLearningWidget = () => {
               <h4 className="mb-2 text-[16px] font-bold text-slate-900">{item.title}</h4>
               <p className="mb-6 flex-1 text-[13px] leading-relaxed text-slate-500">{item.description}</p>
               <div className="flex gap-3">
-                <button className="flex-1 rounded-xl bg-[#006064] py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#00838f]">
+                <button className="flex-1 cursor-pointer rounded-xl bg-[#006064] py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#00838f]">
                   Start Now
                 </button>
-                <button className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-bold text-slate-700 transition-colors hover:bg-slate-50">
+                <button className="flex-1 cursor-pointer rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-bold text-slate-700 transition-colors hover:bg-slate-50">
                   Details
                 </button>
               </div>
@@ -474,7 +542,11 @@ export const PriorityLearningWidget = () => {
           ))
         ) : (
           <div className="md:col-span-2">
-            <LoadingState rows={4} />
+            <EmptyState
+              icon={<Network size={18} />}
+              title="No priority learning yet"
+              description="There are no recommendations to show right now."
+            />
           </div>
         )}
       </div>
@@ -496,7 +568,7 @@ export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
           icon={<TrendingUp size={18} />}
         />
         {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X size={18} />
           </button>
         )}
@@ -505,7 +577,11 @@ export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
       {status === "loading" ? (
         <LoadingState rows={5} />
       ) : status === "error" ? (
-        <LoadingState rows={5} />
+        <EmptyState
+          icon={<TrendingUp size={18} />}
+          title="No market demand yet"
+          description="Market signals will appear after backend returns demand data."
+        />
       ) : data ? (
         <>
           <div className="mb-6 mt-2 flex items-center gap-3">
@@ -530,7 +606,13 @@ export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
             </p>
           </div>
         </>
-      ) : <LoadingState rows={5} />}
+      ) : (
+        <EmptyState
+          icon={<TrendingUp size={18} />}
+          title="No market demand yet"
+          description="There is no market demand data to show right now."
+        />
+      )}
     </div>
   )
 }

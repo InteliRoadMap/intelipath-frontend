@@ -18,7 +18,7 @@ export const DialogContent = ({ className, children, ...props }: ComponentProps<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+      <DialogPrimitive.Close className="absolute right-4 top-4 grid h-8 w-8 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
         <X size={16} weight="bold" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

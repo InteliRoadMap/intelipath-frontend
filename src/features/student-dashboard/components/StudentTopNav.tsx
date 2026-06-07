@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 import { MapTrifold, Robot, SquaresFour, TrendUp } from "@phosphor-icons/react"
 import { DashboardUserActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
@@ -16,8 +16,11 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: StudentTopNavProps) {
+  const location = useLocation()
+  const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
+
   return (
-    <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
+    <nav className="fixed inset-x-0 top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
       <div className="flex items-center gap-6 md:gap-12">
         <Logo hideIcon className="scale-90 origin-left" />
 
@@ -33,7 +36,11 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
           <button
             type="button"
             onClick={onOpenAiMentor}
-            className="flex items-center gap-2 border-b-[3px] border-transparent py-4 -mb-3.5 transition-colors hover:text-slate-800"
+            className={`flex cursor-pointer items-center gap-2 border-b-[3px] py-4 -mb-3.5 transition-colors ${
+              isAiMentorActive
+                ? "border-[#00838f] text-[#00838f]"
+                : "border-transparent hover:text-slate-800"
+            }`}
           >
             <Robot size={17} weight="duotone" />
             AI Mentor
