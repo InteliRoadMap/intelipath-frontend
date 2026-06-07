@@ -24,17 +24,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const initialState: AuthState = {
-  user: {
-    id: "mock-student-id",
-    email: "student@example.com",
-    fullName: "Mock Student",
-    role: "STUDENT",
-    status: "ACTIVE"
-  } as User,
-  accessToken: "mock-access-token",
-  refreshToken: "mock-refresh-token",
-  isAuthenticated: true,
-  loading: false
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  isAuthenticated: false,
+  loading: true
 }
 
 type AuthAction =

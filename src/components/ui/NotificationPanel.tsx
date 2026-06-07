@@ -11,72 +11,7 @@ export interface Notification {
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    type: 'success',
-    title: 'Roadmap updated',
-    message: 'Your learning roadmap has been updated based on your latest skill assessment.',
-    time: '2 min ago',
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'info',
-    title: 'New mentor available',
-    message: 'A new mentor specializing in React and TypeScript is now available for booking.',
-    time: '1 hr ago',
-    read: false,
-  },
-  {
-    id: '3',
-    type: 'warning',
-    title: 'Skill gap detected',
-    message: 'Market demand for Python has risen significantly. Consider adding it to your roadmap.',
-    time: '3 hr ago',
-    read: false,
-  },
-  {
-    id: '4',
-    type: 'info',
-    title: 'AI Mentor session ready',
-    message: 'Your scheduled AI Mentor session is ready. Join now to get personalized guidance.',
-    time: 'Yesterday',
-    read: true,
-  },
-  {
-    id: '5',
-    type: 'success',
-    title: 'Profile setup complete',
-    message: 'Great! Your profile is fully set up. You can now access all features.',
-    time: '2 days ago',
-    read: true,
-  },
-  {
-    id: '6',
-    type: 'info',
-    title: 'Weekly report available',
-    message: 'Your weekly learning progress report is now available. Check your dashboard.',
-    time: '3 days ago',
-    read: true,
-  },
-  {
-    id: '7',
-    type: 'warning',
-    title: 'Incomplete skills',
-    message: 'You have 3 unrated skills. Rate them to get a more accurate roadmap suggestion.',
-    time: '4 days ago',
-    read: true,
-  },
-  {
-    id: '8',
-    type: 'success',
-    title: 'Counselor feedback received',
-    message: 'Your counselor has reviewed your progress and left new feedback for you.',
-    time: '5 days ago',
-    read: true,
-  },
-]
+const MOCK_NOTIFICATIONS: Notification[] = []
 
 // ─── Icons per type ────────────────────────────────────────────────────────────
 function NotifIcon({ type }: { type: Notification['type'] }) {
@@ -189,9 +124,15 @@ function NotifFullPage({
 
       {/* Notification list */}
       <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-w-2xl w-full mx-auto">
-        {notifications.map((n) => (
-          <NotifItem key={n.id} notif={n} onRead={onRead} />
-        ))}
+        {notifications.length === 0 ? (
+          <div className="p-8 text-center text-[14px] text-slate-500">
+            No notifications yet
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <NotifItem key={n.id} notif={n} onRead={onRead} />
+          ))
+        )}
       </div>
 
       {/* Footer — collapse button */}
@@ -301,9 +242,15 @@ export default function NotificationPanel() {
 
             {/* Notification list */}
             <div className="divide-y divide-slate-100 max-h-[320px] overflow-y-auto">
-              {previewNotifs.map((n) => (
-                <NotifItem key={n.id} notif={n} onRead={markRead} compact />
-              ))}
+              {previewNotifs.length === 0 ? (
+                <div className="p-6 text-center text-[13px] text-slate-500">
+                  No notifications yet
+                </div>
+              ) : (
+                previewNotifs.map((n) => (
+                  <NotifItem key={n.id} notif={n} onRead={markRead} compact />
+                ))
+              )}
             </div>
 
             {/* View all button */}

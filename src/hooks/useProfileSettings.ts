@@ -21,7 +21,7 @@ const EMPTY_PROFILE: ProfileData = {
   email: "",
   role: "Student",
   university: "",
-  major: "Software Engineering",
+  major: "",
   year_of_admission: "",
   githubProfile: ""
 }

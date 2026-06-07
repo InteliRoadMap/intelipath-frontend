@@ -6,9 +6,16 @@ import {
   GraduationCap,
   Mail,
   ShieldCheck,
-  User
+  User,
+  Bot,
+  LayoutDashboard,
+  Map,
+  TrendingUp
 } from "lucide-react"
-import Topbar from "../components/ui/Topbar"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useAuth } from "@/context"
+import { ROUTES } from "@/shared"
+import { DashboardUserActions, Logo } from "@/components"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 
 export default function ProfileSettingsPage() {
@@ -25,9 +32,55 @@ export default function ProfileSettingsPage() {
     githubName
   } = useProfileSettings()
 
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate(ROUTES.LOGIN)
+  }
+
+  const navItems = [
+    { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
+    { label: "My Roadmap", icon: Map, path: ROUTES.STUDENT_ROADMAP || "/roadmap/student" },
+    { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
+    { label: "Market Pulse", icon: TrendingUp, path: "/market" }
+  ]
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      <Topbar userRole={role} />
+      <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8 shrink-0">
+        <div className="flex items-center gap-6 md:gap-12">
+          <Logo hideIcon className="scale-90 origin-left" />
+
+          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || (item.path === ROUTES.DASHBOARD && location.pathname === "/")
+              return (
+                <a
+                  key={item.label}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate(item.path)
+                  }}
+                  className={`flex items-center gap-2 py-4 -mb-3.5 transition-colors ${
+                    isActive
+                      ? "border-b-[3px] border-[#00838f] text-[#00838f]"
+                      : "hover:text-slate-800"
+                  }`}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </a>
+              )
+            })}
+          </div>
+        </div>
+
+        <DashboardUserActions user={user} onLogout={handleLogout} />
+      </nav>
 
       <main className="flex-1 overflow-y-auto relative py-10 px-4 md:px-8">
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 pb-20">

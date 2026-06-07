@@ -1,6 +1,8 @@
 import { Bell, GearSix, SignOut } from '@phosphor-icons/react'
 import type { User } from '@/features/auth'
 import NotificationPanel from './NotificationPanel'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '@/shared'
 
 interface DashboardUserActionsProps {
   user: User | null
@@ -9,6 +11,7 @@ interface DashboardUserActionsProps {
 }
 
 export default function DashboardUserActions({ user, onLogout, onSettings }: DashboardUserActionsProps) {
+  const navigate = useNavigate()
   const fullName = user?.fullName || 'User'
   const email = user?.email || 'No email'
   const role = String(user?.role || 'USER').toUpperCase()
@@ -20,7 +23,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
         <NotificationPanel />
         <button
           type="button"
-          onClick={onSettings}
+          onClick={onSettings || (() => navigate(ROUTES.PROFILE_SETTINGS))}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Settings"
         >

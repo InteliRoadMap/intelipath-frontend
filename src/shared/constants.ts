@@ -4,7 +4,7 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
-  OAUTH_CALLBACK: '/oauth2/redirect',
+  OAUTH_CALLBACK: '/auth/callback',
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
