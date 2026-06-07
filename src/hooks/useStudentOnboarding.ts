@@ -61,13 +61,13 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     }
 
     try {
-      await updateApi.fillFormUser({
+      await updateApi.updateUserProfile({
         fullName,
         yob,
         bio
       })
 
-      await updateApi.fillFormUserAcademic({
+      await updateApi.updateStudentProfile({
         university,
         yearOfAdmission: yearOfAdmission,
         major 

@@ -1,6 +1,5 @@
 import { useState } from "react"
-import { Bot, LayoutDashboard, Map, TrendingUp } from "lucide-react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { DashboardUserActions, Logo } from "@/components"
@@ -18,6 +17,7 @@ import {
 } from "./StudentDashboardWidgets"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
+import StudentTopNav from "./StudentTopNav"
 
 const studentSections = [
   { id: "overview", label: "Overview" },
@@ -32,54 +32,20 @@ const studentSections = [
 export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
-
   const handleLogout = async () => {
     await logout()
     navigate(ROUTES.LOGIN)
   }
 
-  const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
-    { label: "My Roadmap", icon: Map, path: ROUTES.STUDENT_ROADMAP || "/roadmap/student" },
-    { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
-    { label: "Market Pulse", icon: TrendingUp, path: "/market" }
-  ]
-
   return (
     <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
-      <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
-        <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon className="scale-90 origin-left" />
+      <StudentTopNav
+        user={user}
+        onLogout={handleLogout}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+      />
 
-          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path || (item.path === ROUTES.DASHBOARD && location.pathname === "/")
-              return (
-                <a
-                  key={item.label}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate(item.path)
-                  }}
-                  className={`flex items-center gap-2 py-4 -mb-3.5 transition-colors ${
-                    isActive
-                      ? "border-b-[3px] border-[#00838f] text-[#00838f]"
-                      : "hover:text-slate-800"
-                  }`}
-                >
-                  <item.icon size={16} />
-                  {item.label}
-                </a>
-              )
-            })}
-          </div>
-        </div>
-
-        <DashboardUserActions user={user} onLogout={handleLogout} />
-      </nav>
       <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
         <aside className="hidden xl:block">
           <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">

@@ -38,7 +38,7 @@ export function useProfileSettings() {
     setError(null)
 
     try {
-      const studentRes = await updateApi.getUserInfo()
+      const studentRes = await updateApi.getStudentProfile()
       const data = studentRes.data
 
       setProfileData({
@@ -72,12 +72,12 @@ export function useProfileSettings() {
 
     try {
       await Promise.all([
-        updateApi.fillFormUser({
+        updateApi.updateUserProfile({
           fullName: profileData.fullName,
           yob: profileData.yob,
           bio: profileData.bio
         }),
-        updateApi.fillFormUserAcademic({
+        updateApi.updateStudentProfile({
           university: profileData.university,
           yearOfAdmission: profileData.year_of_admission,
           major: profileData.major

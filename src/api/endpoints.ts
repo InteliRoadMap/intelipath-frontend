@@ -17,10 +17,15 @@ export const ENDPOINTS = {
   },
   STUDENT: {
     PROFILE: "/student/profile",
+    TARGET_CAREER: "/student/target-career",
     SKILLS: "/student/skills",
     SELECT_SKILLS: "/student/skills/select"
   },
+  CAREER_ROLES: {
+    LIST: "/career-roles"
+  },
   ROADMAP: {
+    STUDENT_ROADMAP: "/student/roadmap",
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
   STUDENT_DASHBOARD: {

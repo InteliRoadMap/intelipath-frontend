@@ -35,7 +35,7 @@ export default function AIMentorPage() {
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
-    { label: "My Roadmap", icon: Map, path: ROUTES.STUDENT_ROADMAP || "/roadmap/student" },
+    { label: "My Roadmap", icon: Map, path: ROUTES.DASHBOARD_STUDENT_ROADMAP || "/roadmap/student" },
     { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
     { label: "Market Pulse", icon: TrendingUp, path: "/market" }
   ]
