@@ -7,6 +7,7 @@ export const ROUTES = {
   OAUTH_CALLBACK: '/auth/callback',
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
+  DASHBOARD_STUDENT_ROADMAP: '/dashboard/student/roadmap',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_ADMIN: '/dashboard/admin',

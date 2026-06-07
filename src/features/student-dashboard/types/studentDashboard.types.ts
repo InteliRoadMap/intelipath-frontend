@@ -4,9 +4,40 @@ export type RoadmapStep = {
   title: string
 }
 
+export type RoadmapNodeStatus = "completed" | "current" | "locked"
+
+export type RoadmapResource = {
+  title: string
+  url: string
+  type?: string
+}
+
+export type RoadmapNode = {
+  id: string
+  title: string
+  status: RoadmapNodeStatus
+  description?: string
+  level?: number
+  resources: RoadmapResource[]
+  children: RoadmapNode[]
+}
+
 export type RoadmapProgress = {
   steps: RoadmapStep[]
   aiTip?: string
+}
+
+export type StudentRoadmap = {
+  targetCareerRole?: string
+  progress?: number
+  nodes: RoadmapNode[]
+}
+
+export type CareerRole = {
+  careerId: string
+  careerName: string
+  prerequisite?: string
+  description?: string
 }
 
 export type SkillGap = {

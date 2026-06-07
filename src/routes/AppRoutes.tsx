@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom"
-import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
+import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
 import { ProtectedRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
 
@@ -28,6 +28,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_ROADMAP}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentRoadmap />
           </ProtectedRoute>
         }
       />

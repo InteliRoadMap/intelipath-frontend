@@ -1,7 +1,5 @@
 import { useState } from "react"
-import { Bot, LayoutDashboard, Map, TrendingUp } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { DashboardUserActions, Logo } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import robotHead from "@/assets/robot/head.png"
@@ -18,6 +16,7 @@ import {
 } from "./StudentDashboardWidgets"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
+import StudentTopNav from "./StudentTopNav"
 
 const studentSections = [
   { id: "overview", label: "Overview" },
@@ -42,32 +41,11 @@ export default function StudentDashboardView() {
 
   return (
     <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
-      <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
-        <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon className="scale-90 origin-left" />
-
-          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
-            <a href="#" className="flex items-center gap-2 border-b-[3px] border-[#00838f] py-4 -mb-3.5 text-[#00838f] transition-colors">
-              <LayoutDashboard size={16} />
-              Dashboard
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <Map size={16} />
-              My Roadmap
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <Bot size={16} />
-              AI Mentor
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <TrendingUp size={16} />
-              Market Pulse
-            </a>
-          </div>
-        </div>
-
-        <DashboardUserActions user={user} onLogout={handleLogout} />
-      </nav>
+      <StudentTopNav
+        user={user}
+        onLogout={handleLogout}
+        onOpenAiMentor={() => setIsAiMentorOpen(true)}
+      />
 
       <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
         <aside className="hidden xl:block">
