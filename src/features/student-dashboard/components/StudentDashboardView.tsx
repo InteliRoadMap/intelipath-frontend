@@ -2,6 +2,7 @@ import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { DiagonalGridBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import robotHead from "@/assets/robot/head.png"
@@ -92,14 +93,16 @@ export default function StudentDashboardView() {
   }
 
   return (
-    <div ref={dashboardRef} className="relative min-h-screen bg-[#f8fafc] pb-20 pt-[74px] font-sans text-slate-900">
+    <div ref={dashboardRef} className="relative min-h-screen overflow-hidden bg-[#f9fafb] pb-20 pt-[74px] font-sans text-slate-900">
+      <DiagonalGridBackground />
+
       <StudentTopNav
         user={user}
         onLogout={handleLogout}
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
+      <main className="relative z-10 mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
         <aside className="student-gsap-sidebar hidden xl:block">
           <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
             <p className="mb-4 text-[13px] font-medium text-slate-400">Sections</p>

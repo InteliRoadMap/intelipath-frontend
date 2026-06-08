@@ -17,7 +17,7 @@ import {
   TreeStructure
 } from "@phosphor-icons/react"
 import { careerApi, roadmapApi, updateApi } from "@/api"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, RouteProgressBar } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DiagonalGridBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import robotHead from "@/assets/robot/head.png"
@@ -466,7 +466,9 @@ export default function StudentRoadmapPageView() {
   }, { scope: pageRef, dependencies: [showCareerSelector, levels.length], revertOnUpdate: true })
 
   return (
-    <div ref={pageRef} className="relative min-h-screen bg-[#f8fafc] pb-20 pt-[74px] font-sans text-slate-900">
+    <div ref={pageRef} className="relative min-h-screen overflow-hidden bg-[#f9fafb] pb-20 pt-[74px] font-sans text-slate-900">
+      <DiagonalGridBackground />
+
       {(isInitialLoading || isRoadmapLoading) && <RouteProgressBar />}
 
       <StudentTopNav
@@ -476,7 +478,7 @@ export default function StudentRoadmapPageView() {
       />
 
       <main
-        className={`mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 ${
+        className={`relative z-10 mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 ${
           showRoadmapSidebar ? "xl:grid-cols-[220px_minmax(0,1fr)]" : ""
         }`}
       >
