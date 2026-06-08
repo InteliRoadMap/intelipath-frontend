@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom"
-import { MapTrifold, Robot, SquaresFour, TrendUp } from "@phosphor-icons/react"
+import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard } from "@phosphor-icons/react"
 import { DashboardUserActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
@@ -29,6 +29,10 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
           <NavLink to={ROUTES.DASHBOARD_STUDENT_ROADMAP} className={navLinkClass}>
             <MapTrifold size={17} weight="duotone" />
             My Roadmap
+          </NavLink>
+          <NavLink to={ROUTES.DASHBOARD_STUDENT_PORTFOLIO} className={navLinkClass}>
+            <IdentificationCard size={17} weight="duotone" />
+            E-Portfolio
           </NavLink>
           <button
             type="button"

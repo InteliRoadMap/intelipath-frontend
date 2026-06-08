@@ -217,7 +217,7 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((gap) => (
             <div
               key={gap.id}
@@ -279,7 +279,7 @@ export const MentorFeedbackWidget = () => {
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((feedback) => (
             <div key={feedback.id} className="relative pl-4">
               <div className="absolute bottom-0 left-0 top-0 w-[5px] rounded-full bg-[#00838f] opacity-90" />
@@ -395,7 +395,7 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((item, index) => (
             <div
               key={item.id}
@@ -449,7 +449,7 @@ export const PriorityLearningWidget = () => {
           <div className="md:col-span-2">
             <LoadingState rows={4} />
           </div>
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((item) => (
             <div key={item.id} className="flex h-full flex-col rounded-lg border border-slate-200 bg-[#f8fafc] p-5">
               <div className="mb-4 flex items-start justify-between">
@@ -517,13 +517,15 @@ export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
           </div>
           <div className="flex flex-1 flex-col justify-end">
             <div className="mb-4 flex h-28 items-end justify-between gap-1.5">
-              {data.chart.map((height, i) => (
+              {Array.isArray(data.chart) ? data.chart.map((height, i) => (
                 <div
                   key={i}
                   className={`w-full rounded-t-sm ${i === data.chart.length - 1 ? "bg-[#006064]" : "bg-[#a3c9c9]"}`}
                   style={{ height: `${height}%` }}
                 />
-              ))}
+              )) : (
+                <div className="w-full text-center text-xs text-slate-400">No chart data</div>
+              )}
             </div>
             <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-800">
               Projected Demand For K8s Masters

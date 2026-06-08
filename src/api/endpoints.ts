@@ -60,5 +60,8 @@ export const ENDPOINTS = {
     METRICS_MENTEES: '/mentor/dashboard/metrics/mentees',
     PENDING_REVIEWS: '/mentor/dashboard/pending-reviews',
     INSIGHT: '/mentor/dashboard/insight',
+    CAREER_DISTRIBUTION: '/mentor/dashboard/career-distribution',
+    STUDENT_LIST: '/mentor/feedback/students',
+    STUDENT_PORTFOLIO: (studentId: string) => `/mentor/portfolio/${studentId}`
   }
 } as const;
