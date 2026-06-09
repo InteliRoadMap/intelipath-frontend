@@ -7,6 +7,7 @@ export interface PortfolioData {
     textColor: string;
     bgPrimary: string;
     bgSecondary: string;
+    radius: string;
   };
   fonts: {
     heading: string;
@@ -61,6 +62,7 @@ let mockPortfolioData: PortfolioData = {
     textColor: '#cbd5e1',
     bgPrimary: '#0d0f17',
     bgSecondary: '#151722',
+    radius: '16px',
   },
   fonts: {
     heading: "'Outfit', sans-serif",

@@ -57,6 +57,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
     document.documentElement.style.setProperty('--bg-primary', data.themeColors.bgPrimary);
     document.documentElement.style.setProperty('--bg-secondary', data.themeColors.bgSecondary);
     document.documentElement.style.setProperty('--card-background', data.themeColors.bgSecondary);
+    document.documentElement.style.setProperty('--card-radius', data.themeColors.radius || '16px');
     document.documentElement.style.setProperty('--heading-font', data.fonts?.heading || "'Outfit', sans-serif");
     document.documentElement.style.setProperty('--body-font', data.fonts?.body || "'Inter', sans-serif");
   }, [data.theme, data.themeColors, data.fonts]);
@@ -108,6 +109,20 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
     }));
   };
 
+  const updateThemePreset = (colors: { primaryColor: string; titleColor: string; textColor: string }) => {
+    setData(prev => ({
+      ...prev,
+      themeColors: { ...prev.themeColors, ...colors }
+    }));
+  };
+
+  const updateThemeRadius = (radius: string) => {
+    setData(prev => ({
+      ...prev,
+      themeColors: { ...prev.themeColors, radius }
+    }));
+  };
+
   const updateFont = (key: 'heading' | 'body', font: string) => {
     setData(prev => ({
       ...prev,
@@ -116,19 +131,20 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
   };
 
   const toggleTheme = () => {
-    setData(prev => ({
-      ...prev,
-      theme: prev.theme === 'dark' ? 'light' : 'dark',
-      themeColors: prev.theme === 'dark' ? {
-        primaryColor: prev.themeColors.primaryColor,
-        bgPrimary: '#f8fafc',
-        bgSecondary: '#f1f5f9'
-      } : {
-        primaryColor: prev.themeColors.primaryColor,
-        bgPrimary: '#0d0f17',
-        bgSecondary: '#151722'
-      }
-    }));
+    setData(prev => {
+      const isCurrentlyDark = prev.theme === 'dark';
+      return {
+        ...prev,
+        theme: isCurrentlyDark ? 'light' : 'dark',
+        themeColors: {
+          ...prev.themeColors,
+          bgPrimary: isCurrentlyDark ? '#f8fafc' : '#0d0f17',
+          bgSecondary: isCurrentlyDark ? '#ffffff' : '#151722',
+          titleColor: isCurrentlyDark ? '#0f172a' : '#f8fafc',
+          textColor: isCurrentlyDark ? '#334155' : '#cbd5e1',
+        }
+      };
+    });
   };
 
   return (
@@ -144,49 +160,51 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
           primaryColor={data.themeColors.primaryColor} 
           titleColor={data.themeColors.titleColor}
           textColor={data.themeColors.textColor}
+          radius={data.themeColors.radius || '16px'}
           headingFont={data.fonts?.heading || "'Outfit', sans-serif"}
           bodyFont={data.fonts?.body || "'Inter', sans-serif"}
           onChangeColor={updateTheme}
+          onApplyPreset={updateThemePreset}
+          onChangeRadius={updateThemeRadius}
           onChangeFont={updateFont}
         />
       )}
 
       {/* NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 flex items-center justify-between border-b border-slate-200 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-4 py-3 md:px-8 transition-colors">
+      <nav className="fixed top-0 w-full z-50 flex items-center justify-between border-b border-slate-200/20 px-4 py-3 md:px-8 transition-colors backdrop-blur-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-primary) 50%, transparent)' }}>
         <div className="flex items-center gap-6">
-          <div className="logo text-lg font-bold font-outfit text-slate-800 dark:text-white">
+          <div className="logo text-lg font-bold font-outfit text-[var(--title-color)]">
             <span className="text-[var(--primary-color)]">IN</span>TELIPATH<span className="text-[var(--primary-color)]">.</span>
           </div>
-          <ul className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500 dark:text-slate-400">
-            <li><a href="#hero" className="hover:text-slate-800 dark:hover:text-white transition-colors">Home</a></li>
-            <li><a href="#education" className="hover:text-slate-800 dark:hover:text-white transition-colors">Education</a></li>
-            <li><a href="#skills" className="hover:text-slate-800 dark:hover:text-white transition-colors">Skills</a></li>
-            <li><a href="#projects" className="hover:text-slate-800 dark:hover:text-white transition-colors">Projects</a></li>
+          <ul className="hidden md:flex items-center gap-6 text-sm font-semibold text-[var(--text-color)]">
+            <li><a href="#hero" className="hover:text-[var(--primary-color)] transition-colors">Home</a></li>
+            <li><a href="#education" className="hover:text-[var(--primary-color)] transition-colors">Education</a></li>
+            <li><a href="#skills" className="hover:text-[var(--primary-color)] transition-colors">Skills</a></li>
+            <li><a href="#projects" className="hover:text-[var(--primary-color)] transition-colors">Projects</a></li>
           </ul>
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 pr-4">
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400"><i className="fas fa-sun"></i></span>
-            <button 
-              onClick={toggleTheme}
+          <button className="flex items-center gap-2" onClick={toggleTheme}>
+            <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-sun"></i></span>
+            <button
+              type="button"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${data.theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`}
-              title="Toggle Dark Mode"
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400"><i className="fas fa-moon"></i></span>
-          </div>
+            <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-moon"></i></span>
+          </button>
           
-          <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Preview</span>
+          <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
+            <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
             <button 
               onClick={() => setIsEditMode(!isEditMode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-300 dark:bg-slate-600'}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
-            <span className="text-sm font-semibold text-slate-800 dark:text-white">Edit</span>
+            <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
           </div>
         </div>
       </nav>
@@ -276,7 +294,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
             {data.education.map((edu, idx) => (
               <div key={edu.id} className="relative pl-12 mb-12 last:mb-0 group">
                 <div className="absolute left-[-17px] top-1 w-8 h-8 rounded-full bg-[var(--bg-primary)] border-4 border-[var(--primary-color)] shadow-sm group-hover:bg-[var(--primary-color)] transition-colors"></div>
-                <div className="bg-[var(--bg-primary)] rounded-2xl p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1">
+                <div className="bg-[var(--bg-primary)] p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1" style={{ borderRadius: 'var(--card-radius)' }}>
                   <div className="flex justify-between items-start mb-2">
                     <EditableText isEditable={isEditMode} value={edu.university} onChange={val => {
                       const newEdu = [...data.education];
@@ -329,7 +347,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
             {data.skills.map((skill, idx) => (
               <div key={skill.id} className="relative pl-12 mb-12 last:mb-0 group">
                 <div className="absolute left-[-17px] top-1 w-8 h-8 rounded-full bg-[var(--bg-primary)] border-4 border-[var(--primary-color)] shadow-sm group-hover:bg-[var(--primary-color)] transition-colors"></div>
-                <div className="bg-[var(--bg-secondary)] rounded-2xl p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1">
+                <div className="bg-[var(--bg-secondary)] p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1" style={{ borderRadius: 'var(--card-radius)' }}>
                   <div className="flex justify-between items-start mb-2">
                     <EditableText isEditable={isEditMode} value={skill.category} onChange={val => {
                       const newSkills = [...data.skills];
@@ -376,7 +394,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
           <h2 className="text-4xl text-center font-bold font-outfit mb-16 text-[var(--title-color)]">Featured Projects</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {data.projects.map((proj, idx) => (
-              <div key={proj.id} className="bg-[var(--bg-primary)] rounded-2xl overflow-hidden shadow-lg border border-[var(--border-color)] flex flex-col group transition-transform hover:-translate-y-2 relative">
+              <div key={proj.id} className="bg-[var(--bg-primary)] overflow-hidden shadow-lg border border-[var(--border-color)] flex flex-col group transition-transform hover:-translate-y-2 relative" style={{ borderRadius: 'var(--card-radius)' }}>
                 {isEditMode && (
                   <button onClick={() => {
                     setData({ ...data, projects: data.projects.filter(p => p.id !== proj.id) });
@@ -447,8 +465,11 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
             ))}
             {isEditMode && (
               <button onClick={() => {
-                setData({ ...data, projects: [...data.projects, { id: 'proj-'+Date.now(), title: 'New Project', tech: 'Tech Stack', description: 'Description', codeLink: '#', demoLink: '#', icon: 'fas fa-code' }] });
-              }} className="border-2 border-dashed border-[var(--border-color)] rounded-2xl flex items-center justify-center flex-col gap-4 text-[var(--text-color)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition-colors h-full min-h-[400px]">
+                setData({
+                  ...data,
+                  projects: [...data.projects, { id: 'proj-'+Date.now(), title: 'New Project', tech: 'Tech Stack', description: 'Description', icon: 'fas fa-code', codeLink: '#', demoLink: '#' }]
+                })
+              }} className="border-2 border-dashed border-[var(--border-color)] flex items-center justify-center flex-col gap-4 text-[var(--text-color)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition-colors h-full min-h-[400px]" style={{ borderRadius: 'var(--card-radius)' }}>
                 <i className="fas fa-plus text-4xl"></i>
                 <span className="font-bold text-xl">Add Project</span>
               </button>
@@ -459,13 +480,15 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
 
       {/* FOOTER */}
       <footer id="footer" className="reveal bg-[var(--bg-primary)] py-16 text-center border-t border-[var(--border-color)]">
-        <h2 className="text-3xl font-bold font-outfit text-[var(--title-color)] mb-6">Get in <span className="text-[var(--primary-color)]">touch</span>.</h2>
-        <div className="flex justify-center gap-6 mb-6">
+        <h2 className="text-3xl font-bold font-outfit text-[var(--title-color)] mb-8">Get in <span className="text-[var(--primary-color)]">touch</span>.</h2>
+        <div className="flex justify-center gap-6 mb-8">
           <a href="#" className="text-3xl text-[var(--text-color)] hover:text-[var(--primary-color)] transition-transform hover:-translate-y-1"><i className="fab fa-linkedin"></i></a>
-          <a href="#" className="text-3xl text-[var(--text-color)] hover:text-[var(--primary-color)] transition-transform hover:-translate-y-1"><i className="fab fa-behance"></i></a>
-          <a href="#" className="text-3xl text-[var(--text-color)] hover:text-[var(--primary-color)] transition-transform hover:-translate-y-1"><i className="fas fa-envelope"></i></a>
+          <a href="#" className="text-3xl text-[var(--text-color)] hover:text-[var(--primary-color)] transition-transform hover:-translate-y-1"><i className="fab fa-github"></i></a>
+          <a href="mailto:intelipath@gmail.com" className="text-3xl text-[var(--text-color)] hover:text-[var(--primary-color)] transition-transform hover:-translate-y-1"><i className="fas fa-envelope"></i></a>
         </div>
-        <p className="text-[var(--text-color)]">Interested in collaborating? <a href={`mailto:${data.hero.contact.email}`} className="text-[var(--primary-color)] font-bold">{data.hero.contact.email}</a></p>
+        <p className="text-[var(--text-color)] mb-8">Interested in collaborating? <a href="mailto:intelipath@gmail.com" className="text-[var(--primary-color)] font-bold">intelipath@gmail.com</a></p>
+        
+        <p className="text-[var(--text-color)] text-sm font-semibold">© 2026 IntelPath.</p>
       </footer>
     </div>
   );

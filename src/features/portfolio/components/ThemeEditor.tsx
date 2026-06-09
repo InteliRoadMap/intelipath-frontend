@@ -4,9 +4,12 @@ interface ThemeEditorProps {
   primaryColor: string;
   titleColor: string;
   textColor: string;
+  radius: string;
   headingFont: string;
   bodyFont: string;
   onChangeColor: (key: 'primaryColor' | 'titleColor' | 'textColor', color: string) => void;
+  onChangeRadius: (radius: string) => void;
+  onApplyPreset: (colors: { primaryColor: string; titleColor: string; textColor: string }) => void;
   onChangeFont: (key: 'heading' | 'body', font: string) => void;
 }
 
@@ -18,8 +21,20 @@ const FONTS = [
   { label: 'Fira Code', value: "'Fira Code', monospace" }
 ];
 
+const THEME_PRESETS = [
+  { name: 'Midnight', colors: { primaryColor: '#a78bfa', titleColor: '#f8fafc', textColor: '#cbd5e1' } },
+  { name: 'Ocean', colors: { primaryColor: '#38bdf8', titleColor: '#f0f9ff', textColor: '#bae6fd' } },
+  { name: 'Forest', colors: { primaryColor: '#4ade80', titleColor: '#f0fdf4', textColor: '#bbf7d0' } }
+];
+
+const RADIUS_OPTIONS = [
+  { label: 'Sharp', value: '0px' },
+  { label: 'Rounded', value: '16px' },
+  { label: 'Pill', value: '40px' }
+];
+
 export const ThemeEditor: React.FC<ThemeEditorProps> = ({ 
-  primaryColor, titleColor, textColor, headingFont, bodyFont, onChangeColor, onChangeFont 
+  primaryColor, titleColor, textColor, radius, headingFont, bodyFont, onChangeColor, onChangeRadius, onApplyPreset, onChangeFont 
 }) => {
   
   const ColorControl = ({ label, value, colorKey }: { label: string, value: string, colorKey: 'primaryColor'|'titleColor'|'textColor' }) => (
@@ -58,14 +73,50 @@ export const ThemeEditor: React.FC<ThemeEditorProps> = ({
   );
 
   return (
-    <div className="fixed bottom-8 right-8 bg-slate-800 text-white p-5 rounded-2xl shadow-2xl z-50 border border-slate-700 w-72">
-      <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><i className="fas fa-paint-roller text-primary-500"></i> Theme Editor</h3>
+    <div className="fixed bottom-8 right-8 bg-slate-800 text-white p-5 rounded-2xl shadow-2xl z-50 border border-slate-700 w-72 max-h-[85vh] overflow-y-auto custom-scrollbar">
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><i className="fas fa-paint-roller text-[var(--primary-color)]"></i> Theme Editor</h3>
       
       <div className="mb-6">
-        <h4 className="text-sm font-bold border-b border-slate-700 pb-2 mb-3 text-slate-300">Colors</h4>
+        <h4 className="text-sm font-bold border-b border-slate-700 pb-2 mb-3 text-slate-300">Color Presets</h4>
+        <div className="flex gap-2">
+          {THEME_PRESETS.map(preset => (
+            <button
+              key={preset.name}
+              onClick={() => onApplyPreset(preset.colors)}
+              className="flex-1 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded-lg py-2 flex flex-col items-center gap-1 transition-colors"
+              title={preset.name}
+            >
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.colors.primaryColor }}></div>
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.colors.titleColor }}></div>
+              </div>
+              <span className="text-[10px] uppercase font-semibold text-slate-400">{preset.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h4 className="text-sm font-bold border-b border-slate-700 pb-2 mb-3 text-slate-300">Custom Colors</h4>
         <ColorControl label="Primary Accent" value={primaryColor} colorKey="primaryColor" />
         <ColorControl label="Title Color" value={titleColor} colorKey="titleColor" />
         <ColorControl label="Text Color" value={textColor} colorKey="textColor" />
+      </div>
+
+      <div className="mb-6">
+        <h4 className="text-sm font-bold border-b border-slate-700 pb-2 mb-3 text-slate-300">Layout Style</h4>
+        <label className="text-xs text-slate-400 block mb-2 uppercase tracking-wider font-semibold">Border Radius</label>
+        <div className="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700">
+          {RADIUS_OPTIONS.map(opt => (
+            <button
+              key={opt.label}
+              onClick={() => onChangeRadius(opt.value)}
+              className={`flex-1 text-xs py-1.5 rounded-md font-semibold transition-colors ${radius === opt.value ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div>
