@@ -134,7 +134,7 @@ export function MentorStudentsView() {
               </NavLink>
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </header>
 
@@ -257,13 +257,7 @@ export function MentorStudentsView() {
                           <Button 
                             variant="outline"
                             className="h-8 text-xs font-semibold"
-                            onClick={() => {
-                              if (student.portfolio_url) {
-                                window.open(student.portfolio_url, '_blank');
-                              } else {
-                                navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':studentId', student.id));
-                              }
-                            }}
+                            onClick={() => navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO)}
                           >
                             <Eye size={14} weight="bold" className="mr-1.5" /> View Portfolio
                           </Button>

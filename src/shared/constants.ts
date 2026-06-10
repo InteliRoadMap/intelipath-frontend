@@ -9,11 +9,13 @@ export const ROUTES = {
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_STUDENT_ROADMAP: '/dashboard/student/roadmap',
   DASHBOARD_STUDENT_PORTFOLIO: '/dashboard/student/portfolio',
+  DASHBOARD_STUDENT_FEEDBACK: '/dashboard/student/feedback',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_MENTOR_STUDENTS: '/dashboard/mentor/students',
   DASHBOARD_MENTOR_FEEDBACK: '/dashboard/mentor/feedback',
   DASHBOARD_MENTOR_PORTFOLIO: '/dashboard/mentor/portfolio/:studentId',
+  DASHBOARD_MENTOR_SETTINGS: '/dashboard/mentor/settings',
   DASHBOARD_ADMIN: '/dashboard/admin',
 } as const
 

@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom"
-import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, CounselorDashboard, MentorDashboard, MentorStudentsPage, MentorFeedbackPage, MentorPortfolioPage, AdminDashboard, OAuthCallbackPage, NotFoundPage, StudentPortfolioPage } from "@/pages"
+import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, CounselorDashboard, MentorDashboard, MentorStudentsPage, MentorFeedbackPage, MentorPortfolioPage, AdminDashboard, OAuthCallbackPage, NotFoundPage, StudentPortfolioPage, MentorProfileSettingsPage, StudentFeedbackPage } from "@/pages"
 import { ProtectedRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
 
@@ -42,8 +42,16 @@ export const AppRoutes = () => {
       <Route
         path={ROUTES.DASHBOARD_STUDENT_PORTFOLIO}
         element={
-          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT, ROLES.MENTOR]}>
             <StudentPortfolioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_FEEDBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentFeedbackPage />
           </ProtectedRoute>
         }
       />
@@ -84,6 +92,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorPortfolioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorProfileSettingsPage />
           </ProtectedRoute>
         }
       />

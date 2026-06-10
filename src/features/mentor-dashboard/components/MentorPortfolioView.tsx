@@ -73,7 +73,7 @@ export function MentorPortfolioView() {
         </div>
 
         <div className="relative">
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </nav>
 
@@ -128,10 +128,17 @@ export function MentorPortfolioView() {
               </div>
 
               {/* Action */}
-              <div className="z-10 w-full md:w-auto">
+              <div className="z-10 w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={() => navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO)} 
+                  className="w-full md:w-auto px-6 py-3 bg-white text-[#00838f] border-2 border-[#00838f] font-bold text-[14px] rounded-xl shadow-md hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 group cursor-pointer"
+                >
+                  <ExternalLink size={16} className="group-hover:scale-110 transition-transform" />
+                  Live E-Portfolio
+                </button>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <button className="w-full md:w-auto px-6 py-3 bg-[#00838f] text-white font-bold text-[14px] rounded-xl shadow-md hover:bg-[#006064] transition-colors flex items-center justify-center gap-2 group cursor-pointer">
+                    <button className="w-full md:w-auto px-6 py-3 bg-[#00838f] text-white font-bold text-[14px] border-2 border-[#00838f] rounded-xl shadow-md hover:bg-[#006064] hover:border-[#006064] transition-colors flex items-center justify-center gap-2 group cursor-pointer">
                       <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                       Provide Feedback
                     </button>

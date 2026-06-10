@@ -73,7 +73,7 @@ let mockPortfolioData: PortfolioData = {
     greeting: 'Hi!',
     name: 'Student Name', // Maps to users.full_name
     role: 'Software Engineering', // Maps to students.major
-    description: 'based in the US with experience in building elegant, accessible, and high-performance user interfaces.',
+    description: 'This is a brief description about the student.',
     objective: 'This is my bio...', // Maps to users.bio
     contact: [
       { id: 'contact-1', type: 'Email', value: 'student@example.com', icon: 'fas fa-envelope' }

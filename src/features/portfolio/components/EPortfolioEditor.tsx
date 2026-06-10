@@ -8,6 +8,13 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import '@/features/portfolio/styles.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context';
+import mentorApi from '@/api/mentorApi';
+import { Dialog, DialogTrigger } from '@/components/ui';
+import { ROUTES } from '@/shared';
+import { Send } from 'lucide-react';
+import { FeedbackModal } from './FeedbackModal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,11 +23,24 @@ interface Props {
 }
 
 export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isMentor = user?.role === 'MENTOR';
+
   const [data, setData] = useState<PortfolioData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(!isMentor);
   const [iconPickerProjectIdx, setIconPickerProjectIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isMentor) {
+      setIsEditMode(false);
+    }
+  }, [isMentor]);
+
+  // Mentor Feedback State
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   
   // Auto-save logic
   const debouncedData = useDebounce(data, 1500); // 1.5s delay after stop typing
@@ -196,18 +216,55 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
             <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-moon"></i></span>
           </button>
           
-          <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
-            <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
-            <button 
-              onClick={() => setIsEditMode(!isEditMode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-            <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
-          </div>
+          {!isMentor && (
+            <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
+              <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
+              <button 
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
+            </div>
+          )}
         </div>
       </nav>
+
+      {/* BACK TO HOME BUTTON */}
+      <button 
+        onClick={() => navigate(isMentor ? ROUTES.DASHBOARD_MENTOR_STUDENTS : "/dashboard/student")}
+        style={{ color: 'var(--text-color)', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--text-color)' }}
+        className="fixed bottom-8 left-4 md:left-8 z-50 hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] px-4 py-2.5 rounded-full shadow-lg border transition-all flex items-center gap-2 text-sm font-semibold group hover:-translate-y-1 hover:shadow-[var(--primary-color)]/20 cursor-pointer"
+      >
+        <i className="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+        <span>Back to InteliPath</span>
+      </button>
+
+      {/* MENTOR FLOATING FEEDBACK BUTTON */}
+      {isMentor && (
+        <>
+          <button 
+            onClick={() => setIsFeedbackOpen(true)}
+            className="fixed bottom-8 right-4 md:right-8 z-50 px-6 py-3 bg-[#0f172a] text-white font-bold text-[14px] rounded-full shadow-xl hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group cursor-pointer border-2 border-white/10"
+          >
+            <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            Provide Feedback
+          </button>
+
+          <FeedbackModal 
+            isOpen={isFeedbackOpen} 
+            onClose={() => setIsFeedbackOpen(false)}
+            studentData={{
+              id: data.studentId,
+              name: data.hero.name,
+              role: data.hero.role,
+              avatarUrl: data.hero.avatarUrl,
+              completionPercent: 85
+            }}
+          />
+        </>
+      )}
 
       {/* HERO SECTION */}
       <header id="hero" className="relative min-h-screen pt-32 pb-16 overflow-hidden bg-[var(--bg-primary)] flex flex-col justify-center">

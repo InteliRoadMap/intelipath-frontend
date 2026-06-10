@@ -90,7 +90,7 @@ export function MentorDashboardView() {
               </NavLink>
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </header>
 

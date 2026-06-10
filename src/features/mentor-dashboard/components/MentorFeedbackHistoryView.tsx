@@ -22,6 +22,14 @@ import {
   Logo,
   Skeleton
 } from "@/components";
+import { 
+  Dialog, 
+  DialogTrigger, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle as UIDialogTitle, 
+  DialogDescription 
+} from "@/components/ui";
 
 export function MentorFeedbackHistoryView() {
   const { user, logout } = useAuth();
@@ -29,6 +37,7 @@ export function MentorFeedbackHistoryView() {
   
   const [feedbackList, setFeedbackList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
 
   useEffect(() => {
     mentorApi.getFeedbackHistory()
@@ -99,7 +108,7 @@ export function MentorFeedbackHistoryView() {
               </NavLink>
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </header>
 
@@ -111,8 +120,33 @@ export function MentorFeedbackHistoryView() {
             <div>
               <CardTitle className="text-xl font-bold">Feedback History</CardTitle>
               <CardDescription>
-                A record of all the professional feedback you have provided to students.
+                {activeTab === 'sent' 
+                  ? 'A record of all the professional feedback you have provided to students.'
+                  : 'Feedback and ratings you have received from students.'}
               </CardDescription>
+            </div>
+            
+            <div className="flex bg-slate-100 p-1 rounded-xl self-start xl:self-auto shrink-0">
+              <button
+                onClick={() => setActiveTab('sent')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === 'sent' 
+                    ? 'bg-white text-slate-900 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Sent to Students
+              </button>
+              <button
+                onClick={() => setActiveTab('received')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === 'received' 
+                    ? 'bg-white text-slate-900 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Received
+              </button>
             </div>
           </CardHeader>
 
@@ -128,9 +162,9 @@ export function MentorFeedbackHistoryView() {
                 </colgroup>
                 <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
                   <tr>
-                    <th className="px-5 py-3">Student</th>
+                    <th className="px-5 py-3">{activeTab === 'sent' ? 'Student' : 'From Student'}</th>
                     <th className="px-5 py-3">Career</th>
-                    <th className="px-5 py-3">Submitted At</th>
+                    <th className="px-5 py-3">{activeTab === 'sent' ? 'Submitted At' : 'Received At'}</th>
                     <th className="px-5 py-3">Status</th>
                     <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
@@ -146,7 +180,7 @@ export function MentorFeedbackHistoryView() {
                     </tr>
                   ))}
                   
-                  {!isLoading && feedbackList.map((item) => (
+                  {activeTab === 'sent' && !isLoading && feedbackList.map((item) => (
                     <tr key={item.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                       <td className="px-5 py-4 align-middle">
                         <div className="flex items-center gap-3">
@@ -167,19 +201,47 @@ export function MentorFeedbackHistoryView() {
                       </td>
                       <td className="px-5 py-4 align-middle">
                         {item.status === 'read' ? (
-                          <Badge variant="outline" className="text-emerald-700 bg-emerald-50 border-emerald-200">Read</Badge>
+                          <Badge variant="default" className="text-emerald-700 bg-emerald-50 border-emerald-200">Read</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-200">Unread</Badge>
+                          <Badge variant="default" className="text-amber-700 bg-amber-50 border-amber-200">Unread</Badge>
                         )}
                       </td>
                       <td className="px-5 py-4 align-middle">
                         <div className="flex items-center justify-end">
-                          <Button 
-                            variant="ghost"
-                            className="h-8 text-xs font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50"
-                          >
-                            <Eye size={14} weight="bold" className="mr-1.5" /> View
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost"
+                                className="h-8 text-xs font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50"
+                              >
+                                <Eye size={14} weight="bold" className="mr-1.5" /> View
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[500px]">
+                              <DialogHeader>
+                                <UIDialogTitle>Feedback Details</UIDialogTitle>
+                                <DialogDescription>
+                                  Feedback for {item.studentName} ({item.career})
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="mt-2 space-y-4 text-sm text-slate-700">
+                                <div className="flex items-center">
+                                  <span className="font-bold text-slate-900 w-20">Type:</span> 
+                                  <Badge variant="outline">{item.type || 'General'}</Badge>
+                                </div>
+                                <div className="flex items-center">
+                                  <span className="font-bold text-slate-900 w-20">Date:</span> 
+                                  <span>{new Date(item.submittedAt).toLocaleString()}</span>
+                                </div>
+                                <div className="pt-2">
+                                  <span className="font-bold text-slate-900 block mb-2">Message Content:</span>
+                                  <p className="p-4 bg-slate-50/80 rounded-xl whitespace-pre-wrap border border-slate-100 leading-relaxed text-slate-700">
+                                    {item.content || "No content provided."}
+                                  </p>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </td>
                     </tr>
@@ -187,12 +249,22 @@ export function MentorFeedbackHistoryView() {
                 </tbody>
               </table>
               
-              {!isLoading && feedbackList.length === 0 && (
-                <div className="grid min-h-64 place-items-center px-5 text-center">
+              {activeTab === 'sent' && !isLoading && feedbackList.length === 0 && (
+                <div className="grid min-h-[300px] place-items-center px-5 text-center">
                   <div>
-                    <ChatTeardropText className="mx-auto text-slate-300" size={32} weight="duotone" />
-                    <p className="mt-3 text-sm font-semibold text-slate-700">No feedback submitted yet</p>
-                    <p className="mt-1 text-xs text-slate-500">Go to the Students directory to review portfolios.</p>
+                    <ChatTeardropText className="mx-auto text-slate-300" size={36} weight="duotone" />
+                    <p className="mt-3 text-[15px] font-bold text-slate-700">No feedback submitted yet</p>
+                    <p className="mt-1 text-sm text-slate-500">Go to the Students directory to review portfolios.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'received' && !isLoading && (
+                <div className="grid min-h-[300px] place-items-center px-5 text-center">
+                  <div>
+                    <ChatTeardropText className="mx-auto text-slate-300" size={36} weight="duotone" />
+                    <p className="mt-3 text-[15px] font-bold text-slate-700">No feedback received yet</p>
+                    <p className="mt-1 text-sm text-slate-500">You haven't received any feedback from students yet.</p>
                   </div>
                 </div>
               )}

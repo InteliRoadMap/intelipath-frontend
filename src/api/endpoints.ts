@@ -43,6 +43,9 @@ export const ENDPOINTS = {
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
     USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
   },
+  COUNSELOR: {
+    PROFILE: '/counselor/profile',
+  },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: '/counselor/dashboard/metrics/students',
     METRICS_PROGRESS: '/counselor/dashboard/metrics/progress',
@@ -63,5 +66,8 @@ export const ENDPOINTS = {
     CAREER_DISTRIBUTION: '/mentor/dashboard/career-distribution',
     STUDENT_LIST: '/mentor/feedback/students',
     STUDENT_PORTFOLIO: (studentId: string) => `/mentor/portfolio/${studentId}`
+  },
+  MENTOR: {
+    PROFILE: '/mentor/profile',
   }
 } as const;

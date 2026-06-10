@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom"
-import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard } from "@phosphor-icons/react"
+import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
 import { DashboardUserActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
