@@ -1,4 +1,5 @@
 import BaseModal from "../components/modals/BaseModal"
+import { DatePicker } from "@/components"
 import {
   User,
   Mail,
@@ -116,11 +117,9 @@ export default function StudentOnboardingModal({
                 <Calendar className="w-3.5 h-3.5 text-brand-blue" />
                 Year of Birth
               </label>
-              <input
-                type="date"
-                value={yob}
-                onChange={(e) => setyob(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue/50 focus:ring-1 focus:ring-brand-blue/50 transition-all shadow-sm"
+              <DatePicker
+                value={yob ?? ''}
+                onChange={(val) => setyob(val)}
               />
             </div>
 
@@ -162,11 +161,9 @@ export default function StudentOnboardingModal({
                   <Calendar className="w-3.5 h-3.5 text-brand-blue" />
                   Year of Admission
                 </label>
-                <input
-                  type="date"
-                  value={yearOfAdmission}
-                  onChange={(e) => setYearOfAdmission(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue/50 focus:ring-1 focus:ring-brand-blue/50 transition-all shadow-sm"
+                <DatePicker
+                  value={yearOfAdmission ?? ''}
+                  onChange={(val) => setYearOfAdmission(val)}
                 />
               </div>
 

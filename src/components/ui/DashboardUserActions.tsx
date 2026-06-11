@@ -23,7 +23,16 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
         <NotificationPanel />
         <button
           type="button"
-          onClick={onSettings || (() => navigate(ROUTES.PROFILE_SETTINGS))}
+          onClick={onSettings || (() => {
+            const roleKey = String(user?.role || 'USER').toUpperCase();
+            if (roleKey === 'MENTOR') {
+              navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings');
+            } else if (roleKey === 'COUNSELOR') {
+              navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings');
+            } else {
+              navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings');
+            }
+          })}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Settings"
         >

@@ -56,7 +56,7 @@ export default function Topbar({ userRole }: TopbarProps) {
   let activeLinks = studentLinks
 
   if (roleLower === "mentor") {
-    avatarGradient = "from-emerald-400 to-teal-600"
+    avatarGradient = "from-cyan-400 to-[#00838f]"
     initial = "M"
     activeLinks = mentorLinks
   } else if (roleLower === "counselor") {
@@ -84,7 +84,7 @@ export default function Topbar({ userRole }: TopbarProps) {
             // Adjust active colors based on role
             let activeClass = "bg-[#a5e1fa] text-[#0d5060]"
             if (roleLower === "mentor" || roleLower === "counselor") {
-              activeClass = "bg-[#bbf7d0] text-[#14532d]"
+              activeClass = "bg-[#a5e1fa] text-[#0d5060]"
             }
 
             return (

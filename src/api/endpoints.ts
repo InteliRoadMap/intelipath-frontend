@@ -22,7 +22,7 @@ export const ENDPOINTS = {
     SELECT_SKILLS: "/student/skills/select"
   },
   CAREER_ROLES: {
-    LIST: "/career-roles"
+    LIST: "/careers"
   },
   ROADMAP: {
     STUDENT_ROADMAP: "/student/roadmap",
@@ -50,9 +50,14 @@ export const ENDPOINTS = {
     METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
     METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
     LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
-    SKILL_DISTRIBUTION: "/counselor/dashboard/skill-distribution",
-    RECENT_ACTIVITY: "/counselor/dashboard/recent-activity",
-    TOP_STUDENTS: "/counselor/dashboard/top-students"
+    CAREER_DISTRIBUTION: "/counselor/dashboard",
+    MISSING_SKILLS: "/counselor/dashboard/missing-skills",
+    GET_STUDENT_FEEDBACK: "/counselor/dashboard/feedback/me",
+    GET_STUDENT_LIST: "/counselor/feedback/students",
+    HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/${studentId}`,
+    CREATE_FEEDBACK: "/counselor/feedback/create",
+    COUNSELOR_PROFILE: "/counselor/profile",
+    GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {
     WELCOME_ALERT: "/mentor/dashboard/welcome-alert",

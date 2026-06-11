@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import updateApi from "../api/updateApi"
+import counselorApi from "../api/counselorApi"
 import { useAuth } from "../context/AuthContext"
 
 export interface ProfileData {
@@ -8,9 +9,17 @@ export interface ProfileData {
   bio: string
   email: string
   role: string
+  // Student & Counselor
   university: string
+  // Student
   major: string
   year_of_admission: string
+  // Mentor
+  company: string
+  industry_focus: string
+  // Counselor
+  department: string
+  // Common
   githubProfile?: string
 }
 
@@ -23,6 +32,9 @@ const EMPTY_PROFILE: ProfileData = {
   university: "",
   major: "",
   year_of_admission: "",
+  company: "",
+  industry_focus: "",
+  department: "",
   githubProfile: ""
 }
 
@@ -38,17 +50,38 @@ export function useProfileSettings() {
     setError(null)
 
     try {
-      const studentRes = await updateApi.getStudentProfile()
-      const data = studentRes.data
+      let data: any = {}
+      if (user?.role === "COUNSELOR") {
+        const res = await counselorApi.getCounselorProfile()
+        data = res
+      } else {
+        const studentRes = await updateApi.getStudentProfile()
+        data = studentRes.data
+      }
 
       setProfileData({
         ...EMPTY_PROFILE,
         ...user,
-        ...data,
-        email: data?.email || user?.email || "",
-        role: data?.role || user?.role || "Student",
-        major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.year_of_admission || ""
+        fullName: data?.user?.fullName || user?.fullName || "",
+        yob: data?.user?.yob?.toString() || "",
+        bio: data?.user?.bio || "",
+        email: data?.user?.email || user?.email || "",
+        role: data?.user?.role || user?.role || "Student",
+
+        // Student / Counselor
+        university:
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        major: data?.student?.major || EMPTY_PROFILE.major,
+        year_of_admission: data?.student?.yearOfAdmission?.toString() || "",
+
+        // Counselor
+        department: data?.academicCounselor?.department || "",
+
+        // Mentor
+        company: data?.industryMentor?.company || "",
+        industry_focus: data?.industryMentor?.industryFocus || ""
       })
     } catch (err) {
       console.error("[ProfileSettingsPage] Error fetching profile data:", err)

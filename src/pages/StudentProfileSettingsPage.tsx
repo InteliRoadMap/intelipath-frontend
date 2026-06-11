@@ -15,7 +15,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo } from "@/components"
+import { DashboardUserActions, Logo, DatePicker } from "@/components"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 
 export default function ProfileSettingsPage() {
@@ -43,7 +43,11 @@ export default function ProfileSettingsPage() {
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
-    { label: "My Roadmap", icon: Map, path: ROUTES.DASHBOARD_STUDENT_ROADMAP || "/roadmap/student" },
+    {
+      label: "My Roadmap",
+      icon: Map,
+      path: ROUTES.DASHBOARD_STUDENT_ROADMAP || "/roadmap/student"
+    },
     { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
     { label: "Market Pulse", icon: TrendingUp, path: "/market" }
   ]
@@ -56,7 +60,9 @@ export default function ProfileSettingsPage() {
 
           <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path || (item.path === ROUTES.DASHBOARD && location.pathname === "/")
+              const isActive =
+                location.pathname === item.path ||
+                (item.path === ROUTES.DASHBOARD && location.pathname === "/")
               return (
                 <a
                   key={item.label}
@@ -169,11 +175,9 @@ export default function ProfileSettingsPage() {
                         <Calendar size={16} className="text-brand-blue" />
                         Year of Birth
                       </label>
-                      <input
-                        type="date"
-                        value={profileData.yob}
-                        onChange={(e) => handleChange("yob", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                      <DatePicker
+                        value={profileData.yob ?? ''}
+                        onChange={(val) => handleChange("yob", val)}
                       />
                     </div>
                     <div>
@@ -195,11 +199,9 @@ export default function ProfileSettingsPage() {
                         <Calendar size={16} className="text-brand-blue" />
                         Year of Admission
                       </label>
-                      <input
-                        type="date"
-                        value={profileData.year_of_admission}
-                        onChange={(e) => handleChange("year_of_admission", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                      <DatePicker
+                        value={profileData.year_of_admission ?? ''}
+                        onChange={(val) => handleChange("year_of_admission", val)}
                       />
                     </div>
                   </div>
@@ -253,15 +255,28 @@ export default function ProfileSettingsPage() {
                     <h4 className="font-bold text-slate-900">GitHub</h4>
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   </div>
-                  <p className="text-xs text-slate-500 mb-2">
-                    Linked: @{githubName}
-                  </p>
-                  <button
-                    type="button"
-                    className="text-xs font-bold text-brand-blue hover:text-brand-electric transition-colors"
+                  <p
+                    className="text-xs text-slate-500 mb-2 truncate"
+                    title={profileData.githubProfile || "Not linked"}
                   >
-                    Sync Now
-                  </button>
+                    Linked:{" "}
+                    {profileData.githubProfile ? (
+                      <a
+                        href={
+                          profileData.githubProfile.startsWith("http")
+                            ? profileData.githubProfile
+                            : `https://${profileData.githubProfile}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:underline hover:text-brand-blue"
+                      >
+                        {profileData.githubProfile}
+                      </a>
+                    ) : (
+                      "Not linked"
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
@@ -288,36 +303,6 @@ export default function ProfileSettingsPage() {
                     aria-label="Edit email"
                   >
                     <Edit3 size={16} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="mb-1 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <ShieldCheck size={13} />
-                      Password
-                    </p>
-                    <p className="text-sm font-bold text-slate-900 tracking-widest">
-                      ************
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-brand-blue hover:text-brand-electric transition-colors"
-                    aria-label="Reset password"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.84-10.36L2 7"></path>
-                    </svg>
                   </button>
                 </div>
               </div>

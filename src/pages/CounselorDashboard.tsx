@@ -1,435 +1,859 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Settings, Bell, Users, TrendingUp, AlertTriangle, Zap,
-  ChevronDown, MessageSquare, CheckCircle, ExternalLink, Calendar, Activity, LayoutDashboard
-} from 'lucide-react';
-import { DashboardUserActions, Logo } from '@/components';
-import { useAuth } from '@/context';
-import { useNavigate } from 'react-router-dom';
-import counselorApi from '@/api/counselorApi';
-import { ROUTES } from '@/shared';
+import { useState, useRef } from "react"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from "recharts"
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  TrendingDown,
+  RefreshCw,
+  Clock,
+  BookOpen,
+  Sparkles,
+  ArrowRight,
+  AlertCircle,
+  Search
+} from "lucide-react"
+import { DashboardUserActions, Logo } from "@/components"
+import { useAuth } from "@/context"
+import { useNavigate } from "react-router-dom"
+import { ROUTES } from "@/shared"
+import type { CareerStatistics, MissingSkillItem, Feedback } from "@/api/counselorApi"
+import {
+  useCareerDistribution,
+  useMissingSkills,
+  useFeedbackList
+} from "@/hooks/useCounselorDashboard"
 
-// -- WIDGETS --
+gsap.registerPlugin(useGSAP)
 
-const MetricWidget = ({ title, icon: Icon, color, apiFunction }: { title: string, icon: any, color: 'blue' | 'red', apiFunction: () => Promise<any> }) => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// ─── Colour palette ──────────────────────────────────────────────
+const CAREER_COLORS = [
+  "#024abd",
+  "#026bff",
+  "#1876ff",
+  "#418dff",
+  "#4293ff",
+  "#69b9ff",
+  "#7ad1ff",
+  "#8dcdfb"
+]
 
-  useEffect(() => { 
-    apiFunction().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
-  }, [apiFunction]);
+const FEEDBACK_TYPE_COLOR: Record<string, string> = {
+  CAREER: "bg-[#e0f2fe] text-[#0284c7]",
+  SKILL: "bg-[#f0fdf4] text-[#16a34a]",
+  GENERAL: "bg-[#fef9c3] text-[#ca8a04]",
+  ACADEMIC: "bg-[#f3e8ff] text-[#7c3aed]",
+  OTHER: "bg-slate-100 text-slate-600"
+}
 
-  const colorStyles = color === 'blue' 
-    ? 'bg-[#e0f2fe] text-[#0284c7]' 
-    : 'bg-[#fee2e2] text-[#ef4444]';
-    
-  const badgeStyles = color === 'blue'
-    ? 'bg-[#bae6fd] text-[#0369a1]'
-    : 'bg-[#fecaca] text-[#b91c1c]';
+// ─── Shared helpers ──────────────────────────────────────────────
+function CareerTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3">
+      <p className="text-[13px] font-bold text-slate-900">
+        {payload[0].payload.careerName}
+      </p>
+      <p className="text-[13px] text-[#006064] font-semibold mt-0.5">
+        {payload[0].value} students
+      </p>
+    </div>
+  )
+}
+
+function WidgetSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-3 animate-pulse">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className="h-5 rounded bg-slate-100"
+          style={{ width: `${82 - i * 10}%` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function EmptyState({ icon: Icon, label }: { icon: any; label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+      <Icon size={36} className="mb-3 text-slate-200" />
+      <p className="text-[14px] font-medium">{label}</p>
+    </div>
+  )
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-[13px] text-rose-600 font-medium">
+      <AlertCircle size={15} />
+      {message}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WIDGET 1 – Career Distribution
+// ═══════════════════════════════════════════════════════════════
+const RADIAN = Math.PI / 180
+const renderCustomizedLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+  index
+}: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+  if (percent < 0.05) return null
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow group">
-      <div className="flex items-start justify-between mb-8">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform ${colorStyles}`}>
-          <Icon size={20} strokeWidth={2.5} />
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={13}
+      fontWeight="bold"
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  )
+}
+
+function CareerDistributionChart({
+  onSelectCareer,
+  onTotalLoaded
+}: {
+  onSelectCareer?: (name: string) => void
+  onTotalLoaded?: (total: number) => void
+}) {
+  const { data, loading, error, total } = useCareerDistribution(onTotalLoaded)
+
+  const getDistributionColor = (idx: number) => {
+    if (data.length <= 1) return CAREER_COLORS[0]
+    const colorIdx = Math.round(
+      (idx / (data.length - 1)) * (CAREER_COLORS.length - 1)
+    )
+    return CAREER_COLORS[Math.min(colorIdx, CAREER_COLORS.length - 1)]
+  }
+
+  return (
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] widget-container group hover:border-[#00838f]/30 transition-colors flex flex-col md:h-[450px]">
+      <div className="flex flex-col md:flex-row gap-8 items-stretch w-full chart-wrapper flex-1 md:min-h-0">
+        <div className="flex-1 w-full flex flex-col">
+          <div className="mb-6">
+            <h2 className="text-[18px] font-bold text-slate-900 widget-title">
+              Students by Career Path
+            </h2>
+            <p className="text-[13px] text-slate-500 mt-0.5">
+              Distribution of students across career tracks
+            </p>
+          </div>
+
+          <div className="h-[320px] w-full flex items-center justify-center relative">
+            {loading ? (
+              <div className="w-[280px] h-[280px] rounded-full bg-slate-100 animate-pulse mx-auto" />
+            ) : error ? (
+              <ErrorBanner message="Cannot load career distribution data." />
+            ) : data.length === 0 ? (
+              <EmptyState icon={BookOpen} label="No career data available" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip
+                    content={<CareerTooltip />}
+                    isAnimationActive={false}
+                  />
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={140}
+                    dataKey="studentCount"
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  >
+                    {data.map((item, idx) => (
+                      <Cell
+                        key={idx}
+                        fill={getDistributionColor(idx)}
+                        cursor="pointer"
+                        onClick={() => onSelectCareer?.(item.careerName)}
+                        className="hover:opacity-80 transition-opacity outline-none"
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
-        {isLoading ? (
-          <div className="h-6 w-12 bg-slate-100 animate-pulse rounded-md"></div>
-        ) : (
-          <span className={`text-[11px] font-bold px-2 py-1.5 rounded-md uppercase tracking-wider ${data ? badgeStyles : 'bg-slate-100 text-slate-400'}`}>
-            {data ? data.growth : '-'}
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">{title}</p>
-        {isLoading ? (
-          <div className="h-8 w-20 bg-slate-100 animate-pulse rounded-md"></div>
-        ) : (
-          <h2 className="text-[32px] font-bold text-[#006064] leading-none">
-            {data ? (data.total || data.rate || data.score) : '0'}
-          </h2>
+
+        {/* Legend on the right, aligned to top */}
+        {!loading && !error && data.length > 0 && (
+          <div className="w-full md:w-[35%] flex flex-col self-stretch min-h-0 bg-transparent md:pl-5 pt-2 legend-container">
+            <div className="flex items-center justify-between pb-3 mb-3 shrink-0">
+              <span className="text-[15px] font-bold text-slate-800">
+                Total Students
+              </span>
+              <span className="bg-[#e6f7f8] text-[#006064] px-3 py-1 rounded-lg text-[14px] font-bold">
+                {total}
+              </span>
+            </div>
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+              {data.map((item, idx) => (
+                <button
+                  key={item.careerName}
+                  type="button"
+                  onClick={() => onSelectCareer?.(item.careerName)}
+                  className="flex items-center w-full group/btn hover:bg-white p-2 -mx-2 rounded-lg transition-all"
+                >
+                  <div
+                    className="w-3.5 h-3.5 rounded-sm shrink-0 shadow-sm"
+                    style={{ background: getDistributionColor(idx) }}
+                  />
+                  <span className="text-[13.5px] text-slate-600 font-medium ml-3 text-left line-clamp-1 group-hover/btn:text-[#00838f] transition-colors">
+                    {item.careerName}
+                  </span>
+                  <span className="text-[14px] font-bold text-slate-900 ml-auto pl-2">
+                    {item.studentCount}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-const LearningActivityWidget = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => { 
-    counselorApi.getLearningActivity().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
-  }, []);
-
+// ═══════════════════════════════════════════════════════════════
+// WIDGET 2 – Missing Skills (từ getSkillMissing)
+// ═══════════════════════════════════════════════════════════════
+function SkillTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full min-h-[380px] hover:shadow-md transition-shadow">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h3 className="font-bold text-slate-900 text-[17px]">Student Learning Activity</h3>
-          <p className="text-[12px] text-slate-500">Activity trends over the selected period</p>
-        </div>
-        <div className="bg-[#f8fafc] p-1 rounded-lg flex text-[13px] font-semibold border border-slate-100 w-fit">
-          <button className="text-slate-500 px-4 py-1.5 hover:text-slate-700 transition-colors">Daily</button>
-          <button className="bg-[#006064] text-white px-4 py-1.5 rounded-md shadow-sm">Weekly</button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col justify-end relative">
-        {isLoading ? (
-          <div className="absolute inset-0 flex items-end justify-between gap-2">
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="flex-1 bg-slate-100 animate-pulse rounded-t-md" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
-            ))}
-          </div>
-        ) : data && data.length > 0 ? (
-          <>
-            {/* Background grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0 pb-8">
-              {[1,2,3,4].map(i => <div key={i} className="w-full border-t border-slate-100"></div>)}
-            </div>
-            
-            {/* Bars */}
-            <div className="flex items-end justify-between gap-1 sm:gap-4 h-[220px] z-10 relative">
-              {data.map((item: any, i: number) => {
-                const isMax = item.value === Math.max(...data.map((d: any) => d.value));
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center group">
-                    <div className="w-full flex items-end justify-center h-full pb-2">
-                      <div 
-                        className={`w-full max-w-[60px] rounded-t-sm transition-all duration-1000 ease-out group-hover:opacity-80
-                          ${isMax ? 'bg-[#006064]' : 'bg-[#bae6fd]'}`} 
-                        style={{ height: `${item.value}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-[12px] font-bold text-slate-600 mt-2">{item.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-            <Activity size={32} className="text-slate-200 mb-3" />
-            <p className="text-sm font-medium">No activity data</p>
-          </div>
-        )}
-      </div>
+    <div className="bg-white border border-slate-200 shadow-xl rounded-xl p-3 z-50">
+      <p className="text-[13px] font-bold text-slate-900">
+        {payload[0].payload.skillName}
+      </p>
+      <p className="text-[13px] text-rose-500 font-semibold mt-0.5">
+        {payload[0].value} students
+      </p>
     </div>
-  );
-};
+  )
+}
 
-const SkillDistributionWidget = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function MissingSkillsChart({
+  careerFilter,
+  onTotalLoaded
+}: {
+  careerFilter?: string
+  onTotalLoaded?: (total: number) => void
+}) {
+  const {
+    data,
+    totalStudents,
+    loading,
+    error,
+    searchInput,
+    setSearchInput,
+    activeSearch,
+    resolvedCareerName,
+    handleSearch
+  } = useMissingSkills(careerFilter, onTotalLoaded)
 
-  useEffect(() => { 
-    counselorApi.getSkillDistribution().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
-  }, []);
+  const getSkillColor = (count: number) => {
+    if (totalStudents === 0) return "#00FF19FF"
+    const ratio = count / totalStudents
+    if (ratio >= 0.75) return "#FF0000FF"
+    if (ratio >= 0.5) return "#FF8000FF"
+    if (ratio >= 0.25) return "#FFE900FF"
+    return "#00FF19FF"
+  }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
-      <h3 className="font-bold text-slate-900 text-[17px] mb-6">Skill Distribution</h3>
-
-      <div className="flex-1 space-y-6">
-        {isLoading ? (
-          Array.from({length: 4}).map((_, i) => (
-            <div key={i}>
-              <div className="flex justify-between mb-2">
-                <div className="h-4 w-24 bg-slate-100 animate-pulse rounded"></div>
-                <div className="h-4 w-8 bg-slate-100 animate-pulse rounded"></div>
-              </div>
-              <div className="h-2.5 w-full bg-slate-100 animate-pulse rounded-full"></div>
-            </div>
-          ))
-        ) : data && data.length > 0 ? (
-          data.map((skill: any) => (
-            <div key={skill.id}>
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-[13px] font-bold text-slate-800">{skill.name}</span>
-                <span className="text-[12px] font-bold text-[#00838f]">{skill.percentage}%</span>
-              </div>
-              <div className="h-2.5 w-full bg-[#f1f5f9] rounded-full overflow-hidden flex">
-                <div 
-                  className={`h-full rounded-r-full transition-all duration-1000 ease-out
-                    ${skill.percentage > 80 ? 'bg-[#006064]' : skill.percentage > 70 ? 'bg-[#0284c7]' : 'bg-[#7dd3fc]'}`} 
-                  style={{ width: `${skill.percentage}%` }}
-                ></div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400">
-            <p className="text-sm font-medium">No skills data</p>
+    <div className="flex flex-col xl:flex-row gap-6 items-stretch w-full">
+      {/* Chart Box */}
+      <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] widget-container group hover:border-[#00838f]/30 transition-colors flex flex-col md:h-[480px]">
+        <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
+          <div>
+            <h2 className="text-[18px] font-bold text-slate-900 widget-title">
+              Missing Skills
+            </h2>
+            <p className="text-[13px] text-slate-500 mt-0.5">
+              {resolvedCareerName
+                ? `Missing skills for ${resolvedCareerName}`
+                : activeSearch
+                  ? `Missing skills for ${activeSearch}`
+                  : "Search a career to view missing skills"}
+            </p>
           </div>
-        )}
-      </div>
-      
-      <div className="mt-8 pt-4 border-t border-slate-100 text-center">
-        <button className="text-[13px] font-bold text-[#006064] hover:text-[#00838f] transition-colors">
-          View Full Skill Matrix
-        </button>
-      </div>
-    </div>
-  );
-};
 
-const RecentActivityWidget = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => { 
-    counselorApi.getRecentActivity().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
-  }, []);
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'completion': return <div className="w-10 h-10 rounded-full bg-[#eff6ff] text-[#3b82f6] flex items-center justify-center"><CheckCircle size={20} /></div>;
-      case 'alert': return <div className="w-10 h-10 rounded-full bg-[#fef2f2] text-[#ef4444] flex items-center justify-center"><AlertTriangle size={20} /></div>;
-      case 'counselor': return <div className="w-10 h-10 rounded-full bg-[#ecfeff] text-[#06b6d4] flex items-center justify-center"><MessageSquare size={20} /></div>;
-      default: return <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center"><Bell size={20} /></div>;
-    }
-  };
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-bold text-slate-900 text-[17px]">Recent Activity</h3>
-        <button className="text-[13px] font-bold text-[#00838f] hover:text-[#006064]">See all</button>
-      </div>
-
-      <div className="flex-1 space-y-6">
-        {isLoading ? (
-          Array.from({length: 3}).map((_, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="w-10 h-10 bg-slate-100 animate-pulse rounded-full shrink-0"></div>
-              <div className="flex-1">
-                <div className="h-4 w-3/4 bg-slate-100 animate-pulse rounded mb-2"></div>
-                <div className="h-3 w-1/2 bg-slate-100 animate-pulse rounded"></div>
-              </div>
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                placeholder="Search career..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[13px] outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all w-full md:w-[220px]"
+              />
             </div>
-          ))
-        ) : data && data.length > 0 ? (
-          data.map((item: any) => (
-            <div key={item.id} className="flex gap-4 group">
-              <div className="shrink-0 transition-transform group-hover:scale-105">{getIcon(item.type)}</div>
-              <div className="flex-1 pt-1">
-                <p className="text-[14px] text-slate-800 leading-snug mb-1">
-                  <span className="font-bold">{item.title.split(' ')[0]} {item.title.split(' ')[1]}</span> 
-                  {' '}{item.title.split(' ').slice(2).join(' ')}
-                </p>
-                <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                  {item.time} <span className="w-1 h-1 bg-slate-300 rounded-full"></span> {item.category}
-                </p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400 py-8">
-            <Bell size={24} className="text-slate-200 mb-2" />
-            <p className="text-sm font-medium">No recent activity</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const TopStudentsWidget = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => { 
-    counselorApi.getTopStudents().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
-  }, []);
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
-      <h3 className="font-bold text-slate-900 text-[17px] mb-6">Top Performing Students</h3>
-
-      <div className="flex-1">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-2 pb-3 border-b border-slate-100">
-          <div className="col-span-2 sm:col-span-1 text-[11px] font-bold text-slate-500 uppercase">Rank</div>
-          <div className="col-span-5 sm:col-span-6 text-[11px] font-bold text-slate-500 uppercase">Student</div>
-          <div className="col-span-3 sm:col-span-3 text-[11px] font-bold text-slate-500 uppercase text-right pr-4 sm:pr-8">Progress</div>
-          <div className="col-span-2 sm:col-span-2 text-[11px] font-bold text-slate-500 uppercase text-right">Action</div>
+            <button
+              type="submit"
+              className="bg-[#00838f] text-white px-4 py-2 rounded-xl text-[13px] font-semibold hover:bg-[#006064] transition-colors"
+            >
+              Search
+            </button>
+          </form>
         </div>
 
-        {/* Table Body */}
-        <div className="divide-y divide-slate-50">
-          {isLoading ? (
-            Array.from({length: 3}).map((_, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 py-4 items-center">
-                <div className="col-span-2 sm:col-span-1"><div className="w-6 h-6 bg-slate-100 animate-pulse rounded-full"></div></div>
-                <div className="col-span-5 sm:col-span-6 flex gap-3 items-center">
-                  <div className="w-8 h-8 bg-slate-100 animate-pulse rounded-full hidden sm:block"></div>
-                  <div className="h-4 w-24 bg-slate-100 animate-pulse rounded"></div>
-                </div>
-                <div className="col-span-3 sm:col-span-3"><div className="h-2 w-full bg-slate-100 animate-pulse rounded-full"></div></div>
-                <div className="col-span-2 sm:col-span-2 flex justify-end"><div className="w-5 h-5 bg-slate-100 animate-pulse rounded"></div></div>
-              </div>
-            ))
-          ) : data && data.length > 0 ? (
-            data.map((student: any) => (
-              <div key={student.id} className="grid grid-cols-12 gap-2 py-3.5 items-center group hover:bg-slate-50 transition-colors -mx-2 px-2 rounded-lg">
-                <div className="col-span-2 sm:col-span-1">
-                  <div className="w-6 h-6 rounded-full bg-[#e0f2fe] text-[#0284c7] flex items-center justify-center text-[11px] font-bold">
-                    {student.rank}
-                  </div>
-                </div>
-                <div className="col-span-5 sm:col-span-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#f1f5f9] text-slate-600 font-bold text-[11px] flex items-center justify-center hidden sm:flex">
-                    {student.name.split(' ').map((n: string) => n[0]).join('').substring(0,2).toUpperCase()}
-                  </div>
-                  <span className="text-[14px] font-bold text-slate-800">{student.name}</span>
-                </div>
-                <div className="col-span-3 sm:col-span-3 flex flex-col sm:flex-row items-end sm:items-center justify-end sm:justify-start gap-2 pr-2 sm:pr-0">
-                  <div className="h-1.5 w-12 sm:w-full max-w-[80px] bg-[#f1f5f9] rounded-full overflow-hidden hidden sm:flex">
-                    <div className="h-full bg-[#006064] rounded-r-full" style={{ width: `${student.progress}%` }}></div>
-                  </div>
-                  <span className="text-[12px] font-bold text-slate-900">{student.progress}%</span>
-                </div>
-                <div className="col-span-2 sm:col-span-2 flex justify-end">
-                  <button className="text-[#00838f] hover:text-[#006064] p-1 rounded-md hover:bg-[#e0f2fe] transition-colors">
-                    <ExternalLink size={16} strokeWidth={2.5} />
-                  </button>
-                </div>
-              </div>
-            ))
+        <div className="h-[320px] w-full flex items-center justify-center relative flex-1 min-h-0">
+          {!activeSearch ? (
+            <EmptyState
+              icon={Search}
+              label="Search a career to see skill gaps"
+            />
+          ) : loading ? (
+            <div className="w-[280px] h-[280px] rounded-full bg-slate-100 animate-pulse mx-auto" />
+          ) : error ? (
+            <ErrorBanner message={error} />
+          ) : data.length === 0 ? (
+            <EmptyState
+              icon={TrendingDown}
+              label="No skill gap data available"
+            />
           ) : (
-             <div className="flex flex-col items-center justify-center text-slate-400 py-8">
-              <p className="text-sm font-medium">No student data</p>
-            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data.slice(0, 10)}
+                margin={{ top: 20, right: 10, left: -20, bottom: 60 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="skillName"
+                  tick={{
+                    fontSize: 11,
+                    fill: "#64748b",
+                    angle: -45,
+                    textAnchor: "end",
+                    dy: 10
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  height={80}
+                  tickFormatter={(value) =>
+                    value.length > 15 ? value.substring(0, 15) + "..." : value
+                  }
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  cursor={{ fill: "#f8fafc" }}
+                  content={<SkillTooltip />}
+                  isAnimationActive={false}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                  {data.map((item, idx) => (
+                    <Cell key={idx} fill={getSkillColor(item.count)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>
+
+      {/* Legend / Table Box */}
+      <div className="w-full xl:w-[380px] bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] widget-container group hover:border-[#00838f]/30 transition-colors flex flex-col md:h-[480px]">
+        {activeSearch && !loading && !error && data.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between pb-4 mb-4 shrink-0 border-b border-slate-100">
+              <span className="text-[16px] font-bold text-slate-800">
+                Skill Details
+              </span>
+              <span className="bg-[#fff1f2] text-[#e11d48] px-3 py-1 rounded-lg text-[13px] font-bold">
+                Total: {totalStudents}
+              </span>
+            </div>
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+              {data.map((item, idx) => (
+                <div
+                  key={item.skillName}
+                  className="flex items-center w-full group/btn hover:bg-slate-50 p-2 -mx-2 rounded-lg transition-all"
+                >
+                  <div
+                    className="w-3.5 h-3.5 rounded-sm shrink-0 shadow-sm"
+                    style={{ background: getSkillColor(item.count) }}
+                  />
+                  <span className="text-[13.5px] text-slate-600 font-medium ml-3 text-left">
+                    {item.skillName}
+                  </span>
+                  <span className="text-[14px] font-bold text-slate-900 ml-auto pl-2">
+                    {item.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center flex-1 text-slate-400">
+            <TrendingDown size={36} className="mb-3 text-slate-200" />
+            <p className="text-[14px] font-medium text-center px-4">
+              Search a career to view detailed skill breakdown
+            </p>
+          </div>
+        )}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-// -- MAIN PAGE --
-
-export default function CounselorDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate(ROUTES.LOGIN);
-  };
+// ═══════════════════════════════════════════════════════════════
+// WIDGET 3 – Feedback List (từ getFeedback)
+// ═══════════════════════════════════════════════════════════════
+function FeedbackList({
+  onTotalLoaded
+}: {
+  onTotalLoaded?: (total: number) => void
+}) {
+  const navigate = useNavigate()
+  const { feedbacks, loading, error } = useFeedbackList(onTotalLoaded)
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans pb-16">
-      {/* TOP NAVIGATION */}
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] widget-container group hover:border-blue-400/30 transition-colors flex flex-col h-[500px]">
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div>
+          <h2 className="text-[18px] font-bold text-slate-900 widget-title">
+            Student Feedback
+          </h2>
+          <p className="text-[13px] text-slate-500 mt-0.5">
+            Messages sent to you from students
+          </p>
+        </div>
+        {!loading && !error && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-[12px] text-slate-600 font-semibold stats-badge">
+            {feedbacks.length} feedbacks
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-4 animate-pulse">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex gap-3">
+              <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-slate-100 rounded w-1/3" />
+                <div className="h-3 bg-slate-100 rounded w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorBanner message="Cannot load feedback data." />
+      ) : feedbacks.length === 0 ? (
+        <EmptyState icon={MessageSquare} label="No feedbacks yet" />
+      ) : (
+        <div className="divide-y divide-slate-100 feedback-list flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
+          {feedbacks.map((fb) => {
+            const name = fb.senderName || "Unknown Student"
+            const initials =
+              name
+                .split(" ")
+                .filter(Boolean)
+                .map((n) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase() || "UN"
+            const typeStyle =
+              FEEDBACK_TYPE_COLOR[fb.type] ?? FEEDBACK_TYPE_COLOR.OTHER
+            const dateStr = new Date(fb.createAt).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric"
+            })
+
+            return (
+              <div
+                key={fb.feedbackId}
+                className="feedback-item py-4 flex gap-3 hover:bg-slate-50 -mx-2 px-3 rounded-xl transition-all hover:shadow-sm group/fb"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#e0f2fe] text-[#006064] flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm group-hover/fb:shadow-md transition-shadow">
+                  {initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px] font-bold text-slate-900 group-hover/fb:text-[#006064] transition-colors">
+                      {name}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${typeStyle}`}
+                    >
+                      {fb.type}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2">
+                    {fb.content}
+                  </p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                      <Clock size={11} />
+                      {dateStr}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          ROUTES.COUNSELOR_FEEDBACK +
+                            "?studentId=" +
+                            fb.senderId +
+                            "&tab=feedback"
+                        )
+                      }
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006064] hover:text-white bg-[#e0f2fe] hover:bg-[#006064] px-2.5 py-1 rounded-md transition-all shadow-sm group-hover/fb:translate-x-0.5"
+                    >
+                      Reply <ArrowRight size={11} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════
+export default function CounselorDashboard() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [selectedCareer, setSelectedCareer] = useState("")
+  const containerRef = useRef<HTMLDivElement>(null)
+  const sparkleRef = useRef<SVGSVGElement>(null)
+
+  // Totals for hero stat pills — populated by widget callbacks
+  const [totalStudents, setTotalStudents] = useState<number | null>(null)
+  const [totalSkillGaps, setTotalSkillGaps] = useState<number | null>(null)
+  const [totalFeedbacks, setTotalFeedbacks] = useState<number | null>(null)
+
+  useGSAP(
+    () => {
+      // ── Entrance animations ──────────────────────────────────
+
+      // Hero banner slides down
+      gsap.from(".page-header", {
+        y: -50,
+        opacity: 0,
+        duration: 1.0,
+        ease: "power4.out",
+        delay: 0.05
+      })
+
+      // Hero icon box pops in with bounce
+      gsap.from(".hero-icon", {
+        scale: 0,
+        rotation: -45,
+        opacity: 0,
+        duration: 0.9,
+        ease: "back.out(2)",
+        delay: 0.35
+      })
+
+      // Stat pills stagger in from right
+      gsap.from(".stat-pill", {
+        x: 40,
+        opacity: 0,
+        duration: 0.65,
+        stagger: 0.1,
+        ease: "power3.out",
+        delay: 0.55
+      })
+
+      // Section rows slide up with stagger
+      gsap.from(".section-row", {
+        y: 60,
+        opacity: 0,
+        duration: 0.85,
+        stagger: 0.2,
+        ease: "power3.out",
+        delay: 0.45
+      })
+
+      // Widget cards slide up
+      gsap.from(".widget-container", {
+        y: 35,
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.12,
+        ease: "power3.out",
+        delay: 0.6
+      })
+
+      // Widget titles slide in from left
+      gsap.from(".widget-title", {
+        x: -20,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.08,
+        ease: "power2.out",
+        delay: 0.85
+      })
+
+      // Stats badges bounce in
+      gsap.from(".stats-badge", {
+        scale: 0,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.1,
+        ease: "back.out(1.7)",
+        delay: 1.0
+      })
+
+      // ── Sparkle twinkle (infinite loop) ─────────────────────
+      if (sparkleRef.current) {
+        const tl = gsap.timeline({ repeat: -1, delay: 1.2 })
+        tl.to(sparkleRef.current, {
+          scale: 1.3,
+          opacity: 0.4,
+          rotate: 20,
+          duration: 0.35,
+          ease: "power2.in"
+        })
+          .to(sparkleRef.current, {
+            scale: 1.15,
+            opacity: 1,
+            rotate: -15,
+            duration: 0.25,
+            ease: "power2.out"
+          })
+          .to(sparkleRef.current, {
+            scale: 1.4,
+            opacity: 0.6,
+            rotate: 10,
+            duration: 0.3,
+            ease: "power2.inOut"
+          })
+          .to(sparkleRef.current, {
+            scale: 1,
+            opacity: 1,
+            rotate: 0,
+            duration: 0.5,
+            ease: "elastic.out(1, 0.5)"
+          })
+          .to(sparkleRef.current, {
+            duration: 2.5 // idle pause before next twinkle
+          })
+      }
+    },
+    { scope: containerRef }
+  )
+
+  // Animate skill bars khi data load xong
+  useGSAP(
+    () => {
+      document.querySelectorAll(".skill-bar").forEach((bar) => {
+        const w = bar.getAttribute("data-width")
+        if (w)
+          gsap.to(bar, {
+            width: `${w}%`,
+            duration: 1.2,
+            ease: "power4.out",
+            delay: 0.5
+          })
+      })
+      gsap.fromTo(
+        ".skill-item",
+        { x: -20, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.5,
+          stagger: 0.05,
+          ease: "power2.out",
+          delay: 0.2
+        }
+      )
+    },
+    { scope: containerRef, dependencies: [selectedCareer] }
+  )
+
+  const handleLogout = async () => {
+    await logout()
+    navigate(ROUTES.LOGIN)
+  }
+
+  return (
+    <div
+      className="min-h-screen bg-[#f8fafc] font-sans pb-4"
+      ref={containerRef}
+    >
+      {/* ─── HEADER ────────────────────────────────────────────── */}
       <nav className="bg-white border-b border-slate-200 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon={true} className="scale-90 origin-left" />
-          
+          <Logo hideIcon className="scale-90 origin-left" />
           <div className="hidden md:flex items-center gap-8 text-[13px] font-bold text-slate-500">
-            <a href="#" className="flex items-center gap-2 text-[#00838f] border-b-[3px] border-[#00838f] py-4 -mb-3.5 transition-colors">
+            <a
+              href="#"
+              className="flex items-center gap-2 text-[#00838f] border-b-[3px] border-[#00838f] py-4 -mb-3.5"
+            >
               <LayoutDashboard size={16} />
               Dashboard
             </a>
-            <a href="#" className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors">
-              <Users size={16} />
-              Students
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors">
-              <Settings size={16} />
-              Settings
-            </a>
-            <a href="#" className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors">
-              <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center text-[9px] font-bold">?</span>
-              Help Center
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(ROUTES.COUNSELOR_FEEDBACK)
+              }}
+              className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors"
+            >
+              <MessageSquare size={16} />
+              Feedback
             </a>
           </div>
         </div>
-
-        <div className="relative">
-          <DashboardUserActions user={user} onLogout={handleLogout} />
-        </div>
+        <DashboardUserActions user={user} onLogout={handleLogout} />
       </nav>
 
-      {/* MAIN CONTENT */}
-      <main className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
-        
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-[24px] font-bold text-slate-900 mb-1">
-              Counselor Dashboard
-            </h1>
-            <p className="text-[13px] text-slate-500">Overview of student performance and engagement metrics.</p>
+      {/* ─── MAIN CONTENT ──────────────────────────────────────── */}
+      <main className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 space-y-7">
+        {/* ── Hero Banner ─────────────────────────────────────── */}
+        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#003d40] via-[#005f63] to-[#00838f] p-7 md:p-9 shadow-[0_30px_60px_rgba(0,96,100,0.35)]">
+          {/* Decorative blobs */}
+          <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-[#00838f]/30 blur-3xl" />
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 rounded-full bg-white/[0.03] blur-2xl" />
+
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-5">
+              {/* Animated icon */}
+              <div className="hero-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
+                <Sparkles
+                  ref={sparkleRef}
+                  size={28}
+                  className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                />
+              </div>
+              <div>
+                <p className="text-white/60 text-[12px] font-semibold uppercase tracking-widest mb-1">
+                  Counselor Portal
+                </p>
+                <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
+                  Counselor Dashboard
+                </h1>
+                <p className="text-white/70 text-[13px] mt-1">
+                  Overview of student learning, skill gaps &amp; feedback
+                  signals
+                </p>
+              </div>
+            </div>
+
+            {/* Stats pills */}
+            <div className="flex flex-wrap gap-3">
+              <div className="stat-pill flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-2.5">
+                <Users size={16} className="text-white/80" />
+                <div>
+                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wide">
+                    Students
+                  </p>
+                  <p className="text-white text-[16px] font-bold leading-none">
+                    {totalStudents ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="stat-pill flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-2.5">
+                <TrendingDown size={16} className="text-white/80" />
+                <div>
+                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wide">
+                    Missing Skills
+                  </p>
+                  <p className="text-white text-[16px] font-bold leading-none">
+                    {totalSkillGaps ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="stat-pill flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-2.5">
+                <MessageSquare size={16} className="text-white/80" />
+                <div>
+                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wide">
+                    Feedbacks
+                  </p>
+                  <p className="text-white text-[16px] font-bold leading-none">
+                    {totalFeedbacks ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 text-[13px] font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-all hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <RefreshCw size={14} />
+                Refresh
+              </button>
+            </div>
           </div>
-          <button className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm w-fit">
-            <Calendar size={16} className="text-slate-400" />
-            Last 30 Days
-            <ChevronDown size={16} className="text-slate-400 ml-1" />
-          </button>
         </div>
 
-        {/* METRICS ROW */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <MetricWidget 
-            title="TOTAL ACTIVE STUDENTS" 
-            icon={Users} 
-            color="blue" 
-            apiFunction={counselorApi.getStudentsMetric} 
-          />
-          <MetricWidget 
-            title="AVG. PROGRESS RATE" 
-            icon={TrendingUp} 
-            color="blue" 
-            apiFunction={counselorApi.getProgressMetric} 
-          />
-          <MetricWidget 
-            title="AT-RISK STUDENTS" 
-            icon={AlertTriangle} 
-            color="red" 
-            apiFunction={counselorApi.getAtRiskMetric} 
-          />
-          <MetricWidget 
-            title="ENGAGEMENT SCORE" 
-            icon={Zap} 
-            color="blue" 
-            apiFunction={counselorApi.getEngagementMetric} 
+        {/* ── Career Distribution ──────────────────────────────── */}
+        <div className="section-row">
+          <CareerDistributionChart
+            onSelectCareer={setSelectedCareer}
+            onTotalLoaded={setTotalStudents}
           />
         </div>
 
-        {/* MIDDLE ROW */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <LearningActivityWidget />
-          </div>
-          <div className="lg:col-span-1">
-            <SkillDistributionWidget />
-          </div>
+        {/* ── Missing Skills + Feedback (side-by-side on xl) ──── */}
+        <div className="section-row flex flex-col gap-6">
+          <MissingSkillsChart
+            careerFilter={selectedCareer}
+            onTotalLoaded={setTotalSkillGaps}
+          />
+          <FeedbackList onTotalLoaded={setTotalFeedbacks} />
         </div>
-
-        {/* BOTTOM ROW */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RecentActivityWidget />
-          <TopStudentsWidget />
-        </div>
-
       </main>
     </div>
-  );
+  )
 }
