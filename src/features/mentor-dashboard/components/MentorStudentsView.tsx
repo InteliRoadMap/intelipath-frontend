@@ -121,17 +121,6 @@ export function MentorStudentsView() {
                 <Users size={17} weight="duotone" />
                 Students
               </NavLink>
-              <NavLink
-                to={ROUTES.DASHBOARD_MENTOR_FEEDBACK}
-                className={({ isActive }) =>
-                  `relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                    isActive ? "border-cyan-700 text-cyan-800" : "border-transparent text-slate-500 hover:text-slate-950"
-                  }`
-                }
-              >
-                <ChatTeardropText size={17} weight="duotone" />
-                Feedback
-              </NavLink>
             </nav>
           </div>
           <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />

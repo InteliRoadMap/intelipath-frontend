@@ -2,11 +2,9 @@ import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
 
 /**
- * Mentor API Service
- * Fetches dashboard metrics for the Mentor role.
+ * Mentor Dashboard API Functions
  */
 
-// Mock state to persist data during a session
 const mentorApi = {
   getWelcomeAlert: async () => {
     return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.WELCOME_ALERT)
@@ -78,7 +76,6 @@ const mentorApi = {
   },
 
   getFeedbackHistory: async () => {
-    // Return empty array
     return new Promise((resolve) => {
       setTimeout(() => resolve([]), 500);
     });

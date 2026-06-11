@@ -5,14 +5,13 @@ import {
   Edit3,
   Mail,
   User,
-  Target,
-  MessageSquare,
+  GraduationCap,
   Sparkles,
   RefreshCw,
-  Briefcase,
+  Github,
   ChevronLeft
 } from "lucide-react"
-import { Layout, ChatTeardropText, PencilSimple } from "@phosphor-icons/react"
+import { PencilSimple } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -24,7 +23,7 @@ import { useGSAP } from "@gsap/react"
 
 gsap.registerPlugin(useGSAP)
 
-export default function MentorProfileSettingsPage() {
+export default function StudentProfileSettingsPage() {
   const {
     profileData,
     loading,
@@ -142,7 +141,7 @@ export default function MentorProfileSettingsPage() {
                     }}
                     className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
                       isActive
-                        ? "border-cyan-700 text-cyan-800"
+                        ? "border-emerald-600 text-emerald-800"
                         : "border-transparent text-slate-500 hover:text-slate-950"
                     }`}
                   >
@@ -161,16 +160,16 @@ export default function MentorProfileSettingsPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-[#4f46e5] transition-all w-fit group mb-4 hover:-translate-x-1"
+          className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-emerald-600 transition-all w-fit group mb-4 hover:-translate-x-1"
         >
-          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-[#4f46e5] transition-colors" />
-          Back to home
+          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
+          Back to Dashboard
         </button>
 
         {/* ── Hero Banner ─────────────────────────────────────── */}
-        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#312e81] via-[#4338ca] to-[#6366f1] p-7 md:p-9 shadow-[0_30px_60px_rgba(99,102,241,0.25)]">
-          <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-[#818cf8]/30 blur-3xl" />
+        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-600 to-teal-500 p-7 md:p-9 shadow-[0_30px_60px_rgba(16,185,129,0.25)]">
+          <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-teal-300/30 blur-3xl" />
           
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -178,12 +177,12 @@ export default function MentorProfileSettingsPage() {
                 <Sparkles ref={sparkleRef} size={28} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
               </div>
               <div>
-                <p className="text-white/60 text-[12px] font-semibold uppercase tracking-widest mb-1">Mentor Portal</p>
+                <p className="text-white/70 text-[12px] font-semibold uppercase tracking-widest mb-1">Student Portal</p>
                 <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
                   Profile Settings
                 </h1>
-                <p className="text-white/70 text-[13px] mt-1">
-                  Manage your professional identity and expertise areas
+                <p className="text-white/80 text-[13px] mt-1">
+                  Manage your academic details and career goals
                 </p>
               </div>
             </div>
@@ -198,7 +197,7 @@ export default function MentorProfileSettingsPage() {
                   void loadProfile()
                 }}
                 disabled={loading || saving}
-                className="flex items-center gap-2 text-[13px] font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
+                className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
               >
                 <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                 Reload
@@ -210,10 +209,10 @@ export default function MentorProfileSettingsPage() {
         <div className="flex flex-col lg:flex-row gap-6 pb-10">
           <div className="flex-[2] space-y-6">
             {/* Identity Card */}
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#6366f1]/30 transition-colors">
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-emerald-500/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#4338ca] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#4f46e5]/30">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-emerald-500/30">
                     {displayInitial}
                   </div>
                   <button
@@ -221,7 +220,7 @@ export default function MentorProfileSettingsPage() {
                     onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, rotation: 15, duration: 0.4, ease: "back.out(2)" })}
                     onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.4, ease: "power2.out" })}
                     onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" })}
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-[#4f46e5] rounded-xl flex items-center justify-center shadow-md border border-slate-100"
+                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-emerald-600 rounded-xl flex items-center justify-center shadow-md border border-slate-100"
                     aria-label="Edit avatar"
                   >
                     <Edit3 size={14} />
@@ -229,10 +228,10 @@ export default function MentorProfileSettingsPage() {
                 </div>
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
-                    Professional Identity
+                    Student Information
                   </h2>
                   <p className="text-sm text-slate-500">
-                    How you appear to students seeking guidance.
+                    Your personal and academic details.
                   </p>
                 </div>
               </div>
@@ -252,26 +251,26 @@ export default function MentorProfileSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <User size={16} className="text-[#6366f1]" />
+                        <User size={16} className="text-emerald-600" />
                         Full Name
                       </label>
                       <input
                         type="text"
                         value={profileData.full_name}
                         onChange={(e) => handleChange("full_name", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-[#6366f1]" />
+                        <Calendar size={16} className="text-emerald-600" />
                         Year of Birth
                       </label>
                       <input
                         type="date"
                         value={profileData.yob}
                         onChange={(e) => handleChange("yob", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                   </div>
@@ -279,43 +278,71 @@ export default function MentorProfileSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Building2 size={16} className="text-[#6366f1]" />
-                        Company / Organization
+                        <Building2 size={16} className="text-emerald-600" />
+                        University
                       </label>
                       <input
                         type="text"
-                        value={profileData.company}
-                        placeholder="e.g. Google, FPT Software"
-                        onChange={(e) => handleChange("company", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        value={profileData.university}
+                        placeholder="e.g. FPT University"
+                        onChange={(e) => handleChange("university", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Target size={16} className="text-[#6366f1]" />
-                        Industry Focus
+                        <GraduationCap size={16} className="text-emerald-600" />
+                        Major
                       </label>
                       <input
                         type="text"
-                        value={profileData.industry_focus}
-                        placeholder="e.g. Software Engineering, Data Science"
-                        onChange={(e) => handleChange("industry_focus", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        value={profileData.major}
+                        placeholder="e.g. Software Engineering"
+                        onChange={(e) => handleChange("major", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Calendar size={16} className="text-emerald-600" />
+                        Year of Admission
+                      </label>
+                      <input
+                        type="date"
+                        value={profileData.year_of_admission}
+                        onChange={(e) => handleChange("year_of_admission", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Github size={16} className="text-emerald-600" />
+                        GitHub Profile
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.github_profile || ''}
+                        placeholder="e.g. https://github.com/username"
+                        onChange={(e) => handleChange("github_profile", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                   </div>
 
                   <div className="mb-8">
                     <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                      <Book size={16} className="text-[#6366f1]" />
-                      Professional Bio
+                      <Book size={16} className="text-emerald-600" />
+                      About Me (Bio)
                     </label>
                     <textarea
                       rows={4}
                       value={profileData.bio}
-                      placeholder="Share your experience and how you can help students..."
+                      placeholder="Share a little bit about yourself, your career goals..."
                       onChange={(e) => handleChange("bio", e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white resize-none"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white resize-none"
                     />
                   </div>
 
@@ -335,14 +362,14 @@ export default function MentorProfileSettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(79, 70, 229, 0.3)", duration: 0.3, ease: "back.out(2)" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)", duration: 0.3, ease: "power2.out" })}
+                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(16, 185, 129, 0.3)", duration: 0.3, ease: "back.out(2)" })}
+                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(16, 185, 129, 0.2)", duration: 0.3, ease: "power2.out" })}
                       onClick={(e) => {
                         gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
                         handleSave()
                       }}
                       disabled={saving}
-                      className="px-6 py-2.5 bg-[#4f46e5] text-white rounded-xl text-[13px] font-bold shadow-md shadow-[#4f46e5]/20 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-bold shadow-md shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
                     >
                       {saving ? "Saving..." : "Save Profile"}
                     </button>
@@ -353,7 +380,7 @@ export default function MentorProfileSettingsPage() {
           </div>
 
           <div className="flex-1 space-y-6">
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#6366f1]/30 transition-colors">
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-emerald-500/30 transition-colors">
               <h3 className="text-[15px] font-bold text-slate-900 mb-5">
                 Account Security
               </h3>
@@ -374,7 +401,7 @@ export default function MentorProfileSettingsPage() {
                     onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.1, y: -2, duration: 0.3, ease: "back.out(2)" })}
                     onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.3, ease: "power2.out" })}
                     onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.1, duration: 0.4, ease: "elastic.out(1, 0.3)" })}
-                    className="text-[#6366f1] hover:text-[#4f46e5] bg-white p-2 rounded-lg shadow-sm border border-slate-200"
+                    className="text-emerald-600 hover:text-emerald-700 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
                     aria-label="Edit email"
                   >
                     <Edit3 size={15} />

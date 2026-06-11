@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom"
+import { NavLink, useNavigate } from "react-router-dom"
 import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
 import { DashboardUserActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
@@ -16,6 +16,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: StudentTopNavProps) {
+  const navigate = useNavigate()
   return (
     <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
       <div className="flex items-center gap-6 md:gap-12">
@@ -52,7 +53,11 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
         </div>
       </div>
 
-      <DashboardUserActions user={user} onLogout={onLogout} />
+      <DashboardUserActions 
+        user={user} 
+        onLogout={onLogout} 
+        onSettings={() => navigate(ROUTES.DASHBOARD_STUDENT_SETTINGS)} 
+      />
     </nav>
   )
 }

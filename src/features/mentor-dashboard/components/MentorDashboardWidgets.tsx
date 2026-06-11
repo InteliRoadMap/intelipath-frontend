@@ -178,18 +178,7 @@ export const QuickActionsWidget = () => {
           </div>
         </button>
 
-        {/* Review Portfolios Card */}
-        <button 
-          onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_FEEDBACK)}
-          className="flex-1 bg-[#00838f] hover:bg-[#006064] text-white rounded-2xl p-5 flex flex-col justify-center text-left relative overflow-hidden group shadow-sm transition-colors min-h-[140px]"
-        >
-          <Layers size={24} className="mb-3 opacity-90 group-hover:scale-110 transition-transform origin-left" />
-          <h4 className="text-[15px] font-bold mb-1">Review Portfolios</h4>
-          <p className="text-[12px] text-cyan-100/80">Batch review outstanding project files</p>
-          <div className="absolute -bottom-6 -right-6 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Layers size={100} />
-          </div>
-        </button>
+        {/* Additional Quick Actions can go here in the future */}
       </div>
     </div>
   );

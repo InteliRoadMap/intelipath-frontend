@@ -26,12 +26,19 @@ export function MentorPortfolioView() {
     setIsSubmitting(true);
     try {
       await mentorApi.submitFeedback(studentId!, { type: feedbackType, content: feedbackContent });
+      // Write notification for Student
+      localStorage.setItem('student_notification', JSON.stringify({
+        type: 'FEEDBACK_RECEIVED',
+        message: 'A mentor just provided feedback on your E-Portfolio.',
+        timestamp: Date.now()
+      }));
+
       setSubmitSuccess(true);
       setTimeout(() => {
         setIsDialogOpen(false);
         setSubmitSuccess(false);
         setFeedbackContent('');
-      }, 1500);
+      }, 2000);
     } catch (e) {
       console.error(e);
     } finally {
@@ -64,10 +71,6 @@ export function MentorPortfolioView() {
             <a onClick={() => navigate(ROUTES.DASHBOARD_MENTOR)} className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors cursor-pointer text-slate-500">
               <LayoutDashboard size={16} />
               Dashboard
-            </a>
-            <a onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_FEEDBACK)} className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors cursor-pointer text-[#00838f] border-b-[3px] border-[#00838f]">
-              <MessageSquare size={16} />
-              Feedback
             </a>
           </div>
         </div>
@@ -147,7 +150,7 @@ export function MentorPortfolioView() {
                     <DialogHeader>
                       <DialogTitle>Provide Feedback</DialogTitle>
                       <DialogDescription>
-                        Share your professional review and suggestions with {portfolio.fullName}.
+                        Share your professional review and suggestions with {portfolio?.hero?.name || 'Student'}.
                       </DialogDescription>
                     </DialogHeader>
                     {submitSuccess ? (

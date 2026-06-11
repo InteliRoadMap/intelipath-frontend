@@ -71,6 +71,14 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, s
     try {
       await mentorApi.submitFeedback(studentData.id, { type: category, content: finalContent });
       localStorage.removeItem(`draft_feedback_${studentData.id}`);
+      
+      // Write notification for Student
+      localStorage.setItem('student_notification', JSON.stringify({
+        type: 'FEEDBACK_RECEIVED',
+        message: 'A mentor just provided feedback on your E-Portfolio.',
+        timestamp: Date.now()
+      }));
+
       setSubmitSuccess(true);
     } catch (e) {
       setError('Failed to submit feedback. Please try again.');

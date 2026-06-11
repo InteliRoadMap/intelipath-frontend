@@ -77,17 +77,6 @@ export function MentorDashboardView() {
                 <UsersIcon size={17} weight="duotone" />
                 Students
               </NavLink>
-              <NavLink
-                to={ROUTES.DASHBOARD_MENTOR_FEEDBACK}
-                className={({ isActive }) =>
-                  `relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                    isActive ? "border-cyan-700 text-cyan-800" : "border-transparent text-slate-500 hover:text-slate-950"
-                  }`
-                }
-              >
-                <ChatTeardropText size={17} weight="duotone" />
-                Feedback
-              </NavLink>
             </nav>
           </div>
           <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
@@ -115,16 +104,6 @@ export function MentorDashboardView() {
                 </a>
               ))}
             </nav>
-            <div className="mt-8 border-t border-slate-100 pt-5">
-              <p className="mb-3 text-[13px] font-medium text-slate-300">Actions</p>
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_FEEDBACK)}
-                className="block rounded-md px-3 py-2 text-left text-[14px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950"
-              >
-                Provide Feedback
-              </button>
-            </div>
           </div>
         </aside>
 
