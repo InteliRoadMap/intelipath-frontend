@@ -1,6 +1,8 @@
-import { GearSix, SignOut } from '@phosphor-icons/react'
+import { Bell, GearSix, SignOut } from '@phosphor-icons/react'
 import type { User } from '@/features/auth'
 import NotificationPanel from './NotificationPanel'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '@/shared'
 
 interface DashboardUserActionsProps {
   user: User | null
@@ -9,6 +11,7 @@ interface DashboardUserActionsProps {
 }
 
 export default function DashboardUserActions({ user, onLogout, onSettings }: DashboardUserActionsProps) {
+  const navigate = useNavigate()
   const fullName = user?.fullName || 'User'
   const email = user?.email || 'No email'
   const role = String(user?.role || 'USER').toUpperCase()
@@ -20,8 +23,17 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
         <NotificationPanel />
         <button
           type="button"
-          onClick={onSettings}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          onClick={onSettings || (() => {
+            const roleKey = String(user?.role || 'USER').toUpperCase();
+            if (roleKey === 'MENTOR') {
+              navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings');
+            } else if (roleKey === 'COUNSELOR') {
+              navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings');
+            } else {
+              navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings');
+            }
+          })}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Settings"
         >
           <GearSix size={18} weight="duotone" />
@@ -29,7 +41,7 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
         <button
           type="button"
           onClick={onLogout}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
           title="Logout"
         >
           <SignOut size={18} weight="duotone" />

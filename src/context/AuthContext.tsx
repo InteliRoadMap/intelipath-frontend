@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (responseData: LoginTokens) => Promise<void>
   logout: () => Promise<void>
+  updateUser: (updatedFields: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,10 +32,17 @@ const initialState: AuthState = {
 }
 
 type AuthAction =
-  | { type: "LOGIN"; payload: { user: User; accessToken: string; refreshToken: string | null } }
+  | {
+      type: "LOGIN"
+      payload: { user: User; accessToken: string; refreshToken: string | null }
+    }
   | { type: "LOGOUT" }
   | { type: "SET_LOADING"; payload: boolean }
-  | { type: "UPDATE_TOKENS"; payload: { accessToken: string; refreshToken: string | null } }
+  | {
+      type: "UPDATE_TOKENS"
+      payload: { accessToken: string; refreshToken: string | null }
+    }
+  | { type: "UPDATE_USER"; payload: { user: User } }
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -67,6 +75,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         accessToken: action.payload.accessToken,
         refreshToken: action.payload.refreshToken
       }
+    case "UPDATE_USER":
+      return {
+        ...state,
+        user: action.payload.user
+      }
     default:
       return state
   }
@@ -83,7 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("user")
   }
 
-  const getExpirationTime = (accessToken: string, expiresIn?: string | null) => {
+  const getExpirationTime = (
+    accessToken: string,
+    expiresIn?: string | null
+  ) => {
     if (expiresIn) {
       const parsedExpiration = new Date(expiresIn).getTime()
       if (Number.isFinite(parsedExpiration)) return parsedExpiration
@@ -132,7 +148,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.group("[AUTH REFRESH] Refresh scheduled")
         console.log("refreshToken:", currentRefreshToken)
         console.log("accessTokenExpiresAt:", new Date(expireTime).toISOString())
-        console.log("refreshAt:", new Date(currentTime + timeUntilRefresh).toISOString())
+        console.log(
+          "refreshAt:",
+          new Date(currentTime + timeUntilRefresh).toISOString()
+        )
         console.log("refreshInSeconds:", Math.round(timeUntilRefresh / 1000))
         console.groupEnd()
       }
@@ -223,7 +242,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         })
 
-        if (refreshToken) setupRefreshTimer(accessToken, refreshToken, expiresIn)
+        if (refreshToken)
+          setupRefreshTimer(accessToken, refreshToken, expiresIn)
       } catch (error) {
         console.error("[Auth] Failed to restore session:", error)
         clearStoredAuth()
@@ -246,9 +266,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.group("[AUTH SESSION] Tokens received after login")
       console.log("hasAccessToken:", Boolean(accessToken))
       console.log("refreshToken:", refreshToken)
-      console.log("accessTokenExpiresAt:", getExpirationTime(accessToken, expiresIn)
-        ? new Date(getExpirationTime(accessToken, expiresIn)!).toISOString()
-        : null)
+      console.log(
+        "accessTokenExpiresAt:",
+        getExpirationTime(accessToken, expiresIn)
+          ? new Date(getExpirationTime(accessToken, expiresIn)!).toISOString()
+          : null
+      )
       console.groupEnd()
     }
 
@@ -261,7 +284,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userInfo = profileRes.data
 
       localStorage.setItem("user", JSON.stringify(userInfo))
-      dispatch({ type: "LOGIN", payload: { user: userInfo, accessToken, refreshToken } })
+      dispatch({
+        type: "LOGIN",
+        payload: { user: userInfo, accessToken, refreshToken }
+      })
 
       if (refreshToken) setupRefreshTimer(accessToken, refreshToken, expiresIn)
     } catch (error) {
@@ -282,10 +308,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const updateUser = (updatedFields: Partial<User>) => {
+    if (!state.user) return
+    const updatedUser = { ...state.user, ...updatedFields }
+    localStorage.setItem("user", JSON.stringify(updatedUser))
+    dispatch({ type: "UPDATE_USER", payload: { user: updatedUser } })
+  }
+
   const value = {
     ...state,
     login,
-    logout
+    logout,
+    updateUser
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,0 +1,149 @@
+import { useEffect, useState } from "react"
+import updateApi from "../api/updateApi"
+import counselorApi from "../api/counselorApi"
+import { useAuth } from "../context/AuthContext"
+
+export interface ProfileData {
+  fullName: string
+  yob: string
+  bio: string
+  email: string
+  role: string
+  // Student & Counselor
+  university: string
+  // Student
+  major: string
+  year_of_admission: string
+  // Mentor
+  company: string
+  industry_focus: string
+  // Counselor
+  department: string
+  // Common
+  githubProfile?: string
+}
+
+const EMPTY_PROFILE: ProfileData = {
+  fullName: "",
+  yob: "",
+  bio: "",
+  email: "",
+  role: "Student",
+  university: "",
+  major: "",
+  year_of_admission: "",
+  company: "",
+  industry_focus: "",
+  department: "",
+  githubProfile: ""
+}
+
+export function useProfileSettings() {
+  const { user, updateUser } = useAuth()
+  const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadProfile = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      let data: any = {}
+      if (user?.role === "COUNSELOR") {
+        const res = await counselorApi.getCounselorProfile()
+        data = res
+      } else {
+        const studentRes = await updateApi.getStudentProfile()
+        data = studentRes.data
+      }
+
+      setProfileData({
+        ...EMPTY_PROFILE,
+        ...user,
+        fullName: data?.user?.fullName || user?.fullName || "",
+        yob: data?.user?.yob?.toString() || "",
+        bio: data?.user?.bio || "",
+        email: data?.user?.email || user?.email || "",
+        role: data?.user?.role || user?.role || "Student",
+
+        // Student / Counselor
+        university:
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        major: data?.student?.major || EMPTY_PROFILE.major,
+        year_of_admission: data?.student?.yearOfAdmission?.toString() || "",
+
+        // Counselor
+        department: data?.academicCounselor?.department || "",
+
+        // Mentor
+        company: data?.industryMentor?.company || "",
+        industry_focus: data?.industryMentor?.industryFocus || ""
+      })
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error fetching profile data:", err)
+      setError("Cannot load profile information. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadProfile()
+  }, [])
+
+  const handleChange = (field: keyof ProfileData, value: string) => {
+    setProfileData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+
+    try {
+      await Promise.all([
+        updateApi.updateUserProfile({
+          fullName: profileData.fullName,
+          yob: profileData.yob,
+          bio: profileData.bio
+        }),
+        updateApi.updateStudentProfile({
+          university: profileData.university,
+          yearOfAdmission: profileData.year_of_admission,
+          major: profileData.major
+        })
+      ])
+
+      updateUser(profileData)
+      alert("Saved successfully!")
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error saving profile:", err)
+      setError("Save failed. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const displayInitial = profileData.fullName?.[0]?.toUpperCase() ?? "U"
+  const role = profileData.role || user?.role || "Student"
+  const githubName =
+    profileData.githubProfile?.split("/").filter(Boolean).pop() ||
+    profileData.fullName.split(" ").join("").toLowerCase() ||
+    "user"
+
+  return {
+    profileData,
+    loading,
+    saving,
+    error,
+    handleChange,
+    handleSave,
+    loadProfile,
+    displayInitial,
+    role,
+    githubName
+  }
+}

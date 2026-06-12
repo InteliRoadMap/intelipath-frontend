@@ -1,5 +1,5 @@
-import { mainClient } from './apiClients'
-import { ENDPOINTS } from './endpoints'
+import { mainClient } from "./apiClients"
+import { ENDPOINTS } from "./endpoints"
 
 export interface UpdateUserProfilePayload {
   fullName: string
@@ -21,7 +21,7 @@ const profileApi = {
     mainClient.patch(ENDPOINTS.USERS.PROFILE, data),
 
   updateStudentProfile: (data: UpdateStudentProfilePayload) =>
-    mainClient.patch(ENDPOINTS.STUDENT.PROFILE, data),
+    mainClient.patch(ENDPOINTS.STUDENT.PROFILE, data)
 }
 
 export default profileApi

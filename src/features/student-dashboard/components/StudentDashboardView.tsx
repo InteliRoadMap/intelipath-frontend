@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react"
 import { DiagonalGridBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
+import { DashboardUserActions, Logo } from "@/components"
 import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import {

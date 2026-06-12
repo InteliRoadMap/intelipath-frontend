@@ -1,5 +1,25 @@
 import { Routes, Route } from "react-router-dom"
 import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
+import {
+  WelcomePage,
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  DashboardPage,
+  StudentDashboard,
+  StudentRoadmap,
+  CounselorDashboard,
+  CounselorFeedbackPage,
+  MentorDashboard,
+  AdminDashboard,
+  OAuthCallbackPage,
+  NotFoundPage,
+  ProfileSettingsPage,
+  MentorProfileSettingsPage,
+  CounselorProfileSettingsPage,
+  AIMentorPage
+} from "@/pages"
 import { ProtectedRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
 
@@ -57,6 +77,14 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path={ROUTES.COUNSELOR_FEEDBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
+            <CounselorFeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.DASHBOARD_MENTOR}
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
@@ -69,6 +97,38 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.AI_MENTOR}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <AIMentorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.PROFILE_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <ProfileSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.MENTOR_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorProfileSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.COUNSELOR_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
+            <CounselorProfileSettingsPage />
           </ProtectedRoute>
         }
       />
