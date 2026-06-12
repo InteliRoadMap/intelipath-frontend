@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
-import updateApi from "../api/updateApi"
+import profileApi from "../api/profileApi"
 import { getErrorMessage } from "../lib/utils"
 import { useAuth } from "../context/AuthContext"
 
@@ -61,13 +61,13 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     }
 
     try {
-      await updateApi.updateUserProfile({
+      await profileApi.updateUserProfile({
         fullName,
         yob,
         bio
       })
 
-      await updateApi.updateStudentProfile({
+      await profileApi.updateStudentProfile({
         university,
         yearOfAdmission: yearOfAdmission,
         major 

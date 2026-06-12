@@ -51,13 +51,13 @@ export function useProfileSettings() {
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await updateApi.getStudentProfile()
+        const res = await profileApi.getStudentProfile()
         data = res.data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
-        const res = await updateApi.getMentorProfile()
+        const res = await profileApi.getMentorProfile()
         data = res.data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await updateApi.getCounselorProfile()
+        const res = await profileApi.getCounselorProfile()
         data = res.data
       }
 
@@ -92,7 +92,7 @@ export function useProfileSettings() {
 
     try {
       const tasks: Promise<any>[] = [
-        updateApi.updateUserProfile({
+        profileApi.updateUserProfile({
           full_name: profileData.full_name,
           yob: profileData.yob,
           bio: profileData.bio
@@ -101,7 +101,7 @@ export function useProfileSettings() {
 
       if (user?.role?.toUpperCase() === "STUDENT") {
         tasks.push(
-          updateApi.updateStudentProfile({
+          profileApi.updateStudentProfile({
             university: profileData.university,
             yearOfAdmission: profileData.year_of_admission,
             major: profileData.major
@@ -109,14 +109,14 @@ export function useProfileSettings() {
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
-          updateApi.updateMentorProfile({
+          profileApi.updateMentorProfile({
             company: profileData.company,
             industryFocus: profileData.industry_focus
           })
         )
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
-          updateApi.updateCounselorProfile({
+          profileApi.updateCounselorProfile({
             department: profileData.department,
             university: profileData.university
           })
