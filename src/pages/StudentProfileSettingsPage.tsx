@@ -8,10 +8,9 @@ import {
   GraduationCap,
   Sparkles,
   RefreshCw,
-  Github,
   ChevronLeft
 } from "lucide-react"
-import { PencilSimple } from "@phosphor-icons/react"
+import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -318,12 +317,12 @@ export default function StudentProfileSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Github size={16} className="text-emerald-600" />
+                      <div className="flex items-center gap-2 mb-1.5 font-medium text-slate-700">
+                        <GithubLogo size={16} className="text-emerald-600" />
                         GitHub Profile
-                      </label>
+                      </div>
                       <input
-                        type="text"
+                        type="url"
                         value={profileData.github_profile || ''}
                         placeholder="e.g. https://github.com/username"
                         onChange={(e) => handleChange("github_profile", e.target.value)}
