@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, LoaderCircle, Search } from 'lucide-react'
-import skillApi, { getSkillErrorMessage, type SkillItem } from '@/api/skillApi'
 import { BaseModal } from '@/components/modals'
+import { isUuid } from '@/lib/utils'
 import {
   Button,
   Card,
@@ -15,13 +15,13 @@ import {
   FieldLabel,
   Input
 } from '@/components'
+import { getSkillErrorMessage, studentDashboardService } from '../services'
+import type { SkillItem } from '../types'
 
 interface StudentSkillSelectionModalProps {
   isOpen: boolean
   onComplete: () => void
 }
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export default function StudentSkillSelectionModal({
   isOpen,
@@ -40,7 +40,7 @@ export default function StudentSkillSelectionModal({
   useEffect(() => {
     if (!isOpen) return
 
-    skillApi.getSkills()
+    studentDashboardService.getSkills()
       .then(({ selectedSkills, skills: availableSkills }) => {
         setError('')
         setQuery('')
@@ -63,7 +63,7 @@ export default function StudentSkillSelectionModal({
     const timeoutId = window.setTimeout(async () => {
       setIsSearching(true)
       try {
-        const results = await skillApi.searchSkills(normalizedQuery)
+        const results = await studentDashboardService.searchSkills(normalizedQuery)
         if (!active) return
         setSearchResults(results)
         setError('')
@@ -107,7 +107,7 @@ export default function StudentSkillSelectionModal({
       setError('Select at least one skill.')
       return
     }
-    if (uniqueSkillIds.some((skillId) => !UUID_PATTERN.test(skillId))) {
+    if (uniqueSkillIds.some((skillId) => !isUuid(skillId))) {
       setError('One or more selected skills have an invalid ID.')
       return
     }
@@ -115,7 +115,7 @@ export default function StudentSkillSelectionModal({
     setError('')
     setIsSaving(true)
     try {
-      const selectedSkills = await skillApi.selectSkills(uniqueSkillIds)
+      const selectedSkills = await studentDashboardService.selectSkills(uniqueSkillIds)
       setSelectedIds(selectedSkills.map((skill) => skill.skillId))
       onComplete()
     } catch (requestError) {

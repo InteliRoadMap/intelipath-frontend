@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, UserRound } from 'lucide-react'
-import { updateApi } from '@/api'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, Search, UserRound } from 'lucide-react'
 import { BaseModal } from '@/components/modals'
 import { useAuth } from '@/context'
-import { getErrorMessage } from '@/lib/utils'
+import { getErrorMessage, isUuid, toIsoDateOnly } from '@/lib/utils'
+import { studentDashboardService } from '../services'
+import type { CareerRole } from '../types'
 
 interface StudentProfileSetupModalProps {
   isOpen: boolean
@@ -15,6 +16,7 @@ interface FormErrors {
   university?: string
   yearOfAdmission?: string
   major?: string
+  careerId?: string
   general?: string
 }
 
@@ -30,8 +32,82 @@ export default function StudentProfileSetupModal({
   const [university, setUniversity] = useState('')
   const [yearOfAdmission, setYearOfAdmission] = useState('')
   const [major, setMajor] = useState('Software Engineering')
+  const [careers, setCareers] = useState<CareerRole[]>([])
+  const [careerId, setCareerId] = useState('')
+  const [careerSearch, setCareerSearch] = useState('')
+  const [careerCategory, setCareerCategory] = useState('All')
   const [errors, setErrors] = useState<FormErrors>({})
+  const [isLoadingCareers, setIsLoadingCareers] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  const careerGroups = useMemo(() => {
+    const groups = new Map<string, CareerRole[]>()
+    careers.forEach((career) => {
+      const category = getCareerCategory(career)
+      groups.set(category, [...(groups.get(category) ?? []), career])
+    })
+
+    return [...groups.entries()]
+      .sort(([first], [second]) => first.localeCompare(second))
+      .map(([category, items]) => ({ category, items }))
+  }, [careers])
+
+  const careerCategories = useMemo(
+    () => ['All', ...careerGroups.map((group) => group.category)],
+    [careerGroups],
+  )
+
+  const filteredCareerGroups = useMemo(() => {
+    const query = careerSearch.trim().toLowerCase()
+
+    return careerGroups
+      .filter((group) => careerCategory === 'All' || group.category === careerCategory)
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((career) => {
+          const searchable = [
+            career.careerName,
+            career.prerequisite,
+            career.description,
+            group.category,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+          return !query || searchable.includes(query)
+        }),
+      }))
+      .filter((group) => group.items.length > 0)
+  }, [careerCategory, careerGroups, careerSearch])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    let active = true
+    setIsLoadingCareers(true)
+    studentDashboardService.getCareerRoles()
+      .then((nextCareers) => {
+        if (!active) return
+        setCareers(nextCareers)
+        setErrors((current) => ({ ...current, general: undefined }))
+      })
+      .catch((requestError) => {
+        if (!active) return
+        setCareers([])
+        setErrors((current) => ({
+          ...current,
+          general: getErrorMessage(requestError)
+        }))
+      })
+      .finally(() => {
+        if (active) setIsLoadingCareers(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [isOpen])
 
   const goToAcademicStep = () => {
     if (!fullName.trim()) {
@@ -50,9 +126,11 @@ export default function StudentProfileSetupModal({
 
   const handleSave = async () => {
     const nextErrors: FormErrors = {}
+    const normalizedAdmissionDate = toIsoDateOnly(yearOfAdmission)
     if (!university.trim()) nextErrors.university = 'Enter your university.'
-    if (!yearOfAdmission) nextErrors.yearOfAdmission = 'Select your admission date.'
+    if (!normalizedAdmissionDate) nextErrors.yearOfAdmission = 'Select a valid admission date.'
     if (!major.trim()) nextErrors.major = 'Enter your major.'
+    if (!isUuid(careerId)) nextErrors.careerId = 'Select a valid target career from the list.'
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
@@ -62,15 +140,16 @@ export default function StudentProfileSetupModal({
     setErrors({})
     setIsSaving(true)
     try {
-      await updateApi.updateUserProfile({
+      await studentDashboardService.updateUserProfile({
         fullName: fullName.trim(),
         yob,
         bio: bio.trim(),
       })
-      await updateApi.updateStudentProfile({
+      await studentDashboardService.updateStudentProfile({
         university: university.trim(),
-        yearOfAdmission,
+        yearOfAdmission: normalizedAdmissionDate,
         major: major.trim(),
+        careerId,
       })
       onComplete()
     } catch (requestError) {
@@ -212,6 +291,84 @@ export default function StudentProfileSetupModal({
                   />
                 </Field>
 
+                <div className="sm:col-span-2">
+                  <Field label="Target career" required error={errors.careerId}>
+                    <div className="rounded-md border border-slate-200 bg-white p-3">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                          value={careerSearch}
+                          disabled={isLoadingCareers}
+                          onChange={(event) => setCareerSearch(event.target.value)}
+                          placeholder={isLoadingCareers ? 'Loading careers...' : 'Search by role, prerequisite, or description'}
+                          className={`${inputClass} pl-9 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500`}
+                        />
+                      </div>
+
+                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                        {careerCategories.map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            onClick={() => setCareerCategory(category)}
+                            className={`shrink-0 cursor-pointer rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
+                              careerCategory === category
+                                ? 'border-[#00767b] bg-cyan-50 text-[#006064]'
+                                : 'border-slate-200 bg-white text-slate-500 hover:border-cyan-200 hover:text-slate-700'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 max-h-56 space-y-4 overflow-y-auto pr-1">
+                        {filteredCareerGroups.length > 0 ? (
+                          filteredCareerGroups.map((group) => (
+                            <div key={group.category}>
+                              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                {group.category}
+                              </p>
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {group.items.map((career) => {
+                                  const isSelected = careerId === career.careerId
+
+                                  return (
+                                    <button
+                                      key={career.careerId}
+                                      type="button"
+                                      onClick={() => {
+                                        setCareerId(career.careerId)
+                                        setErrors((current) => ({ ...current, careerId: undefined }))
+                                      }}
+                                      className={`min-h-20 cursor-pointer rounded-md border p-3 text-left transition-all ${
+                                        isSelected
+                                          ? 'border-[#00767b] bg-cyan-50 ring-2 ring-[#00767b]/15'
+                                          : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-white'
+                                      }`}
+                                    >
+                                      <span className="block text-sm font-bold text-slate-900">
+                                        {career.careerName}
+                                      </span>
+                                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+                                        {career.prerequisite || career.description || 'Career roadmap from backend data.'}
+                                      </span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-medium text-slate-500">
+                            {isLoadingCareers ? 'Loading careers...' : 'No careers match your filters.'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Field>
+                </div>
+
                 <div className="sm:col-span-2 mt-2 flex gap-3 rounded-md border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-slate-600">
                   <BookOpen className="mt-0.5 shrink-0 text-[#00767b]" size={17} />
                   You can update these details later from your profile settings.
@@ -249,6 +406,19 @@ export default function StudentProfileSetupModal({
 
 const inputClass =
   'block h-11 w-full rounded-md border border-slate-300 bg-white px-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#00767b] focus:ring-2 focus:ring-[#00767b]/15'
+
+function getCareerCategory(career: CareerRole) {
+  const text = `${career.careerName} ${career.prerequisite ?? ''} ${career.description ?? ''}`.toLowerCase()
+
+  if (/(ai|machine learning|data|analyst|analytics|scientist)/.test(text)) return 'Data & AI'
+  if (/(security|cyber|devops|cloud|network|system)/.test(text)) return 'Infrastructure'
+  if (/(ui|ux|design|product|business|manager|marketing)/.test(text)) return 'Product & Design'
+  if (/(mobile|android|ios|flutter|react native)/.test(text)) return 'Mobile'
+  if (/(backend|java|spring|node|api|database)/.test(text)) return 'Backend'
+  if (/(frontend|front-end|react|css|html|javascript|typescript|web)/.test(text)) return 'Frontend'
+
+  return 'General'
+}
 
 function SectionTitle({
   icon,

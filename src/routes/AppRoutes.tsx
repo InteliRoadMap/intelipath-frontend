@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom"
-import { WelcomePage, WelcomeDemo, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
+import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
 import { ProtectedRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
 
@@ -8,7 +8,7 @@ export const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path={ROUTES.HOME} element={<WelcomePage />} />
-      <Route path={ROUTES.WELCOME_DEMO} element={<WelcomeDemo />} />
+
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />

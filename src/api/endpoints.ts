@@ -11,23 +11,28 @@ export const ENDPOINTS = {
     REFRESH_TOKEN: '/auth/refresh'
   },
   USERS: {
-    ME: '/user/me',
-    PROFILE: '/user/profile',
+    ME: '/users/me',
+    PROFILE: '/users/profile',
   },
   STUDENT: {
-    PROFILE: '/student/profile',
-    TARGET_CAREER: '/student/target-career',
-    SKILLS: '/student/skills',
-    SELECT_SKILLS: '/student/skills/select',
+    PROFILE: '/students/profile',
+    TARGET_CAREER: '/students/target-career',
+    SKILLS: '/students/skills',
+    SELECT_SKILLS: '/students/skills/select',
   },
   CAREER_ROLES: {
     LIST: '/career-roles',
   },
   ROADMAP: {
-    STUDENT_ROADMAP: '/student/roadmap',
-    COMPARE_SKILLS: '/roadmap/skills/compare',
+    CAREER_ROADMAP: (careerId: string) => `/roadmaps/${careerId}`,
+    CAREER_PROGRESS: (careerId: string) => `/roadmaps/${careerId}/progress`,
+    STUDENT_ROADMAP: '/roadmaps/student',
+    NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
+    UPDATE_NODE_PROGRESS: '/roadmaps/nodes/progress',
+    COMPARE_SKILLS: '/roadmaps/skills/compare',
   },
   STUDENT_DASHBOARD: {
+    OVERVIEW: '/student/dashboard',
     ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',
     SKILL_GAPS: '/student/dashboard/skill-gaps',
     MENTOR_FEEDBACK: '/student/dashboard/mentor-feedback',

@@ -40,6 +40,25 @@ export type CareerRole = {
   description?: string
 }
 
+export type SkillItem = {
+  skillId: string
+  skillName: string
+  category: string
+  career: string
+}
+
+export type RequiredSkill = {
+  skill: SkillItem
+  importanceLevel: string
+}
+
+export type SkillResponse = {
+  selectedSkills: SkillItem[]
+  skills: SkillItem[]
+  requiredSkills: RequiredSkill[]
+  missingSkills: SkillItem[]
+}
+
 export type SkillGap = {
   id: string
   type: "critical" | "market"

@@ -11,9 +11,10 @@ export interface UpdateStudentProfilePayload {
   university: string
   yearOfAdmission: string
   major: string
+  careerId: string
 }
 
-const updateApi = {
+const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>
@@ -23,4 +24,4 @@ const updateApi = {
     mainClient.patch(ENDPOINTS.STUDENT.PROFILE, data),
 }
 
-export default updateApi
+export default profileApi
