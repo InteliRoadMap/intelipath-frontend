@@ -67,6 +67,9 @@ export const ENDPOINTS = {
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
     USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`
   },
+  COUNSELOR: {
+    PROFILE: '/counselor/profile',
+  },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
     METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
@@ -88,7 +91,13 @@ export const ENDPOINTS = {
     METRICS_RESPONSE_TIME: "/mentor/dashboard/metrics/response-time",
     METRICS_MENTEES: "/mentor/dashboard/metrics/mentees",
     PENDING_REVIEWS: "/mentor/dashboard/pending-reviews",
-    INSIGHT: "/mentor/dashboard/insight"
+    INSIGHT: "/mentor/dashboard/insight",
+    CAREER_DISTRIBUTION: '/mentor/dashboard/career-distribution',
+    STUDENT_LIST: '/mentor/feedback/students',
+    STUDENT_PORTFOLIO: (studentId: string) => `/mentor/portfolio/${studentId}`
+  },
+  MENTOR: {
+    PROFILE: '/mentor/profile',
   }
   // // ─── User Profile (general) ────────────────────────────────────
   // EDIT: {

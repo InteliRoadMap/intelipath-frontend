@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from "react-router-dom"
-import { MapTrifold, Robot, SquaresFour, TrendUp } from "@phosphor-icons/react"
+import { NavLink, useNavigate, useLocation } from "react-router-dom"
+import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
 import { DashboardUserActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
@@ -19,6 +19,7 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
   const location = useLocation()
   const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
 
+  const navigate = useNavigate()
   return (
     <nav className="fixed inset-x-0 top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
       <div className="flex items-center gap-6 md:gap-12">
@@ -32,6 +33,10 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
           <NavLink to={ROUTES.DASHBOARD_STUDENT_ROADMAP} className={navLinkClass}>
             <MapTrifold size={17} weight="duotone" />
             My Roadmap
+          </NavLink>
+          <NavLink to={ROUTES.DASHBOARD_STUDENT_PORTFOLIO} className={navLinkClass}>
+            <IdentificationCard size={17} weight="duotone" />
+            E-Portfolio
           </NavLink>
           <button
             type="button"
@@ -55,7 +60,11 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
         </div>
       </div>
 
-      <DashboardUserActions user={user} onLogout={onLogout} />
+      <DashboardUserActions 
+        user={user} 
+        onLogout={onLogout} 
+        onSettings={() => navigate(ROUTES.DASHBOARD_STUDENT_SETTINGS)} 
+      />
     </nav>
   )
 }

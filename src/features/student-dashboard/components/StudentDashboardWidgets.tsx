@@ -321,6 +321,90 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
           </div>
         </div>
       )}
+      <div className="flex-1 space-y-3.5">
+        {status === "loading" ? (
+          <LoadingState />
+        ) : status === "error" ? (
+          <LoadingState />
+        ) : Array.isArray(data) && data.length > 0 ? (
+          data.map((gap) => (
+            <div
+              key={gap.id}
+              className={`rounded-xl border p-4 ${
+                gap.type === "critical" ? "border-[#ffe4e4] bg-[#fff5f5]" : "border-[#e0f2fe] bg-[#f0f9ff]"
+              }`}
+            >
+              <div className="mb-1.5 flex items-center justify-between">
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wider ${
+                    gap.type === "critical" ? "text-rose-600" : "text-[#0284c7]"
+                  }`}
+                >
+                  {gap.type === "critical" ? "CRITICAL GAP" : "MARKET REQUIREMENT"}
+                </span>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                    gap.type === "critical" ? "bg-[#fee2e2] text-rose-600" : "bg-[#bae6fd] text-[#0369a1]"
+                  }`}
+                >
+                  {gap.severity}
+                </span>
+              </div>
+              <h4 className="mb-1 text-[15px] font-bold text-slate-900">{gap.title}</h4>
+              <p className="text-[12px] leading-snug text-slate-600">{gap.description}</p>
+            </div>
+          ))
+        ) : (
+          <LoadingState />
+        )}
+      </div>
+
+      <button className="mt-5 w-full rounded-xl border border-slate-200 py-2.5 text-[14px] font-bold text-[#006064] transition-colors hover:bg-slate-50">
+        Download Detailed Report
+      </button>
+    </div>
+  )
+}
+
+export const MentorFeedbackWidget = () => {
+  const { data, status } = useDashboardData<MentorFeedback[]>(
+    () => dashboardApi.getMentorFeedback() as Promise<MentorFeedback[]>
+  )
+
+  return (
+    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <WidgetHeader
+        title="Mentor Feedback"
+        description="Latest notes from mentors and reviewers."
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        }
+      />
+
+      <div className="flex-1 space-y-4">
+        {status === "loading" ? (
+          <LoadingState />
+        ) : status === "error" ? (
+          <LoadingState />
+        ) : Array.isArray(data) && data.length > 0 ? (
+          data.map((feedback) => (
+            <div key={feedback.id} className="relative pl-4">
+              <div className="absolute bottom-0 left-0 top-0 w-[5px] rounded-full bg-[#00838f] opacity-90" />
+              <div className="rounded-xl rounded-l-none border border-slate-100 bg-[#f8fafc] p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-[14px] font-bold text-[#006064]">{feedback.name}</h4>
+                  <span className="text-[10px] font-semibold text-slate-400">{feedback.time}</span>
+                </div>
+                <p className="text-[13px] italic leading-relaxed text-slate-600">"{feedback.text}"</p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <LoadingState />
+        )}
+      </div>
     </div>
   )
 }
@@ -390,14 +474,128 @@ export const SkillComparisonWidget = () => {
   )
 }
 
-export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
-  const { data, status } = useDashboardData<MarketDemand>(
-    () => studentDashboardService.getMarketDemand()
+export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
+  const { data, status } = useDashboardData<AiHistoryItem[]>(
+    () => dashboardApi.getAiHistory() as Promise<AiHistoryItem[]>
   )
 
-  // Map data to Recharts format
-  const chartData = data?.chart.map((val, i) => ({ 
-    name: `M${i+1}`, 
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-white p-5 md:p-6">
+      <div className="flex items-start justify-between gap-4">
+        <WidgetHeader
+          title="AI Mentor History"
+          description="Recent questions and guidance."
+          icon={<Bot size={18} />}
+        />
+        <button
+          type="button"
+          onClick={onClose}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          title="Close AI Mentor"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+        {status === "loading" ? (
+          <LoadingState />
+        ) : status === "error" ? (
+          <LoadingState />
+        ) : Array.isArray(data) && data.length > 0 ? (
+          data.map((item, index) => (
+            <div
+              key={item.id}
+              className={`rounded-xl border p-4 ${
+                index === 1 ? "border-l-[3px] border-[#00838f] bg-white" : "border-slate-100 bg-[#f8fafc]"
+              }`}
+            >
+              <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">{item.tag}</span>
+              <h4 className="mb-1 truncate text-[14px] font-bold text-slate-900">{item.title}</h4>
+              <p className="truncate text-[12px] text-slate-500">{item.preview}</p>
+            </div>
+          ))
+        ) : (
+          <LoadingState />
+        )}
+      </div>
+
+      <div className="relative mt-5">
+        <input
+          type="text"
+          placeholder="Ask your AI Mentor..."
+          className="w-full rounded-xl border border-slate-200 bg-[#f8fafc] py-3 pl-4 pr-12 text-[13px] outline-none transition-colors focus:border-[#00838f]"
+        />
+        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00838f] hover:text-[#006064]">
+          <Send size={16} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export const PriorityLearningWidget = () => {
+  const { data, status } = useDashboardData<Recommendation[]>(
+    () => dashboardApi.getRecommendations() as Promise<Recommendation[]>
+  )
+
+  return (
+    <div className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <WidgetHeader
+        title="Priority Learning"
+        description="Recommended actions to bridge the most important gaps."
+        icon={<Network size={18} />}
+      />
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {status === "loading" ? (
+          <div className="md:col-span-2">
+            <LoadingState />
+          </div>
+        ) : status === "error" ? (
+          <div className="md:col-span-2">
+            <LoadingState rows={4} />
+          </div>
+        ) : Array.isArray(data) && data.length > 0 ? (
+          data.map((item) => (
+            <div key={item.id} className="flex h-full flex-col rounded-lg border border-slate-200 bg-[#f8fafc] p-5">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e0f2fe] text-[#0284c7]">
+                  {item.icon === "Network" ? <Network size={20} strokeWidth={2.5} /> : <Box size={20} strokeWidth={2.5} />}
+                </div>
+                <span className="rounded-md bg-[#e0f2fe] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#0369a1]">
+                  {item.type}
+                </span>
+              </div>
+              <h4 className="mb-2 text-[16px] font-bold text-slate-900">{item.title}</h4>
+              <p className="mb-6 flex-1 text-[13px] leading-relaxed text-slate-500">{item.description}</p>
+              <div className="flex gap-3">
+                <button className="flex-1 rounded-xl bg-[#006064] py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#00838f]">
+                  Start Now
+                </button>
+                <button className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-bold text-slate-700 transition-colors hover:bg-slate-50">
+                  Details
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="md:col-span-2">
+            <LoadingState rows={4} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
+  const { data, status } = useDashboardData<MarketDemandData>(
+    () => dashboardApi.getMarketDemand() as Promise<MarketDemandData>
+  )
+
+  const chartData = data?.trend?.map((val, i) => ({
+    name: `M${i + 1}`,
     value: val 
   })) || []
 

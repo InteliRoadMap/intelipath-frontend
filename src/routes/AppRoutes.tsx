@@ -1,24 +1,11 @@
 import { Routes, Route } from "react-router-dom"
-import { WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, CounselorDashboard, MentorDashboard, AdminDashboard, OAuthCallbackPage, NotFoundPage } from "@/pages"
-import {
-  WelcomePage,
-  LoginPage,
-  RegisterPage,
-  ForgotPasswordPage,
-  ResetPasswordPage,
-  DashboardPage,
-  StudentDashboard,
-  StudentRoadmap,
-  CounselorDashboard,
-  CounselorFeedbackPage,
-  MentorDashboard,
-  AdminDashboard,
-  OAuthCallbackPage,
-  NotFoundPage,
-  ProfileSettingsPage,
-  MentorProfileSettingsPage,
-  CounselorProfileSettingsPage,
-  AIMentorPage
+import { 
+  WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, 
+  DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, 
+  CounselorDashboard, CounselorFeedbackPage, MentorDashboard, AdminDashboard, 
+  OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
+  CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
+  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage
 } from "@/pages"
 import { ProtectedRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
@@ -69,6 +56,30 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path={ROUTES.DASHBOARD_STUDENT_PORTFOLIO}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT, ROLES.MENTOR]}>
+            <StudentPortfolioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentProfileSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_FEEDBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentFeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.DASHBOARD_COUNSELOR}
         element={
           <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
@@ -89,6 +100,38 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_STUDENTS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorStudentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_FEEDBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorFeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_PORTFOLIO}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorPortfolioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_SETTINGS}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorProfileSettingsPage />
           </ProtectedRoute>
         }
       />
