@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Gauge, Users, Layers } from 'lucide-react';
 import { Layout, ChatTeardropText, Users as UsersIcon } from '@phosphor-icons/react';
-import { DashboardUserActions, Logo } from '@/components/ui';
+import { UserHeaderActions, Logo } from '@/components/ui';
 import { useAuth } from '@/context';
 import { useNavigate, NavLink } from 'react-router-dom';
 import mentorApi from '@/api/mentorApi';
@@ -79,7 +79,7 @@ export function MentorDashboardView() {
               </NavLink>
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
+          <UserHeaderActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </header>
 

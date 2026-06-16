@@ -33,7 +33,7 @@ import {
   PaperPlaneTilt
 } from "@phosphor-icons/react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import type { MyStudent, MissingSkillItem, Feedback } from "@/api/counselorApi"
@@ -906,7 +906,7 @@ export default function CounselorFeedbackPage() {
             </a>
           </div>
         </div>
-        <DashboardUserActions user={user} onLogout={handleLogout} />
+        <UserHeaderActions user={user} onLogout={handleLogout} />
       </nav>
 
       {/* MAIN */}

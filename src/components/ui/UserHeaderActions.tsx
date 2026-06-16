@@ -3,15 +3,15 @@ import { Bell, UserCircle, SignOut, CaretDown, CheckCircle, Gear, GearSix } from
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
 import type { User } from '@/features/auth'
-import NotificationPanel from './NotificationPanel'
 
-interface DashboardUserActionsProps {
+
+interface UserHeaderActionsProps {
   user: User | null
   onLogout: () => void
   onSettings?: () => void
 }
 
-export default function DashboardUserActions({ user, onLogout, onSettings }: DashboardUserActionsProps) {
+export default function UserHeaderActions({ user, onLogout, onSettings }: UserHeaderActionsProps) {
   const navigate = useNavigate()
   const fullName = user?.fullName || 'User'
   const email = user?.email || 'No email'
@@ -59,24 +59,6 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
   return (
     <div className="flex min-w-0 items-center gap-3 lg:gap-4">
       <div className="flex items-center gap-1.5 border-r border-slate-200 pr-3 lg:gap-2 lg:pr-4">
-        <NotificationPanel />
-        <button
-          type="button"
-          onClick={onSettings || (() => {
-            const roleKey = String(user?.role || 'USER').toUpperCase();
-            if (roleKey === 'MENTOR') {
-              navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings');
-            } else if (roleKey === 'COUNSELOR') {
-              navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings');
-            } else {
-              navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings');
-            }
-          })}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
-          title="Settings"
-        >
-          <Gear size={18} weight="duotone" />
-        </button>
         <div className="relative">
           <button
             type="button"
@@ -123,7 +105,16 @@ export default function DashboardUserActions({ user, onLogout, onSettings }: Das
         </div>
         <button
           type="button"
-          onClick={onSettings}
+          onClick={onSettings || (() => {
+            const roleKey = String(user?.role || 'USER').toUpperCase();
+            if (roleKey === 'MENTOR') {
+              navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings');
+            } else if (roleKey === 'COUNSELOR') {
+              navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings');
+            } else {
+              navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings');
+            }
+          })}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
           title="Settings"
         >

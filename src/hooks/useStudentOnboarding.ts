@@ -61,17 +61,19 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     }
 
     try {
-      await profileApi.updateUserProfile({
-        fullName,
-        yob,
-        bio
-      })
-
-      await profileApi.updateStudentProfile({
-        university,
-        yearOfAdmission: yearOfAdmission,
-        major 
-      })
+      await Promise.all([
+        profileApi.updateUserProfile({
+          fullName,
+          yob,
+          bio
+        }),
+        profileApi.updateStudentProfile({
+          university,
+          yearOfAdmission,
+          major,
+          careerId: ""
+        })
+      ])
 
       setStep(1)
       handleClose()

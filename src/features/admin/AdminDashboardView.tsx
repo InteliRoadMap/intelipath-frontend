@@ -23,7 +23,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DashboardUserActions,
+  UserHeaderActions,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -438,7 +438,7 @@ export default function AdminDashboardView() {
               })}
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <UserHeaderActions user={user} onLogout={handleLogout} />
         </div>
       </header>
 

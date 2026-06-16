@@ -14,7 +14,7 @@ import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
@@ -151,7 +151,7 @@ export default function StudentProfileSettingsPage() {
               })}
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} />
+          <UserHeaderActions user={user} onLogout={handleLogout} />
         </div>
       </header>
 

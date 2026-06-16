@@ -18,7 +18,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DashboardUserActions,
+  UserHeaderActions,
   Logo,
   Skeleton
 } from "@/components";
@@ -108,7 +108,7 @@ export function MentorFeedbackHistoryView() {
               </NavLink>
             </nav>
           </div>
-          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
+          <UserHeaderActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </header>
 

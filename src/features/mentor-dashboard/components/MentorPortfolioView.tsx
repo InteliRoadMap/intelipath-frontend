@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, MessageSquare, ArrowLeft, Mail, MapPin, GraduationCap, Briefcase, ExternalLink, Send, Users } from 'lucide-react';
-import { DashboardUserActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui';
+import { UserHeaderActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui';
 import { useAuth } from '@/context';
 import { useNavigate, useParams } from 'react-router-dom';
 import mentorApi from '@/api/mentorApi';
@@ -76,7 +76,7 @@ export function MentorPortfolioView() {
         </div>
 
         <div className="relative">
-          <DashboardUserActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
+          <UserHeaderActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
         </div>
       </nav>
 

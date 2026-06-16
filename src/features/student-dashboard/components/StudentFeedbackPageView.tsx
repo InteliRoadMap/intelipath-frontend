@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import StudentTopNav from './StudentTopNav';
+import StudentHeader from './StudentHeader';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';
@@ -47,7 +47,7 @@ export function StudentFeedbackPageView() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans">
-      <StudentTopNav 
+      <StudentHeader 
         user={user} 
         onLogout={handleLogout} 
         onOpenAiMentor={() => {}} 

@@ -1,10 +1,10 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
 
-type StudentTopNavProps = {
+type StudentHeaderProps = {
   user: User | null
   onLogout: () => void | Promise<void>
   onOpenAiMentor: () => void
@@ -15,7 +15,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "border-[#00838f] text-[#00838f]" : "border-transparent hover:text-slate-800"
   }`
 
-export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: StudentTopNavProps) {
+export default function StudentHeader({ user, onLogout, onOpenAiMentor }: StudentHeaderProps) {
   const location = useLocation()
   const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
 
@@ -60,7 +60,7 @@ export default function StudentTopNav({ user, onLogout, onOpenAiMentor }: Studen
         </div>
       </div>
 
-      <DashboardUserActions 
+      <UserHeaderActions 
         user={user} 
         onLogout={onLogout} 
         onSettings={() => navigate(ROUTES.DASHBOARD_STUDENT_SETTINGS)} 

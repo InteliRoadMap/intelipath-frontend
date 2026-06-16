@@ -5,7 +5,7 @@ import { useGSAP } from "@gsap/react"
 import { DiagonalGridBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import {
@@ -17,7 +17,7 @@ import {
 } from "./StudentDashboardWidgets"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
-import StudentTopNav from "./StudentTopNav"
+import StudentHeader from "./StudentHeader"
 
 gsap.registerPlugin(useGSAP)
 
@@ -58,7 +58,7 @@ export default function StudentDashboardView() {
     <div ref={dashboardRef} className="relative min-h-screen overflow-x-hidden bg-[#f8fafc] pb-24 pt-[74px] font-sans text-slate-900">
       <DiagonalGridBackground />
 
-      <StudentTopNav
+      <StudentHeader
         user={user}
         onLogout={handleLogout}
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}

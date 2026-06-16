@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Check } from 'lucide-react';
+import { Check, LockKeyhole } from 'lucide-react';
 
 interface CustomRoadmapNodeProps {
   data: {
@@ -17,94 +17,99 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   const isCompleted = data.status === 'completed';
   const isCurrent = data.status === 'current' || data.status === 'in_progress';
   const isLocked = data.status === 'locked' || (!isCompleted && !isCurrent);
-  const isMain = data.level && data.level > 0;
+  const isMain = data.level !== undefined && data.level > 0;
   const isIsolated = !!data.isIsolated;
-  const isChild = !isMain && !isIsolated;
   
-  const themeColor = data.themeColor || 'cyan';
+  const themeColor = data.themeColor || 'amber';
 
-  let gradientClass = '';
-  let lightGradientClass = '';
-  let textLightClass = '';
+  const getVividColor = () => {
+    if (isCompleted) return 'bg-[#00ffa3]'; 
+    if (isLocked && !isCurrent) return 'bg-slate-300'; 
+    
+    switch (themeColor) {
+      case 'cyan': return 'bg-[#00f0ff]';
+      case 'emerald': return 'bg-[#00ffa3]';
+      case 'violet': return 'bg-[#b05dff]';
+      case 'amber': return 'bg-[#ffe500]';
+      case 'rose': return 'bg-[#ff3b8d]';
+      case 'monochrome': return 'bg-white';
+      default: return 'bg-[#ffe500]';
+    }
+  };
 
-  switch (themeColor) {
-    case 'emerald': 
-      gradientClass = 'from-emerald-500 to-teal-600'; 
-      lightGradientClass = 'bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-900';
-      textLightClass = 'text-emerald-900';
-      break;
-    case 'violet': 
-      gradientClass = 'from-violet-500 to-fuchsia-600'; 
-      lightGradientClass = 'bg-gradient-to-br from-violet-50 to-fuchsia-50 text-violet-900';
-      textLightClass = 'text-violet-900';
-      break;
-    case 'amber': 
-      gradientClass = 'from-amber-400 to-orange-500'; 
-      lightGradientClass = 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-900';
-      textLightClass = 'text-amber-900';
-      break;
-    case 'rose': 
-      gradientClass = 'from-rose-400 to-red-600'; 
-      lightGradientClass = 'bg-gradient-to-br from-rose-50 to-red-50 text-rose-900';
-      textLightClass = 'text-rose-900';
-      break;
-    case 'monochrome': 
-      gradientClass = 'from-slate-700 to-slate-900'; 
-      lightGradientClass = 'bg-gradient-to-br from-slate-100 to-slate-50 text-slate-900';
-      textLightClass = 'text-slate-900';
-      break;
-    case 'cyan':
-    default: 
-      gradientClass = 'from-cyan-500 to-blue-600'; 
-      lightGradientClass = 'bg-gradient-to-br from-cyan-50 to-blue-50 text-cyan-900';
-      textLightClass = 'text-cyan-900';
-      break;
-  }
+  if (isMain) {
+    const bgColor = getVividColor();
+    const shadowClass = selected || isCurrent 
+      ? 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-[4px] translate-y-[4px]' 
+      : 'shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-[2px] group-hover:-translate-x-[2px]';
 
-  return (
-    <div className="w-[280px] min-h-[70px] relative group cursor-pointer">
-      
-      {/* Outer Shell (Double-Bezel) */}
-      <div className={`w-full h-full rounded-[1.5rem] p-1.5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]
-        ${selected ? 'shadow-[0_16px_40px_rgb(0,0,0,0.12)] scale-[1.02] ring-1 ring-black/10' : 'shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-black/[0.04] group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.08)] group-hover:scale-[1.02]'}
-        ${isMain ? `bg-gradient-to-br ${gradientClass}` : isIsolated ? 'bg-white ring-1 ring-slate-200 border border-dashed border-slate-300' : 'bg-white'}
-      `}>
-        {/* Inner Core */}
-        <div className={`w-full h-full rounded-[calc(1.5rem-0.375rem)] px-5 py-3 flex flex-col justify-center items-center text-center transition-colors duration-700
-          ${isMain ? 'bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] backdrop-blur-md' : 
-            isIsolated ? 'bg-slate-50/50 shadow-[inset_0_1px_1px_rgba(255,255,255,1)]' : 
-            `${lightGradientClass} shadow-[inset_0_1px_1px_rgba(255,255,255,1)] ring-1 ring-black/[0.03]`}
-          ${isChild && isCompleted ? 'ring-1 ring-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]' : ''}
-          ${isChild && isCurrent ? 'ring-1 ring-blue-500/30 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : ''}
-          ${isMain && isCompleted ? 'ring-1 ring-emerald-300/60 shadow-[inset_0_0_20px_rgba(16,185,129,0.3)]' : ''}
-          ${isMain && isCurrent ? 'ring-1 ring-white/60 shadow-[inset_0_0_20px_rgba(255,255,255,0.3)]' : ''}
+    return (
+      <div className="relative group cursor-pointer w-[280px]">
+        <div className={`
+          flex items-center justify-center min-h-[64px] px-6 py-4 
+          rounded-full border-[3.5px] border-black
+          transition-all duration-200 ease-out
+          ${bgColor} ${shadowClass}
         `}>
-          <p className={`text-[14px] font-semibold tracking-wide leading-snug transition-colors duration-500
-            ${isMain ? (isLocked ? 'text-white/60' : 'text-white') : 
-              isIsolated ? (isLocked ? 'text-slate-400' : 'text-slate-500') :
-              (isLocked ? 'text-slate-400/80' : textLightClass)}
-          `}>
+          {isCompleted && <Check size={20} strokeWidth={4} className="text-black absolute left-5" />}
+          {isLocked && !isCompleted && !isCurrent && <LockKeyhole size={18} strokeWidth={3} className="text-black/50 absolute left-5" />}
+          <p className="text-[15px] font-black uppercase tracking-[0.08em] text-black text-center w-full px-6">
             {data.label}
           </p>
         </div>
+
+        {/* Handles */}
+        <Handle type="target" position={Position.Top} id="t-top" className="w-1 h-1 opacity-0" />
+        <Handle type="source" position={Position.Bottom} id="s-bottom" className="w-1 h-1 opacity-0" />
+        <Handle type="target" position={Position.Left} id="t-left" className="w-1 h-1 opacity-0" />
+        <Handle type="source" position={Position.Right} id="s-right" className="w-1 h-1 opacity-0" />
+        <Handle type="source" position={Position.Left} id="s-left" className="w-1 h-1 opacity-0" />
+        <Handle type="target" position={Position.Right} id="t-right" className="w-1 h-1 opacity-0" />
+      </div>
+    );
+  }
+
+  const subShadowClass = selected || isCurrent
+    ? 'shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] translate-x-[3px] translate-y-[3px]'
+    : 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-[1px] group-hover:-translate-x-[1px]';
+
+  return (
+    <div className="relative group cursor-pointer w-[240px]">
+      <div className={`
+        flex items-center justify-between min-h-[56px] px-5 py-3 
+        rounded-xl border-[3px] border-black bg-white
+        transition-all duration-200 ease-out
+        ${subShadowClass}
+        ${isIsolated ? 'border-dashed' : ''}
+        ${isCurrent ? 'ring-2 ring-black ring-offset-2' : ''}
+      `}>
+        <div className="flex-1">
+          <p className={`text-[14px] font-bold tracking-wide leading-tight text-black ${isLocked && !isCurrent ? 'opacity-50' : ''}`}>
+            {data.label}
+          </p>
+        </div>
+        <div className="shrink-0 ml-3">
+          {isCompleted && (
+            <div className="w-6 h-6 rounded-full bg-[#00ffa3] border-2 border-black flex items-center justify-center">
+              <Check size={14} strokeWidth={4} className="text-black" />
+            </div>
+          )}
+          {isLocked && !isCompleted && !isCurrent && (
+            <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-black flex items-center justify-center">
+              <LockKeyhole size={12} strokeWidth={3} className="text-black/50" />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Target Handles (Nhận dây) */}
+      {/* Handles */}
       <Handle type="target" position={Position.Top} id="t-top" className="w-1 h-1 opacity-0" />
-      <Handle type="target" position={Position.Left} id="t-left" className="w-1 h-1 opacity-0" />
-      <Handle type="target" position={Position.Right} id="t-right" className="w-1 h-1 opacity-0" />
-
-      {/* Source Handles (Phóng dây) */}
       <Handle type="source" position={Position.Bottom} id="s-bottom" className="w-1 h-1 opacity-0" />
-      <Handle type="source" position={Position.Left} id="s-left" className="w-1 h-1 opacity-0" />
+      <Handle type="target" position={Position.Left} id="t-left" className="w-1 h-1 opacity-0" />
       <Handle type="source" position={Position.Right} id="s-right" className="w-1 h-1 opacity-0" />
-
-      {/* Status Badges */}
-      {isCompleted && (
-        <div className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)] ring-2 ring-white z-10 transition-transform group-hover:scale-110 duration-500">
-          <Check size={12} strokeWidth={3} />
-        </div>
-      )}
+      <Handle type="source" position={Position.Left} id="s-left" className="w-1 h-1 opacity-0" />
+      <Handle type="target" position={Position.Right} id="t-right" className="w-1 h-1 opacity-0" />
+      
       {isCurrent && (
         <div className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_4px_10px_rgba(59,130,246,0.3)] ring-2 ring-white animate-pulse z-10 transition-transform group-hover:scale-110 duration-500">
           <div className="h-2 w-2 rounded-full bg-white"></div>

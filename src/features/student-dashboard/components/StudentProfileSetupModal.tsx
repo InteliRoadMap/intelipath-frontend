@@ -140,17 +140,19 @@ export default function StudentProfileSetupModal({
     setErrors({})
     setIsSaving(true)
     try {
-      await studentDashboardService.updateUserProfile({
-        fullName: fullName.trim(),
-        yob,
-        bio: bio.trim(),
-      })
-      await studentDashboardService.updateStudentProfile({
-        university: university.trim(),
-        yearOfAdmission: normalizedAdmissionDate,
-        major: major.trim(),
-        careerId,
-      })
+      await Promise.all([
+        studentDashboardService.updateUserProfile({
+          fullName: fullName.trim(),
+          yob,
+          bio: bio.trim(),
+        }),
+        studentDashboardService.updateStudentProfile({
+          university: university.trim(),
+          yearOfAdmission: normalizedAdmissionDate,
+          major: major.trim(),
+          careerId,
+        })
+      ])
       onComplete()
     } catch (requestError) {
       setErrors({ general: getErrorMessage(requestError) })

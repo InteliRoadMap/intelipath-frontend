@@ -8,7 +8,11 @@ import {
   TrendingUp,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bot,
+  Send,
+  Network,
+  Box
 } from "lucide-react"
 import {
   Radar,
@@ -29,7 +33,10 @@ import type {
   MarketDemand,
   RoadmapProgress,
   SkillGap,
-  SkillResponse
+  SkillResponse,
+  MentorFeedback,
+  AiHistoryItem,
+  Recommendation
 } from "../types"
 
 const LoadingState = ({ rows = 3 }: { rows?: number }) => (
@@ -126,7 +133,7 @@ export const StudentWelcomeHeader = () => {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00838f]"></span>
             </span>
             <p className="text-[14px] font-bold text-slate-900">
-              Backend Developer
+              {data?.targetCareerRole || 'Not Selected'}
             </p>
           </div>
         </div>
@@ -368,7 +375,7 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
 
 export const MentorFeedbackWidget = () => {
   const { data, status } = useDashboardData<MentorFeedback[]>(
-    () => dashboardApi.getMentorFeedback() as Promise<MentorFeedback[]>
+    () => studentDashboardService.getMentorFeedback() as Promise<MentorFeedback[]>
   )
 
   return (
@@ -474,9 +481,9 @@ export const SkillComparisonWidget = () => {
   )
 }
 
-export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
+export const AiMentorWidget = () => {
   const { data, status } = useDashboardData<AiHistoryItem[]>(
-    () => dashboardApi.getAiHistory() as Promise<AiHistoryItem[]>
+    () => studentDashboardService.getAiHistory() as Promise<AiHistoryItem[]>
   )
 
   return (
@@ -534,9 +541,9 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-export const PriorityLearningWidget = () => {
+export const RecommendationsWidget = () => {
   const { data, status } = useDashboardData<Recommendation[]>(
-    () => dashboardApi.getRecommendations() as Promise<Recommendation[]>
+    () => studentDashboardService.getRecommendations() as Promise<Recommendation[]>
   )
 
   return (
@@ -590,11 +597,11 @@ export const PriorityLearningWidget = () => {
 }
 
 export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
-  const { data, status } = useDashboardData<MarketDemandData>(
-    () => dashboardApi.getMarketDemand() as Promise<MarketDemandData>
+  const { data, status } = useDashboardData<MarketDemand>(
+    () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
   )
 
-  const chartData = data?.trend?.map((val, i) => ({
+  const chartData = data?.chart?.map((val, i) => ({
     name: `M${i + 1}`,
     value: val 
   })) || []

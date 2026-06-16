@@ -6,6 +6,7 @@ import { ReactFlowProvider } from '@xyflow/react'
 import {
   ArrowRight,
   ArrowsClockwise,
+  Check,
   CheckCircle,
   Clock,
   LinkSimple,
@@ -28,7 +29,7 @@ import { studentDashboardService } from "../services"
 import type { CareerRole, StudentRoadmap } from "../types"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
-import StudentTopNav from "./StudentTopNav"
+import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 
 gsap.registerPlugin(useGSAP)
@@ -210,7 +211,8 @@ export default function StudentRoadmapPageView() {
   const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null)
   
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
-  const [isUpdatingNode, setIsUpdatingNode] = useState(false)
+  const [isUpdatingNode, setIsUpdatingNode] = useState(false);
+  const [optimisticStatusMap, setOptimisticStatusMap] = useState<Record<string, string>>({});
 
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
 
@@ -233,11 +235,42 @@ export default function StudentRoadmapPageView() {
     if (!selectedNodeData || isUpdatingNode) return;
     setIsUpdatingNode(true);
     try {
+      // 1. Gửi request lên Backend (nếu lỗi sẽ văng xuống catch)
       await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus);
-      await loadRoadmap(); // Reload the map to reflect changes (colors, edges)
+      
+      // 2. Cập nhật lạc quan (Optimistic Update)
       setSelectedNodeData({ ...selectedNodeData, status: newStatus });
+      if (roadmapData && roadmapData.nodes) {
+        const updatedNodes = roadmapData.nodes.map(node => 
+          node.id === selectedNodeData.id ? { ...node, status: newStatus as any } : node
+        );
+        setRoadmapData({ ...roadmapData, nodes: updatedNodes });
+      }
+      setOptimisticStatusMap(prev => ({ ...prev, [selectedNodeData.id]: newStatus }));
+      
+      console.log(
+        newStatus === 'completed' 
+          ? 'Node marked as completed!' 
+          : 'Node marked as in progress'
+      );
+
+      // 3. Gọi ngầm Backend để lấy cây Roadmap mới nhất (đã được tính toán Auto-Unlock)
+      studentDashboardService.getStudentRoadmap().then(freshData => {
+        if (freshData) {
+          setRoadmapData(freshData);
+          // Xóa map lạc quan vì data thật đã về
+          setOptimisticStatusMap({});
+        }
+      }).catch(err => console.error("Background sync failed", err));
+
     } catch (error) {
-      console.error("[Student Roadmap] Failed to update node progress:", error);
+      console.error("Failed to update node status", error);
+      setSelectedNodeData(prev => prev ? { ...prev, status: prevStatus } : null);
+      setOptimisticStatusMap(prev => {
+        const newMap = { ...prev };
+        delete newMap[selectedNodeData.id];
+        return newMap;
+      });
     } finally {
       setIsUpdatingNode(false);
     }
@@ -357,7 +390,7 @@ export default function StudentRoadmapPageView() {
     <div ref={pageRef} className="relative h-screen w-screen overflow-hidden bg-[#f9fafb] font-sans text-slate-900 flex flex-col">
       <DiagonalGridBackground />
 
-      <StudentTopNav
+      <StudentHeader
         user={user}
         onLogout={handleLogout}
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
@@ -368,43 +401,7 @@ export default function StudentRoadmapPageView() {
       {/* Main Canvas Area */}
       <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4 gap-4">
         
-        {/* Left Column (Theme Settings) */}
-        <div className="hidden xl:block w-[320px] shrink-0 h-full">
-          {!isInitialLoading && !showCareerSelector && !isRoadmapLoading && (
-            <div className="bg-[#FAFAFA] rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-black/5 p-6 h-max">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
-                <Palette size={14} weight="light" />
-                Theme Customizer
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'cyan', label: 'Tech Blue', from: 'bg-cyan-500', to: 'bg-blue-600' },
-                  { id: 'emerald', label: 'Emerald', from: 'bg-emerald-500', to: 'bg-teal-600' },
-                  { id: 'violet', label: 'Violet', from: 'bg-violet-500', to: 'bg-fuchsia-600' },
-                  { id: 'amber', label: 'Amber', from: 'bg-amber-400', to: 'bg-orange-500' },
-                  { id: 'rose', label: 'Rose', from: 'bg-rose-400', to: 'bg-red-500' },
-                  { id: 'monochrome', label: 'Mono', from: 'bg-slate-700', to: 'bg-slate-900' },
-                ].map((theme) => (
-                  <button
-                    key={theme.id}
-                    onClick={() => setThemeColor(theme.id)}
-                    className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${
-                      themeColor === theme.id 
-                        ? 'bg-white shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-black/10' 
-                        : 'bg-transparent hover:bg-slate-100 hover:shadow-sm'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${theme.from} ${theme.to} shadow-inner shrink-0`} />
-                    <span className={`text-[13px] font-medium ${themeColor === theme.id ? 'text-slate-900' : 'text-slate-500'}`}>
-                      {theme.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Left Column removed as requested */}
 
         {/* Vector Graph Area */}
         <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
@@ -412,7 +409,12 @@ export default function StudentRoadmapPageView() {
             <div className="absolute inset-0 z-10 bg-slate-50">
               {/* React Flow Provider must wrap the Canvas */}
               <ReactFlowProvider>
-                <RoadmapVectorGraph onNodeClick={handleNodeClick} themeColor={themeColor} />
+                <RoadmapVectorGraph 
+                  onNodeClick={handleNodeClick} 
+                  themeColor={themeColor} 
+                  roadmapData={roadmapData} 
+                  optimisticStatusMap={optimisticStatusMap}
+                />
               </ReactFlowProvider>
               
             </div>
@@ -524,6 +526,13 @@ export default function StudentRoadmapPageView() {
                         {isUpdatingNode ? 'Updating...' : 'Re-learn (Mark In Progress)'}
                       </button>
                     </div>
+                  ) : selectedNodeData.status === 'locked' ? (
+                    <button 
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
+                    >
+                      <LockKeyhole size={16} weight="bold" /> Locked (Complete Prerequisites First)
+                    </button>
                   ) : (
                     <button 
                       onClick={() => handleUpdateNodeStatus('completed')}

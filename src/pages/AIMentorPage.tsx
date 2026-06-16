@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { 
   Bot, 
   MessageSquare, 
@@ -71,7 +71,7 @@ export default function AIMentorPage() {
           </div>
         </div>
 
-        <DashboardUserActions user={user} onLogout={handleLogout} />
+        <UserHeaderActions user={user} onLogout={handleLogout} />
       </nav>
 
       <main className="flex-1 flex overflow-hidden relative">

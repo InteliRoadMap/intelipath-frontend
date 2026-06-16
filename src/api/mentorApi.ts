@@ -11,23 +11,19 @@ const mentorApi = {
   },
   
   getRatingMetric: async () => {
-    return new Promise(() => {}); // Infinite loading
+    return new Promise((resolve) => setTimeout(() => resolve({ score: 4.8, increase: 0.2 }), 500));
   },
-
   getResponseTimeMetric: async () => {
-    return new Promise(() => {}); // Infinite loading
+    return new Promise((resolve) => setTimeout(() => resolve({ hours: 2, increase: -0.5 }), 500));
   },
-
   getTotalStudentsMetric: async () => {
-    return new Promise(() => {}); // Infinite loading
+    return new Promise((resolve) => setTimeout(() => resolve({ count: 15, increase: 3 }), 500));
   },
-
   getPendingReviewsCountMetric: async () => {
-    return new Promise(() => {}); // Infinite loading
+    return new Promise((resolve) => setTimeout(() => resolve({ count: 4, increase: -1 }), 500));
   },
-
   getFeedbackSubmittedMetric: async () => {
-    return new Promise(() => {}); // Infinite loading
+    return new Promise((resolve) => setTimeout(() => resolve({ count: 120, increase: 15 }), 500));
   },
 
   getPendingReviews: async () => {

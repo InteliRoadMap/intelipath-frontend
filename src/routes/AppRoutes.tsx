@@ -1,26 +1,26 @@
 import { Routes, Route } from "react-router-dom"
 import { 
   WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, 
-  DashboardPage, StudentDashboard, StudentRoadmap, AIMentorPage, 
-  CounselorDashboard, CounselorFeedbackPage, MentorDashboard, AdminDashboard, 
+  DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
+  CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage
 } from "@/pages"
-import { ProtectedRoute } from "@/routes"
+import { ProtectedRoute, GuestRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path={ROUTES.HOME} element={<WelcomePage />} />
+      <Route path={ROUTES.HOME} element={<GuestRoute><WelcomePage /></GuestRoute>} />
 
-      <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
-      <Route path={ROUTES.OAUTH_CALLBACK} element={<OAuthCallbackPage />} />
+      <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
+      <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
+      <Route path={ROUTES.OAUTH_CALLBACK} element={<GuestRoute><OAuthCallbackPage /></GuestRoute>} />
 
       {/* Protected Routes */}
       <Route
@@ -35,7 +35,7 @@ export const AppRoutes = () => {
         path={ROUTES.DASHBOARD_STUDENT}
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-            <StudentDashboard />
+            <StudentDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -43,7 +43,7 @@ export const AppRoutes = () => {
         path={ROUTES.DASHBOARD_STUDENT_ROADMAP}
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-            <StudentRoadmap />
+            <StudentRoadmapPage />
           </ProtectedRoute>
         }
       />
@@ -83,7 +83,7 @@ export const AppRoutes = () => {
         path={ROUTES.DASHBOARD_COUNSELOR}
         element={
           <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
-            <CounselorDashboard />
+            <CounselorDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -99,7 +99,7 @@ export const AppRoutes = () => {
         path={ROUTES.DASHBOARD_MENTOR}
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
-            <MentorDashboard />
+            <MentorDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -139,7 +139,7 @@ export const AppRoutes = () => {
         path={ROUTES.DASHBOARD_ADMIN}
         element={
           <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-            <AdminDashboard />
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />

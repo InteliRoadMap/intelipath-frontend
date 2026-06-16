@@ -48,16 +48,7 @@ export const ENDPOINTS = {
     RECOMMENDATIONS: '/student/dashboard/recommendations',
     MARKET_DEMAND: '/student/dashboard/market-demand',
     AI_HISTORY: '/student/dashboard/ai-history',
-    STUDENT_ROADMAP: "/student/roadmap",
     COMPARE_SKILLS: "/roadmap/skills/compare"
-  },
-  STUDENT_DASHBOARD: {
-    ROADMAP_PROGRESS: "/student/dashboard/roadmap-progress",
-    SKILL_GAPS: "/student/dashboard/skill-gaps",
-    MENTOR_FEEDBACK: "/student/dashboard/mentor-feedback",
-    RECOMMENDATIONS: "/student/dashboard/recommendations",
-    MARKET_DEMAND: "/student/dashboard/market-demand",
-    AI_HISTORY: "/student/dashboard/ai-history"
   },
   ADMIN_DASHBOARD: {
     METRICS_USERS: "/admin/dashboard/metrics/users",

@@ -20,10 +20,12 @@ const nodeTypes = {
 interface RoadmapVectorGraphProps {
   onNodeClick: (nodeData: any) => void;
   themeColor?: string;
+  roadmapData: StudentRoadmap | null;
+  optimisticStatusMap?: Record<string, string>;
 }
 
 // --- Dynamic Anti-Overlap Spine Layout Algorithm ---
-const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor?: string) => {
+const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor?: string, optimisticStatusMap: Record<string, string> = {}) => {
   if (!rawNodes.length) return { nodes: [], edges: [] };
 
   const NODE_WIDTH = 280;
@@ -198,44 +200,36 @@ const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor
   });
 
   // Gắn themeColor và trạng thái isIsolated vào tất cả các node đã được layout
-  const finalNodes = positionedNodes.map(node => ({
-    ...node,
-    data: { 
-      ...node.data, 
-      themeColor,
-      isIsolated: inDegree[node.id] === 0 && adjacencyList[node.id].length === 0
-    }
-  }));
+  const finalNodes = positionedNodes.map(node => {
+    const currentStatus = optimisticStatusMap[node.id] || node.data.status;
+    return {
+      ...node,
+      data: { 
+        ...node.data, 
+        themeColor,
+        status: currentStatus,
+        isIsolated: inDegree[node.id] === 0 && adjacencyList[node.id].length === 0
+      }
+    };
+  });
 
   return { nodes: finalNodes, edges: Array.from(processedEdges.values()) };
 };
 
-export const RoadmapVectorGraph = ({ onNodeClick, themeColor }: RoadmapVectorGraphProps) => {
+export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optimisticStatusMap = {} }: RoadmapVectorGraphProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null);
 
   useEffect(() => {
-    const loadGraph = async () => {
-      try {
-        const data = await studentDashboardService.getStudentRoadmap();
-        setRoadmapData(data);
-      } catch (error) {
-        console.error("Failed to load roadmap data for graph:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadGraph();
-  }, []);
-
-  useEffect(() => {
-    if (!roadmapData) return;
+    if (!roadmapData || !roadmapData.nodes || roadmapData.nodes.length === 0) {
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
     const processData = async () => {
       try {
-        const { nodes: rawNodes, edges: rawEdges } = await studentDashboardService.getRoadmapGraphData(roadmapData);
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getDynamicLayoutedElements(rawNodes, rawEdges, themeColor);
+        const { nodes: rawNodes, edges: rawEdges } = await studentDashboardService.getRoadmapGraphData();
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getDynamicLayoutedElements(rawNodes, rawEdges, themeColor, optimisticStatusMap);
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
       } catch (e) {
@@ -243,13 +237,13 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor }: RoadmapVectorGra
       }
     };
     processData();
-  }, [roadmapData, setNodes, setEdges, themeColor]);
+  }, [roadmapData, setNodes, setEdges, themeColor, optimisticStatusMap]);
 
   const handleNodeClick = (_: React.MouseEvent, node: any) => {
     onNodeClick(node.data);
   };
 
-  if (isLoading) {
+  if (!roadmapData) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-[#f8fafc]">
         <div className="flex flex-col items-center gap-3 text-slate-400">

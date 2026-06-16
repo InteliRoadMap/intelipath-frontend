@@ -145,41 +145,89 @@ const normalizeResource = (resource: RawRoadmapResource, index: number): Roadmap
   }
 }
 
-const normalizeNode = (node: RawRoadmapNode): RoadmapNode | null => {
-  const id = node.id || node.nodeId
-  if (!id || !isUuid(id)) return null
+const normalizeNode = (node: any): RoadmapNode | null => {
+  const id = node.id || node.nodeId || node.node_id
+  if (!id) return null
 
   const rawResources = node.resources ?? parseResourceField(node.resource)
 
   return {
     id,
-    title: node.title || node.nodeName || "Untitled node",
+    title: node.title || node.nodeName || node.node_name || "Untitled node",
     status: normalizeStatus(node.status),
     description: node.description,
     level: node.level,
     resources: rawResources
-      .map((resource, index) => normalizeResource(resource, index))
-      .filter((resource): resource is RoadmapResource => Boolean(resource)),
+      .map((resource: any, index: number) => normalizeResource(resource, index))
+      .filter((resource: any): resource is RoadmapResource => Boolean(resource)),
     children: Array.isArray(node.children)
       ? node.children
           .map(normalizeNode)
-          .filter((child): child is RoadmapNode => Boolean(child))
+          .filter((child: any): child is RoadmapNode => Boolean(child))
       : []
   }
 }
 
 const normalizeStudentRoadmap = (responseData: unknown): StudentRoadmap => {
-  const data = unwrapResponse<RawStudentRoadmap>(responseData)
-  const nodes = data.nodes ?? data.roadmap ?? data.steps ?? []
+  const data = unwrapResponse<any>(responseData)
+  
+  let rawNodes: any[] = []
+  let targetCareerRole: string | undefined
+  let progress: number | undefined
+
+  // Recursive finder to locate the actual node array or root node
+  const findRoadmapData = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return null;
+    if (Array.isArray(obj)) {
+      if (obj.length > 0 && (obj[0].nodeId || obj[0].id || obj[0].title || obj[0].name || obj[0].nodeName || obj[0].NodeName)) {
+        return obj; // Found the array of nodes!
+      }
+      for (const item of obj) {
+        const found = findRoadmapData(item);
+        if (found) return found;
+      }
+      return null;
+    }
+    // Is this object itself a node?
+    if (obj.nodeId || obj.id || obj.title || obj.name || obj.nodeName || obj.NodeName) {
+      if (obj.children || obj.status || obj.level || obj.Level) return obj;
+    }
+    // Otherwise, search its keys
+    for (const key of Object.keys(obj)) {
+      const found = findRoadmapData(obj[key]);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  if (data && typeof data === 'object') {
+    const extractedData = findRoadmapData(data) || data;
+    if (Array.isArray(extractedData)) {
+      rawNodes = extractedData;
+    } else if (extractedData && typeof extractedData === 'object') {
+      rawNodes = [extractedData];
+    }
+    targetCareerRole = data.targetCareerRole || data.careerName || data.career_name || data.data?.targetCareerRole || data.data?.careerName
+    progress = typeof data.progress === "number" ? data.progress : data.data?.progress
+  }
+
+  const flattenedNodes: any[] = [];
+  const flattenNode = (node: any) => {
+    if (!node) return;
+    flattenedNodes.push(node);
+    if (node.children && Array.isArray(node.children)) {
+      node.children.forEach(flattenNode);
+    }
+  };
+  rawNodes.forEach(flattenNode);
 
   return {
-    targetCareerRole: data.targetCareerRole || data.careerName,
-    progress: typeof data.progress === "number" ? data.progress : undefined,
-    nodes: Array.isArray(nodes)
-      ? nodes
-          .map(normalizeNode)
-          .filter((node): node is RoadmapNode => Boolean(node))
-      : []
+    targetCareerRole,
+    progress,
+    _rawResponse: responseData,
+    nodes: flattenedNodes
+      .map(normalizeNode)
+      .filter((node): node is RoadmapNode => Boolean(node))
   }
 }
 
@@ -330,67 +378,107 @@ export const studentDashboardService = {
     try {
       const response = await roadmapApi.getStudentRoadmap();
       
-      // Determine the array of rows from API response format
-      let rows: any[] = [];
-      if (Array.isArray(response.data)) {
-        rows = response.data;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        rows = response.data.data;
-      } else if (response.data && Array.isArray(response.data.nodes)) {
-        rows = response.data.nodes;
-      } else if (response.data && Array.isArray(response.data.steps)) {
-        rows = response.data.steps;
-      } else if (response.data && Array.isArray(response.data.roadmap)) {
-        rows = response.data.roadmap;
+      const rows: any[] = [];
+      const nameToId: Record<string, string> = {};
+      
+      const registerNameId = (node: any) => {
+        const name = String(node.title || node.name || node.NodeName || node.nodeName || node.node_name || "").trim();
+        const id = String(node.nodeId || node.id || node.node_id || name).trim();
+        if (name && id) nameToId[name] = id;
+        if (node.children && Array.isArray(node.children)) {
+          node.children.forEach(registerNameId);
+        }
+      };
+
+      const flattenNode = (node: any, parentId: string | null = null) => {
+        if (!node) return;
+        const flattenedNode = { ...node };
+        if (parentId && !flattenedNode.childNodeOf && !flattenedNode.ChildNodeOf && !flattenedNode.connectTo && !flattenedNode.ConnectTo) {
+          flattenedNode.childNodeOf = parentId;
+        }
+        rows.push(flattenedNode);
+        if (node.children && Array.isArray(node.children)) {
+          const currentId = node.nodeId || node.id || node.node_id || node.nodeName || node.NodeName || node.title;
+          node.children.forEach((child: any) => flattenNode(child, currentId));
+        }
+      };
+
+      const findRoadmapData = (obj: any): any => {
+        if (!obj || typeof obj !== 'object') return null;
+        if (Array.isArray(obj)) {
+          if (obj.length > 0 && (obj[0].nodeId || obj[0].id || obj[0].title || obj[0].name || obj[0].nodeName || obj[0].NodeName)) {
+            return obj;
+          }
+          for (const item of obj) {
+            const found = findRoadmapData(item);
+            if (found) return found;
+          }
+          return null;
+        }
+        if (obj.nodeId || obj.id || obj.title || obj.name || obj.nodeName || obj.NodeName) {
+          if (obj.children || obj.status || obj.level || obj.Level) return obj;
+        }
+        for (const key of Object.keys(obj)) {
+          const found = findRoadmapData(obj[key]);
+          if (found) return found;
+        }
+        return null;
+      };
+
+      const extractedData = findRoadmapData(response.data) || response.data;
+      
+      if (Array.isArray(extractedData)) {
+        extractedData.forEach(registerNameId);
+        extractedData.forEach(item => flattenNode(item));
+      } else if (extractedData && typeof extractedData === 'object') {
+        registerNameId(extractedData);
+        flattenNode(extractedData);
       }
 
-      // Step 1: Identify all main nodes to build the sequential spine
-      const mainNodes = rows
-        .map(r => ({ ...r, parsedLevel: parseInt(String(r.Level || r.level)) || 0 }))
-        .filter(r => r.parsedLevel > 0)
-        .sort((a, b) => a.parsedLevel - b.parsedLevel);
+      // Identify main nodes: strictly those with explicit level > 0 from the database
+      const actualMainNodes = rows.filter(r => {
+        const explicitLevel = parseInt(String(r.Level || r.level || 0));
+        return explicitLevel > 0;
+      }).sort((a, b) => {
+        const levelA = parseInt(String(a.Level || a.level || 0));
+        const levelB = parseInt(String(b.Level || b.level || 0));
+        return levelA - levelB;
+      });
 
       const nodes: any[] = [];
       const edges: any[] = [];
       
+      const adjacencyList: Record<string, string[]> = {};
+      const inDegree: Record<string, number> = {};
+
       rows.forEach((row, index) => {
-        const nodeName = row.NodeName || row.nodeName;
-        let parentId = row.ChildNodeOf || row.childNodeOf ? String(row.ChildNodeOf || row.childNodeOf).trim() : null;
-        const level = parseInt(String(row.Level || row.level || 0));
+        const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId || `Node_${index}`;
+        const isMainNode = actualMainNodes.some(m => m === row);
+        const level = isMainNode ? parseInt(String(row.Level || row.level || 1)) : 0; // Maintain explicit level for UI
         
-        if (!nodeName) return;
-        
-        const nodeId = String(nodeName).trim();
-        
-        // Auto-connect main spine nodes based on sorted index
-        if (level > 0) {
-          const mainNodeIndex = mainNodes.findIndex(n => 
-            String(n.NodeName || n.nodeName).trim() === nodeId
-          );
-          if (mainNodeIndex > 0) {
-            const prevMainNode = mainNodes[mainNodeIndex - 1];
-            parentId = String(prevMainNode.NodeName || prevMainNode.nodeName).trim();
-          }
-        }
-        
+        const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
+
+        adjacencyList[nodeId] = adjacencyList[nodeId] || [];
+        inDegree[nodeId] = inDegree[nodeId] || 0;
+
         let resources: any[] = [];
+        const rawResourceData = row.resources || row.Resources || row.resource || row.Resource;
         
-        // Extract from normalized array or string
-        const rawResources = row.resources ?? parseResourceField(row.resource);
-        if (Array.isArray(rawResources) && rawResources.length > 0) {
-          resources = rawResources.map((res: any, idx: number) => {
-            if (!res) return null;
-            if (typeof res === 'string') return { title: `Resource ${idx + 1}`, url: res };
-            return { title: res?.title || `Resource ${idx + 1}`, url: res?.url || res?.link || res?.href };
-          }).filter((res: any) => Boolean(res?.url));
-        }
-        
-        // Fallback to legacy link1, link2, link3
-        if (resources.length === 0) {
-          const legacyObj = (row.resource && typeof row.resource === 'object' && !Array.isArray(row.resource)) ? row.resource : row;
-          if (legacyObj.link1) resources.push({ title: 'Resource 1', url: legacyObj.link1 });
-          if (legacyObj.link2) resources.push({ title: 'Resource 2', url: legacyObj.link2 });
-          if (legacyObj.link3) resources.push({ title: 'Resource 3', url: legacyObj.link3 });
+        if (rawResourceData) {
+            const parseResourceField = (res: any) => {
+                let parsed = res;
+                if (typeof res === 'string') {
+                    try { parsed = JSON.parse(res); } catch (e) { parsed = []; }
+                }
+                if (Array.isArray(parsed)) return parsed.map((r: any, i: number) => ({ title: r.title || `Resource ${i+1}`, url: r.url || r.link || "" }));
+                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }];
+                return [];
+            };
+            resources = parseResourceField(rawResourceData);
+        } else {
+          if (row.Link1 || row.link1) resources.push({ title: row.Title1 || 'Resource 1', url: row.Link1 || row.link1 });
+          if (row.Link2 || row.link2) resources.push({ title: row.Title2 || 'Resource 2', url: row.Link2 || row.link2 });
+          if (row.Link3 || row.link3) resources.push({ title: row.Title3 || 'Resource 3', url: row.Link3 || row.link3 });
         }
         
         nodes.push({
@@ -399,16 +487,44 @@ export const studentDashboardService = {
           position: { x: 0, y: 0 },
           data: {
             id: nodeId,
-            label: row.NodeName || row.nodeName || row.title || nodeId,
+            label: nodeName,
             description: row.Description || row.description || '',
             links: resources,
             level: level,
             status: normalizeStatus(row.Status || row.status)
           }
         });
+      });
 
+      rows.forEach(row => {
+        const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId;
+        const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
+        const isMainNode = actualMainNodes.some(m => m === row);
+        
+        let parentId = null;
+        const rawParent = row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id;
+        
+        if (rawParent) {
+          if (typeof rawParent === 'object') {
+            parentId = rawParent.nodeId || rawParent.id || rawParent.node_id || rawParent.title || rawParent.name || rawParent.nodeName || rawParent.node_name || rawParent.NodeName;
+          } else {
+            parentId = String(rawParent).trim();
+            if (nameToId[parentId]) {
+              parentId = nameToId[parentId];
+            }
+          }
+        }
+        
+        // Auto-connect main spine nodes sequentially based on actualMainNodes array order
+        if (isMainNode && !parentId) {
+          const mainNodeIndex = actualMainNodes.findIndex(m => m === row);
+          if (mainNodeIndex > 0) {
+            const prevMainNode = actualMainNodes[mainNodeIndex - 1];
+            parentId = String(prevMainNode.nodeId || prevMainNode.id || prevMainNode.node_id || prevMainNode.title || prevMainNode.name || prevMainNode.NodeName || prevMainNode.nodeName || prevMainNode.node_name).trim();
+          }
+        }
+        
         if (parentId) {
-          const isMainNode = level > 0;
           const status = normalizeStatus(row.Status || row.status);
           edges.push({
             id: `e-${parentId}-${nodeId}`,
@@ -417,11 +533,13 @@ export const studentDashboardService = {
             type: 'smoothstep',
             animated: status === 'in_progress' || status === 'current',
             style: { 
-              stroke: '#3b82f6', // solid blue
               strokeWidth: isMainNode ? 3 : 2, 
-              strokeDasharray: isMainNode ? 'none' : '5 5' // Dotted for side branches
+              strokeDasharray: isMainNode ? 'none' : '5 5'
             }
           });
+          adjacencyList[parentId] = adjacencyList[parentId] || [];
+          adjacencyList[parentId].push(nodeId);
+          inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
         }
       });
 
