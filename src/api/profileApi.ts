@@ -40,6 +40,16 @@ const profileApi = {
 
   updateCounselorProfile: (data: UpdateCounselorProfilePayload) =>
     mainClient.patch(ENDPOINTS.COUNSELOR.PROFILE, data),
+
+  updateAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return mainClient.patch('/users/profile/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
 }
 
 export default profileApi

@@ -43,6 +43,7 @@ export function useProfileSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -65,10 +66,11 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
+        full_name: data?.fullName || user?.fullName || data?.full_name || "",
         email: data?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.year_of_admission || ""
+        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || ""
       })
     } catch (err) {
       console.error("[ProfileSettingsPage] Error fetching profile data:", err)
@@ -89,14 +91,15 @@ export function useProfileSettings() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
+    setSuccess(null)
 
     try {
       const tasks: Promise<any>[] = [
         profileApi.updateUserProfile({
-          full_name: profileData.full_name,
+          fullName: profileData.full_name,
           yob: profileData.yob,
           bio: profileData.bio
-        })
+        } as any)
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
@@ -125,7 +128,8 @@ export function useProfileSettings() {
 
       await Promise.all(tasks)
 
-      alert("Saved successfully!")
+      setSuccess("Profile saved successfully!")
+      setTimeout(() => setSuccess(null), 4000)
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
       setError("Save failed. Please try again.")
@@ -146,6 +150,7 @@ export function useProfileSettings() {
     loading,
     saving,
     error,
+    success,
     handleChange,
     handleSave,
     loadProfile,

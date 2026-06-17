@@ -6,6 +6,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   OAUTH_CALLBACK: '/auth/callback',
+  PUBLIC_PORTFOLIO: '/portfolio/:slug',
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_STUDENT_ROADMAP: '/dashboard/student/roadmap',

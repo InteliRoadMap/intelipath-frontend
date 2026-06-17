@@ -15,19 +15,21 @@ export const ENDPOINTS = {
     ME: '/users/me',
     PROFILE: '/users/profile',
   },
-  STUDENT: {
+  STUDENT_OLD: {
     PROFILE: '/students/profile',
     TARGET_CAREER: '/students/target-career',
     SKILLS: '/students/skills',
     SELECT_SKILLS: '/students/skills/select',
     ME: "/user/me",
-    PROFILE: "/user/profile"
+    PROFILE_USER: "/user/profile"
   },
   STUDENT: {
     PROFILE: "/student/profile",
     TARGET_CAREER: "/student/target-career",
     SKILLS: "/student/skills",
-    SELECT_SKILLS: "/student/skills/select"
+    SELECT_SKILLS: "/student/skills/select",
+    PORTFOLIO_ME: "/student/portfolio/me",
+    PORTFOLIO_SLUG: "/student/portfolio/slug"
   },
   CAREER_ROLES: {
     LIST: "/careers"
@@ -38,7 +40,7 @@ export const ENDPOINTS = {
     STUDENT_ROADMAP: '/roadmaps/student',
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: '/roadmaps/nodes/progress',
-    COMPARE_SKILLS: '/roadmaps/skills/compare',
+    COMPARE_SKILLS: '/roadmap/skills/compare',
   },
   STUDENT_DASHBOARD: {
     OVERVIEW: '/student/dashboard',

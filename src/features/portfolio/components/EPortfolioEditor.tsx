@@ -20,24 +20,29 @@ gsap.registerPlugin(ScrollTrigger);
 
 interface Props {
   initialData: PortfolioData;
+  isPublicView?: boolean;
 }
 
-export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
+export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMentor = user?.role === 'MENTOR';
 
   const [data, setData] = useState<PortfolioData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(!isMentor);
+  const [isEditMode, setIsEditMode] = useState(!isMentor && !isPublicView);
   const [iconPickerProjectIdx, setIconPickerProjectIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Slug Customization State
+  const [slug, setSlug] = useState(data.slug || '');
+  const [isCopied, setIsCopied] = useState(false);
+
   useEffect(() => {
-    if (isMentor) {
+    if (isMentor || isPublicView) {
       setIsEditMode(false);
     }
-  }, [isMentor]);
+  }, [isMentor, isPublicView]);
 
   // Mentor Feedback State
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -54,6 +59,8 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
       return;
     }
     
+    if (isPublicView) return; // Don't auto-save in public view
+
     const saveData = async () => {
       setIsSaving(true);
       try {
@@ -66,7 +73,9 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
     };
     
     saveData();
-  }, [debouncedData]);
+  }, [debouncedData, isPublicView]);
+
+  // No frontend slug generation or save logic required. Backend handles it.
 
   // Apply theme colors globally when they change
   useEffect(() => {
@@ -167,15 +176,21 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
     });
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/portfolio/${slug}`);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   return (
-    <div ref={containerRef} className="e-portfolio-wrapper font-inter">
-      {isSaving && (
-        <div className="fixed top-4 right-4 bg-primary-500 text-white px-4 py-2 rounded shadow-lg z-50 text-sm flex items-center gap-2">
-          <i className="fas fa-spinner fa-spin"></i> Saving changes...
+    <div ref={containerRef} className="e-portfolio-wrapper font-inter relative">
+      {isSaving && !isPublicView && (
+        <div className="fixed top-20 right-4 bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm flex items-center gap-2 font-medium">
+          <i className="fas fa-spinner fa-spin"></i> Auto-saving...
         </div>
       )}
 
-      {isEditMode && (
+      {isEditMode && !isPublicView && (
         <ThemeEditor 
           primaryColor={data.themeColors.primaryColor} 
           titleColor={data.themeColors.titleColor}
@@ -196,7 +211,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
           <div className="logo text-lg font-bold font-outfit text-[var(--title-color)]">
             <span className="text-[var(--primary-color)]">IN</span>TELIPATH<span className="text-[var(--primary-color)]">.</span>
           </div>
-          <ul className="hidden md:flex items-center gap-6 text-sm font-semibold text-[var(--text-color)]">
+          <ul className="hidden lg:flex items-center gap-6 text-sm font-semibold text-[var(--text-color)]">
             <li><a href="#hero" className="hover:text-[var(--primary-color)] transition-colors">Home</a></li>
             <li><a href="#education" className="hover:text-[var(--primary-color)] transition-colors">Education</a></li>
             <li><a href="#skills" className="hover:text-[var(--primary-color)] transition-colors">Skills</a></li>
@@ -205,18 +220,32 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2" onClick={toggleTheme}>
-            <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-sun"></i></span>
-            <button
-              type="button"
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${data.theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-            <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-moon"></i></span>
-          </button>
-          
-          {!isMentor && (
+            {!isPublicView && !isMentor && (
+              <div className="relative flex items-center">
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border opacity-80 hover:opacity-100 transition-all bg-[var(--bg-secondary)] border-[var(--border-color)]">
+                  <span className="text-xs font-semibold text-[var(--text-color)]">intelipath.com/portfolio/</span>
+                  <span className="text-sm font-bold text-[var(--title-color)]">
+                    {slug || <span className="text-slate-400 italic font-normal">will-be-generated</span>}
+                  </span>
+                  <button onClick={handleCopyLink} className="text-[var(--primary-color)] hover:opacity-80 p-1 ml-1" title="Copy public link">
+                    <i className={`fas ${isCopied ? 'fa-check text-emerald-500' : 'fa-link'}`}></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 ml-2 cursor-pointer" onClick={toggleTheme}>
+              <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-sun"></i></span>
+              <button
+                type="button"
+                className={`relative inline-flex h-6 w-11 pointer-events-none items-center rounded-full transition-colors ${data.theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm font-semibold text-[var(--text-color)]"><i className="fas fa-moon"></i></span>
+            </div>
+            
+          {!isPublicView && !isMentor && (
             <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
               <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
               <button 
@@ -232,17 +261,19 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
       </nav>
 
       {/* BACK TO HOME BUTTON */}
-      <button 
-        onClick={() => navigate(isMentor ? ROUTES.DASHBOARD_MENTOR_STUDENTS : "/dashboard/student")}
-        style={{ color: 'var(--text-color)', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--text-color)' }}
-        className="fixed bottom-8 left-4 md:left-8 z-50 hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] px-4 py-2.5 rounded-full shadow-lg border transition-all flex items-center gap-2 text-sm font-semibold group hover:-translate-y-1 hover:shadow-[var(--primary-color)]/20 cursor-pointer"
-      >
-        <i className="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
-        <span>Back to InteliPath</span>
-      </button>
+      {!isPublicView && (
+        <button 
+          onClick={() => navigate(isMentor ? ROUTES.DASHBOARD_MENTOR_STUDENTS : "/dashboard/student")}
+          style={{ color: 'var(--text-color)', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--text-color)' }}
+          className="fixed bottom-8 left-4 md:left-8 z-50 hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] px-4 py-2.5 rounded-full shadow-lg border transition-all flex items-center gap-2 text-sm font-semibold group hover:-translate-y-1 hover:shadow-[var(--primary-color)]/20 cursor-pointer"
+        >
+          <i className="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+          <span>Back to InteliPath</span>
+        </button>
+      )}
 
       {/* MENTOR FLOATING FEEDBACK BUTTON */}
-      {isMentor && (
+      {isMentor && !isPublicView && (
         <>
           <button 
             onClick={() => setIsFeedbackOpen(true)}
@@ -256,7 +287,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
             isOpen={isFeedbackOpen} 
             onClose={() => setIsFeedbackOpen(false)}
             studentData={{
-              id: data.studentId,
+              id: data.studentId || 'unknown',
               name: data.hero.name,
               role: data.hero.role,
               avatarUrl: data.hero.avatarUrl,
@@ -462,18 +493,6 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
                   {isEditMode && (
                     <button onClick={() => setIconPickerProjectIdx(idx)} className="absolute bottom-2 right-2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Change Icon</button>
                   )}
-                  {iconPickerProjectIdx === idx && (
-                    <IconPicker 
-                      currentIcon={proj.icon}
-                      onSelect={(icon) => {
-                        const newProj = [...data.projects];
-                        newProj[idx].icon = icon;
-                        setData({ ...data, projects: newProj });
-                        setIconPickerProjectIdx(null);
-                      }}
-                      onClose={() => setIconPickerProjectIdx(null)}
-                    />
-                  )}
                 </div>
                 <div className="p-8 flex flex-col flex-1">
                   <EditableText isEditable={isEditMode} value={proj.title} onChange={val => {
@@ -547,6 +566,19 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData }) => {
         
         <p className="text-[var(--text-color)] text-sm font-semibold">© 2026 IntelPath.</p>
       </footer>
+
+      {iconPickerProjectIdx !== null && (
+        <IconPicker 
+          currentIcon={data.projects[iconPickerProjectIdx].icon}
+          onSelect={(icon) => {
+            const newProj = [...data.projects];
+            newProj[iconPickerProjectIdx].icon = icon;
+            setData({ ...data, projects: newProj });
+            setIconPickerProjectIdx(null);
+          }}
+          onClose={() => setIconPickerProjectIdx(null)}
+        />
+      )}
     </div>
   );
 };

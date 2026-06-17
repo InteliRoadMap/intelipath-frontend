@@ -22,3 +22,4 @@ export { default as StudentProfileSettingsPage } from './StudentProfileSettingsP
 export { default as MentorProfileSettingsPage } from './MentorProfileSettingsPage'
 export { default as CounselorProfileSettingsPage } from './CounselorProfileSettingsPage'
 export * from './StudentPortfolioPage'
+export * from './PublicPortfolioPage'

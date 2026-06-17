@@ -99,19 +99,19 @@ const CareerSelector = ({
   )
 
   return (
-    <div className="roadmap-gsap-panel w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
-      <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1">
+    <div className="roadmap-gsap-panel w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[75vh]">
+      <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1 min-h-0">
         
         {/* Header section */}
-        <div className="px-6 py-6 md:px-8 md:py-8 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
-           <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-slate-900">
+        <div className="px-6 py-5 md:px-8 md:py-6 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
+           <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight text-slate-900">
              Change Career Path
            </h1>
         </div>
 
-        <div className="p-6 md:p-8 flex-1 flex flex-col">
+        <div className="p-6 md:p-8 flex-1 min-h-0 flex flex-col">
           {/* Search bar */}
-          <div className="relative mb-6">
+          <div className="relative mb-6 shrink-0">
             <MagnifyingGlass size={20} weight="light" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input 
               value={searchValue}
@@ -396,8 +396,6 @@ export default function StudentRoadmapPageView() {
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      {(isInitialLoading || isRoadmapLoading) && <RouteProgressBar />}
-
       {/* Main Canvas Area */}
       <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4 gap-4">
         
@@ -405,7 +403,6 @@ export default function StudentRoadmapPageView() {
 
         {/* Vector Graph Area */}
         <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
-          {isInitialLoading || isRoadmapLoading ? null : (
             <div className="absolute inset-0 z-10 bg-slate-50">
               {/* React Flow Provider must wrap the Canvas */}
               <ReactFlowProvider>
@@ -416,9 +413,7 @@ export default function StudentRoadmapPageView() {
                   optimisticStatusMap={optimisticStatusMap}
                 />
               </ReactFlowProvider>
-              
             </div>
-          )}
         </div>
 
         {/* Right Column (Details) - High-End Redesign */}
@@ -531,7 +526,7 @@ export default function StudentRoadmapPageView() {
                       disabled
                       className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
                     >
-                      <LockKeyhole size={16} weight="bold" /> Locked (Complete Prerequisites First)
+                      <LockKey size={16} weight="bold" /> Locked (Complete Prerequisites First)
                     </button>
                   ) : (
                     <button 

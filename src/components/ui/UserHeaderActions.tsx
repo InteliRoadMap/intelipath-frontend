@@ -130,6 +130,8 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         </button>
       </div>
 
+
+
       <div className="flex min-w-0 items-center gap-3">
         <div className="hidden min-w-0 max-w-[180px] flex-col items-end justify-center text-right sm:flex lg:max-w-[260px]">
           <div className="flex max-w-full items-baseline justify-end gap-2">
@@ -140,8 +142,12 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
           </div>
           <p className="mt-0.5 max-w-full truncate text-[12px] font-medium leading-4 text-slate-500">{email}</p>
         </div>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00838f] text-[13px] font-bold text-white shadow-sm">
-          {initial}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00838f] text-[13px] font-bold text-white shadow-sm overflow-hidden">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            initial
+          )}
         </div>
       </div>
     </div>

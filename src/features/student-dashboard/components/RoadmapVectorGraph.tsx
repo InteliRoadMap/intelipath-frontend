@@ -254,6 +254,19 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     );
   }
 
+  if (roadmapData && (!roadmapData.nodes || roadmapData.nodes.length === 0)) {
+    return (
+      <div className="flex h-full w-full flex-col p-8 bg-white border border-rose-200 rounded-xl overflow-auto m-4 max-w-[800px] mx-auto shadow-sm z-50">
+        <h2 className="text-xl font-bold text-rose-600 mb-4">Roadmap Display Error</h2>
+        <p className="text-slate-600 mb-4">The backend returned data, but couldn't find any nodes to display. Could you send me this raw data so I can fix the parsing logic?</p>
+        <p className="text-sm font-bold text-slate-800 mb-2">Raw Data Dump:</p>
+        <pre className="text-[11px] bg-slate-100 p-4 rounded-lg overflow-auto border border-slate-200">
+          {JSON.stringify(roadmapData, null, 2)}
+        </pre>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full bg-[#f8fafc]">
       <ReactFlow

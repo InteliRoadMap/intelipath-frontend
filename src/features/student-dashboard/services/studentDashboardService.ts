@@ -28,6 +28,9 @@ type RawCareerRole = {
   name?: string
   prerequisite?: string
   description?: string
+  Description?: string
+  content?: string
+  desc?: string
 }
 
 type RawRoadmapResource = Partial<RoadmapResource> | string
@@ -79,7 +82,7 @@ const normalizeCareerRole = (career: RawCareerRole): CareerRole | null => {
     careerId,
     careerName,
     prerequisite: career.prerequisite,
-    description: career.description
+    description: career.description || career.Description || career.desc || career.content
   }
 }
 
@@ -488,7 +491,7 @@ export const studentDashboardService = {
           data: {
             id: nodeId,
             label: nodeName,
-            description: row.Description || row.description || '',
+            description: row.Description || row.description || row.NodeDescription || row.nodeDescription || row.content || row.desc || '',
             links: resources,
             level: level,
             status: normalizeStatus(row.Status || row.status)

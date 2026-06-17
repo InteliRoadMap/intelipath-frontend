@@ -5,7 +5,8 @@ import {
   CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
-  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage
+  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
+  PublicPortfolioPage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
@@ -15,6 +16,7 @@ export const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path={ROUTES.HOME} element={<GuestRoute><WelcomePage /></GuestRoute>} />
+      <Route path={ROUTES.PUBLIC_PORTFOLIO} element={<PublicPortfolioPage />} />
 
       <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />

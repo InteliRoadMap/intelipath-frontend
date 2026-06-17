@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo } from "@/components"
+import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
@@ -28,6 +29,7 @@ export default function StudentProfileSettingsPage() {
     loading,
     saving,
     error,
+    success,
     handleChange,
     handleSave,
     loadProfile,
@@ -210,21 +212,7 @@ export default function StudentProfileSettingsPage() {
             {/* Identity Card */}
             <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-emerald-500/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-emerald-500/30">
-                    {displayInitial}
-                  </div>
-                  <button
-                    type="button"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, rotation: 15, duration: 0.4, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.4, ease: "power2.out" })}
-                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" })}
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-emerald-600 rounded-xl flex items-center justify-center shadow-md border border-slate-100"
-                    aria-label="Edit avatar"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                </div>
+                <AvatarUpload initial={displayInitial} />
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
                     Student Information
@@ -241,13 +229,8 @@ export default function StudentProfileSettingsPage() {
                 </div>
               )}
 
-              {loading ? (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
-                  Loading profile data...
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Form Content - Always visible even when loading */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                         <User size={16} className="text-emerald-600" />
@@ -373,8 +356,6 @@ export default function StudentProfileSettingsPage() {
                       {saving ? "Saving..." : "Save Profile"}
                     </button>
                   </div>
-                </>
-              )}
             </div>
           </div>
 
@@ -412,6 +393,20 @@ export default function StudentProfileSettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Floating Success Toast */}
+      <div
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl shadow-emerald-900/20 backdrop-blur transition-all duration-500 ${
+          success ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        {success}
+      </div>
     </div>
   )
 }
