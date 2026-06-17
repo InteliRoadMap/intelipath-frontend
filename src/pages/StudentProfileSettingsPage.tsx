@@ -3,22 +3,26 @@ import {
   Building2,
   Calendar,
   Edit3,
-  GraduationCap,
   Mail,
-  ShieldCheck,
   User,
-  Bot,
-  LayoutDashboard,
-  Map,
-  TrendingUp
+  GraduationCap,
+  Sparkles,
+  RefreshCw,
+  ChevronLeft
 } from "lucide-react"
+import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo, DatePicker } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { useProfileSettings } from "../hooks/useProfileSettings"
+import { useRef } from "react"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
 
-export default function ProfileSettingsPage() {
+gsap.registerPlugin(useGSAP)
+
+export default function StudentProfileSettingsPage() {
   const {
     profileData,
     loading,
@@ -27,14 +31,82 @@ export default function ProfileSettingsPage() {
     handleChange,
     handleSave,
     loadProfile,
-    displayInitial,
-    role,
-    githubName
+    displayInitial
   } = useProfileSettings()
 
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const sparkleRef = useRef<SVGSVGElement>(null)
+
+  useGSAP(
+    () => {
+      // ── Entrance animations ──────────────────────────────────
+      gsap.from(".page-header", {
+        y: -50,
+        opacity: 0,
+        duration: 1.0,
+        ease: "power4.out",
+        delay: 0.05
+      })
+
+      gsap.from(".hero-icon", {
+        scale: 0,
+        rotation: -45,
+        opacity: 0,
+        duration: 0.9,
+        ease: "back.out(2)",
+        delay: 0.35
+      })
+
+      gsap.from(".section-card", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: "power3.out",
+        delay: 0.4
+      })
+
+      // ── Sparkle twinkle (infinite loop) ─────────────────────
+      if (sparkleRef.current) {
+        const tl = gsap.timeline({ repeat: -1, delay: 1.2 })
+        tl.to(sparkleRef.current, {
+          scale: 1.3,
+          opacity: 0.4,
+          rotate: 20,
+          duration: 0.35,
+          ease: "power2.in"
+        })
+        .to(sparkleRef.current, {
+          scale: 1.15,
+          opacity: 1,
+          rotate: -15,
+          duration: 0.25,
+          ease: "power2.out"
+        })
+        .to(sparkleRef.current, {
+          scale: 1.4,
+          opacity: 0.6,
+          rotate: 10,
+          duration: 0.3,
+          ease: "power2.inOut"
+        })
+        .to(sparkleRef.current, {
+          scale: 1,
+          opacity: 1,
+          rotate: 0,
+          duration: 0.5,
+          ease: "elastic.out(1, 0.5)"
+        })
+        .to(sparkleRef.current, {
+          duration: 2.5
+        })
+      }
+    },
+    { scope: containerRef }
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -42,64 +114,112 @@ export default function ProfileSettingsPage() {
   }
 
   const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, path: ROUTES.DASHBOARD },
-    {
-      label: "My Roadmap",
-      icon: Map,
-      path: ROUTES.DASHBOARD_STUDENT_ROADMAP || "/roadmap/student"
-    },
-    { label: "AI Mentor", icon: Bot, path: ROUTES.AI_MENTOR },
-    { label: "Market Pulse", icon: TrendingUp, path: "/market" }
+    { label: "Settings", icon: PencilSimple, path: location.pathname }
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8 shrink-0">
-        <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon className="scale-90 origin-left" />
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans text-slate-900" ref={containerRef}>
+      {/* TOP NAVIGATION */}
+      <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
+          <div className="flex items-center gap-8">
+            <Logo hideIcon className="origin-left scale-90" />
+            <nav className="hidden items-center gap-8 lg:flex">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path
+                return (
+                  <a
+                    key={item.label}
+                    href="#"
+                    onMouseEnter={(e) => gsap.to(e.currentTarget, { y: -3, scale: 1.05, duration: 0.3, ease: "back.out(2)" })}
+                    onMouseLeave={(e) => gsap.to(e.currentTarget, { y: 0, scale: 1, duration: 0.3, ease: "power2.out" })}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                      navigate(item.path)
+                    }}
+                    className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
+                      isActive
+                        ? "border-emerald-600 text-emerald-800"
+                        : "border-transparent text-slate-500 hover:text-slate-950"
+                    }`}
+                  >
+                    <item.icon size={17} weight="duotone" />
+                    {item.label}
+                  </a>
+                )
+              })}
+            </nav>
+          </div>
+          <UserHeaderActions user={user} onLogout={handleLogout} />
+        </div>
+      </header>
 
-          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
-            {navItems.map((item) => {
-              const isActive =
-                location.pathname === item.path ||
-                (item.path === ROUTES.DASHBOARD && location.pathname === "/")
-              return (
-                <a
-                  key={item.label}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate(item.path)
-                  }}
-                  className={`flex items-center gap-2 py-4 -mb-3.5 transition-colors ${
-                    isActive
-                      ? "border-b-[3px] border-[#00838f] text-[#00838f]"
-                      : "hover:text-slate-800"
-                  }`}
-                >
-                  <item.icon size={16} />
-                  {item.label}
-                </a>
-              )
-            })}
+      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 space-y-7">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-emerald-600 transition-all w-fit group mb-4 hover:-translate-x-1"
+        >
+          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
+          Back to Dashboard
+        </button>
+
+        {/* ── Hero Banner ─────────────────────────────────────── */}
+        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-600 to-teal-500 p-7 md:p-9 shadow-[0_30px_60px_rgba(16,185,129,0.25)]">
+          <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-teal-300/30 blur-3xl" />
+          
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="hero-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
+                <Sparkles ref={sparkleRef} size={28} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+              </div>
+              <div>
+                <p className="text-white/70 text-[12px] font-semibold uppercase tracking-widest mb-1">Student Portal</p>
+                <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
+                  Profile Settings
+                </h1>
+                <p className="text-white/80 text-[13px] mt-1">
+                  Manage your academic details and career goals
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", duration: 0.3, ease: "back.out(2)" })}
+                onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, boxShadow: "none", duration: 0.3, ease: "power2.out" })}
+                onClick={(e) => {
+                  gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                  void loadProfile()
+                }}
+                disabled={loading || saving}
+                className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
+              >
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                Reload
+              </button>
+            </div>
           </div>
         </div>
 
-        <DashboardUserActions user={user} onLogout={handleLogout} />
-      </nav>
-
-      <main className="flex-1 overflow-y-auto relative py-10 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 pb-20">
-          <div className="flex-[2]">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6 pb-10">
+          <div className="flex-[2] space-y-6">
+            {/* Identity Card */}
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-emerald-500/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white font-bold text-3xl shadow-lg">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-emerald-500/30">
                     {displayInitial}
                   </div>
                   <button
                     type="button"
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-cyan text-white rounded-lg flex items-center justify-center shadow-md hover:brightness-110 transition-all border-2 border-white"
+                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, rotation: 15, duration: 0.4, ease: "back.out(2)" })}
+                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.4, ease: "power2.out" })}
+                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" })}
+                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-emerald-600 rounded-xl flex items-center justify-center shadow-md border border-slate-100"
                     aria-label="Edit avatar"
                   >
                     <Edit3 size={14} />
@@ -107,10 +227,10 @@ export default function ProfileSettingsPage() {
                 </div>
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
-                    Personal Identity
+                    Student Information
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Update your public profile and professional summary.
+                    Your personal and academic details.
                   </p>
                 </div>
               </div>
@@ -122,106 +242,135 @@ export default function ProfileSettingsPage() {
               )}
 
               {loading ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm font-medium text-slate-500">
-                  Loading profile...
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
+                  Loading profile data...
                 </div>
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <User size={16} className="text-brand-blue" />
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <User size={16} className="text-emerald-600" />
                         Full Name
                       </label>
                       <input
                         type="text"
-                        value={profileData.fullName}
-                        onChange={(e) =>
-                          handleChange("fullName", e.target.value)
-                        }
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                        value={profileData.full_name}
+                        onChange={(e) => handleChange("full_name", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
-                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <GraduationCap size={16} className="text-brand-blue" />
-                        Major
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.major}
-                        onChange={(e) => handleChange("major", e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                      <Book size={16} className="text-brand-blue" />
-                      Professional Bio
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={profileData.bio}
-                      onChange={(e) => handleChange("bio", e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all resize-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <Calendar size={16} className="text-brand-blue" />
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Calendar size={16} className="text-emerald-600" />
                         Year of Birth
                       </label>
-                      <DatePicker
-                        value={profileData.yob ?? ''}
-                        onChange={(val) => handleChange("yob", val)}
+                      <input
+                        type="date"
+                        value={profileData.yob}
+                        onChange={(e) => handleChange("yob", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <Building2 size={16} className="text-brand-blue" />
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Building2 size={16} className="text-emerald-600" />
                         University
                       </label>
                       <input
                         type="text"
                         value={profileData.university}
-                        onChange={(e) =>
-                          handleChange("university", e.target.value)
-                        }
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                        placeholder="e.g. FPT University"
+                        onChange={(e) => handleChange("university", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
-                      <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                        <Calendar size={16} className="text-brand-blue" />
-                        Year of Admission
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <GraduationCap size={16} className="text-emerald-600" />
+                        Major
                       </label>
-                      <DatePicker
-                        value={profileData.year_of_admission ?? ''}
-                        onChange={(val) => handleChange("year_of_admission", val)}
+                      <input
+                        type="text"
+                        value={profileData.major}
+                        placeholder="e.g. Software Engineering"
+                        onChange={(e) => handleChange("major", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Calendar size={16} className="text-emerald-600" />
+                        Year of Admission
+                      </label>
+                      <input
+                        type="date"
+                        value={profileData.year_of_admission}
+                        onChange={(e) => handleChange("year_of_admission", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5 font-medium text-slate-700">
+                        <GithubLogo size={16} className="text-emerald-600" />
+                        GitHub Profile
+                      </div>
+                      <input
+                        type="url"
+                        value={profileData.github_profile || ''}
+                        placeholder="e.g. https://github.com/username"
+                        onChange={(e) => handleChange("github_profile", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-8">
+                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                      <Book size={16} className="text-emerald-600" />
+                      About Me (Bio)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={profileData.bio}
+                      placeholder="Share a little bit about yourself, your career goals..."
+                      onChange={(e) => handleChange("bio", e.target.value)}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white resize-none"
+                    />
                   </div>
 
                   <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
                     <button
                       type="button"
-                      onClick={() => void loadProfile()}
+                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, duration: 0.3, ease: "back.out(2)", backgroundColor: "#f1f5f9" })}
+                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.3, ease: "power2.out", backgroundColor: "transparent" })}
+                      onClick={(e) => {
+                        gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                        void loadProfile()
+                      }}
                       disabled={saving}
-                      className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50"
+                      className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 disabled:opacity-50 px-4 py-2.5 rounded-xl"
                     >
-                      Discard
+                      Discard Changes
                     </button>
                     <button
                       type="button"
-                      onClick={handleSave}
+                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(16, 185, 129, 0.3)", duration: 0.3, ease: "back.out(2)" })}
+                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(16, 185, 129, 0.2)", duration: 0.3, ease: "power2.out" })}
+                      onClick={(e) => {
+                        gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
+                        handleSave()
+                      }}
                       disabled={saving}
-                      className="px-6 py-2.5 bg-[#4cb7ed] hover:bg-[#3ba2d6] text-white rounded-xl text-sm font-bold transition-colors shadow-md shadow-[#4cb7ed]/20 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-bold shadow-md shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
                     >
-                      {saving ? "Saving..." : "Save Changes"}
+                      {saving ? "Saving..." : "Save Profile"}
                     </button>
                   </div>
                 </>
@@ -230,83 +379,36 @@ export default function ProfileSettingsPage() {
           </div>
 
           <div className="flex-1 space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-5">
-                Linked Accounts
-              </h3>
-
-              <div className="border border-slate-200 rounded-xl p-4 flex items-start gap-4">
-                <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-bold text-slate-900">GitHub</h4>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  </div>
-                  <p
-                    className="text-xs text-slate-500 mb-2 truncate"
-                    title={profileData.githubProfile || "Not linked"}
-                  >
-                    Linked:{" "}
-                    {profileData.githubProfile ? (
-                      <a
-                        href={
-                          profileData.githubProfile.startsWith("http")
-                            ? profileData.githubProfile
-                            : `https://${profileData.githubProfile}`
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:underline hover:text-brand-blue"
-                      >
-                        {profileData.githubProfile}
-                      </a>
-                    ) : (
-                      "Not linked"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 mb-5">
-                Account Access
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-emerald-500/30 transition-colors">
+              <h3 className="text-[15px] font-bold text-slate-900 mb-5">
+                Account Security
               </h3>
 
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50/80 border border-slate-100">
                   <div>
                     <p className="mb-1 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       <Mail size={13} />
-                      Email
+                      Email Address
                     </p>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-[14px] font-semibold text-slate-900">
                       {profileData.email || "Not set"}
                     </p>
                   </div>
                   <button
                     type="button"
-                    className="text-brand-blue hover:text-brand-electric transition-colors"
+                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.1, y: -2, duration: 0.3, ease: "back.out(2)" })}
+                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.3, ease: "power2.out" })}
+                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.1, duration: 0.4, ease: "elastic.out(1, 0.3)" })}
+                    className="text-emerald-600 hover:text-emerald-700 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
                     aria-label="Edit email"
                   >
-                    <Edit3 size={16} />
+                    <Edit3 size={15} />
                   </button>
                 </div>
               </div>
             </div>
+            
           </div>
         </div>
       </main>

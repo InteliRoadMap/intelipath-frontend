@@ -60,6 +60,20 @@ const processQueue = (
   failedQueue = []
 }
 
+// Global API Loading State
+export let globalActiveRequests = 0;
+export const onLoadingChange = new Set<(isLoading: boolean) => void>();
+
+export const incrementLoading = () => {
+  globalActiveRequests++;
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+}
+
+export const decrementLoading = () => {
+  globalActiveRequests = Math.max(0, globalActiveRequests - 1);
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+}
+
 //Auth Helpers & Token Management
 export const getStoredToken = () => localStorage.getItem("accessToken")
 const defaultGetRefreshToken = () => localStorage.getItem("refreshToken")
@@ -110,6 +124,7 @@ export function createApiClient({
   // Request start -> run request interceptor ->  attach token if available -> send request
   client.interceptors.request.use(
     (config) => {
+      incrementLoading();
       if (import.meta.env.DEV) {
         console.group(
           `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
@@ -135,6 +150,7 @@ export function createApiClient({
       return config
     },
     (error) => {
+      decrementLoading();
       console.error(" [API REQUEST ERROR]", error)
       return Promise.reject(error)
     }
@@ -143,6 +159,7 @@ export function createApiClient({
   // 2. Response Interceptor: Handle Errors & Refresh Token & Beautiful Logging
   client.interceptors.response.use(
     (response) => {
+      decrementLoading();
       if (import.meta.env.DEV) {
         console.group(
           `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
@@ -155,6 +172,7 @@ export function createApiClient({
       return response
     },
     async (error: AxiosError) => {
+      decrementLoading();
       const originalRequest = error.config as CustomAxiosRequestConfig
       const res = error.response
       const status = res?.status

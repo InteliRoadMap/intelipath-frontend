@@ -1,34 +1,38 @@
-import { useEffect, useMemo, useState } from "react"
-import type { ReactNode } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
+import { ReactFlowProvider } from '@xyflow/react'
 import {
   ArrowRight,
   ArrowsClockwise,
+  Check,
   CheckCircle,
   Clock,
   LinkSimple,
   LockKey,
   MapTrifold,
   MagnifyingGlass,
+  Palette,
   PencilSimple,
   Target,
-  TreeStructure
+  TreeStructure,
+  X
 } from "@phosphor-icons/react"
-import { careerApi, roadmapApi, updateApi } from "@/api"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Skeleton } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DiagonalGridBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
+import { isUuid } from "@/lib/utils"
 import { ROUTES } from "@/shared"
 import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
-import type { CareerRole, RoadmapNode, RoadmapNodeStatus, StudentRoadmap } from "../types"
-import { AiMentorHistoryWidget } from "./StudentDashboardWidgets"
+import { studentDashboardService } from "../services"
+import type { CareerRole, StudentRoadmap } from "../types"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
-import StudentTopNav from "./StudentTopNav"
+import StudentHeader from "./StudentHeader"
+import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 
-type RoadmapNodeWithDepth = RoadmapNode & {
-  depth: number
-}
+gsap.registerPlugin(useGSAP)
 
 type StudentProfileResponse = {
   careerId?: string
@@ -45,55 +49,6 @@ type StudentProfileResponse = {
   }
 }
 
-const statusConfig: Record<
-  RoadmapNodeStatus,
-  {
-    label: string
-    badge: "success" | "info" | "default"
-    icon: ReactNode
-    cardClass: string
-  }
-> = {
-  completed: {
-    label: "Completed",
-    badge: "success",
-    icon: <CheckCircle size={18} weight="duotone" />,
-    cardClass: "border-emerald-200 bg-emerald-50/40"
-  },
-  current: {
-    label: "Current",
-    badge: "info",
-    icon: <Clock size={18} weight="duotone" />,
-    cardClass: "border-cyan-300 bg-cyan-50/60 shadow-cyan-100"
-  },
-  locked: {
-    label: "Locked",
-    badge: "default",
-    icon: <LockKey size={18} weight="duotone" />,
-    cardClass: "border-slate-200 bg-white"
-  }
-}
-
-const flattenNodes = (nodes: RoadmapNode[], depth = 0): RoadmapNodeWithDepth[] =>
-  nodes.flatMap((node) => [
-    { ...node, depth },
-    ...flattenNodes(node.children, depth + 1)
-  ])
-
-const groupByDepth = (nodes: RoadmapNodeWithDepth[]) =>
-  nodes.reduce<Record<number, RoadmapNodeWithDepth[]>>((groups, node) => {
-    const key = node.level ?? node.depth
-    groups[key] = [...(groups[key] ?? []), node]
-    return groups
-  }, {})
-
-const getNodeLevelLabel = (node: RoadmapNodeWithDepth) => node.level ?? node.depth + 1
-
-const getGroupLevelLabel = (
-  level: number,
-  groups: Record<number, RoadmapNodeWithDepth[]>
-) => groups[level]?.some((node) => node.level !== undefined) ? level : level + 1
-
 const unwrapProfile = (responseData: unknown): StudentProfileResponse | null => {
   if (!responseData || typeof responseData !== "object") return null
   if ("data" in responseData) return unwrapProfile((responseData as { data: unknown }).data)
@@ -101,12 +56,13 @@ const unwrapProfile = (responseData: unknown): StudentProfileResponse | null => 
 }
 
 const getProfileCareerId = (profile: StudentProfileResponse | null) =>
-  profile?.careerId ||
-  profile?.career_id ||
-  profile?.career?.careerId ||
-  profile?.career?.career_id ||
-  profile?.career?.id ||
-  null
+  [
+    profile?.careerId,
+    profile?.career_id,
+    profile?.career?.careerId,
+    profile?.career?.career_id,
+    profile?.career?.id
+  ].find((careerId): careerId is string => Boolean(careerId && isUuid(careerId))) || null
 
 const getProfileCareerName = (profile: StudentProfileResponse | null) =>
   profile?.careerName ||
@@ -114,79 +70,6 @@ const getProfileCareerName = (profile: StudentProfileResponse | null) =>
   profile?.career?.careerName ||
   profile?.career?.career_name ||
   profile?.career?.name
-
-const RoadmapSkeleton = () => (
-  <div className="grid gap-4 lg:grid-cols-3">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <Card key={index} className="h-[190px]">
-        <CardHeader className="gap-3">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-7 w-3/4" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-8 w-full" />
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-)
-
-const RoadmapNodeCard = ({ node }: { node: RoadmapNodeWithDepth }) => {
-  const config = statusConfig[node.status]
-
-  return (
-    <Card className={`relative min-h-[190px] transition-shadow hover:shadow-md ${config.cardClass}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 text-slate-500">
-            {config.icon}
-            <span className="text-[11px] font-bold uppercase tracking-[0.16em]">
-              Level {getNodeLevelLabel(node)}
-            </span>
-          </div>
-          <Badge variant={config.badge}>{config.label}</Badge>
-        </div>
-        <CardTitle className="text-[18px] leading-6">{node.title}</CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex h-full flex-col gap-4">
-        {node.description ? (
-          <p className="line-clamp-2 text-[13px] leading-5 text-slate-600">{node.description}</p>
-        ) : (
-          <p className="text-[13px] leading-5 text-slate-400">Description will appear when backend sends it.</p>
-        )}
-
-        <div className="mt-auto space-y-2">
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            <LinkSimple size={15} weight="bold" />
-            Resources
-          </div>
-          {node.resources.length ? (
-            <div className="flex flex-wrap gap-2">
-              {node.resources.slice(0, 3).map((resource) => (
-                <a
-                  key={`${node.id}-${resource.url}`}
-                  href={resource.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 transition-colors hover:border-cyan-300 hover:text-cyan-700"
-                >
-                  {resource.title}
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-md border border-dashed border-slate-200 bg-white/70 px-3 py-2 text-[12px] font-medium text-slate-400">
-              Resources will appear here.
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 const CareerSelector = ({
   careers,
@@ -216,98 +99,104 @@ const CareerSelector = ({
   )
 
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-slate-200 bg-white p-6 md:p-8">
-        <p className="mb-2 flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
-          <Target size={17} weight="duotone" />
-          Target Career Role
-        </p>
-        <h1 className="text-[30px] font-bold leading-tight text-slate-950 md:text-[42px]">
-          Choose your roadmap path
-        </h1>
-        <p className="mt-3 max-w-3xl text-[15px] font-medium leading-7 text-slate-500">
-          Select one career role first. The roadmap will be generated from backend data for that career.
-        </p>
-      </div>
-
-      <CardContent className="p-6 md:p-8">
-        <div className="relative mb-5">
-          <MagnifyingGlass
-            size={18}
-            weight="bold"
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <Input
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search career roles"
-            className="h-11 pl-10"
-          />
+    <div className="roadmap-gsap-panel w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
+      <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1">
+        
+        {/* Header section */}
+        <div className="px-6 py-6 md:px-8 md:py-8 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
+           <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-slate-900">
+             Change Career Path
+           </h1>
         </div>
 
-        {errorMessage && (
-          <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-            {errorMessage}
+        <div className="p-6 md:p-8 flex-1 flex flex-col">
+          {/* Search bar */}
+          <div className="relative mb-6">
+            <MagnifyingGlass size={20} weight="light" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input 
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search available career roles..."
+              className="w-full h-14 pl-14 pr-6 bg-white rounded-full border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all text-[15px] font-medium text-slate-900 placeholder:text-slate-400"
+            />
           </div>
-        )}
 
-        <div className="grid max-h-[430px] grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
-          {filteredCareers.map((career) => {
-            const isSelected = selectedCareerId === career.careerId
-            const isCurrent = currentCareerId === career.careerId
-
-            return (
-              <button
-                key={career.careerId}
-                type="button"
-                onClick={() => onSelectCareer(career.careerId)}
-                className={`min-h-[138px] rounded-lg border bg-white p-4 text-left transition-all hover:border-cyan-300 hover:shadow-sm ${
-                  isSelected ? "border-[#00838f] ring-2 ring-[#00838f]/15" : "border-slate-200"
-                }`}
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <h3 className="text-[16px] font-bold leading-5 text-slate-950">{career.careerName}</h3>
-                  {isCurrent && <Badge variant="info">Current</Badge>}
-                </div>
-                <p className="line-clamp-3 text-[13px] leading-5 text-slate-500">
-                  {career.description || career.prerequisite || "Backend will provide description for this career role."}
-                </p>
-              </button>
-            )
-          })}
-        </div>
-
-        {!filteredCareers.length && (
-          <div className="grid min-h-[180px] place-items-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center">
-            <p className="text-sm font-medium text-slate-500">No career roles found.</p>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
+          {errorMessage && (
+            <div className="mb-6 max-w-xl mx-auto rounded-xl border border-rose-100 bg-rose-50/50 px-5 py-4 text-[14px] font-medium text-rose-600 text-center">
+              {errorMessage}
+            </div>
           )}
-          <Button
-            type="button"
-            variant="brand"
-            disabled={!selectedCareerId || isSaving}
-            onClick={onSave}
-          >
-            {isSaving ? "Generating..." : "Generate roadmap"}
-            {!isSaving && <ArrowRight size={16} weight="bold" />}
-          </Button>
+
+          {/* Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+            {filteredCareers.map(career => {
+               const isSelected = selectedCareerId === career.careerId;
+               const isCurrent = currentCareerId === career.careerId;
+               return (
+                 <button
+                   key={career.careerId}
+                   type="button"
+                   onClick={() => onSelectCareer(career.careerId)}
+                   className={`text-left p-1 rounded-2xl transition-all duration-300
+                     ${isSelected ? 'bg-black shadow-[0_8px_20px_rgba(0,0,0,0.12)] scale-[1.01] ring-1 ring-black' : 'bg-transparent hover:bg-black/5'}
+                   `}
+                 >
+                   <div className={`w-full h-full min-h-[100px] rounded-[calc(1rem-0.25rem)] p-4 flex flex-col transition-colors duration-300
+                     ${isSelected ? 'bg-[#111]' : 'bg-white shadow-sm ring-1 ring-black/[0.04]'}
+                   `}>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                         <h3 className={`text-[14px] font-bold tracking-tight transition-colors
+                           ${isSelected ? 'text-white' : 'text-slate-900'}
+                         `}>{career.careerName}</h3>
+                         {isCurrent && (
+                           <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded flex-shrink-0
+                             ${isSelected ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-600'}
+                           `}>Current</span>
+                         )}
+                      </div>
+                      <p className={`text-[12px] leading-relaxed line-clamp-2 mt-auto transition-colors
+                        ${isSelected ? 'text-white/60' : 'text-slate-500'}
+                      `}>
+                        {career.description || career.prerequisite || 'Select to view roadmap.'}
+                      </p>
+                   </div>
+                 </button>
+               )
+            })}
+            
+            {!filteredCareers.length && (
+              <div className="col-span-full min-h-[160px] flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center">
+                <p className="text-[14px] font-medium text-slate-500">No career roles found.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-black/[0.04]">
+             {onCancel && (
+               <button onClick={onCancel} className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">Cancel</button>
+             )}
+             <button
+               type="button"
+               disabled={!selectedCareerId || isSaving}
+               onClick={onSave}
+               className={`group flex items-center justify-center gap-2 bg-black text-white px-6 py-2.5 rounded-xl transition-all active:scale-[0.98] ${!selectedCareerId ? 'opacity-40 cursor-not-allowed' : 'shadow-md hover:shadow-lg'}`}
+             >
+               <span className="text-[13px] font-semibold">
+                 {isSaving ? "Saving..." : "Confirm"}
+               </span>
+               {!isSaving && <ArrowRight size={14} weight="bold" className="group-hover:translate-x-1 transition-transform" />}
+             </button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
 export default function StudentRoadmapPageView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [isAiMentorOpen, setIsAiMentorOpen] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerSearch, setCareerSearch] = useState("")
   const [selectedCareerId, setSelectedCareerId] = useState("")
@@ -317,32 +206,21 @@ export default function StudentRoadmapPageView() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isRoadmapLoading, setIsRoadmapLoading] = useState(false)
   const [isSavingCareer, setIsSavingCareer] = useState(false)
+  const [themeColor, setThemeColor] = useState('cyan')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null)
+  
+  const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
+  const [isUpdatingNode, setIsUpdatingNode] = useState(false);
+  const [optimisticStatusMap, setOptimisticStatusMap] = useState<Record<string, string>>({});
+
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
-
-  const levelGroups = useMemo(() => {
-    const flattened = flattenNodes(roadmapData?.nodes ?? [])
-    return groupByDepth(flattened)
-  }, [roadmapData?.nodes])
-
-  const levels = Object.keys(levelGroups)
-    .map(Number)
-    .sort((a, b) => a - b)
-
-  const completedCount = useMemo(
-    () => flattenNodes(roadmapData?.nodes ?? []).filter((node) => node.status === "completed").length,
-    [roadmapData?.nodes]
-  )
-
-  const totalCount = useMemo(() => flattenNodes(roadmapData?.nodes ?? []).length, [roadmapData?.nodes])
-  const progress = roadmapData?.progress ?? (totalCount ? Math.round((completedCount / totalCount) * 100) : 0)
 
   const loadRoadmap = async () => {
     setIsRoadmapLoading(true)
     setErrorMessage(undefined)
     try {
-      const nextRoadmap = await roadmapApi.getStudentRoadmap()
+      const nextRoadmap = await studentDashboardService.getStudentRoadmap()
       setRoadmapData(nextRoadmap)
     } catch (error) {
       console.error("[Student Roadmap] Failed to load roadmap:", error)
@@ -353,6 +231,51 @@ export default function StudentRoadmapPageView() {
     }
   }
 
+  const handleUpdateNodeStatus = async (newStatus: string) => {
+    if (!selectedNodeData || isUpdatingNode) return;
+    setIsUpdatingNode(true);
+    try {
+      // 1. Gửi request lên Backend (nếu lỗi sẽ văng xuống catch)
+      await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus);
+      
+      // 2. Cập nhật lạc quan (Optimistic Update)
+      setSelectedNodeData({ ...selectedNodeData, status: newStatus });
+      if (roadmapData && roadmapData.nodes) {
+        const updatedNodes = roadmapData.nodes.map(node => 
+          node.id === selectedNodeData.id ? { ...node, status: newStatus as any } : node
+        );
+        setRoadmapData({ ...roadmapData, nodes: updatedNodes });
+      }
+      setOptimisticStatusMap(prev => ({ ...prev, [selectedNodeData.id]: newStatus }));
+      
+      console.log(
+        newStatus === 'completed' 
+          ? 'Node marked as completed!' 
+          : 'Node marked as in progress'
+      );
+
+      // 3. Gọi ngầm Backend để lấy cây Roadmap mới nhất (đã được tính toán Auto-Unlock)
+      studentDashboardService.getStudentRoadmap().then(freshData => {
+        if (freshData) {
+          setRoadmapData(freshData);
+          // Xóa map lạc quan vì data thật đã về
+          setOptimisticStatusMap({});
+        }
+      }).catch(err => console.error("Background sync failed", err));
+
+    } catch (error) {
+      console.error("Failed to update node status", error);
+      setSelectedNodeData(prev => prev ? { ...prev, status: prevStatus } : null);
+      setOptimisticStatusMap(prev => {
+        const newMap = { ...prev };
+        delete newMap[selectedNodeData.id];
+        return newMap;
+      });
+    } finally {
+      setIsUpdatingNode(false);
+    }
+  };
+
   useEffect(() => {
     let active = true
 
@@ -362,8 +285,8 @@ export default function StudentRoadmapPageView() {
 
       try {
         const [profileResult, careersResult] = await Promise.allSettled([
-          updateApi.getStudentProfile(),
-          careerApi.getCareerRoles()
+          studentDashboardService.getStudentProfile(),
+          studentDashboardService.getCareerRoles()
         ])
 
         if (!active) return
@@ -372,7 +295,7 @@ export default function StudentRoadmapPageView() {
         setCareers(nextCareers)
 
         const profile = profileResult.status === "fulfilled"
-          ? unwrapProfile(profileResult.value.data)
+          ? unwrapProfile(profileResult.value)
           : null
         const profileCareerId = getProfileCareerId(profile)
         const profileCareerName = getProfileCareerName(profile)
@@ -412,11 +335,15 @@ export default function StudentRoadmapPageView() {
       setErrorMessage("Select a target career role first.")
       return
     }
+    if (!isUuid(career.careerId)) {
+      setErrorMessage("Selected career has an invalid backend ID.")
+      return
+    }
 
     setIsSavingCareer(true)
     setErrorMessage(undefined)
     try {
-      await careerApi.updateTargetCareer(career.careerId)
+      await studentDashboardService.updateTargetCareer(career.careerId)
       setCurrentCareerId(career.careerId)
       setCurrentCareerName(career.careerName)
       setIsChangingCareer(false)
@@ -429,6 +356,10 @@ export default function StudentRoadmapPageView() {
     }
   }
 
+  const handleNodeClick = (nodeData: any) => {
+    setSelectedNodeData(nodeData)
+  }
+
   const showCareerSelector = !currentCareerId || isChangingCareer
 
   const handleLogout = async () => {
@@ -436,189 +367,231 @@ export default function StudentRoadmapPageView() {
     navigate(ROUTES.LOGIN)
   }
 
+  useGSAP(() => {
+    gsap.from(".roadmap-gsap-panel", {
+      y: 20,
+      autoAlpha: 0,
+      duration: 0.55,
+      stagger: 0.08,
+      ease: "power3.out"
+    })
+    
+    gsap.to(".roadmap-gsap-robot", {
+      y: -8,
+      rotation: 2,
+      duration: 1.9,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    })
+  }, { scope: pageRef, dependencies: [showCareerSelector], revertOnUpdate: true })
+
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
-      <StudentTopNav
+    <div ref={pageRef} className="relative h-screen w-screen overflow-hidden bg-[#f9fafb] font-sans text-slate-900 flex flex-col">
+      <DiagonalGridBackground />
+
+      <StudentHeader
         user={user}
         onLogout={handleLogout}
-        onOpenAiMentor={() => setIsAiMentorOpen(true)}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="hidden xl:block">
-          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
-            <p className="mb-4 text-[13px] font-medium text-slate-400">Roadmap</p>
-            <nav className="space-y-1.5">
-              {showCareerSelector ? (
-                <a href="#choose-career" className="block rounded-md bg-slate-100 px-3 py-2 text-[14px] font-semibold text-slate-950">
-                  Target Career
-                </a>
-              ) : (
-                <>
-                  <a href="#overview" className="block rounded-md bg-slate-100 px-3 py-2 text-[14px] font-semibold text-slate-950">
-                    Overview
-                  </a>
-                  {levels.map((level) => (
-                    <a
-                      key={level}
-                      href={`#level-${level}`}
-                      className="block rounded-md px-3 py-2 text-[14px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
-                    >
-                      Level {getGroupLevelLabel(level, levelGroups)}
-                    </a>
-                  ))}
-                </>
-              )}
-            </nav>
-          </div>
-        </aside>
+      {(isInitialLoading || isRoadmapLoading) && <RouteProgressBar />}
 
-        <section className="min-w-0">
-          {isInitialLoading ? (
-            <RoadmapSkeleton />
-          ) : showCareerSelector ? (
-            <div id="choose-career" className="scroll-mt-28">
-              <CareerSelector
-                careers={careers}
-                selectedCareerId={selectedCareerId}
-                currentCareerId={currentCareerId}
-                searchValue={careerSearch}
-                isSaving={isSavingCareer}
-                errorMessage={errorMessage}
-                onSearchChange={setCareerSearch}
-                onSelectCareer={setSelectedCareerId}
-                onSave={handleSaveCareer}
-                onCancel={currentCareerId ? () => {
-                  setSelectedCareerId(currentCareerId)
-                  setIsChangingCareer(false)
-                  setErrorMessage(undefined)
-                } : undefined}
-              />
+      {/* Main Canvas Area */}
+      <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4 gap-4">
+        
+        {/* Left Column removed as requested */}
+
+        {/* Vector Graph Area */}
+        <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+          {isInitialLoading || isRoadmapLoading ? null : (
+            <div className="absolute inset-0 z-10 bg-slate-50">
+              {/* React Flow Provider must wrap the Canvas */}
+              <ReactFlowProvider>
+                <RoadmapVectorGraph 
+                  onNodeClick={handleNodeClick} 
+                  themeColor={themeColor} 
+                  roadmapData={roadmapData} 
+                  optimisticStatusMap={optimisticStatusMap}
+                />
+              </ReactFlowProvider>
+              
             </div>
-          ) : (
-            <>
-          <div id="overview" className="mb-6 scroll-mt-28 rounded-lg border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="mb-2 flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
-                  <MapTrifold size={17} weight="duotone" />
-                  Dynamic Roadmap
-                </p>
-                <h1 className="text-[30px] font-bold leading-tight text-slate-950 md:text-[42px]">
-                  {roadmapData?.targetCareerRole || currentCareerName || "Your target career roadmap"}
-                </h1>
-                <p className="mt-3 text-[15px] font-medium leading-7 text-slate-500">
-                  Follow the prioritized learning path, open curated resources, and track completion as backend progress data arrives.
-                </p>
-              </div>
+          )}
+        </div>
 
-              <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[320px]">
-                <Card className="p-5">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide text-slate-500">
-                      <Target size={17} weight="duotone" />
-                      Progress
+        {/* Right Column (Details) - High-End Redesign */}
+        <div className="hidden lg:flex w-[340px] shrink-0 flex-col bg-[#FAFAFA] rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-black/5 overflow-hidden relative">
+          
+          {/* Target Career Header */}
+          <div className="px-5 py-4 border-b border-black/[0.04] bg-white">
+             <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+               <Target size={12} weight="bold" />
+               Target Career
+             </p>
+             <div className="flex items-center justify-between gap-3">
+               <h1 className="text-[14px] font-bold tracking-tight text-slate-900 truncate flex-1">
+                 {roadmapData?.targetCareerRole || currentCareerName || "Target Career"}
+               </h1>
+               <button
+                 className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100/50 hover:bg-slate-100 text-[10px] font-semibold text-slate-600 transition-all active:scale-[0.98] group shrink-0"
+                 onClick={() => {
+                   setSelectedCareerId(currentCareerId || "")
+                   setCareerSearch("")
+                   setIsChangingCareer(true)
+                 }}
+               >
+                 <PencilSimple size={10} weight="bold" className="group-hover:text-slate-900 transition-colors" /> Change
+               </button>
+             </div>
+          </div>
+
+          <div className="flex-1 flex flex-col overflow-hidden p-5 relative">
+            {selectedNodeData ? (
+              <>
+                <div className="flex flex-col shrink-0 gap-2.5 mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ${
+                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' : 
+                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' : 
+                      'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
+                    }`}>
+                      {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' ? 'Current Focus' : 'Locked'}
                     </span>
-                    <span className="text-[24px] font-bold text-slate-950">{progress}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-[#00838f]" style={{ width: `${progress}%` }} />
-                  </div>
-                  <p className="mt-3 text-[12px] font-medium text-slate-500">
-                    {completedCount} of {totalCount} nodes completed
-                  </p>
-                </Card>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setSelectedCareerId(currentCareerId || "")
-                    setCareerSearch("")
-                    setIsChangingCareer(true)
-                  }}
-                >
-                  <PencilSimple size={16} weight="bold" />
-                  Change career
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {isRoadmapLoading ? (
-            <RoadmapSkeleton />
-          ) : errorMessage || !levels.length ? (
-            <Card className="grid min-h-[360px] place-items-center p-8 text-center">
-              <div className="max-w-md">
-                <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-lg bg-cyan-50 text-cyan-700">
-                  <TreeStructure size={24} weight="duotone" />
+                  <h2 className="text-[20px] font-bold tracking-tight leading-snug text-slate-950">{selectedNodeData.label}</h2>
                 </div>
-                <h2 className="text-[22px] font-bold text-slate-950">Roadmap data is not available yet.</h2>
-                <p className="mt-3 text-[14px] leading-6 text-slate-500">
-                  Backend should return nodes for <span className="font-semibold text-slate-700">GET /student/roadmap</span> after target career is selected.
-                </p>
-                <Button type="button" variant="outline" className="mt-5" onClick={loadRoadmap}>
-                  <ArrowsClockwise size={16} weight="bold" />
-                  Retry
-                </Button>
-              </div>
-            </Card>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="grid min-w-[960px] auto-cols-[minmax(280px,1fr)] grid-flow-col gap-5">
-                {levels.map((level, index) => (
-                  <section key={level} id={`level-${level}`} className="scroll-mt-28">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                          Phase {index + 1}
-                        </p>
-                        <h2 className="text-[18px] font-bold text-slate-950">
-                          Level {getGroupLevelLabel(level, levelGroups)}
-                        </h2>
-                      </div>
-                      {index < levels.length - 1 && (
-                        <ArrowRight size={20} weight="bold" className="text-slate-300" />
-                      )}
-                    </div>
 
-                    <div className="space-y-4">
-                      {levelGroups[level].map((node) => (
-                        <RoadmapNodeCard key={node.id} node={node} />
-                      ))}
+                <div className="flex flex-col shrink-0 max-h-[240px] mb-6 relative">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 shrink-0">Description</h3>
+                  
+                  {/* Premium Scroll Area */}
+                  <div className="overflow-y-auto pr-3 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 transition-colors">
+                    <p className="text-[13px] leading-relaxed text-slate-600 font-medium">
+                      {selectedNodeData.description || 'No description provided for this skill node yet.'}
+                    </p>
+                  </div>
+                  {/* Fade out mask at bottom of description if it scrolls */}
+                  <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#FAFAFA] to-transparent pointer-events-none" />
+                </div>
+
+                <div className="flex-1 flex flex-col overflow-hidden min-h-[100px]">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5 shrink-0">
+                    <LinkSimple size={12} weight="bold" />
+                    Learning Resources
+                  </h3>
+                  <div className="flex-1 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+                    {selectedNodeData.links && selectedNodeData.links.length > 0 ? (
+                      <div className="flex flex-col gap-2.5">
+                        {selectedNodeData.links.map((link: any, idx: number) => {
+                          const href = typeof link === 'string' ? link : (link?.url || '');
+                          const title = typeof link === 'string' ? `Resource Link ${idx + 1}` : (link?.title || `Resource Link ${idx + 1}`);
+                          return (
+                            <a 
+                              key={idx} 
+                              href={href} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="group flex items-center justify-between p-3 bg-white rounded-xl ring-1 ring-black/[0.04] shadow-sm hover:shadow-md hover:ring-black/[0.08] transition-all duration-300 active:scale-[0.98]"
+                            >
+                              <span className="text-[12px] font-semibold text-slate-700 group-hover:text-black transition-colors truncate mr-3">{title}</span>
+                              <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors duration-300">
+                                <ArrowRight size={12} weight="bold" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="bg-white p-4 rounded-xl ring-1 ring-black/[0.04] text-center border border-slate-50">
+                        <p className="text-[12px] text-slate-500 font-medium">No learning resources attached.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="shrink-0 pt-4 mt-auto space-y-3">
+                  {/* Premium Compact Action Buttons */}
+                  {selectedNodeData.status === 'completed' ? (
+                    <div className="space-y-3">
+                      <button disabled className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-5 py-3 rounded-xl ring-1 ring-emerald-500/20 font-semibold text-[13px] shadow-sm">
+                        <Check size={16} weight="bold" /> Completed
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateNodeStatus('in_progress')}
+                        disabled={isUpdatingNode}
+                        className="w-full flex items-center justify-center bg-white text-slate-600 px-5 py-2.5 rounded-xl ring-1 ring-slate-200 hover:bg-slate-50 transition-colors font-medium text-[12px] disabled:opacity-50"
+                      >
+                        {isUpdatingNode ? 'Updating...' : 'Re-learn (Mark In Progress)'}
+                      </button>
                     </div>
-                  </section>
-                ))}
+                  ) : selectedNodeData.status === 'locked' ? (
+                    <button 
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
+                    >
+                      <LockKeyhole size={16} weight="bold" /> Locked (Complete Prerequisites First)
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleUpdateNodeStatus('completed')}
+                      disabled={isUpdatingNode}
+                      className="group relative w-full flex items-center justify-between bg-black text-white px-5 py-3 rounded-xl overflow-hidden transition-transform active:scale-[0.98] duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgb(0,0,0,0.15)] disabled:opacity-50 disabled:active:scale-100"
+                    >
+                      <span className="text-[13px] font-semibold tracking-wide relative z-10">
+                        {isUpdatingNode ? 'Marking...' : 'Mark as Completed'}
+                      </span>
+                      <div className="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center relative z-10 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105">
+                        <Check size={12} weight="bold" />
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-center text-slate-400">
+                <div className="w-12 h-12 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center mb-4">
+                  <MapTrifold size={20} weight="light" className="text-slate-400" />
+                </div>
+                <p className="text-[14px] font-semibold text-slate-900 tracking-tight">Select a topic</p>
+                <p className="text-[12px] mt-1.5 max-w-[180px] text-slate-500 leading-relaxed">Click any node to view its detailed learning resources.</p>
               </div>
-            </div>
-          )}
-            </>
-          )}
-        </section>
+            )}
+          </div>
+        </div>
+
+        {/* Career Selector Overlay */}
+        {!isInitialLoading && showCareerSelector && (
+          <div className="absolute inset-0 z-50 bg-slate-50/90 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8">
+            <CareerSelector
+              careers={careers}
+              selectedCareerId={selectedCareerId}
+              currentCareerId={currentCareerId}
+              searchValue={careerSearch}
+              isSaving={isSavingCareer}
+              errorMessage={errorMessage}
+              onSearchChange={setCareerSearch}
+              onSelectCareer={setSelectedCareerId}
+              onSave={handleSaveCareer}
+              onCancel={currentCareerId ? () => {
+                setSelectedCareerId(currentCareerId)
+                setIsChangingCareer(false)
+                setErrorMessage(undefined)
+              } : undefined}
+            />
+          </div>
+        )}
       </main>
 
       <button
         type="button"
-        onClick={() => setIsAiMentorOpen(true)}
-        className="ai-mentor-float fixed bottom-5 right-4 z-50 flex h-20 w-20 items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28"
+        onClick={() => navigate(ROUTES.AI_MENTOR)}
+        className="roadmap-gsap-robot fixed bottom-6 left-6 z-50 w-16 h-16 rounded-full shadow-2xl transition-transform hover:scale-110 active:scale-95"
         title="Ask AI Mentor"
       >
         <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain drop-shadow-xl" />
       </button>
-
-      {isAiMentorOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close AI Mentor"
-            onClick={() => setIsAiMentorOpen(false)}
-            className="fixed inset-0 z-[60] bg-slate-950/25 backdrop-blur-[1px]"
-          />
-          <aside className="fixed inset-x-3 bottom-3 top-20 z-[70] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(680px,calc(100vh-3rem))] sm:w-[420px]">
-            <AiMentorHistoryWidget onClose={() => setIsAiMentorOpen(false)} />
-          </aside>
-        </>
-      )}
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (

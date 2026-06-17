@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
-import updateApi from "../api/updateApi"
+import profileApi from "../api/profileApi"
 import { getErrorMessage } from "../lib/utils"
 import { useAuth } from "../context/AuthContext"
 
@@ -61,17 +61,19 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     }
 
     try {
-      await updateApi.updateUserProfile({
-        fullName,
-        yob,
-        bio
-      })
-
-      await updateApi.updateStudentProfile({
-        university,
-        yearOfAdmission: yearOfAdmission,
-        major 
-      })
+      await Promise.all([
+        profileApi.updateUserProfile({
+          fullName,
+          yob,
+          bio
+        }),
+        profileApi.updateStudentProfile({
+          university,
+          yearOfAdmission,
+          major,
+          careerId: ""
+        })
+      ])
 
       setStep(1)
       handleClose()

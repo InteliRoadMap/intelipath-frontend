@@ -245,7 +245,7 @@ function NotifFullPage({
 }
 
 // ─── Main exported component ───────────────────────────────────────────────────
-export default function NotificationPanel() {
+export default function NotificationBell() {
   const [notifications, setNotifications] =
     useState<Notification[]>(MOCK_NOTIFICATIONS)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)

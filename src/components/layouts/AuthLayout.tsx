@@ -22,10 +22,6 @@ export default function AuthLayout({ children, view }: AuthLayoutProps) {
         <div className="absolute left-1/4 top-1/4 h-[80%] w-[80%] animate-[spin_90s_linear_infinite_reverse] rounded-full bg-gradient-radial from-cyan-300/20 via-transparent to-transparent blur-3xl" />
       </div>
 
-      <header className="relative z-30 flex w-full items-center px-6 py-6 xl:px-8">
-        <Logo hideIcon className="scale-95 !text-slate-900" />
-      </header>
-
       <main className="relative z-20 mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4 py-4 xl:px-0">
         <div className="relative w-full max-w-310">
           <div className="absolute inset-0 -z-10 rounded-3xl bg-blue-300/30 blur-3xl" />

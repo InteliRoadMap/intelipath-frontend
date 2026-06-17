@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
-import updateApi from "../api/updateApi"
-import counselorApi from "../api/counselorApi"
+import profileApi from "../api/profileApi"
 import { useAuth } from "../context/AuthContext"
 
 export interface ProfileData {
-  fullName: string
+  full_name: string
   yob: string
   bio: string
   email: string
@@ -20,11 +19,11 @@ export interface ProfileData {
   // Counselor
   department: string
   // Common
-  githubProfile?: string
+  github_profile?: string
 }
 
 const EMPTY_PROFILE: ProfileData = {
-  fullName: "",
+  full_name: "",
   yob: "",
   bio: "",
   email: "",
@@ -39,7 +38,7 @@ const EMPTY_PROFILE: ProfileData = {
 }
 
 export function useProfileSettings() {
-  const { user, updateUser } = useAuth()
+  const { user } = useAuth()
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -51,37 +50,25 @@ export function useProfileSettings() {
 
     try {
       let data: any = {}
-      if (user?.role === "COUNSELOR") {
-        const res = await counselorApi.getCounselorProfile()
-        data = res
-      } else {
-        const studentRes = await updateApi.getStudentProfile()
-        data = studentRes.data
+      if (user?.role?.toUpperCase() === "STUDENT") {
+        const res = await profileApi.getStudentProfile()
+        data = res.data
+      } else if (user?.role?.toUpperCase() === "MENTOR") {
+        const res = await profileApi.getMentorProfile()
+        data = res.data
+      } else if (user?.role?.toUpperCase() === "COUNSELOR") {
+        const res = await profileApi.getCounselorProfile()
+        data = res.data
       }
 
       setProfileData({
         ...EMPTY_PROFILE,
         ...user,
-        fullName: data?.user?.fullName || user?.fullName || "",
-        yob: data?.user?.yob?.toString() || "",
-        bio: data?.user?.bio || "",
-        email: data?.user?.email || user?.email || "",
-        role: data?.user?.role || user?.role || "Student",
-
-        // Student / Counselor
-        university:
-          data?.student?.university ||
-          data?.academicCounselor?.university ||
-          "",
-        major: data?.student?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.student?.yearOfAdmission?.toString() || "",
-
-        // Counselor
-        department: data?.academicCounselor?.department || "",
-
-        // Mentor
-        company: data?.industryMentor?.company || "",
-        industry_focus: data?.industryMentor?.industryFocus || ""
+        ...data,
+        email: data?.email || user?.email || "",
+        role: data?.role || user?.role || "Student",
+        major: data?.major || EMPTY_PROFILE.major,
+        year_of_admission: data?.year_of_admission || ""
       })
     } catch (err) {
       console.error("[ProfileSettingsPage] Error fetching profile data:", err)
@@ -104,20 +91,40 @@ export function useProfileSettings() {
     setError(null)
 
     try {
-      await Promise.all([
-        updateApi.updateUserProfile({
-          fullName: profileData.fullName,
+      const tasks: Promise<any>[] = [
+        profileApi.updateUserProfile({
+          full_name: profileData.full_name,
           yob: profileData.yob,
           bio: profileData.bio
-        }),
-        updateApi.updateStudentProfile({
-          university: profileData.university,
-          yearOfAdmission: profileData.year_of_admission,
-          major: profileData.major
         })
-      ])
+      ]
 
-      updateUser(profileData)
+      if (user?.role?.toUpperCase() === "STUDENT") {
+        tasks.push(
+          profileApi.updateStudentProfile({
+            university: profileData.university,
+            yearOfAdmission: profileData.year_of_admission,
+            major: profileData.major
+          })
+        )
+      } else if (user?.role?.toUpperCase() === "MENTOR") {
+        tasks.push(
+          profileApi.updateMentorProfile({
+            company: profileData.company,
+            industryFocus: profileData.industry_focus
+          })
+        )
+      } else if (user?.role?.toUpperCase() === "COUNSELOR") {
+        tasks.push(
+          profileApi.updateCounselorProfile({
+            department: profileData.department,
+            university: profileData.university
+          })
+        )
+      }
+
+      await Promise.all(tasks)
+
       alert("Saved successfully!")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
@@ -127,11 +134,11 @@ export function useProfileSettings() {
     }
   }
 
-  const displayInitial = profileData.fullName?.[0]?.toUpperCase() ?? "U"
+  const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
     profileData.githubProfile?.split("/").filter(Boolean).pop() ||
-    profileData.fullName.split(" ").join("").toLowerCase() ||
+    profileData.full_name.split(" ").join("").toLowerCase() ||
     "user"
 
   return {

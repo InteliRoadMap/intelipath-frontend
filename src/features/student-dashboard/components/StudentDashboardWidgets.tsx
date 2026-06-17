@@ -1,29 +1,42 @@
 import React, { useEffect, useState } from "react"
 import {
-  Send,
   Check,
   MapPin,
   Lock,
-  Info,
-  Network,
-  Box,
   AlertTriangle,
   Map,
-  Bot,
   TrendingUp,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Bot,
+  Send,
+  Network,
+  Box
 } from "lucide-react"
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  AreaChart,
+  Area,
+  CartesianGrid
+} from "recharts"
 import { useAuth } from "@/context"
-import { dashboardApi } from "@/api"
-import { skillApi, type SkillResponse } from "@/api"
+import { studentDashboardService } from "../services"
 import { useDashboardData } from "../hooks"
 import type {
-  AiHistoryItem,
   MarketDemand,
-  MentorFeedback,
-  Recommendation,
   RoadmapProgress,
-  SkillGap
+  SkillGap,
+  SkillResponse,
+  MentorFeedback,
+  AiHistoryItem,
+  Recommendation
 } from "../types"
 
 const LoadingState = ({ rows = 3 }: { rows?: number }) => (
@@ -38,6 +51,30 @@ const LoadingState = ({ rows = 3 }: { rows?: number }) => (
   </div>
 )
 
+const EmptyState = ({
+  icon,
+  title,
+  description
+}: {
+  icon?: React.ReactNode
+  title: string
+  description?: string
+}) => (
+  <div className="grid min-h-[120px] flex-1 place-items-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center">
+    <div>
+      {icon && (
+        <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm">
+          {icon}
+        </div>
+      )}
+      <p className="text-[13px] font-bold text-slate-700">{title}</p>
+      {description && (
+        <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-slate-500">{description}</p>
+      )}
+    </div>
+  </div>
+)
+
 const WidgetHeader = ({
   title,
   description,
@@ -47,17 +84,17 @@ const WidgetHeader = ({
   description?: string
   icon?: React.ReactNode
 }) => (
-  <div className="mb-5 flex min-w-0 items-start justify-between gap-4">
-    <div className="flex min-w-0 items-start gap-3">
+  <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+    <div className="flex min-w-0 items-start gap-2.5">
       {icon && (
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e0f2fe] text-[#006064]">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e0f2fe] text-[#006064]">
           {icon}
         </div>
       )}
       <div className="min-w-0">
-        <h3 className="text-[16px] font-bold leading-5 text-slate-900 md:text-[17px]">{title}</h3>
+        <h3 className="text-[15px] font-bold leading-5 text-slate-900 md:text-[16px]">{title}</h3>
         {description && (
-          <p className="mt-1 text-[12px] font-medium text-slate-500">{description}</p>
+          <p className="mt-0.5 text-[12px] font-medium text-slate-500">{description}</p>
         )}
       </div>
     </div>
@@ -69,30 +106,36 @@ export const StudentWelcomeHeader = () => {
   const [data, setData] = useState<RoadmapProgress | null>(null)
 
   useEffect(() => {
-    dashboardApi.getRoadmapProgress().then(setData).catch(() => setData(null))
+    studentDashboardService.getRoadmapProgress().then(setData).catch(() => setData(null))
   }, [])
 
   return (
-    <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
           Student Dashboard
         </p>
-        <h1 className="text-[26px] font-bold leading-tight text-slate-900 md:text-[30px]">
+        <h1 className="text-[24px] font-bold leading-tight text-slate-900 md:text-[28px]">
           Good morning, {user?.fullName?.trim().split(" ").pop() || "User"}
         </h1>
-        <p className="mt-1 text-[14px] font-medium text-slate-500">
-          Track your roadmap progress, skill gaps, mentor feedback, and market signals.
+        <p className="mt-1 text-[13px] font-medium text-slate-500">
+          Track your roadmap progress, skill gaps, and market signals.
         </p>
       </div>
       {data?.steps && (
-        <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-right shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            Current Track
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Current Target Role
           </p>
-          <p className="text-[14px] font-bold text-slate-900">
-            {data.steps.find((step) => step.status === "current")?.title || "In Progress"}
-          </p>
+          <div className="mt-1 flex items-center justify-end gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00838f] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00838f]"></span>
+            </span>
+            <p className="text-[14px] font-bold text-slate-900">
+              {data?.targetCareerRole || 'Not Selected'}
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -100,68 +143,67 @@ export const StudentWelcomeHeader = () => {
 }
 
 export const RoadmapProgressWidget = () => {
-  const { data, status } = useDashboardData<RoadmapProgress>(
-    () => dashboardApi.getRoadmapProgress() as Promise<RoadmapProgress>
+  const { data: roadmapData, status: roadmapStatus } = useDashboardData<RoadmapProgress>(
+    () => studentDashboardService.getRoadmapProgress()
   )
 
   return (
-    <div className="flex min-h-[260px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <WidgetHeader
           title="Roadmap Progress"
-          description="Follow your current learning path and next milestone."
-          icon={<Map size={18} />}
+          description="Your current progress timeline and milestones."
+          icon={<Map size={16} />}
         />
-        <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-[13px] font-semibold">
-          <button className="rounded-md bg-[#4fc3f7] px-4 py-1.5 text-white shadow-sm">
+        <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-[12px] font-semibold">
+          <button className="cursor-pointer rounded-md bg-[#00838f] px-3 py-1 text-white shadow-sm">
             Foundations
           </button>
-          <button className="rounded-md px-4 py-1.5 text-slate-500 hover:text-slate-700">
+          <button className="cursor-pointer rounded-md px-3 py-1 text-slate-500 hover:text-slate-700">
             Advanced
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center">
-        {status === "loading" ? (
-          <LoadingState rows={4} />
-        ) : status === "error" ? (
-          <LoadingState rows={4} />
-        ) : data?.steps?.length ? (
-          <div className="relative mb-8 flex items-start justify-between overflow-x-auto px-4 pb-2">
-            <div className="absolute left-8 right-8 top-[14px] z-0 h-[2px] bg-slate-200" />
+      <div className="flex flex-1 flex-col justify-center pb-2">
+        {roadmapStatus === "loading" ? (
+          <LoadingState rows={3} />
+        ) : roadmapStatus === "error" ? (
+          <EmptyState
+            icon={<Map size={16} />}
+            title="No roadmap progress yet"
+            description="Progress will appear after backend returns roadmap milestones."
+          />
+        ) : roadmapData?.steps?.length ? (
+          <div className="relative mt-2 flex w-full items-center justify-between px-2 sm:px-8">
+            {/* Timeline connection line */}
+            <div className="absolute left-[5%] right-[5%] top-[16px] z-0 h-[2px] bg-slate-100" />
             <div
-              className="absolute left-8 top-[14px] z-0 h-[2px] bg-[#006064] transition-all"
-              style={{ width: "60%" }}
+              className="absolute left-[5%] top-[16px] z-0 h-[2px] bg-[#00838f] transition-all duration-1000"
+              style={{ width: "45%" }}
             />
 
-            {data.steps.map((step) => (
-              <div key={step.id} className="relative z-10 flex min-w-[88px] flex-col items-center gap-3">
+            {roadmapData.steps.map((step) => (
+              <div key={step.id} className="relative z-10 flex min-w-[64px] sm:min-w-[80px] flex-col items-center gap-2.5">
                 <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 bg-white ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white transition-all duration-500 ${
                     step.status === "completed"
-                      ? "border-[#006064] bg-[#006064] text-white"
+                      ? "border-[#00838f] text-[#00838f]"
                       : step.status === "current"
-                        ? "border-[#006064] text-[#006064]"
+                        ? "border-[#00838f] bg-[#00838f] text-white shadow-[0_0_10px_rgba(0,131,143,0.3)] ring-4 ring-[#e0f2fe]"
                         : "border-slate-200 text-slate-300"
                   }`}
                 >
                   {step.status === "completed" && <Check size={14} strokeWidth={3} />}
-                  {step.status === "current" && (
-                    <MapPin
-                      size={14}
-                      fill="currentColor"
-                      className="rounded-full bg-[#006064] p-0.5 text-white"
-                    />
-                  )}
+                  {step.status === "current" && <MapPin size={14} fill="currentColor" className="text-white" />}
                   {step.status === "locked" && <Lock size={12} />}
                 </div>
                 <span
-                  className={`text-[12px] font-bold ${
+                  className={`text-center text-[10px] sm:text-[12px] font-bold ${
                     step.status === "locked"
                       ? "text-slate-300"
                       : step.status === "current"
-                        ? "text-[#006064]"
+                        ? "text-[#00838f]"
                         : "text-slate-700"
                   }`}
                 >
@@ -171,21 +213,11 @@ export const RoadmapProgressWidget = () => {
             ))}
           </div>
         ) : (
-          <LoadingState rows={4} />
-        )}
-
-        {status === "success" && data?.aiTip && (
-          <div className="flex items-start gap-3 rounded-xl border border-[#e0f2fe] bg-[#f0f9ff] p-4">
-            <div className="mt-0.5 text-[#00838f]">
-              <Info size={20} />
-            </div>
-            <p className="text-[13px] leading-relaxed text-slate-700">
-              <span className="font-bold text-[#00838f]">AI Tip:</span>{" "}
-              {data.aiTip.split("**")[0]}
-              <span className="font-bold text-slate-900">{data.aiTip.split("**")[1]}</span>
-              {data.aiTip.split("**")[2]}
-            </p>
-          </div>
+          <EmptyState
+            icon={<Map size={16} />}
+            title="No roadmap progress yet"
+            description="Choose a target career or wait for roadmap data from backend."
+          />
         )}
       </div>
     </div>
@@ -194,30 +226,114 @@ export const RoadmapProgressWidget = () => {
 
 export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
   const { data, status } = useDashboardData<SkillGap[]>(
-    () => dashboardApi.getSkillGaps() as Promise<SkillGap[]>
+    () => studentDashboardService.getSkillGaps()
   )
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  
+  const totalPages = data ? Math.ceil(data.length / itemsPerPage) : 0;
+  const currentData = data ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) : [];
 
   return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <WidgetHeader
-          title="Skill Gaps"
-          description="Prioritized skills to improve next."
-          icon={<AlertTriangle size={18} strokeWidth={2.5} />}
-        />
-        {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={18} />
-          </button>
-        )}
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <WidgetHeader
+            title="Skill Gaps Analysis"
+            description="Identify and close your technical blindspots."
+            icon={<AlertTriangle size={16} strokeWidth={2.5} />}
+          />
+          {onClose && (
+            <button type="button" onClick={onClose} className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="mt-1">
+          {status === "loading" ? (
+            <LoadingState rows={5} />
+          ) : status === "error" ? (
+            <EmptyState
+              icon={<AlertTriangle size={16} />}
+              title="No skill gaps yet"
+              description="Skill gap data will appear after required and selected skills are available."
+            />
+          ) : currentData.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-left text-[12px]">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2.5 font-semibold w-2/3">Skill Requirement</th>
+                    <th className="px-3 py-2.5 font-semibold w-1/3">Priority Level</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {currentData.map((gap) => (
+                    <tr key={gap.id} className="transition-colors hover:bg-slate-50">
+                      <td className="px-3 py-3">
+                        <p className="font-bold text-slate-900">{gap.title}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-500 truncate max-w-[180px] sm:max-w-[250px]">{gap.description}</p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase ${
+                            gap.type === "critical"
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-sky-100 text-sky-700"
+                          }`}
+                        >
+                          {gap.severity}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<AlertTriangle size={16} />}
+              title="No skill gaps yet"
+              description="There is no gap data to show right now."
+            />
+          )}
+        </div>
       </div>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <span className="text-[11px] font-medium text-slate-500">
+            Showing <span className="font-bold text-slate-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * itemsPerPage, data!.length)}</span> of <span className="font-bold text-slate-900">{data!.length}</span>
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <div className="text-[11px] font-bold text-slate-700 px-1.5">{currentPage} / {totalPages}</div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex-1 space-y-3.5">
         {status === "loading" ? (
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((gap) => (
             <div
               key={gap.id}
@@ -259,7 +375,7 @@ export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
 
 export const MentorFeedbackWidget = () => {
   const { data, status } = useDashboardData<MentorFeedback[]>(
-    () => dashboardApi.getMentorFeedback() as Promise<MentorFeedback[]>
+    () => studentDashboardService.getMentorFeedback() as Promise<MentorFeedback[]>
   )
 
   return (
@@ -279,7 +395,7 @@ export const MentorFeedbackWidget = () => {
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((feedback) => (
             <div key={feedback.id} className="relative pl-4">
               <div className="absolute bottom-0 left-0 top-0 w-[5px] rounded-full bg-[#00838f] opacity-90" />
@@ -302,74 +418,72 @@ export const MentorFeedbackWidget = () => {
 
 export const SkillComparisonWidget = () => {
   const { data, status } = useDashboardData<SkillResponse>(
-    () => skillApi.compareRoadmapSkills()
+    () => studentDashboardService.compareRoadmapSkills()
   )
   const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
   const missingIds = new Set(data?.missingSkills.map((skill) => skill.skillId) ?? [])
 
+  // Format data for Recharts Radar
+  const chartData = data?.requiredSkills.map(({ skill, importanceLevel }) => {
+    const current = missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0
+    const target = importanceLevel === "High" ? 100 : importanceLevel === "Medium" ? 70 : 40
+    return {
+      subject: skill.skillName.substring(0, 12),
+      Current: current,
+      Target: target,
+      fullMark: 100,
+    }
+  }) || []
+
   return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="mb-5 flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e0f2fe] text-[#006064]">
-            <TrendingUp size={18} />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-[17px] font-bold leading-5 text-slate-900">Skill Comparison</h3>
-            <p className="mt-1 text-[12px] font-medium text-slate-500">
-              Current level compared to target level.
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#006064]" />
+    <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5 overflow-hidden">
+      <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <WidgetHeader
+          title="Skill Radar"
+          description="Multidimensional view of your current stack vs target."
+          icon={<TrendingUp size={16} />}
+        />
+        <div className="flex shrink-0 items-center gap-2 text-[9px] font-bold uppercase tracking-wide text-slate-600">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-[#00838f]" />
             Current
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#e0f2fe]" />
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-[#e0f2fe]" />
             Target
           </span>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 -ml-5 -mr-5 -mb-5 mt-1 relative">
         {status === "loading" ? (
-          <LoadingState />
-        ) : status === "error" ? (
-          <LoadingState />
-        ) : data?.requiredSkills.length ? (
-          data.requiredSkills.map(({ skill, importanceLevel }) => {
-            const current = missingIds.has(skill.skillId)
-              ? 0
-              : selectedIds.has(skill.skillId)
-                ? 100
-                : 0
-            return (
-            <div key={skill.skillId}>
-              <div className="mb-2 flex items-end justify-between">
-                <span className="text-[12px] font-bold text-slate-800">{skill.skillName}</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  {current}% / 100% · {importanceLevel}
-                </span>
-              </div>
-              <div className="relative flex h-2 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
-                <div className="absolute bottom-0 left-0 top-0 z-0 w-full bg-[#e0f2fe]" />
-                <div className="absolute bottom-0 left-0 top-0 z-10 rounded-r-full bg-[#006064]" style={{ width: `${current}%` }} />
-              </div>
-            </div>
-          )})
+          <div className="px-5"><LoadingState rows={4} /></div>
+        ) : status === "error" || chartData.length === 0 ? (
+          <div className="px-5 h-full flex items-center"><EmptyState
+            icon={<TrendingUp size={16} />}
+            title="No skill comparison yet"
+            description="Required skill data has not been returned yet."
+          /></div>
         ) : (
-          <LoadingState />
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="65%" data={chartData}>
+              <PolarGrid stroke="#f1f5f9" />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+              <Radar name="Target" dataKey="Target" stroke="#bae6fd" fill="#e0f2fe" fillOpacity={0.6} />
+              <Radar name="Current" dataKey="Current" stroke="#00838f" fill="#00838f" fillOpacity={0.5} />
+              <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
+            </RadarChart>
+          </ResponsiveContainer>
         )}
       </div>
     </div>
   )
 }
 
-export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
+export const AiMentorWidget = () => {
   const { data, status } = useDashboardData<AiHistoryItem[]>(
-    () => dashboardApi.getAiHistory() as Promise<AiHistoryItem[]>
+    () => studentDashboardService.getAiHistory() as Promise<AiHistoryItem[]>
   )
 
   return (
@@ -395,7 +509,7 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
           <LoadingState />
         ) : status === "error" ? (
           <LoadingState />
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((item, index) => (
             <div
               key={item.id}
@@ -427,9 +541,9 @@ export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-export const PriorityLearningWidget = () => {
+export const RecommendationsWidget = () => {
   const { data, status } = useDashboardData<Recommendation[]>(
-    () => dashboardApi.getRecommendations() as Promise<Recommendation[]>
+    () => studentDashboardService.getRecommendations() as Promise<Recommendation[]>
   )
 
   return (
@@ -449,7 +563,7 @@ export const PriorityLearningWidget = () => {
           <div className="md:col-span-2">
             <LoadingState rows={4} />
           </div>
-        ) : data && data.length > 0 ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           data.map((item) => (
             <div key={item.id} className="flex h-full flex-col rounded-lg border border-slate-200 bg-[#f8fafc] p-5">
               <div className="mb-4 flex items-start justify-between">
@@ -484,54 +598,79 @@ export const PriorityLearningWidget = () => {
 
 export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
   const { data, status } = useDashboardData<MarketDemand>(
-    () => dashboardApi.getMarketDemand() as Promise<MarketDemand>
+    () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
   )
 
+  const chartData = data?.chart?.map((val, i) => ({
+    name: `M${i + 1}`,
+    value: val 
+  })) || []
+
   return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5 overflow-hidden">
+      <div className="flex items-start justify-between gap-3">
         <WidgetHeader
           title="Market Demand"
-          description="Projected demand for your target role."
-          icon={<TrendingUp size={18} />}
+          description="Job posting trends for your target role."
+          icon={<TrendingUp size={16} />}
         />
         {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={18} />
+          <button type="button" onClick={onClose} className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <X size={16} />
           </button>
         )}
       </div>
 
-      {status === "loading" ? (
-        <LoadingState rows={5} />
-      ) : status === "error" ? (
-        <LoadingState rows={5} />
-      ) : data ? (
-        <>
-          <div className="mb-6 mt-2 flex items-center gap-3">
-            <span className="text-[32px] font-bold leading-none text-slate-900">{data.growth}%</span>
-            <div className="flex flex-col justify-center">
-              <span className="text-[10px] font-bold text-[#00838f]">YoY Growth</span>
-              <span className="text-[11px] leading-tight text-slate-500">{data.role}</span>
+      <div className="flex-1 flex flex-col justify-between mt-1">
+        {status === "loading" ? (
+          <LoadingState rows={4} />
+        ) : status === "error" ? (
+          <EmptyState
+            icon={<TrendingUp size={16} />}
+            title="No market demand yet"
+            description="Market signals will appear after backend returns demand data."
+          />
+        ) : data ? (
+          <>
+            <div className="mb-2 flex items-center gap-3">
+              <span className="text-[32px] font-black leading-none tracking-tighter text-slate-900">{data.growth}%</span>
+              <div className="flex flex-col justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00838f]">YoY Growth</span>
+                <span className="text-[12px] font-medium leading-tight text-slate-500">{data.role}</span>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-1 flex-col justify-end">
-            <div className="mb-4 flex h-28 items-end justify-between gap-1.5">
-              {data.chart.map((height, i) => (
-                <div
-                  key={i}
-                  className={`w-full rounded-t-sm ${i === data.chart.length - 1 ? "bg-[#006064]" : "bg-[#a3c9c9]"}`}
-                  style={{ height: `${height}%` }}
-                />
-              ))}
+            <div className="relative flex-1 -ml-5 -mr-5 -mb-5 mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorDemand" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00838f" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#00838f" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    name="Demand Index"
+                    stroke="#00838f" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorDemand)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-800">
-              Projected Demand For K8s Masters
-            </p>
-          </div>
-        </>
-      ) : <LoadingState rows={5} />}
+          </>
+        ) : (
+          <EmptyState
+            icon={<TrendingUp size={16} />}
+            title="No market demand yet"
+            description="There is no market demand data to show right now."
+          />
+        )}
+      </div>
     </div>
   )
 }
-

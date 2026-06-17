@@ -26,7 +26,7 @@ import {
   AlertCircle,
   Search
 } from "lucide-react"
-import { DashboardUserActions, Logo } from "@/components"
+import { UserHeaderActions, Logo } from "@/components"
 import { useAuth } from "@/context"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared"
@@ -754,7 +754,7 @@ export default function CounselorDashboard() {
             </a>
           </div>
         </div>
-        <DashboardUserActions user={user} onLogout={handleLogout} />
+        <UserHeaderActions user={user} onLogout={handleLogout} />
       </nav>
 
       {/* ─── MAIN CONTENT ──────────────────────────────────────── */}

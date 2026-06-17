@@ -225,7 +225,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const profileResponse = await userApi.getMe()
-        const user = profileResponse.data
+        let user = profileResponse.data?.data || profileResponse.data
+        
+        // If the backend doesn't return role, try to extract from token
+        try {
+          const decoded: any = jwtDecode(accessToken)
+          if (decoded && decoded.role && !user.role) {
+            user = { ...user, role: decoded.role }
+          }
+        } catch (e) {
+          console.warn("Failed to decode role from token")
+        }
+
         if (!active) return
 
         accessToken = localStorage.getItem("accessToken") || accessToken
@@ -281,7 +292,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const profileRes = await userApi.getMe()
-      const userInfo = profileRes.data
+      let userInfo = profileRes.data?.data || profileRes.data
+
+      // If the backend doesn't return role, try to extract from token
+      try {
+        const decoded: any = jwtDecode(accessToken)
+        if (decoded && decoded.role && !userInfo.role) {
+          userInfo = { ...userInfo, role: decoded.role }
+        }
+      } catch (e) {
+        console.warn("Failed to decode role from token")
+      }
 
       localStorage.setItem("user", JSON.stringify(userInfo))
       dispatch({

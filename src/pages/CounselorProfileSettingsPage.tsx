@@ -17,7 +17,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { DashboardUserActions, Logo, DatePicker } from "@/components"
+import { UserHeaderActions, Logo, DatePicker } from "@/components"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef, useState, useEffect } from "react"
 import gsap from "gsap"
@@ -181,7 +181,7 @@ export default function CounselorProfileSettingsPage() {
           </div>
         </div>
 
-        <DashboardUserActions user={user} onLogout={handleLogout} />
+        <UserHeaderActions user={user} onLogout={handleLogout} />
       </nav>
 
       <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 space-y-7">
