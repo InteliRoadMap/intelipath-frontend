@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
+import { SharedAppBackground } from '@/components/ui';
+import { Loader2 } from 'lucide-react';
 
 export const PublicPortfolioPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -27,23 +29,15 @@ export const PublicPortfolioPage = () => {
 
   if (loading || !data) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#0a0a0a] text-white relative overflow-hidden">
-        {/* Background ambient glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px]" />
+      <div className="flex h-screen w-full flex-col items-center justify-center relative overflow-hidden">
+        <SharedAppBackground />
         
-        {/* Animated Spinner */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div className="w-20 h-20 border-[3px] border-slate-800 rounded-full"></div>
-          <div className="absolute w-20 h-20 border-[3px] border-indigo-500 rounded-full border-t-transparent border-r-transparent animate-spin"></div>
-          <div className="absolute w-20 h-20 border-[3px] border-purple-500 rounded-full border-b-transparent border-l-transparent animate-[spin_1.5s_linear_infinite_reverse]"></div>
-          {/* Inner core */}
-          <div className="absolute w-10 h-10 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-pulse opacity-80 blur-[2px]"></div>
+        <div className="relative flex flex-col items-center justify-center mb-8 z-10 bg-white/80 p-8 rounded-2xl shadow-sm backdrop-blur-sm border border-slate-200">
+          <Loader2 className="w-10 h-10 text-[#00838f] animate-spin mb-4" />
+          <h2 className="text-xl font-semibold tracking-tight text-slate-800">
+            {error ? error : "Loading Portfolio..."}
+          </h2>
         </div>
-
-        {/* Text */}
-        <h2 className="text-2xl font-bold tracking-tight text-white mb-3">
-          {error ? error : "Loading Portfolio..."}
-        </h2>
       </div>
     );
   }

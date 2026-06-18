@@ -361,15 +361,22 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           
           <div className="hero-img-wrapper relative flex-shrink-0 ml-0 md:ml-16 mt-16 md:mt-0">
             <div className="absolute -top-[10%] -left-[20%] w-[140%] h-[120%] border-2 border-[var(--primary-color)] opacity-30 z-0 animate-morph" style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}></div>
-            <img src={data.hero.avatarUrl} alt="Profile" className="hero-img-pill w-[360px] h-[480px] object-cover rounded-[200px] relative z-10 border-4 border-[var(--bg-secondary)] shadow-2xl" />
-            {isEditMode && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-[200px]">
-                <button className="bg-white text-slate-900 px-4 py-2 rounded-full font-semibold text-sm cursor-pointer" onClick={() => {
-                  const url = prompt("Enter new image URL", data.hero.avatarUrl);
-                  if (url) updateHero('avatarUrl', url);
-                }}>Change Image</button>
-              </div>
-            )}
+            {(() => {
+              const displayAvatar = data.hero.avatarUrl === 'https://via.placeholder.com/150' && user?.avatarUrl ? user.avatarUrl : data.hero.avatarUrl;
+              return (
+                <>
+                  <img src={displayAvatar} alt="Profile" className="hero-img-pill w-[360px] h-[480px] object-cover rounded-[200px] relative z-10 border-4 border-[var(--bg-secondary)] shadow-2xl" />
+                  {isEditMode && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-[200px]">
+                      <button className="bg-white text-slate-900 px-4 py-2 rounded-full font-semibold text-sm cursor-pointer" onClick={() => {
+                        const url = prompt("Enter new image URL", displayAvatar);
+                        if (url) updateHero('avatarUrl', url);
+                      }}>Change Image</button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </header>

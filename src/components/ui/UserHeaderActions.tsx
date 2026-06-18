@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import { Bell, UserCircle, SignOut, CaretDown, CheckCircle, Gear, GearSix } from '@phosphor-icons/react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Bell, UserCircle, SignOut, CaretDown, GearSix, IdentificationBadge } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
 import type { User } from '@/features/auth'
-
 
 interface UserHeaderActionsProps {
   user: User | null
@@ -19,7 +18,8 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
   const initial = fullName.trim()[0]?.toUpperCase() || 'U'
 
   const [notifications, setNotifications] = useState<any[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Listen for localstorage changes specifically for notifications
   useEffect(() => {
@@ -45,111 +45,120 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
     return () => clearInterval(interval)
   }, [role])
 
-  const handleClearNotifications = () => {
-    localStorage.removeItem('student_notification')
-    setNotifications([])
-    setShowNotifications(false)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleSettingsClick = () => {
+    setShowDropdown(false)
+    if (onSettings) {
+      onSettings()
+    } else {
+      const roleKey = String(user?.role || 'USER').toUpperCase()
+      if (roleKey === 'MENTOR') {
+        navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings')
+      } else if (roleKey === 'COUNSELOR') {
+        navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings')
+      } else {
+        navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings')
+      }
+    }
   }
 
   const handleNotificationClick = () => {
-    setShowNotifications(false);
-    navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO);
+    setShowDropdown(false)
+    // Clear notification upon reading it by clicking it
+    localStorage.removeItem('student_notification')
+    setNotifications([])
+    navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO)
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-3 lg:gap-4">
-      <div className="flex items-center gap-1.5 border-r border-slate-200 pr-3 lg:gap-2 lg:pr-4">
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
-            title="Notifications"
-          >
-            <Bell size={18} weight="duotone" />
-            {notifications.length > 0 && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-rose-500" />
-            )}
-          </button>
-          
-          {showNotifications && (
-            <div className="absolute right-0 top-10 w-80 bg-white border border-slate-200 rounded-2xl shadow-lg z-50 overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
-                {notifications.length > 0 && (
-                  <button onClick={handleClearNotifications} className="text-xs text-[#00838f] font-semibold hover:underline">
-                    Mark as read
-                  </button>
-                )}
-              </div>
-              <div className="max-h-[300px] overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-slate-500 text-sm">
-                    No new notifications
-                  </div>
-                ) : (
-                  notifications.map((notif, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={handleNotificationClick}
-                      className="p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 cursor-pointer"
-                    >
-                      <p className="text-sm text-slate-800 font-medium mb-1">{notif.message}</p>
-                      <span className="text-xs text-slate-400">Just now</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={onSettings || (() => {
-            const roleKey = String(user?.role || 'USER').toUpperCase();
-            if (roleKey === 'MENTOR') {
-              navigate(ROUTES.MENTOR_SETTINGS || '/mentor/settings');
-            } else if (roleKey === 'COUNSELOR') {
-              navigate(ROUTES.COUNSELOR_SETTINGS || '/counselor/settings');
-            } else {
-              navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings');
-            }
-          })}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
-          title="Settings"
-        >
-          <GearSix size={18} weight="duotone" />
-        </button>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-          title="Logout"
-        >
-          <SignOut size={18} weight="duotone" />
-        </button>
-      </div>
-
-
-
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="hidden min-w-0 max-w-[180px] flex-col items-end justify-center text-right sm:flex lg:max-w-[260px]">
-          <div className="flex max-w-full items-baseline justify-end gap-2">
-            <p className="truncate text-[13px] font-bold leading-4 text-slate-900">{fullName}</p>
-            <span className="shrink-0 text-[10px] font-bold uppercase leading-4 tracking-wide text-[#006064]">
-              {role}
-            </span>
-          </div>
-          <p className="mt-0.5 max-w-full truncate text-[12px] font-medium leading-4 text-slate-500">{email}</p>
-        </div>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00838f] text-[13px] font-bold text-white shadow-sm overflow-hidden">
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+      >
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] text-[14px] font-bold text-white shadow-sm overflow-hidden">
           {user?.avatarUrl ? (
             <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
             initial
           )}
+          {notifications.length > 0 && (
+            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0a0a0a] bg-rose-500" />
+          )}
         </div>
-      </div>
+        <CaretDown size={14} weight="bold" className="text-slate-500" />
+      </button>
+
+      {/* Dropdown Menu */}
+      {showDropdown && (
+        <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-[20px] shadow-[0_20px_40px_rgba(0,0,0,0.08)] overflow-hidden z-50 origin-top-right animate-in fade-in slide-in-from-top-2 duration-200">
+          
+          {/* User Info Header */}
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[14px] font-bold text-slate-900 truncate">{fullName}</span>
+              <span className="text-[12px] font-medium text-slate-500 truncate">{email}</span>
+            </div>
+            <div className="mt-2 inline-flex px-2 py-0.5 bg-slate-200/70 text-slate-700 text-[10px] font-bold rounded-full uppercase tracking-widest">
+              {role}
+            </div>
+          </div>
+
+          <div className="p-2 flex flex-col gap-1">
+            {/* Notifications */}
+            <button
+              onClick={notifications.length > 0 ? handleNotificationClick : undefined}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative text-slate-500">
+                  <Bell size={18} weight="duotone" />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-rose-500" />
+                  )}
+                </div>
+                <span className="text-[14px] font-medium text-slate-700">Notifications</span>
+              </div>
+              {notifications.length > 0 && (
+                <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">{notifications.length}</span>
+              )}
+            </button>
+
+            {/* Settings */}
+            <button
+              onClick={handleSettingsClick}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left text-slate-700"
+            >
+              <GearSix size={18} weight="duotone" className="text-slate-500" />
+              <span className="text-[14px] font-medium">Settings</span>
+            </button>
+            
+            {/* Divider */}
+            <div className="h-px bg-slate-100 my-1" />
+
+            {/* Logout */}
+            <button
+              onClick={() => {
+                setShowDropdown(false)
+                onLogout()
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose-50 transition-colors text-left text-rose-600 group"
+            >
+              <SignOut size={18} weight="duotone" className="text-rose-500 group-hover:text-rose-600" />
+              <span className="text-[14px] font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

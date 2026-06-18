@@ -44,10 +44,12 @@ const profileApi = {
   updateAvatar: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
+    // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
     return mainClient.patch('/users/profile/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      transformRequest: [(data, headers) => {
+        delete headers['Content-Type'];
+        return data;
+      }],
     })
   },
 }

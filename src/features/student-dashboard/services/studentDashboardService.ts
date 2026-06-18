@@ -341,6 +341,7 @@ export const studentDashboardService = {
     const response = await roadmapApi.getStudentRoadmap()
     return normalizeStudentRoadmap(response.data)
   },
+
 
   updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
     const response = await roadmapApi.updateNodeProgress(nodeId, status);
@@ -353,7 +354,15 @@ export const studentDashboardService = {
   },
 
   getSkillGaps: async (): Promise<SkillGap[]> => {
-    const response = await dashboardApi.getSkillGaps()
+    // REFACTOR: Use skillApi.getSkills() instead of deprecated dashboardApi.getSkillGaps()
+    const response = await skillApi.getSkills()
+    const data = unwrapResponse(response.data) as any
+    // Depending on the exact structure, it could be data.missingSkills or data.missing
+    return data.missingSkills || data.missing || []
+  },
+
+  getNodeDetail: async (nodeId: string): Promise<any> => {
+    const response = await roadmapApi.getNodeDetail(nodeId)
     return unwrapResponse(response.data)
   },
 

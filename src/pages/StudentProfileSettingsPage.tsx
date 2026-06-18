@@ -14,7 +14,8 @@ import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { UserHeaderActions, Logo } from "@/components"
+import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
+import StudentHeader from "@/features/student-dashboard/components/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
@@ -120,44 +121,15 @@ export default function StudentProfileSettingsPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans text-slate-900" ref={containerRef}>
-      {/* TOP NAVIGATION */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
-          <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
-            <nav className="hidden items-center gap-8 lg:flex">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path
-                return (
-                  <a
-                    key={item.label}
-                    href="#"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { y: -3, scale: 1.05, duration: 0.3, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { y: 0, scale: 1, duration: 0.3, ease: "power2.out" })}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.3)" })
-                      navigate(item.path)
-                    }}
-                    className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                      isActive
-                        ? "border-emerald-600 text-emerald-800"
-                        : "border-transparent text-slate-500 hover:text-slate-950"
-                    }`}
-                  >
-                    <item.icon size={17} weight="duotone" />
-                    {item.label}
-                  </a>
-                )
-              })}
-            </nav>
-          </div>
-          <UserHeaderActions user={user} onLogout={handleLogout} />
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden" ref={containerRef}>
+      <SharedAppBackground />
+      <StudentHeader
+        user={user}
+        onLogout={handleLogout}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+      />
 
-      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 space-y-7">
+      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 pt-[120px] pb-16 space-y-7 relative z-10">
         <button
           type="button"
           onClick={() => navigate(-1)}

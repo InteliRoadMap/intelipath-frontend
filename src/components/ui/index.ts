@@ -3,6 +3,7 @@ export { default as Header } from './Header'
 export { default as AbstractIllustration } from './AbstractIllustration'
 export { default as UserHeaderActions } from './UserHeaderActions'
 export { default as DiagonalGridBackground } from './DiagonalGridBackground'
+export { default as SharedAppBackground } from './SharedAppBackground'
 export { default as NotificationBell } from './NotificationBell'
 export { default as RouteProgressBar } from './RouteProgressBar'
 export { default as ProtectedRoute } from "./ProtectedRoute"

@@ -10,10 +10,6 @@ type StudentHeaderProps = {
   onOpenAiMentor: () => void
 }
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-2 border-b-[3px] py-4 -mb-3.5 transition-colors ${
-    isActive ? "border-[#00838f] text-[#00838f]" : "border-transparent hover:text-slate-800"
-  }`
 
 export default function StudentHeader({ user, onLogout, onOpenAiMentor }: StudentHeaderProps) {
   const location = useLocation()
@@ -21,50 +17,78 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
 
   const navigate = useNavigate()
   return (
-    <nav className="fixed inset-x-0 top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
-      <div className="flex items-center gap-6 md:gap-12">
-        <Logo hideIcon className="scale-90 origin-left" />
+    <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
+      <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
+        {/* Left: Logo */}
+        <div className="flex items-center">
+          <Logo hideIcon className="scale-[0.85] origin-left" />
+        </div>
 
-        <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
-          <NavLink to={ROUTES.DASHBOARD_STUDENT} end className={navLinkClass}>
-            <SquaresFour size={17} weight="duotone" />
+        {/* Center: Navigation Links in a Glass Pill */}
+        <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
+          <NavLink
+            to={ROUTES.DASHBOARD_STUDENT}
+            end
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+              }`
+            }
+          >
             Dashboard
           </NavLink>
-          <NavLink to={ROUTES.DASHBOARD_STUDENT_ROADMAP} className={navLinkClass}>
-            <MapTrifold size={17} weight="duotone" />
-            My Roadmap
+          <NavLink
+            to={ROUTES.DASHBOARD_STUDENT_ROADMAP}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+              }`
+            }
+          >
+            Roadmap
           </NavLink>
-          <NavLink to={ROUTES.DASHBOARD_STUDENT_PORTFOLIO} className={navLinkClass}>
-            <IdentificationCard size={17} weight="duotone" />
-            E-Portfolio
+          <NavLink
+            to={ROUTES.DASHBOARD_STUDENT_MARKET_PULSE}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+              }`
+            }
+          >
+            Market Pulse
+          </NavLink>
+          <NavLink
+            to={ROUTES.DASHBOARD_STUDENT_PORTFOLIO}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+              }`
+            }
+          >
+            Portfolio
           </NavLink>
           <button
             type="button"
             onClick={onOpenAiMentor}
-            className={`flex cursor-pointer items-center gap-2 border-b-[3px] py-4 -mb-3.5 transition-colors ${
-              isAiMentorActive
-                ? "border-[#00838f] text-[#00838f]"
-                : "border-transparent hover:text-slate-800"
+            className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+              isAiMentorActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
             }`}
           >
-            <Robot size={17} weight="duotone" />
             AI Mentor
           </button>
-          <a
-            href={`${ROUTES.DASHBOARD_STUDENT}#market-demand`}
-            className="flex items-center gap-2 border-b-[3px] border-transparent py-4 -mb-3.5 transition-colors hover:text-slate-800"
-          >
-            <TrendUp size={17} weight="duotone" />
-            Market Pulse
-          </a>
         </div>
-      </div>
 
-      <UserHeaderActions 
-        user={user} 
-        onLogout={onLogout} 
-        onSettings={() => navigate(ROUTES.DASHBOARD_STUDENT_SETTINGS)} 
-      />
-    </nav>
+        {/* Right: User Actions / Dropdown */}
+        <div className="flex items-center justify-end">
+          <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
+            <UserHeaderActions
+              user={user}
+              onLogout={onLogout}
+              onSettings={() => navigate(ROUTES.DASHBOARD_STUDENT_SETTINGS)}
+            />
+          </div>
+        </div>
+      </nav>
+    </div>
   )
 }

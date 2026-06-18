@@ -13,6 +13,7 @@ import {
   MarketDemandChartWidget,
   SkillRadarChartWidget
 } from "./StudentDashboardWidgets"
+import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
@@ -42,7 +43,8 @@ export default function StudentDashboardView() {
   }
 
   return (
-    <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-white pb-32 pt-[74px] font-sans text-slate-900 selection:bg-black/10">
+    <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
+      <SharedAppBackground />
       
       {/* We keep the Header but maybe make it solid white to blend in */}
       <StudentHeader

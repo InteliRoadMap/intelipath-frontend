@@ -9,6 +9,7 @@ import {
   Terminal
 } from "@phosphor-icons/react"
 import { ROUTES } from "@/shared"
+import { SharedAppBackground, Logo } from "@/components"
 
 export default function WelcomePage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -85,33 +86,40 @@ export default function WelcomePage() {
   }, []);
 
   return (
-    <div ref={containerRef} style={{ fontFamily: 'var(--font-manrope)' }} className="relative w-full h-screen overflow-hidden bg-[#f4f1ea] text-[#0a0a0a] selection:bg-cyan-200 flex flex-col">
+    <div ref={containerRef} style={{ fontFamily: 'var(--font-manrope)' }} className="relative w-full h-screen overflow-hidden bg-transparent text-[#0a0a0a] selection:bg-cyan-200 flex flex-col">
       
       {/* =========================================
-          BACKGROUND - Textured Paper
+          BACKGROUND - Unified App Grid
           ========================================= */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1603484477859-abe6a73f9366?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center mix-blend-multiply opacity-[0.15] grayscale contrast-125" />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/60 via-transparent to-black/5" />
-      </div>
+      <SharedAppBackground />
 
       {/* =========================================
           FLOATING NAVBAR
           ========================================= */}
-      <nav className="floating-nav relative z-50 pt-6 px-6 sm:px-12 flex justify-between items-center pointer-events-none opacity-0">
-        <div className="pointer-events-auto flex items-center gap-2 bg-white/90 backdrop-blur-md px-5 py-3 rounded-full shadow-[var(--shadow-taste-2)] border border-white">
-          <div className="bg-[#0a0a0a] text-white p-1.5 rounded-[10px]">
-            <MapTrifold size={16} weight="fill" />
+      <div className="floating-nav fixed inset-x-0 top-6 z-50 flex justify-center px-4 md:px-8 pointer-events-none opacity-0">
+        <nav className="pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-full bg-white/95 px-3 py-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] backdrop-blur-md border border-slate-200/60 transition-all">
+          
+          {/* Left: Logo */}
+          <div className="flex items-center pl-2">
+            <Logo />
           </div>
-          <span className="font-bold text-[14px] tracking-tight text-[#0a0a0a]">InteliPath</span>
-        </div>
 
-        <div className="pointer-events-auto hidden md:flex items-center gap-1 bg-white/90 backdrop-blur-md p-1.5 rounded-full shadow-[var(--shadow-taste-2)] border border-white">
-          <Link to={ROUTES.LOGIN} className="flex items-center gap-2 bg-[#0a0a0a] !text-white px-5 py-2 rounded-full text-[13px] font-bold hover:bg-slate-800 transition-colors shadow-sm">
-            <span className="text-white">Log in</span> <ArrowRight size={12} weight="bold" className="text-white" />
-          </Link>
-        </div>
-      </nav>
+          {/* Center: Navigation Links */}
+          <div className="hidden items-center gap-6 text-[13px] font-bold text-slate-500 lg:flex">
+            <a href="#features" className="px-3 py-1.5 rounded-full hover:text-slate-800 transition-colors">Features</a>
+            <a href="#how-it-works" className="px-3 py-1.5 rounded-full hover:text-slate-800 transition-colors">How it Works</a>
+            <a href="#testimonials" className="px-3 py-1.5 rounded-full hover:text-slate-800 transition-colors">Testimonials</a>
+            <a href="#pricing" className="px-3 py-1.5 rounded-full hover:text-slate-800 transition-colors">Pricing</a>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center justify-end">
+            <Link to={ROUTES.LOGIN} className="flex items-center gap-2 bg-[#0a0a0a] !text-white px-5 py-2 rounded-full text-[13px] font-bold hover:bg-slate-800 transition-colors shadow-sm">
+              <span className="text-white">Log in</span> <ArrowRight size={12} weight="bold" className="text-white" />
+            </Link>
+          </div>
+        </nav>
+      </div>
 
       {/* =========================================
           HERO SECTION (100vh Centered)

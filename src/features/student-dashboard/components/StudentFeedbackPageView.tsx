@@ -53,7 +53,7 @@ export function StudentFeedbackPageView() {
         onOpenAiMentor={() => {}} 
       />
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 md:px-8">
+      <main className="mx-auto w-full max-w-[1440px] px-4 pb-8 pt-[120px] md:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mentor Feedback</h1>
           <p className="mt-2 text-slate-500">Read and reply to professional reviews of your portfolio.</p>
