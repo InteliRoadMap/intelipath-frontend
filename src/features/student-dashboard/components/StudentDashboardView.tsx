@@ -1,38 +1,41 @@
-import { useState } from "react"
+import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import {
-  AiMentorHistoryWidget,
-  MarketDemandWidget,
-  MentorFeedbackWidget,
-  PriorityLearningWidget,
-  RoadmapProgressWidget,
-  SkillComparisonWidget,
-  SkillGapsWidget,
-  StudentWelcomeHeader
+  StudentWelcomeHeader,
+  CurrentProgressBanner,
+  ActionableListWidget,
+  QuickStatsWidget,
+  MarketDemandChartWidget,
+  SkillRadarChartWidget
 } from "./StudentDashboardWidgets"
+import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
-import StudentTopNav from "./StudentTopNav"
+import StudentHeader from "./StudentHeader"
 
-const studentSections = [
-  { id: "overview", label: "Overview" },
-  { id: "roadmap", label: "Roadmap Progress" },
-  { id: "skill-gaps", label: "Skill Gaps" },
-  { id: "market-demand", label: "Market Demand" },
-  { id: "mentor-feedback", label: "Mentor Feedback" },
-  { id: "skill-comparison", label: "Skill Comparison" },
-  { id: "priority-learning", label: "Priority Learning" }
-]
+gsap.registerPlugin(useGSAP)
 
 export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [isAiMentorOpen, setIsAiMentorOpen] = useState(false)
+  const dashboardRef = useRef<HTMLDivElement>(null)
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+
+  useGSAP(() => {
+    // Minimalist staggered fade up
+    gsap.from(".anim-block", {
+      y: 30,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: "power3.out",
+    });
+  }, { scope: dashboardRef })
 
   const handleLogout = async () => {
     await logout()
@@ -40,127 +43,53 @@ export default function StudentDashboardView() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
-      <StudentTopNav
+    <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
+      <SharedAppBackground />
+      
+      {/* We keep the Header but maybe make it solid white to blend in */}
+      <StudentHeader
         user={user}
         onLogout={handleLogout}
-        onOpenAiMentor={() => setIsAiMentorOpen(true)}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
-        <aside className="hidden xl:block">
-          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
-            <p className="mb-4 text-[13px] font-medium text-slate-400">Sections</p>
-            <nav className="space-y-1.5">
-              {studentSections.map((section, index) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className={`block rounded-md px-3 py-2 text-[14px] font-semibold transition-colors ${
-                    index === 0
-                      ? "bg-slate-100 text-slate-950"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
-                  }`}
-                >
-                  {section.label}
-                </a>
-              ))}
-            </nav>
-            <div className="mt-8 border-t border-slate-100 pt-5">
-              <p className="mb-3 text-[13px] font-medium text-slate-300">Actions</p>
-              <button
-                type="button"
-                onClick={() => setIsAiMentorOpen(true)}
-                className="block rounded-md px-3 py-2 text-left text-[14px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950"
-              >
-                Ask AI Mentor
-              </button>
+      <main className="mx-auto w-full max-w-[1300px] px-5 py-8 md:px-10 lg:py-12">
+        <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
+          
+          {/* Left Column (Main Content) */}
+          <div className="flex-1 w-full min-w-0">
+            <div className="anim-block">
+              <StudentWelcomeHeader />
+            </div>
+            
+            <div className="anim-block">
+              <CurrentProgressBanner />
+            </div>
+            
+            <div className="anim-block">
+              <ActionableListWidget />
             </div>
           </div>
-        </aside>
 
-        <div className="min-w-0">
-          <section id="overview" className="scroll-mt-28">
-            <StudentWelcomeHeader />
-          </section>
+          {/* Right Column (Sidebar Statistics) */}
+          <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col">
+            <div className="anim-block">
+              <QuickStatsWidget />
+            </div>
 
-          <div className="flex min-w-0 flex-col gap-5 xl:gap-6">
-            <section id="roadmap" className="scroll-mt-28">
-              <RoadmapProgressWidget />
-            </section>
-            <section id="skill-gaps" className="scroll-mt-28">
-              <SkillGapsWidget />
-            </section>
-            <section id="market-demand" className="scroll-mt-28">
-              <MarketDemandWidget />
-            </section>
-            <section id="mentor-feedback" className="scroll-mt-28">
-              <MentorFeedbackWidget />
-            </section>
-            <section id="skill-comparison" className="scroll-mt-28">
-              <SkillComparisonWidget />
-            </section>
-            <section id="priority-learning" className="scroll-mt-28">
-              <PriorityLearningWidget />
-            </section>
+            <div className="anim-block mt-4">
+              <MarketDemandChartWidget />
+            </div>
+
+            <div className="anim-block">
+              <SkillRadarChartWidget />
+            </div>
           </div>
+
         </div>
-
-        <aside className="hidden 2xl:block">
-          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
-            <p className="mb-4 text-[13px] font-semibold text-slate-700">On This Page</p>
-            <nav className="space-y-2.5">
-              {studentSections.slice(1).map((section) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className="block text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-950"
-                >
-                  {section.label}
-                </a>
-              ))}
-            </nav>
-
-            <div className="mt-10 rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="text-[16px] font-bold leading-snug text-slate-950">Need roadmap guidance?</h3>
-              <p className="mt-3 text-[13px] leading-6 text-slate-500">
-                Review mentor history and ask for the next learning move.
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsAiMentorOpen(true)}
-                className="mt-5 rounded-md border border-slate-200 bg-white px-3 py-2 text-[13px] font-semibold text-slate-900 transition-colors hover:bg-slate-50"
-              >
-                Open AI Mentor
-              </button>
-            </div>
-          </div>
-        </aside>
       </main>
 
-      <button
-        type="button"
-        onClick={() => setIsAiMentorOpen(true)}
-        className="ai-mentor-float fixed bottom-5 right-4 z-50 flex h-20 w-20 items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28"
-        title="Ask AI Mentor"
-      >
-        <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain drop-shadow-xl" />
-      </button>
-
-      {isAiMentorOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close AI Mentor"
-            onClick={() => setIsAiMentorOpen(false)}
-            className="fixed inset-0 z-[60] bg-slate-950/25 backdrop-blur-[1px]"
-          />
-          <aside className="fixed inset-x-3 bottom-3 top-20 z-[70] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(680px,calc(100vh-3rem))] sm:w-[420px]">
-            <AiMentorHistoryWidget onClose={() => setIsAiMentorOpen(false)} />
-          </aside>
-        </>
-      )}
-
+      {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (
         <StudentSkillSelectionModal isOpen onComplete={completeSetup} />

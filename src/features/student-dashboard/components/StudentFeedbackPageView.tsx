@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import StudentTopNav from './StudentTopNav';
+import StudentHeader from './StudentHeader';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';
@@ -47,13 +47,13 @@ export function StudentFeedbackPageView() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans">
-      <StudentTopNav 
+      <StudentHeader 
         user={user} 
         onLogout={handleLogout} 
         onOpenAiMentor={() => {}} 
       />
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 md:px-8">
+      <main className="mx-auto w-full max-w-[1440px] px-4 pb-8 pt-[120px] md:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mentor Feedback</h1>
           <p className="mt-2 text-slate-500">Read and reply to professional reviews of your portfolio.</p>

@@ -16,6 +16,17 @@ export function isValidPassword(password: string): boolean {
   return passwordRegex.test(password)
 }
 
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+export function toIsoDateOnly(value: string): string {
+  const trimmed = value.trim()
+  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  return ""
+}
+
 export function getErrorMessage(error: unknown): string {
   if (isAxiosError<{ message?: string }>(error)) {
     const status = error.response?.status

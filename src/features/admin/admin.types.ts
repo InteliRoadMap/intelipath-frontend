@@ -19,6 +19,7 @@ export interface AdminSystemHealth {
 export interface AdminUserListItem {
   id: string
   name: string
+  email?: string
   role: AdminRole
   joinedDate: string
 }

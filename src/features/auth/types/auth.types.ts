@@ -3,6 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string;
 }
 
 export interface AuthState {

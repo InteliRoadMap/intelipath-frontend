@@ -1,5 +1,8 @@
 import React from "react"
+import { Link } from "react-router-dom"
+import { ArrowRight } from "@phosphor-icons/react"
 import { useLogin } from "@/features/auth"
+import { ROUTES } from "@/shared"
 
 const ChromeIcon = () => (
   <svg
@@ -45,11 +48,11 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-8 select-none">
-        <h2 className="mb-2 font-display text-5xl font-bold tracking-tight text-slate-900">
-          Welcome Back
+        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+          Welcome
         </h2>
         <p className="font-sans text-sm font-light text-slate-600">
-          Continue your learning journey with{" "}
+          Sign in or create an account to access{" "}
           <span className="font-medium text-brand-cyan">InteliPath</span>
         </p>
       </div>
@@ -83,7 +86,15 @@ export default function LoginForm() {
         </div>
       )}
 
-
+      <div className="mt-6 flex justify-end">
+        <Link
+          to={ROUTES.HOME}
+          className="group inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-cyan-600"
+        >
+          Back to Welcome
+          <ArrowRight size={14} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
     </div>
   )
 }

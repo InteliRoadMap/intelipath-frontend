@@ -1,5 +1,5 @@
-import { mainClient } from './apiClients'
-import { ENDPOINTS } from './endpoints'
+import { mainClient } from "./apiClients"
+import { ENDPOINTS } from "./endpoints"
 
 export interface UpdateUserProfilePayload {
   fullName: string
@@ -11,6 +11,7 @@ export interface UpdateStudentProfilePayload {
   university: string
   yearOfAdmission: string
   major: string
+  careerId: string
 }
 
 export interface UpdateMentorProfilePayload {
@@ -23,7 +24,7 @@ export interface UpdateCounselorProfilePayload {
   university: string
 }
 
-const updateApi = {
+const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
   getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR.PROFILE),
@@ -39,6 +40,18 @@ const updateApi = {
 
   updateCounselorProfile: (data: UpdateCounselorProfilePayload) =>
     mainClient.patch(ENDPOINTS.COUNSELOR.PROFILE, data),
+
+  updateAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
+    return mainClient.patch('/users/profile/avatar', formData, {
+      transformRequest: [(data, headers) => {
+        delete headers['Content-Type'];
+        return data;
+      }],
+    })
+  },
 }
 
-export default updateApi
+export default profileApi

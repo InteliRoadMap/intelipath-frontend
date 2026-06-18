@@ -1,3 +1,6 @@
+import { mainClient, publicClient } from './apiClients';
+import { ENDPOINTS } from './endpoints';
+
 export interface PortfolioData {
   id: string;
   theme: 'dark' | 'light';
@@ -50,18 +53,19 @@ export interface PortfolioData {
     demoLink: string;
     icon: string;
   }>;
+  slug?: string;
+  studentId?: string;
 }
 
-// Mock Database
-let mockPortfolioData: PortfolioData = {
-  id: 'portfolio-1', // from users.user_id
-  theme: 'dark',
+const defaultPortfolioData: PortfolioData = {
+  id: 'new',
+  theme: 'light',
   themeColors: {
-    primaryColor: '#a78bfa',
-    titleColor: '#f8fafc',
-    textColor: '#cbd5e1',
-    bgPrimary: '#0d0f17',
-    bgSecondary: '#151722',
+    primaryColor: '#3b82f6',
+    titleColor: '#0f172a',
+    textColor: '#334155',
+    bgPrimary: '#f8fafc',
+    bgSecondary: '#ffffff',
     radius: '16px',
   },
   fonts: {
@@ -71,36 +75,168 @@ let mockPortfolioData: PortfolioData = {
   hero: {
     title: 'About me',
     greeting: 'Hi!',
-    name: 'Student Name', // Maps to users.full_name
-    role: 'Software Engineering', // Maps to students.major
+    name: 'Student Name',
+    role: 'Software Engineering',
     description: 'This is a brief description about the student.',
-    objective: 'This is my bio...', // Maps to users.bio
+    objective: 'This is my bio...',
     contact: [
       { id: 'contact-1', type: 'Email', value: 'student@example.com', icon: 'fas fa-envelope' }
     ],
     avatarUrl: 'https://via.placeholder.com/150',
   },
-  education: [], // Initially empty. In reality, BE could prepopulate 1 item from `students` (university, major, year_of_admission)
-  skills: [], // Maps to student_skills -> skills
-  projects: [] // Maps to portfolio_project
+  education: [],
+  skills: [],
+  projects: []
+};
+
+// Mapper from Backend PortfolioResponse to Frontend PortfolioData
+const mapToFrontendData = (backendData: any): PortfolioData => {
+  if (!backendData) return defaultPortfolioData;
+  
+  const uiData: PortfolioData = JSON.parse(JSON.stringify(defaultPortfolioData)); // deep clone
+  
+  // User Info mapping
+  if (backendData.userInfo) {
+    uiData.hero.name = backendData.userInfo.fullName || uiData.hero.name;
+    uiData.hero.objective = backendData.userInfo.bio || uiData.hero.objective;
+    uiData.slug = backendData.userInfo.portfolioSlug;
+    
+    // Update contact email if exists
+    if (backendData.userInfo.email) {
+      uiData.hero.contact[0].value = backendData.userInfo.email;
+    }
+  }
+
+  // Config mapping
+  if (backendData.config) {
+    uiData.theme = backendData.config.theme || uiData.theme;
+    if (backendData.config.themeColors) uiData.themeColors = { ...uiData.themeColors, ...backendData.config.themeColors };
+    if (backendData.config.fonts) uiData.fonts = { ...uiData.fonts, ...backendData.config.fonts };
+    if (backendData.config.heroSection) uiData.hero = { ...uiData.hero, ...backendData.config.heroSection };
+  }
+
+  // Projects
+  if (backendData.projects && Array.isArray(backendData.projects)) {
+    uiData.projects = backendData.projects.map((p: any) => ({
+      id: p.projectId || `proj-${Date.now()}-${Math.random()}`,
+      title: p.projectName || 'Untitled',
+      tech: p.techStack ? (typeof p.techStack === 'string' ? p.techStack : JSON.stringify(p.techStack)) : 'Tech Stack',
+      description: p.description || '',
+      codeLink: p.repoUrl || '#',
+      demoLink: p.demoUrl || '#',
+      icon: p.icon || 'fas fa-code'
+    }));
+  }
+
+  // Education
+  if (backendData.education && Array.isArray(backendData.education)) {
+    uiData.education = backendData.education.map((e: any) => ({
+      id: e.educationId || `edu-${Date.now()}-${Math.random()}`,
+      university: e.university || '',
+      degree: e.degree || '',
+      period: e.period || '',
+      description: e.description || ''
+    }));
+  }
+
+  // Skills
+  if (backendData.skills && Array.isArray(backendData.skills)) {
+    uiData.skills = backendData.skills.map((s: any, idx: number) => ({
+      id: `skill-${idx}`,
+      category: s.skillName || 'Skill',
+      stack: s.techStack || '',
+      description: s.customDescription || ''
+    }));
+  }
+
+  return uiData;
+};
+
+// Mapper from Frontend PortfolioData to Backend PortfolioUpsertRequest
+const mapToBackendRequest = (uiData: PortfolioData): any => {
+  return {
+    config: {
+      theme: uiData.theme,
+      themeColors: uiData.themeColors,
+      fonts: uiData.fonts,
+      heroSection: uiData.hero,
+      skillsSection: null
+    },
+    projects: uiData.projects.map(p => ({
+      projectName: p.title,
+      repoUrl: p.codeLink,
+      demoUrl: p.demoLink,
+      description: p.description,
+      techStack: { text: p.tech }, // Map string back to object if necessary
+      icon: p.icon,
+      stars: 0
+    })),
+    education: uiData.education.map(e => ({
+      university: e.university,
+      degree: e.degree,
+      period: e.period,
+      description: e.description
+    }))
+  };
 };
 
 export const portfolioApi = {
   getPortfolio: async (): Promise<PortfolioData> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockPortfolioData);
-      }, 500); // Simulate network delay
-    });
+    try {
+      const response = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_ME);
+      return mapToFrontendData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch portfolio', error);
+      return defaultPortfolioData; // fallback
+    }
   },
 
   updatePortfolio: async (data: PortfolioData): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        mockPortfolioData = { ...data };
-        console.log('API: Successfully saved portfolio data to DB', mockPortfolioData);
-        resolve();
-      }, 300); // Simulate network delay
-    });
+    try {
+      const requestPayload = mapToBackendRequest(data);
+      await mainClient.put(ENDPOINTS.STUDENT.PORTFOLIO_ME, requestPayload);
+    } catch (error) {
+      console.error('Failed to update portfolio', error);
+      throw error;
+    }
+  },
+
+  getPublicPortfolio: async (slug: string): Promise<PortfolioData | null> => {
+    try {
+      // Calling the backend to get the public portfolio by slug
+      // If the endpoint differs, it can be updated here.
+      const response = await publicClient.get(`/public/portfolio/${slug}`);
+      return mapToFrontendData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch public portfolio', error);
+      return null;
+    }
+  },
+
+  updateSlug: async (slug: string): Promise<void> => {
+    try {
+      await mainClient.put(ENDPOINTS.STUDENT.PORTFOLIO_SLUG, { slug });
+    } catch (error) {
+      console.error('Failed to update slug', error);
+      throw error;
+    }
+  },
+
+  checkSlugAvailability: async (slug: string): Promise<boolean> => {
+    try {
+      // Typically, an endpoint like GET /student/portfolio/slug/check?slug=...
+      // For now, if BE doesn't have it, we assume this endpoint will return { available: boolean }
+      // Or it returns 200 OK if available, 409 if taken.
+      const response = await mainClient.get(`${ENDPOINTS.STUDENT.PORTFOLIO_SLUG}/check`, { params: { slug } });
+      // Depending on BE format, adjust this. Assuming { available: true }
+      return response.data?.available !== false;
+    } catch (error: any) {
+      // If it throws 409 Conflict, it means taken
+      if (error.response?.status === 409) {
+        return false;
+      }
+      // If endpoint doesn't exist yet (404), just assume it's true to not block the UI for now
+      return true;
+    }
   }
 };

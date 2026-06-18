@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import updateApi from "../api/updateApi"
+import profileApi from "../api/profileApi"
 import { useAuth } from "../context/AuthContext"
 
 export interface ProfileData {
@@ -43,6 +43,7 @@ export function useProfileSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -51,13 +52,13 @@ export function useProfileSettings() {
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await updateApi.getStudentProfile()
+        const res = await profileApi.getStudentProfile()
         data = res.data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
-        const res = await updateApi.getMentorProfile()
+        const res = await profileApi.getMentorProfile()
         data = res.data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await updateApi.getCounselorProfile()
+        const res = await profileApi.getCounselorProfile()
         data = res.data
       }
 
@@ -65,10 +66,11 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
+        full_name: data?.fullName || user?.fullName || data?.full_name || "",
         email: data?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.year_of_admission || ""
+        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || ""
       })
     } catch (err) {
       console.error("[ProfileSettingsPage] Error fetching profile data:", err)
@@ -89,19 +91,20 @@ export function useProfileSettings() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
+    setSuccess(null)
 
     try {
       const tasks: Promise<any>[] = [
-        updateApi.updateUserProfile({
-          full_name: profileData.full_name,
+        profileApi.updateUserProfile({
+          fullName: profileData.full_name,
           yob: profileData.yob,
           bio: profileData.bio
-        })
+        } as any)
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
         tasks.push(
-          updateApi.updateStudentProfile({
+          profileApi.updateStudentProfile({
             university: profileData.university,
             yearOfAdmission: profileData.year_of_admission,
             major: profileData.major
@@ -109,14 +112,14 @@ export function useProfileSettings() {
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
-          updateApi.updateMentorProfile({
+          profileApi.updateMentorProfile({
             company: profileData.company,
             industryFocus: profileData.industry_focus
           })
         )
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
-          updateApi.updateCounselorProfile({
+          profileApi.updateCounselorProfile({
             department: profileData.department,
             university: profileData.university
           })
@@ -125,7 +128,8 @@ export function useProfileSettings() {
 
       await Promise.all(tasks)
 
-      alert("Saved successfully!")
+      setSuccess("Profile saved successfully!")
+      setTimeout(() => setSuccess(null), 4000)
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
       setError("Save failed. Please try again.")
@@ -146,6 +150,7 @@ export function useProfileSettings() {
     loading,
     saving,
     error,
+    success,
     handleChange,
     handleSave,
     loadProfile,
