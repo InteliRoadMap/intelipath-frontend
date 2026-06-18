@@ -245,7 +245,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
 
   if (!roadmapData) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-[#f8fafc]">
+      <div className="flex h-full w-full items-center justify-center bg-transparent">
         <div className="flex flex-col items-center gap-3 text-slate-400">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
           <p className="text-[14px] font-bold">Drafting your Roadmap...</p>
@@ -254,8 +254,21 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     );
   }
 
+  if (roadmapData && (!roadmapData.nodes || roadmapData.nodes.length === 0)) {
+    return (
+      <div className="flex h-full w-full flex-col p-8 bg-white border border-rose-200 rounded-xl overflow-auto m-4 max-w-[800px] mx-auto shadow-sm z-50">
+        <h2 className="text-xl font-bold text-rose-600 mb-4">Roadmap Display Error</h2>
+        <p className="text-slate-600 mb-4">The backend returned data, but couldn't find any nodes to display. Could you send me this raw data so I can fix the parsing logic?</p>
+        <p className="text-sm font-bold text-slate-800 mb-2">Raw Data Dump:</p>
+        <pre className="text-[11px] bg-slate-100 p-4 rounded-lg overflow-auto border border-slate-200">
+          {JSON.stringify(roadmapData, null, 2)}
+        </pre>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full w-full bg-[#f8fafc]">
+    <div className="h-full w-full bg-transparent">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -277,8 +290,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
         maxZoom={1.5}
         className="roadmap-flow"
       >
-        <Background color="#cbd5e1" variant={BackgroundVariant.Dots} gap={24} size={2} />
-        <Controls showInteractive={false} className="bg-white border-slate-200 shadow-sm" />
+        <Controls showInteractive={false} className="bg-white/50 backdrop-blur-md border-white/60 shadow-sm" />
       </ReactFlow>
     </div>
   );

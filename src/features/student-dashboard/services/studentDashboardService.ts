@@ -28,6 +28,9 @@ type RawCareerRole = {
   name?: string
   prerequisite?: string
   description?: string
+  Description?: string
+  content?: string
+  desc?: string
 }
 
 type RawRoadmapResource = Partial<RoadmapResource> | string
@@ -79,7 +82,7 @@ const normalizeCareerRole = (career: RawCareerRole): CareerRole | null => {
     careerId,
     careerName,
     prerequisite: career.prerequisite,
-    description: career.description
+    description: career.description || career.Description || career.desc || career.content
   }
 }
 
@@ -338,6 +341,7 @@ export const studentDashboardService = {
     const response = await roadmapApi.getStudentRoadmap()
     return normalizeStudentRoadmap(response.data)
   },
+
 
   updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
     const response = await roadmapApi.updateNodeProgress(nodeId, status);
@@ -350,7 +354,15 @@ export const studentDashboardService = {
   },
 
   getSkillGaps: async (): Promise<SkillGap[]> => {
-    const response = await dashboardApi.getSkillGaps()
+    // REFACTOR: Use skillApi.getSkills() instead of deprecated dashboardApi.getSkillGaps()
+    const response = await skillApi.getSkills()
+    const data = unwrapResponse(response.data) as any
+    // Depending on the exact structure, it could be data.missingSkills or data.missing
+    return data.missingSkills || data.missing || []
+  },
+
+  getNodeDetail: async (nodeId: string): Promise<any> => {
+    const response = await roadmapApi.getNodeDetail(nodeId)
     return unwrapResponse(response.data)
   },
 
@@ -488,7 +500,7 @@ export const studentDashboardService = {
           data: {
             id: nodeId,
             label: nodeName,
-            description: row.Description || row.description || '',
+            description: row.Description || row.description || row.NodeDescription || row.nodeDescription || row.content || row.desc || '',
             links: resources,
             level: level,
             status: normalizeStatus(row.Status || row.status)

@@ -19,11 +19,10 @@ import {
   TreeStructure,
   X
 } from "@phosphor-icons/react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, DiagonalGridBackground, Input, RouteProgressBar } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
 import { isUuid } from "@/lib/utils"
 import { ROUTES } from "@/shared"
-import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import { studentDashboardService } from "../services"
 import type { CareerRole, StudentRoadmap } from "../types"
@@ -99,19 +98,19 @@ const CareerSelector = ({
   )
 
   return (
-    <div className="roadmap-gsap-panel w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
-      <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1">
+    <div className="roadmap-gsap-panel w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[75vh]">
+      <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1 min-h-0">
         
         {/* Header section */}
-        <div className="px-6 py-6 md:px-8 md:py-8 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
-           <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-slate-900">
+        <div className="px-6 py-5 md:px-8 md:py-6 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
+           <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight text-slate-900">
              Change Career Path
            </h1>
         </div>
 
-        <div className="p-6 md:p-8 flex-1 flex flex-col">
+        <div className="p-6 md:p-8 flex-1 min-h-0 flex flex-col">
           {/* Search bar */}
-          <div className="relative mb-6">
+          <div className="relative mb-6 shrink-0">
             <MagnifyingGlass size={20} weight="light" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input 
               value={searchValue}
@@ -356,8 +355,43 @@ export default function StudentRoadmapPageView() {
     }
   }
 
-  const handleNodeClick = (nodeData: any) => {
+  const handleNodeClick = async (nodeData: any) => {
     setSelectedNodeData(nodeData)
+    if (nodeData && (!nodeData.links || nodeData.links.length === 0)) {
+      try {
+        const detail = await studentDashboardService.getNodeDetail(nodeData.id)
+        if (detail) {
+          let resources: {title: string, url: string}[] = [];
+          
+          if (detail.resource && typeof detail.resource === 'string') {
+            try {
+              const parsed = JSON.parse(detail.resource);
+              if (Array.isArray(parsed)) {
+                resources = parsed.map((url: string, idx: number) => ({ title: `Learning Resource ${idx + 1}`, url }));
+              }
+            } catch (e) {
+              console.error("Failed to parse resource string:", e);
+            }
+          }
+
+          if (resources.length === 0) {
+            if (detail.links && Array.isArray(detail.links)) {
+              resources.push(...detail.links);
+            } else {
+              if (detail.Link1 || detail.link1) resources.push({ title: detail.Title1 || 'Resource 1', url: detail.Link1 || detail.link1 });
+              if (detail.Link2 || detail.link2) resources.push({ title: detail.Title2 || 'Resource 2', url: detail.Link2 || detail.link2 });
+              if (detail.Link3 || detail.link3) resources.push({ title: detail.Title3 || 'Resource 3', url: detail.Link3 || detail.link3 });
+            }
+          }
+
+          if (resources.length > 0) {
+            setSelectedNodeData(prev => prev ? { ...prev, links: resources } : prev)
+          }
+        }
+      } catch (error) {
+        console.error("[Student Roadmap] Failed to fetch node resources:", error)
+      }
+    }
   }
 
   const showCareerSelector = !currentCareerId || isChangingCareer
@@ -375,20 +409,11 @@ export default function StudentRoadmapPageView() {
       stagger: 0.08,
       ease: "power3.out"
     })
-    
-    gsap.to(".roadmap-gsap-robot", {
-      y: -8,
-      rotation: 2,
-      duration: 1.9,
-      ease: "sine.inOut",
-      repeat: -1,
-      yoyo: true
-    })
   }, { scope: pageRef, dependencies: [showCareerSelector], revertOnUpdate: true })
 
   return (
-    <div ref={pageRef} className="relative h-screen w-screen overflow-hidden bg-[#f9fafb] font-sans text-slate-900 flex flex-col">
-      <DiagonalGridBackground />
+    <div ref={pageRef} className="relative h-screen w-screen overflow-hidden bg-transparent font-sans text-slate-900 flex flex-col">
+      <SharedAppBackground />
 
       <StudentHeader
         user={user}
@@ -396,17 +421,14 @@ export default function StudentRoadmapPageView() {
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      {(isInitialLoading || isRoadmapLoading) && <RouteProgressBar />}
-
       {/* Main Canvas Area */}
       <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4 gap-4">
         
         {/* Left Column removed as requested */}
 
         {/* Vector Graph Area */}
-        <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
-          {isInitialLoading || isRoadmapLoading ? null : (
-            <div className="absolute inset-0 z-10 bg-slate-50">
+        <div className="flex-1 w-full h-full relative overflow-hidden bg-transparent rounded-2xl">
+            <div className="absolute inset-0 z-10 bg-transparent">
               {/* React Flow Provider must wrap the Canvas */}
               <ReactFlowProvider>
                 <RoadmapVectorGraph 
@@ -416,16 +438,14 @@ export default function StudentRoadmapPageView() {
                   optimisticStatusMap={optimisticStatusMap}
                 />
               </ReactFlowProvider>
-              
             </div>
-          )}
         </div>
 
         {/* Right Column (Details) - High-End Redesign */}
-        <div className="hidden lg:flex w-[340px] shrink-0 flex-col bg-[#FAFAFA] rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-black/5 overflow-hidden relative">
+        <div className="hidden lg:flex w-[340px] shrink-0 flex-col bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-white/60 overflow-hidden relative">
           
           {/* Target Career Header */}
-          <div className="px-5 py-4 border-b border-black/[0.04] bg-white">
+          <div className="px-5 py-4 border-b border-white/60 bg-white/50">
              <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
                <Target size={12} weight="bold" />
                Target Career
@@ -504,7 +524,7 @@ export default function StudentRoadmapPageView() {
                         })}
                       </div>
                     ) : (
-                      <div className="bg-white p-4 rounded-xl ring-1 ring-black/[0.04] text-center border border-slate-50">
+                      <div className="bg-white/50 p-4 rounded-xl ring-1 ring-white/60 text-center">
                         <p className="text-[12px] text-slate-500 font-medium">No learning resources attached.</p>
                       </div>
                     )}
@@ -531,7 +551,7 @@ export default function StudentRoadmapPageView() {
                       disabled
                       className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
                     >
-                      <LockKeyhole size={16} weight="bold" /> Locked (Complete Prerequisites First)
+                      <LockKey size={16} weight="bold" /> Locked (Complete Prerequisites First)
                     </button>
                   ) : (
                     <button 
@@ -583,15 +603,6 @@ export default function StudentRoadmapPageView() {
           </div>
         )}
       </main>
-
-      <button
-        type="button"
-        onClick={() => navigate(ROUTES.AI_MENTOR)}
-        className="roadmap-gsap-robot fixed bottom-6 left-6 z-50 w-16 h-16 rounded-full shadow-2xl transition-transform hover:scale-110 active:scale-95"
-        title="Ask AI Mentor"
-      >
-        <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain drop-shadow-xl" />
-      </button>
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (

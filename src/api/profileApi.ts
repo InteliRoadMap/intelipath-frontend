@@ -40,6 +40,18 @@ const profileApi = {
 
   updateCounselorProfile: (data: UpdateCounselorProfilePayload) =>
     mainClient.patch(ENDPOINTS.COUNSELOR.PROFILE, data),
+
+  updateAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
+    return mainClient.patch('/users/profile/avatar', formData, {
+      transformRequest: [(data, headers) => {
+        delete headers['Content-Type'];
+        return data;
+      }],
+    })
+  },
 }
 
 export default profileApi

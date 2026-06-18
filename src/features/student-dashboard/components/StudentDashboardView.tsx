@@ -2,19 +2,18 @@ import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import { DiagonalGridBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { UserHeaderActions, Logo } from "@/components"
-import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import {
-  MarketDemandWidget,
-  RoadmapProgressWidget,
-  SkillComparisonWidget,
-  SkillGapsWidget,
-  StudentWelcomeHeader
+  StudentWelcomeHeader,
+  CurrentProgressBanner,
+  ActionableListWidget,
+  QuickStatsWidget,
+  MarketDemandChartWidget,
+  SkillRadarChartWidget
 } from "./StudentDashboardWidgets"
+import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
@@ -28,24 +27,13 @@ export default function StudentDashboardView() {
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
 
   useGSAP(() => {
-    // Bento Grid Entrance Animation
-    gsap.from(".bento-item", {
-      y: 40,
+    // Minimalist staggered fade up
+    gsap.from(".anim-block", {
+      y: 30,
       opacity: 0,
-      duration: 0.7,
-      stagger: 0.08,
+      duration: 0.8,
+      stagger: 0.1,
       ease: "power3.out",
-      delay: 0.1
-    });
-
-    // Floating Robot Animation
-    gsap.to(".student-gsap-robot", {
-      y: -10,
-      rotation: 3,
-      duration: 2,
-      ease: "sine.inOut",
-      repeat: -1,
-      yoyo: true
     });
   }, { scope: dashboardRef })
 
@@ -55,53 +43,51 @@ export default function StudentDashboardView() {
   }
 
   return (
-    <div ref={dashboardRef} className="relative min-h-screen overflow-x-hidden bg-[#f8fafc] pb-24 pt-[74px] font-sans text-slate-900">
-      <DiagonalGridBackground />
-
+    <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
+      <SharedAppBackground />
+      
+      {/* We keep the Header but maybe make it solid white to blend in */}
       <StudentHeader
         user={user}
         onLogout={handleLogout}
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
       />
 
-      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
-        
-        {/* Header Section */}
-        <section className="bento-item mb-8">
-          <StudentWelcomeHeader />
-        </section>
-
-        {/* Streamlined 4-Widget Bento Grid Architecture */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-fr">
+      <main className="mx-auto w-full max-w-[1300px] px-5 py-8 md:px-10 lg:py-12">
+        <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
           
-          {/* Row 1: Roadmap (with Priority) & Market Demand */}
-          <div className="bento-item md:col-span-8">
-            <RoadmapProgressWidget />
-          </div>
-          <div className="bento-item md:col-span-4">
-            <MarketDemandWidget />
+          {/* Left Column (Main Content) */}
+          <div className="flex-1 w-full min-w-0">
+            <div className="anim-block">
+              <StudentWelcomeHeader />
+            </div>
+            
+            <div className="anim-block">
+              <CurrentProgressBanner />
+            </div>
+            
+            <div className="anim-block">
+              <ActionableListWidget />
+            </div>
           </div>
 
-          {/* Row 2: Skills Analysis (Radar & Paginated Table) */}
-          <div className="bento-item md:col-span-5">
-            <SkillComparisonWidget />
-          </div>
-          <div className="bento-item md:col-span-7">
-            <SkillGapsWidget />
+          {/* Right Column (Sidebar Statistics) */}
+          <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col">
+            <div className="anim-block">
+              <QuickStatsWidget />
+            </div>
+
+            <div className="anim-block mt-4">
+              <MarketDemandChartWidget />
+            </div>
+
+            <div className="anim-block">
+              <SkillRadarChartWidget />
+            </div>
           </div>
 
         </div>
       </main>
-
-      {/* Floating AI Mentor Button */}
-      <button
-        type="button"
-        onClick={() => navigate(ROUTES.AI_MENTOR)}
-        className="ai-mentor-float student-gsap-robot fixed bottom-5 right-4 z-50 flex h-20 w-20 cursor-pointer items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28 drop-shadow-2xl hover:drop-shadow-[0_10px_25px_rgba(0,131,143,0.35)]"
-        title="Ask AI Mentor"
-      >
-        <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain" />
-      </button>
 
       {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />

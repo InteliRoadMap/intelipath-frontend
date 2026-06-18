@@ -8,8 +8,6 @@ const dashboardApi = {
   getRoadmapProgress: () =>
     mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.ROADMAP_PROGRESS),
   
-  getSkillGaps: () =>
-    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.SKILL_GAPS),
 
   getMentorFeedback: () =>
     mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK),

@@ -5,7 +5,8 @@ import {
   CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
-  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage
+  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
+  PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/routes"
 import { ROLES, ROUTES } from "@/shared"
@@ -15,6 +16,7 @@ export const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path={ROUTES.HOME} element={<GuestRoute><WelcomePage /></GuestRoute>} />
+      <Route path={ROUTES.PUBLIC_PORTFOLIO} element={<PublicPortfolioPage />} />
 
       <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
@@ -52,6 +54,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
             <AIMentorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_MARKET_PULSE}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentMarketPulsePage />
           </ProtectedRoute>
         }
       />

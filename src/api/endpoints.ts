@@ -15,19 +15,20 @@ export const ENDPOINTS = {
     ME: '/users/me',
     PROFILE: '/users/profile',
   },
-  STUDENT: {
+  STUDENT_OLD: {
     PROFILE: '/students/profile',
     TARGET_CAREER: '/students/target-career',
     SKILLS: '/students/skills',
     SELECT_SKILLS: '/students/skills/select',
     ME: "/user/me",
-    PROFILE: "/user/profile"
+    PROFILE_USER: "/user/profile"
   },
   STUDENT: {
     PROFILE: "/student/profile",
-    TARGET_CAREER: "/student/target-career",
     SKILLS: "/student/skills",
-    SELECT_SKILLS: "/student/skills/select"
+    SELECT_SKILLS: "/student/skills/select",
+    PORTFOLIO_ME: "/student/portfolio/me",
+    PORTFOLIO_SLUG: "/student/portfolio/slug"
   },
   CAREER_ROLES: {
     LIST: "/careers"
@@ -38,7 +39,7 @@ export const ENDPOINTS = {
     STUDENT_ROADMAP: '/roadmaps/student',
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: '/roadmaps/nodes/progress',
-    COMPARE_SKILLS: '/roadmaps/skills/compare',
+    COMPARE_SKILLS: '/roadmap/skills/compare',
   },
   STUDENT_DASHBOARD: {
     OVERVIEW: '/student/dashboard',
@@ -89,37 +90,12 @@ export const ENDPOINTS = {
   },
   MENTOR: {
     PROFILE: '/mentor/profile',
+  },
+  CHAT: {
+    SESSIONS: "/chat/sessions",
+    SESSION: (sessionId: string) => `/chat/sessions/${sessionId}`,
+    MESSAGES: (sessionId: string) => `/chat/sessions/${sessionId}/messages`,
+    STREAM: (sessionId: string) => `/chat/sessions/${sessionId}/stream`,
+    UPLOAD_FILE: "/chat/files/upload"
   }
-  // // ─── User Profile (general) ────────────────────────────────────
-  // EDIT: {
-  //   USERPROFILE: "/user/profile" // PATCH /user/profile
-  // },
-
-  // // ─── Student Profile ──────────────────────────────────────────
-
-  // STUDENT: {
-  //   PROFILE: "/student/profile", // PATCH /student/profile
-  //   SKILLS: "/student/skills", // GET  /student/{student_id}/skills  → truyền studentId vào URL khi gọi
-  //   FILTER_SKILLS: "/student/skills", // GET  /student/skills/{category}     → truyền category vào URL khi gọi
-  //   SELECT_SKILLS: "/student/skills/select" // POST /student/skills/select
-  // },
-
-  // // ─── Careers ──────────────────────────────────────────────────
-
-  // CAREER: {
-  //   LIST: "/careers", // GET  /careers
-  //   REQUIREMENTS: "/careers" // GET  /careers/{career_id}/requirements → truyền career_id vào URL khi gọi
-  // },
-
-  // // ─── Roadmap ──────────────────────────────────────────────────
-
-  // ROADMAP: {
-  //   GET_ROAD_MAP: "/roadmap", // GET   /roadmap/{career_id}
-  //   TOTAL_PROGRESS: "/roadmap", // GET   /roadmap/{career_id}/progress
-  //   GET_NODE: "/roadmap/node", // GET   /roadmap/node/{node_id}
-  //   UPDATE_PROGRESS: "/roadmap/node/progress", // PATCH /roadmap/node/progress  (nodeId + status trong body)
-  //   SKILLS_COMPARE: "/roadmap/skills/compare" // POST  /roadmap/skills/compare
-  // }
-
-  // // Add other feature endpoints here as the project grows...
 } as const

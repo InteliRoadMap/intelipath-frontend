@@ -38,13 +38,13 @@ export default function GlobalLoadingBar() {
       // Finish loading: snap to 100% then fade out
       gsap.to(barRef.current, {
         width: "100%",
-        duration: 0.4,
-        ease: "power2.inOut",
+        duration: 0.15,
+        ease: "power2.out",
         onComplete: () => {
           gsap.to(barRef.current, {
             opacity: 0,
-            duration: 0.3,
-            delay: 0.1,
+            duration: 0.15,
+            delay: 0.05,
             onComplete: () => {
               gsap.set(barRef.current, { width: "0%" })
               gsap.killTweensOf(glowRef.current)
