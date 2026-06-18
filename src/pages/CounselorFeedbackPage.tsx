@@ -32,7 +32,7 @@ import {
   ChatCenteredText,
   PaperPlaneTilt
 } from "@phosphor-icons/react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams, NavLink } from "react-router-dom"
 import { UserHeaderActions, Logo } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -883,34 +883,49 @@ export default function CounselorFeedbackPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans pb-16" ref={pageRef}>
-      {/* HEADER */}
-      <nav className="bg-white border-b border-slate-200 px-4 md:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon className="scale-90 origin-left" />
-          <div className="hidden md:flex items-center gap-8 text-[13px] font-bold text-slate-500">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate(ROUTES.DASHBOARD_COUNSELOR)
-              }}
-              className="flex items-center gap-2 hover:text-slate-800 py-4 -mb-3.5 transition-colors"
-            >
-              <LayoutDashboard size={16} /> Dashboard
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-2 text-[#00838f] border-b-[3px] border-[#00838f] py-4 -mb-3.5"
-            >
-              <MessageSquare size={16} /> Feedback
-            </a>
+      {/* HEADER (Glass Pill Style) */}
+      <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
+        <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
+          <div className="flex items-center">
+            <Logo hideIcon className="scale-[0.85] origin-left" />
           </div>
-        </div>
-        <UserHeaderActions user={user} onLogout={handleLogout} />
-      </nav>
+
+          <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
+            <NavLink
+              to={ROUTES.DASHBOARD_COUNSELOR}
+              end
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </NavLink>
+            <NavLink
+              to={ROUTES.COUNSELOR_FEEDBACK}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <MessageSquare size={16} />
+              Feedback
+            </NavLink>
+          </div>
+
+          <div className="flex items-center justify-end">
+            <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
+              <UserHeaderActions user={user} onLogout={handleLogout} />
+            </div>
+          </div>
+        </nav>
+      </div>
 
       {/* MAIN */}
-      <main className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
+      <main className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 pt-28">
         {/* HERO BANNER */}
         <div className="page-anim-hero relative w-full h-[215px] rounded-2xl bg-gradient-to-br from-[#004d40] via-[#006064] to-[#00838f] overflow-hidden mb-6 shadow-[0_10px_30px_rgba(0,96,100,0.2)] border border-white/10">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>

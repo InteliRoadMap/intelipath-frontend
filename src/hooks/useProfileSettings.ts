@@ -34,7 +34,7 @@ const EMPTY_PROFILE: ProfileData = {
   company: "",
   industry_focus: "",
   department: "",
-  githubProfile: ""
+  github_profile: ""
 }
 
 export function useProfileSettings() {
@@ -70,7 +70,8 @@ export function useProfileSettings() {
         email: data?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || ""
+        year_of_admission:
+          data?.yearOfAdmission || data?.year_of_admission || ""
       })
     } catch (err) {
       console.error("[ProfileSettingsPage] Error fetching profile data:", err)
@@ -141,7 +142,7 @@ export function useProfileSettings() {
   const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
-    profileData.githubProfile?.split("/").filter(Boolean).pop() ||
+    profileData.github_profile?.split("/").filter(Boolean).pop() ||
     profileData.full_name.split(" ").join("").toLowerCase() ||
     "user"
 
