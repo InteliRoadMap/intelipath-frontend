@@ -192,73 +192,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true
 
     const restoreSession = async () => {
-      const storedAccessToken = localStorage.getItem("accessToken")
+      const storedToken = localStorage.getItem("accessToken")
+      const storedUser = localStorage.getItem("user")
       const storedRefreshToken = localStorage.getItem("refreshToken")
       const storedExpiresIn = localStorage.getItem("tokenExpiresIn")
-      const storedUser = localStorage.getItem("user")
 
-      if (!storedUser || !storedAccessToken) {
-        if (active) dispatch({ type: "SET_LOADING", payload: false })
+      if (!storedToken || !storedUser) {
+        dispatch({ type: "SET_LOADING", payload: false })
         return
       }
 
       try {
-        let accessToken = storedAccessToken
-        let refreshToken = storedRefreshToken
-        let expiresIn = storedExpiresIn
-        const expirationTime = getExpirationTime(accessToken, expiresIn)
+        const profileRes = await userApi.getMe()
+        let userInfo = profileRes.data?.data || profileRes.data
 
-        if (expirationTime && expirationTime <= Date.now() + 30_000) {
-          if (!refreshToken) throw new Error("Refresh token is missing")
-
-          const response = await authApi.refreshToken(refreshToken)
-          accessToken = response.data.accessToken
-          refreshToken = response.data.refreshToken || refreshToken
-          expiresIn = response.data.expiresIn || null
-
-          if (!accessToken) throw new Error("Access token refresh failed")
-
-          localStorage.setItem("accessToken", accessToken)
-          localStorage.setItem("refreshToken", refreshToken)
-          if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
-          else localStorage.removeItem("tokenExpiresIn")
-        }
-
-        const profileResponse = await userApi.getMe()
-        let user = profileResponse.data?.data || profileResponse.data
-        
-        // If the backend doesn't return role, try to extract from token
         try {
-          const decoded: any = jwtDecode(accessToken)
-          if (decoded && decoded.role && !user.role) {
-            user = { ...user, role: decoded.role }
+          const decoded: any = jwtDecode(storedToken)
+          if (decoded && decoded.role && !userInfo.role) {
+            userInfo = { ...userInfo, role: decoded.role }
           }
-        } catch (e) {
-          console.warn("Failed to decode role from token")
+        } catch {
+          // ignore decode errors
         }
 
-        if (!active) return
+        localStorage.setItem("user", JSON.stringify(userInfo))
 
-        accessToken = localStorage.getItem("accessToken") || accessToken
-        refreshToken = localStorage.getItem("refreshToken") || refreshToken
-        expiresIn = localStorage.getItem("tokenExpiresIn") || expiresIn
-
-        localStorage.setItem("user", JSON.stringify(user))
-        dispatch({
-          type: "LOGIN",
-          payload: {
-            user,
-            accessToken,
-            refreshToken
+        if (active) {
+          dispatch({
+            type: "LOGIN",
+            payload: {
+              user: userInfo,
+              accessToken: storedToken,
+              refreshToken: storedRefreshToken
+            }
+          })
+          if (storedRefreshToken) {
+            setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
           }
-        })
-
-        if (refreshToken)
-          setupRefreshTimer(accessToken, refreshToken, expiresIn)
-      } catch (error) {
-        console.error("[Auth] Failed to restore session:", error)
+        }
+      } catch {
+        // Token expired or invalid - clear and force re-login
         clearStoredAuth()
-        if (active) dispatch({ type: "LOGOUT" })
+        if (active) {
+          dispatch({ type: "SET_LOADING", payload: false })
+        }
       }
     }
 

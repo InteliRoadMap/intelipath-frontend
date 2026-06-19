@@ -26,7 +26,7 @@ import {
   AlertCircle,
   Search
 } from "lucide-react"
-import { UserHeaderActions, Logo } from "@/components"
+import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
 import { useNavigate, NavLink } from "react-router-dom"
 import { ROUTES } from "@/shared"
@@ -726,9 +726,10 @@ export default function CounselorDashboard() {
 
   return (
     <div
-      className="min-h-screen bg-[#f8fafc] font-sans pb-4"
+      className="relative min-h-screen bg-transparent font-sans pb-4"
       ref={containerRef}
     >
+      <SharedAppBackground />
       {/* ─── HEADER (Glass Pill Style) ─────────────────────────── */}
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
         <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
