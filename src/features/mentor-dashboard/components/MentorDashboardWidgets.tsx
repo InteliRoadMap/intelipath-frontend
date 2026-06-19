@@ -10,12 +10,15 @@ import { useGSAP } from '@gsap/react';
 
 export const WelcomeBanner = ({ user }: { user: any }) => {
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between rounded-3xl bg-black p-8 text-white mb-8 gap-6">
-      <div>
-        <h1 className="text-[32px] font-black tracking-tight mb-2">
+    <div className="relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-8 md:p-10 shadow-[0_30px_60px_rgba(15,23,42,0.3)] mb-8 gap-6">
+      <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-slate-500/20 blur-3xl" />
+      
+      <div className="relative z-10">
+        <h1 className="text-[32px] font-black text-white tracking-tight mb-2">
           Good morning, {user?.name || user?.fullName || 'Mentor'}!
         </h1>
-        <p className="text-[16px] text-slate-400 font-medium">
+        <p className="text-[16px] text-white/70 font-medium">
           Here is a snapshot of your mentees' activity and your recent feedback.
         </p>
       </div>

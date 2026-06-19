@@ -5,19 +5,19 @@ import {
   Edit3,
   Mail,
   User,
-  Target,
-  MessageSquare,
+  GraduationCap,
   Sparkles,
   RefreshCw,
-  Briefcase,
-  ChevronLeft
+  ChevronLeft,
+  Target
 } from "lucide-react"
-
+import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { SharedAppBackground } from "@/components"
 import { MentorHeader } from "@/features/mentor-dashboard/components/MentorHeader"
+import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
@@ -31,6 +31,7 @@ export default function MentorProfileSettingsPage() {
     loading,
     saving,
     error,
+    success,
     handleChange,
     handleSave,
     loadProfile,
@@ -116,7 +117,9 @@ export default function MentorProfileSettingsPage() {
     navigate(ROUTES.LOGIN)
   }
 
-
+  const navItems = [
+    { label: "Settings", icon: PencilSimple, path: location.pathname }
+  ]
 
   return (
     <div className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden" ref={containerRef}>
@@ -169,7 +172,7 @@ export default function MentorProfileSettingsPage() {
                   void loadProfile()
                 }}
                 disabled={loading || saving}
-                className="flex items-center gap-2 text-[13px] font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
+                className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
               >
                 <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                 Reload
@@ -183,21 +186,7 @@ export default function MentorProfileSettingsPage() {
             {/* Identity Card */}
             <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-slate-800/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-slate-900/30">
-                    {displayInitial}
-                  </div>
-                  <button
-                    type="button"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, rotation: 15, duration: 0.4, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.4, ease: "power2.out" })}
-                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" })}
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-slate-900 rounded-xl flex items-center justify-center shadow-md border border-slate-100"
-                    aria-label="Edit avatar"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                </div>
+                <AvatarUpload initial={displayInitial} />
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
                     Professional Identity
@@ -228,7 +217,7 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.full_name}
+                        value={profileData.full_name || ''}
                         onChange={(e) => handleChange("full_name", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
@@ -240,7 +229,7 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="date"
-                        value={profileData.yob}
+                        value={profileData.yob || ''}
                         onChange={(e) => handleChange("yob", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
@@ -255,7 +244,7 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.company}
+                        value={profileData.company || ''}
                         placeholder="e.g. Google, FPT Software"
                         onChange={(e) => handleChange("company", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
@@ -268,7 +257,7 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.industry_focus}
+                        value={profileData.industry_focus || ''}
                         placeholder="e.g. Software Engineering, Data Science"
                         onChange={(e) => handleChange("industry_focus", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
@@ -283,7 +272,7 @@ export default function MentorProfileSettingsPage() {
                     </label>
                     <textarea
                       rows={4}
-                      value={profileData.bio}
+                      value={profileData.bio || ''}
                       placeholder="Share your experience and how you can help students..."
                       onChange={(e) => handleChange("bio", e.target.value)}
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white resize-none"
@@ -306,14 +295,14 @@ export default function MentorProfileSettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(79, 70, 229, 0.3)", duration: 0.3, ease: "back.out(2)" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)", duration: 0.3, ease: "power2.out" })}
+                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(15, 23, 42, 0.3)", duration: 0.3, ease: "back.out(2)" })}
+                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)", duration: 0.3, ease: "power2.out" })}
                       onClick={(e) => {
                         gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
                         handleSave()
                       }}
                       disabled={saving}
-                      className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[13px] font-bold shadow-md shadow-slate-900/20 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-[13px] font-bold shadow-md shadow-slate-900/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
                     >
                       {saving ? "Saving..." : "Save Profile"}
                     </button>
@@ -353,10 +342,23 @@ export default function MentorProfileSettingsPage() {
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </main>
+
+      {/* Floating Success Toast */}
+      <div
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl shadow-slate-900/20 backdrop-blur transition-all duration-500 ${
+          success ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-500/20 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        {success}
+      </div>
     </div>
   )
 }
