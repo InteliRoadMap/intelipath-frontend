@@ -56,6 +56,7 @@ const chatApi = {
     const decoder = new TextDecoder('utf-8')
     let done = false
     let buffer = ""
+    let fullText = ""
 
     while (!done) {
       const { value, done: readerDone } = await reader.read()
@@ -91,12 +92,19 @@ const chatApi = {
               }
             }
             
-            if (eventData !== "" || eventStr.includes('data:')) {
-              onMessage(eventData)
+            if (eventData !== "") {
+              fullText += eventData
+              onMessage(fullText)
+            } else if (eventStr.includes('data:')) {
+              // An empty data block in SSE typically represents a newline token (\n) 
+              // that was streamed by the backend LLM
+              fullText += '\n'
+              onMessage(fullText)
             }
           }
         } else {
-          onMessage(buffer)
+          fullText += buffer
+          onMessage(fullText)
           buffer = ""
         }
       }

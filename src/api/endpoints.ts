@@ -28,7 +28,8 @@ export const ENDPOINTS = {
     SKILLS: "/student/skills",
     SELECT_SKILLS: "/student/skills/select",
     PORTFOLIO_ME: "/student/portfolio/me",
-    PORTFOLIO_SLUG: "/student/portfolio/slug"
+    PORTFOLIO_SLUG: "/student/portfolio/slug",
+    PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import"
   },
   CAREER_ROLES: {
     LIST: "/careers"
@@ -51,13 +52,24 @@ export const ENDPOINTS = {
     AI_HISTORY: '/student/dashboard/ai-history',
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
+  MARKET_TRENDS: {
+    TOP_HIRING: '/market-trends/companies/top-hiring',
+    TRENDING_SKILLS: '/market-trends/skills/trending',
+    SALARY_OVERVIEW: '/market-trends/salary-overview'
+  },
+  RECRUITMENT_POSTS: {
+    ALL: '/recruitment-posts/',
+    COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,
+    RECRUITMENT: (recruitmentId: string) => `/recruitment-posts/recruitment/${recruitmentId}`
+  },
   ADMIN_DASHBOARD: {
     METRICS_USERS: "/admin/dashboard/metrics/users",
     METRICS_COURSES: "/admin/dashboard/metrics/courses",
     METRICS_HEALTH: "/admin/dashboard/metrics/health",
     USERS: "/admin/dashboard/users",
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
-    USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`
+    USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
+    TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction"
   },
   COUNSELOR: {
     PROFILE: '/counselor/profile',

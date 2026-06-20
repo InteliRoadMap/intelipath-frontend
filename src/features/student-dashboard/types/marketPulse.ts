@@ -29,3 +29,26 @@ export interface RecruitmentPost {
   company?: Company;
   recruitment?: Recruitment;
 }
+
+export interface TopCompany {
+  topCvCompanyId?: string;
+  name: string;
+  logo: string;
+  companyLink: string;
+  recruitmentCount: number;
+}
+
+export interface SkillDataPoint {
+  date: string;
+  jobsNeeded: number;
+}
+
+export interface SkillTrend {
+  skillName: string;
+  dataPoints: SkillDataPoint[];
+}
+
+export interface SalaryBracket {
+  category: string;
+  jobCount: number;
+}

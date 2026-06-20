@@ -19,8 +19,7 @@ import {
   CardHeader,
   CardTitle,
   UserHeaderActions,
-  Logo,
-  Skeleton
+  Logo
 } from "@/components";
 import { 
   Dialog, 
@@ -36,13 +35,23 @@ export function MentorFeedbackHistoryView() {
   const navigate = useNavigate();
   
   const [feedbackList, setFeedbackList] = useState<any[]>([]);
+  const [inboxList, setInboxList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
 
   useEffect(() => {
-    mentorApi.getFeedbackHistory()
-      .then(res => setFeedbackList(Array.isArray(res) ? res : []))
-      .catch(() => setFeedbackList([]))
+    Promise.all([
+        mentorApi.getFeedbackHistory(),
+        mentorApi.getFeedbackInbox()
+    ])
+      .then(([sent, received]) => {
+          setFeedbackList(Array.isArray(sent) ? sent : []);
+          setInboxList(Array.isArray(received) ? received : []);
+      })
+      .catch(() => {
+          setFeedbackList([]);
+          setInboxList([]);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -170,17 +179,73 @@ export function MentorFeedbackHistoryView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {isLoading && Array.from({ length: 3 }).map((_, index) => (
-                    <tr key={index}>
-                      <td className="px-5 py-4"><Skeleton className="h-9 w-48" /></td>
-                      <td className="px-5 py-4"><Skeleton className="h-6 w-24" /></td>
-                      <td className="px-5 py-4"><Skeleton className="h-5 w-32" /></td>
-                      <td className="px-5 py-4"><Skeleton className="h-6 w-16" /></td>
-                      <td className="px-5 py-4"><Skeleton className="ml-auto h-8 w-24" /></td>
+                  {activeTab === 'received' && inboxList.map((item) => (
+                    <tr key={item.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
+                      <td className="px-5 py-4 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-950 text-xs font-bold text-white">
+                            {item.studentName.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950">{item.studentName}</p>
+                            <p className="text-xs text-slate-400">{item.studentEmail}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 align-middle">
+                        <Badge variant="info">{item.career}</Badge>
+                      </td>
+                      <td className="px-5 py-4 align-middle text-sm text-slate-600 font-medium">
+                        {new Date(item.submittedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-5 py-4 align-middle">
+                        {item.status === 'read' ? (
+                          <Badge variant="default" className="text-emerald-700 bg-emerald-50 border-emerald-200">Read</Badge>
+                        ) : (
+                          <Badge variant="default" className="text-amber-700 bg-amber-50 border-amber-200">Unread</Badge>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 align-middle">
+                        <div className="flex items-center justify-end">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost"
+                                className="h-8 text-xs font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50"
+                              >
+                                <Eye size={14} weight="bold" className="mr-1.5" /> View
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[500px]">
+                              <DialogHeader>
+                                <UIDialogTitle>Feedback Details</UIDialogTitle>
+                                <DialogDescription>
+                                  Feedback for {item.studentName} ({item.career})
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="mt-2 space-y-4 text-sm text-slate-700">
+                                <div className="flex items-center">
+                                  <span className="font-bold text-slate-900 w-20">Type:</span> 
+                                  <Badge variant="outline">{item.type || 'General'}</Badge>
+                                </div>
+                                <div className="flex items-center">
+                                  <span className="font-bold text-slate-900 w-20">Date:</span> 
+                                  <span>{new Date(item.submittedAt).toLocaleString()}</span>
+                                </div>
+                                <div className="pt-2">
+                                  <span className="font-bold text-slate-900 block mb-2">Message Content:</span>
+                                  <p className="p-4 bg-slate-50/80 rounded-xl whitespace-pre-wrap border border-slate-100 leading-relaxed text-slate-700">
+                                    {item.content || "No content provided."}
+                                  </p>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </td>
                     </tr>
                   ))}
-                  
-                  {activeTab === 'sent' && !isLoading && feedbackList.map((item) => (
+                  {activeTab === 'sent' && feedbackList.map((item) => (
                     <tr key={item.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                       <td className="px-5 py-4 align-middle">
                         <div className="flex items-center gap-3">

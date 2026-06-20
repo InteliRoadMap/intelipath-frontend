@@ -120,7 +120,37 @@ const mapToFrontendData = (backendData: any): PortfolioData => {
     uiData.projects = backendData.projects.map((p: any) => ({
       id: p.projectId || `proj-${Date.now()}-${Math.random()}`,
       title: p.projectName || 'Untitled',
-      tech: p.techStack ? (typeof p.techStack === 'string' ? p.techStack : JSON.stringify(p.techStack)) : 'Tech Stack',
+      tech: (() => {
+        if (!p.techStack) return 'Tech Stack';
+        
+        // Helper to recursively parse JSON if it's a string
+        const deepParse = (val: any): any => {
+          if (typeof val === 'string') {
+            try {
+              const parsed = JSON.parse(val);
+              // Only return parsed if it's an object or array to avoid infinite loops on primitive strings
+              if (parsed && typeof parsed === 'object') {
+                return deepParse(parsed);
+              }
+            } catch (e) {
+              return val;
+            }
+          }
+          if (val && typeof val === 'object' && val.text) {
+             return deepParse(val.text);
+          }
+          return val;
+        };
+
+        const cleaned = deepParse(p.techStack);
+        
+        if (typeof cleaned === 'string') return cleaned;
+        if (typeof cleaned === 'object' && cleaned !== null) {
+          return Object.values(cleaned).flat().join(', ');
+        }
+        
+        return 'Tech Stack';
+      })(),
       description: p.description || '',
       codeLink: p.repoUrl || '#',
       demoLink: p.demoUrl || '#',
@@ -238,5 +268,10 @@ export const portfolioApi = {
       // If endpoint doesn't exist yet (404), just assume it's true to not block the UI for now
       return true;
     }
+  },
+
+  importGithubProject: async (repoUrl: string) => {
+    const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT, { repoUrl });
+    return res.data;
   }
 };

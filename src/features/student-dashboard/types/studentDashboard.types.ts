@@ -50,6 +50,7 @@ export type SkillItem = {
 export type RequiredSkill = {
   skill: SkillItem
   importanceLevel: string
+  progress?: number
 }
 
 export type SkillResponse = {
@@ -65,6 +66,7 @@ export type SkillGap = {
   severity: string
   title: string
   description: string
+  progress?: number
 }
 
 export type MentorFeedback = {

@@ -11,7 +11,7 @@ import '@/features/portfolio/styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
 import mentorApi from '@/api/mentorApi';
-import { Dialog, DialogTrigger } from '@/components/ui';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components/ui';
 import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
@@ -46,6 +46,59 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
 
   // Mentor Feedback State
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  // GitHub Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [githubUrl, setGithubUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  const showToast = (text: string, type: 'error' | 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleImport = async () => {
+    setIsImporting(true);
+    try {
+      const aiData = await portfolioApi.importGithubProject(githubUrl);
+      
+      const newProject = {
+        id: aiData.projectId || 'proj-' + Date.now(),
+        title: aiData.projectName || 'Tên Project',
+        tech: aiData.techStack ? Object.values(aiData.techStack).flat().join(', ') : 'Tech Stack',
+        description: aiData.description || 'Mô tả dự án',
+        icon: 'fab fa-github',
+        codeLink: aiData.repoUrl || '#',
+        demoLink: aiData.demoUrl || '#'
+      };
+
+      setData(prev => ({
+        ...prev,
+        projects: [...prev.projects, newProject]
+      }));
+      
+      setIsImportModalOpen(false);
+      setGithubUrl('');
+      showToast("Import dự án thành công!", "success");
+    } catch (error: any) {
+      console.error("Lỗi khi import github:", error);
+      let errorMsg = "Hệ thống AI đang bận, vui lòng thử lại sau!"; // Lỗi 500 hoặc mặc định
+      
+      if (error.response?.status === 400) {
+        errorMsg = "Đường dẫn GitHub không đúng định dạng!";
+      } else if (error.response?.status === 404) {
+        errorMsg = "Không tìm thấy dự án này, hoặc đây là dự án Private!";
+      } else if (error.response?.status === 429) {
+        errorMsg = "Bạn đã thao tác quá nhiều, vui lòng chờ một lát!";
+      }
+      
+      showToast(errorMsg, "error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   
   // Auto-save logic
   const debouncedData = useDebounce(data, 1500); // 1.5s delay after stop typing
@@ -115,11 +168,11 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
     // Hero Timeline
     const heroTimeline = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 } });
     heroTimeline
-      .from(".hero-title-pill", { x: -100, opacity: 0, duration: 1 }, 0)
-      .from(".hero-img-wrapper", { x: 100, opacity: 0, duration: 1 }, 0.2)
-      .from(".hero-text p", { y: 20, opacity: 0, stagger: 0.1 }, 0.4)
-      .from(".contact-title", { y: 20, opacity: 0, duration: 0.8 }, 0.6)
-      .from(".contact-grid a", { y: 20, opacity: 0, stagger: 0.1 }, 0.8);
+      .fromTo(".hero-title-pill", { x: -100, opacity: 0 }, { x: 0, opacity: 1, duration: 1 }, 0)
+      .fromTo(".hero-img-wrapper", { x: 100, opacity: 0 }, { x: 0, opacity: 1, duration: 1 }, 0.2)
+      .fromTo(".hero-text p", { y: 20, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.1 }, 0.4)
+      .fromTo(".contact-title", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.6)
+      .fromTo(".contact-grid div", { y: 20, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.1 }, 0.8);
       
   }, { scope: containerRef, dependencies: [] }); // Run once on mount
 
@@ -438,46 +491,27 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       <section id="skills" className="reveal py-24 px-8 bg-[var(--bg-primary)]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl text-center font-bold font-outfit mb-16 text-[var(--title-color)]">My Skills</h2>
-          <div className="relative border-l-2 border-[var(--border-color)] ml-4">
+          <div className="flex flex-wrap gap-4 justify-center">
             {data.skills.map((skill, idx) => (
-              <div key={skill.id} className="relative pl-12 mb-12 last:mb-0 group">
-                <div className="absolute left-[-17px] top-1 w-8 h-8 rounded-full bg-[var(--bg-primary)] border-4 border-[var(--primary-color)] shadow-sm group-hover:bg-[var(--primary-color)] transition-colors"></div>
-                <div className="bg-[var(--bg-secondary)] p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1" style={{ borderRadius: 'var(--card-radius)' }}>
-                  <div className="flex justify-between items-start mb-2">
-                    <EditableText isEditable={isEditMode} value={skill.category} onChange={val => {
-                      const newSkills = [...data.skills];
-                      newSkills[idx].category = val;
-                      setData({ ...data, skills: newSkills });
-                    }} as="h3" className="text-2xl font-bold text-[var(--title-color)]" />
-                    {isEditMode && (
-                      <button onClick={() => {
-                        setData({ ...data, skills: data.skills.filter(s => s.id !== skill.id) });
-                      }} className="bg-red-500 text-white w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><i className="fas fa-trash text-sm"></i></button>
-                    )}
-                  </div>
-                  <p className="text-[var(--primary-color)] font-bold mb-2">
-                    <EditableText isEditable={isEditMode} value={skill.stack} onChange={val => {
-                      const newSkills = [...data.skills];
-                      newSkills[idx].stack = val;
-                      setData({ ...data, skills: newSkills });
-                    }} />
-                  </p>
-                  <p className="text-[var(--text-color)]">
-                    <EditableText isEditable={isEditMode} value={skill.description} onChange={val => {
-                      const newSkills = [...data.skills];
-                      newSkills[idx].description = val;
-                      setData({ ...data, skills: newSkills });
-                    }} multiline />
-                  </p>
-                </div>
+              <div key={skill.id} className="relative group flex items-center bg-[var(--bg-secondary)] px-6 py-3 shadow-sm border border-[var(--border-color)] transition-all hover:shadow-md" style={{ borderRadius: 'var(--card-radius)' }}>
+                <EditableText isEditable={isEditMode} value={skill.category} onChange={val => {
+                  const newSkills = [...data.skills];
+                  newSkills[idx].category = val;
+                  setData({ ...data, skills: newSkills });
+                }} className="text-lg font-bold text-[var(--title-color)]" />
+                {isEditMode && (
+                  <button onClick={() => {
+                    setData({ ...data, skills: data.skills.filter(s => s.id !== skill.id) });
+                  }} className="ml-3 bg-red-500 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><i className="fas fa-times text-xs"></i></button>
+                )}
               </div>
             ))}
             {isEditMode && (
-              <div className="pl-12 mt-8">
-                <button onClick={() => {
-                  setData({ ...data, skills: [...data.skills, { id: 'skill-'+Date.now(), category: 'New Category', stack: 'Technologies', description: 'Description' }] });
-                }} className="px-4 py-2 border-2 border-dashed border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors w-full">+ Add Skill</button>
-              </div>
+              <button onClick={() => {
+                setData({ ...data, skills: [...data.skills, { id: 'skill-'+Date.now(), category: 'New Skill', stack: '', description: '' }] });
+              }} className="px-6 py-3 border-2 border-dashed border-[var(--primary-color)] text-[var(--primary-color)] font-bold transition-colors hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-2" style={{ borderRadius: 'var(--card-radius)' }}>
+                <i className="fas fa-plus"></i> Add Skill
+              </button>
             )}
           </div>
         </div>
@@ -547,15 +581,60 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
               </div>
             ))}
             {isEditMode && (
-              <button onClick={() => {
-                setData({
-                  ...data,
-                  projects: [...data.projects, { id: 'proj-'+Date.now(), title: 'New Project', tech: 'Tech Stack', description: 'Description', icon: 'fas fa-code', codeLink: '#', demoLink: '#' }]
-                })
-              }} className="border-2 border-dashed border-[var(--border-color)] flex items-center justify-center flex-col gap-4 text-[var(--text-color)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition-colors h-full min-h-[400px]" style={{ borderRadius: 'var(--card-radius)' }}>
-                <i className="fas fa-plus text-4xl"></i>
-                <span className="font-bold text-xl">Add Project</span>
-              </button>
+              <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+                <DialogTrigger asChild>
+                  <button className="border-2 border-dashed border-[var(--border-color)] flex items-center justify-center flex-col gap-4 text-[var(--text-color)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition-colors h-full min-h-[400px]" style={{ borderRadius: 'var(--card-radius)' }}>
+                    <i className="fas fa-plus text-4xl"></i>
+                    <span className="font-bold text-xl">Add Project</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Project</DialogTitle>
+                    <DialogDescription>
+                      Choose how you want to add a project to your portfolio.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="flex flex-col gap-4 mt-4">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><i className="fab fa-github"></i> Import from GitHub (AI)</h4>
+                      <p className="text-sm text-slate-500 mb-3">Paste a public repository URL and InteliPath AI will automatically summarize the project for you.</p>
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="https://github.com/username/repo" 
+                          value={githubUrl}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button onClick={handleImport} disabled={isImporting || !githubUrl} className="bg-black text-white hover:bg-slate-800">
+                          {isImporting ? <i className="fas fa-spinner fa-spin"></i> : "Import"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="relative flex py-2 items-center">
+                      <div className="flex-grow border-t border-slate-200"></div>
+                      <span className="flex-shrink-0 mx-4 text-slate-400 text-sm font-semibold">OR</span>
+                      <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full font-bold"
+                      onClick={() => {
+                        setData({
+                          ...data,
+                          projects: [...data.projects, { id: 'proj-'+Date.now(), title: 'New Project', tech: 'Tech Stack', description: 'Description', icon: 'fas fa-code', codeLink: '#', demoLink: '#' }]
+                        });
+                        setIsImportModalOpen(false);
+                      }}
+                    >
+                      Create Blank Project
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>
@@ -586,6 +665,22 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           onClose={() => setIconPickerProjectIdx(null)}
         />
       )}
+
+      {/* Floating Toast */}
+      <div
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
+          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+        } ${toastMessage?.type === 'error' ? 'bg-red-900/95 shadow-red-900/20' : 'bg-emerald-900/95 shadow-emerald-900/20'}`}
+      >
+        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+          {toastMessage?.type === 'error' ? (
+            <i className="fas fa-exclamation-triangle"></i>
+          ) : (
+            <i className="fas fa-check"></i>
+          )}
+        </div>
+        {toastMessage?.text}
+      </div>
     </div>
   );
 };

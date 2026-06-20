@@ -11,7 +11,8 @@ import {
   Pulse,
   ShieldCheck,
   Trash,
-  UsersThree
+  UsersThree,
+  Lightning
 } from "@phosphor-icons/react"
 import { useNavigate } from "react-router-dom"
 import { adminApi } from "@/api"
@@ -31,8 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Logo,
-  Skeleton
+  Logo
 } from "@/components"
 import { useAuth } from "@/context"
 import { ROLES, ROUTES } from "@/shared"
@@ -92,22 +92,16 @@ function MetricCard({
             </div>
             <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
           </div>
-          {isLoading ? (
-            <Skeleton className="h-6 w-16 shrink-0" />
-          ) : isUnavailable ? (
+          {isUnavailable ? (
             <Badge className="shrink-0">Unavailable</Badge>
           ) : (
             status
           )}
         </div>
 
-        {isLoading ? (
-          <Skeleton className="h-9 w-28" />
-        ) : (
-          <p className="font-display text-2xl font-semibold leading-none text-slate-950">
-            {isUnavailable ? "--" : value}
-          </p>
-        )}
+        <p className="font-display text-2xl font-semibold leading-none text-slate-950">
+          {isUnavailable ? "--" : value}
+        </p>
 
         {progress !== undefined && !isUnavailable && (
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -301,15 +295,7 @@ function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {isLoading && Array.from({ length: 5 }).map((_, index) => (
-                <tr key={index}>
-                  <td className="px-5 py-4"><Skeleton className="h-9 w-48" /></td>
-                  <td className="px-5 py-4"><Skeleton className="h-6 w-20" /></td>
-                  <td className="px-5 py-4"><Skeleton className="h-5 w-24" /></td>
-                  <td className="px-5 py-4"><Skeleton className="ml-auto h-8 w-40" /></td>
-                </tr>
-              ))}
-              {!isLoading && paginatedUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <tr key={user.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                   <td className="px-5 py-4 align-middle">
                     <div className="flex items-center gap-3">
@@ -402,10 +388,29 @@ function UserManagement() {
 export default function AdminDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [isTriggering, setIsTriggering] = useState(false)
+  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
+
+  const showToast = (text: string, type: 'error' | 'success') => {
+    setToastMessage({ text, type })
+    setTimeout(() => setToastMessage(null), 4000)
+  }
 
   const handleLogout = async () => {
     await logout()
     navigate(ROUTES.LOGIN)
+  }
+
+  const handleTriggerJob = async () => {
+    setIsTriggering(true)
+    try {
+      await adminApi.triggerSkillExtraction()
+      showToast("Skill extraction job started successfully!", "success")
+    } catch (error) {
+      showToast("Failed to trigger skill extraction job.", "error")
+    } finally {
+      setIsTriggering(false)
+    }
   }
 
   return (
@@ -451,14 +456,45 @@ export default function AdminDashboardView() {
             <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">
               System overview
             </h1>
-            <p className="mt-2 max-w-[280px] text-sm leading-5 text-slate-500">
+            <p className="mt-2 mb-4 max-w-[280px] text-sm leading-5 text-slate-500">
               Monitor platform health and manage user access.
             </p>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800"
+              onClick={handleTriggerJob}
+              disabled={isTriggering}
+            >
+              <Lightning size={16} weight="duotone" className={isTriggering ? "animate-pulse" : ""} /> 
+              {isTriggering ? "Triggering..." : "Force Run Skill Extraction"}
+            </Button>
           </div>
           <AdminMetrics className="min-w-0" />
         </section>
         <UserManagement />
       </main>
+
+      {/* Floating Toast */}
+      <div
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
+          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+        } ${toastMessage?.type === 'error' ? 'shadow-red-900/20' : 'shadow-emerald-900/20'}`}
+      >
+        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+          {toastMessage?.type === 'error' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          )}
+        </div>
+        {toastMessage?.text}
+      </div>
     </div>
   )
 }

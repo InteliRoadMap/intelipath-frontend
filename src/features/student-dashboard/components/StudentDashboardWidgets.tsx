@@ -230,8 +230,8 @@ export const ActionableListWidget = () => {
                     {index % 3 === 0 ? <BookOpen size={24} className="text-black" /> : index % 3 === 1 ? <Target size={24} className="text-black" /> : <Zap size={24} className="text-black" />}
                   </div>
                   <div>
-                    <h4 className="text-[16px] font-bold text-black">{item.title}</h4>
-                    <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[250px]">{item.description}</p>
+                    <h4 className="text-[16px] font-bold text-black">{item.title || item.skillName || 'Action Item'}</h4>
+                    <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[250px]">{item.description || item.category || 'Skill Gap'}</p>
                   </div>
                 </div>
 
@@ -240,6 +240,17 @@ export const ActionableListWidget = () => {
                     <Clock size={16} />
                     <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : 'Med Prio'}</span>
                   </div>
+                  
+                  {/* Progress Bar for Skill Gaps */}
+                  {activeTab === 'gaps' && item.progress !== undefined && (
+                    <div className="flex items-center gap-3 min-w-[100px]">
+                      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-black rounded-full" style={{ width: `${item.progress}%` }} />
+                      </div>
+                      <span className="text-[13px] font-black text-black">{item.progress}%</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5 text-[14px] font-bold text-black min-w-[60px]">
                     <Flame size={16} className="text-black" />
                     {item.severity}
@@ -389,8 +400,8 @@ export const SkillRadarChartWidget = () => {
   const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
   const missingIds = new Set(data?.missingSkills.map((skill) => skill.skillId) ?? [])
 
-  const chartData = data?.requiredSkills.map(({ skill, importanceLevel }) => {
-    const current = missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0
+  const chartData = data?.requiredSkills.map(({ skill, importanceLevel, progress }) => {
+    const current = progress !== undefined ? progress : (missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0)
     const target = importanceLevel === "High" ? 100 : importanceLevel === "Medium" ? 70 : 40
     return {
       subject: skill.skillName.substring(0, 10),

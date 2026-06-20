@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -20,15 +20,104 @@ import {
   Edit2,
   Trash2,
   Check,
-  Loader2,
   ArrowUp
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
+import GradeReportUI from "@/features/student-dashboard/components/GradeReportUI"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
+import rehypeRaw from 'rehype-raw'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { motion, AnimatePresence } from 'framer-motion'
+
+const processMarkdown = (text: string) => {
+  if (!text) return text;
+  
+  // 1. Basic formatting: newlines before headings/bullets, and clean dirty markdown in tables
+  let processed = text
+    .replace(/([^\n])(#{1,6}\s)/g, '$1\n\n$2')
+    .replace(/([^\n])(-\s)/g, '$1\n$2')
+    .replace(/([^\n])(\d+\.\s)/g, '$1\n$2')
+    // Clean up rogue ### inside table cells caused by blind AI copying
+    .replace(/\|(\s*)#{1,6}\s+/g, '|$1');
+
+  // 2. Advanced table repairing for broken rows & squished tables
+  const lines = processed.split('\n');
+  let inTable = false;
+  let expectedCols = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Detect table separator line (e.g. |---|---|)
+    if (line.match(/^\|?[-: ]+\|[-:| ]*$/) && i > 0 && lines[i-1].includes('|')) {
+      inTable = true;
+      // Ensure the header row starts and ends with '|'
+      if (!lines[i-1].trim().startsWith('|')) lines[i-1] = '| ' + lines[i-1].trim();
+      if (!lines[i-1].trim().endsWith('|')) lines[i-1] = lines[i-1].trim() + ' |';
+      
+      expectedCols = lines[i-1].split('|').length;
+      
+      // Fix separator column count to match header
+      let sepLine = line;
+      if (!sepLine.startsWith('|')) sepLine = '|' + sepLine;
+      if (!sepLine.endsWith('|')) sepLine = sepLine + '|';
+      
+      const sepCols = sepLine.split('|').length;
+      if (sepCols < expectedCols) {
+        sepLine = sepLine.slice(0, -1) + '|---|'.repeat(expectedCols - sepCols);
+      }
+      lines[i] = sepLine;
+      
+      // Ensure a blank line exists before the header
+      if (i > 1 && lines[i-2].trim() !== '') {
+        lines.splice(i - 1, 0, '');
+        i++; // adjust index because we inserted a line
+      }
+    } else if (inTable && line === '') {
+      // Look ahead to see if the table continues
+      let nextNonEmptyIndex = i + 1;
+      while (nextNonEmptyIndex < lines.length && lines[nextNonEmptyIndex].trim() === '') {
+        nextNonEmptyIndex++;
+      }
+      
+      if (nextNonEmptyIndex < lines.length && lines[nextNonEmptyIndex].trim().startsWith('|')) {
+        // Table continues! Delete this blank line.
+        lines[i] = '__TO_DELETE__';
+      } else {
+        inTable = false;
+      }
+    }
+    
+    if (inTable && i > 0 && lines[i] !== '__TO_DELETE__') {
+      // If current line does NOT start with '|' and we are inside a table,
+      // it means the row was broken into multiple lines!
+      if (line.length > 0 && !line.startsWith('|') && !line.match(/^\|?[-: ]+\|[-:| ]*$/)) {
+        // Join it with the previous line
+        let prevIndex = i - 1;
+        while (prevIndex >= 0 && lines[prevIndex] === '__TO_DELETE__') {
+          prevIndex--;
+        }
+        if (prevIndex >= 0) {
+          lines[prevIndex] = lines[prevIndex] + ' ' + line;
+          lines[i] = '__TO_DELETE__';
+        }
+      } else if (line.length > 0 && line.startsWith('|')) {
+        // Normal row, ensure it ends with '|'
+        if (!lines[i].trim().endsWith('|')) lines[i] = lines[i].trim() + ' |';
+        
+        // Very basic fix for broken rows: if this row has too few cols and the NEXT row starts with '|' and also has few cols
+        // We just leave it for now, as joining them safely requires complex parsing.
+      }
+    }
+  }
+  
+  return lines.filter(l => l !== '__TO_DELETE__').join('\n');
+}
 
 export default function AIMentorPage() {
   const { user, logout } = useAuth()
@@ -46,8 +135,109 @@ export default function AIMentorPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
+  const [externalLink, setExternalLink] = useState<string | null>(null)
   const [editingSessionName, setEditingSessionName] = useState("")
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
+
+  const markdownComponents = useMemo(() => ({
+    code({node, inline, className, children, ...props}: any) {
+      const match = /language-(\w+)/.exec(className || '')
+      if (!inline && match) {
+        const lang = match[1];
+        const codeStr = String(children).replace(/\n$/, '');
+        
+        if (lang === 'json') {
+          try {
+            let jsonStr = codeStr.trim();
+            // AI sometimes hallucinates and drops the leading or trailing brace
+            if (!jsonStr.startsWith('{') && !jsonStr.startsWith('[')) {
+              jsonStr = '{' + jsonStr;
+            }
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.ui_type === 'GRADE_REPORT') {
+              return <GradeReportUI data={parsed.data} />;
+            }
+          } catch (e: any) {
+            // JSON is likely still streaming and incomplete. Show a sleek loading state.
+            if (codeStr.includes('"GRADE_REPORT"')) {
+              return (
+                <div className="w-full bg-white border border-indigo-100 shadow-sm rounded-2xl p-8 flex flex-col items-center justify-center my-6 overflow-hidden">
+                  <div className="flex gap-2 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div>
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-150"></div>
+                    <div className="w-2 h-2 rounded-full bg-indigo-600 animate-bounce delay-300"></div>
+                  </div>
+                  <p className="text-indigo-600 font-medium text-sm animate-pulse">Generating Grade Report UI...</p>
+                  {/* DEBUG INFO: Only visible if the stream finishes but JSON is still broken */}
+                  <div className="mt-6 p-4 bg-red-50 text-red-600 text-xs rounded-lg w-full text-left overflow-x-auto border border-red-100">
+                    <p className="font-bold mb-1">JSON Parse Error (AI output malformed):</p>
+                    <p className="mb-3">{e.message}</p>
+                    <p className="font-bold mb-1">Raw AI Output:</p>
+                    <pre className="whitespace-pre-wrap">{codeStr}</pre>
+                  </div>
+                </div>
+              );
+            }
+          }
+        }
+        
+        return (
+          <SyntaxHighlighter
+            {...props}
+            children={codeStr}
+            style={vscDarkPlus}
+            language={lang}
+            PreTag="div"
+            className="rounded-md my-2"
+          />
+        );
+      }
+      
+      return (
+        <code {...props} className={`${className} bg-zinc-100 text-zinc-800 px-1.5 py-0.5 rounded-md font-mono text-[13.5px]`}>
+          {children}
+        </code>
+      )
+    },
+    table({children}: any) {
+      return (
+        <div className="overflow-x-auto my-6 border border-zinc-200 rounded-xl shadow-sm">
+          <table className="w-full text-sm text-left border-collapse">
+            {children}
+          </table>
+        </div>
+      )
+    },
+    thead({children}: any) {
+      return <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-700 font-semibold">{children}</thead>
+    },
+    tr({children}: any) {
+      return <tr className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50 transition-colors">{children}</tr>
+    },
+    th({children}: any) {
+      return <th className="px-4 py-3 whitespace-nowrap">{children}</th>
+    },
+    td({children}: any) {
+      return <td className="px-4 py-3">{children}</td>
+    },
+    a({href, children, ...props}: any) {
+      return (
+        <a 
+          href={href} 
+          {...props}
+          onClick={(e) => {
+            if (href && (href.startsWith('http') || href.startsWith('//'))) {
+              e.preventDefault();
+              setExternalLink(href);
+            }
+          }}
+          className="text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-600 transition-colors cursor-pointer"
+        >
+          {children}
+        </a>
+      )
+    }
+  }), [setExternalLink]);
   const [uploadError, setUploadError] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -253,10 +443,10 @@ export default function AIMentorPage() {
     abortControllerRef.current = new AbortController()
 
     try {
-      await chatApi.streamMessage(currentSessionId, userMsgContent, (chunk) => {
+      await chatApi.streamMessage(currentSessionId, userMsgContent, (fullText) => {
         setMessages(prev => prev.map(msg => {
           if (msg.messageId === tempAiMsgId) {
-            return { ...msg, content: msg.content + chunk }
+            return { ...msg, content: fullText }
           }
           return msg
         }))
@@ -291,6 +481,8 @@ export default function AIMentorPage() {
     if (e.target.files && e.target.files.length > 0) {
       setSelectedFile(e.target.files[0])
     }
+    // Clear the input value so the same file can be selected again
+    e.target.value = ''
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -447,7 +639,7 @@ export default function AIMentorPage() {
           </div>
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth w-full relative z-0">
+          <div className={`flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth w-full relative z-0 transition-all duration-300 ${isSidebarOpen ? 'xl:pr-[260px]' : ''}`}>
             <div className="max-w-3xl mx-auto w-full min-h-full flex flex-col pt-12 pb-48">
               
               {messages.length === 0 ? (
@@ -521,9 +713,13 @@ export default function AIMentorPage() {
                               </div>
                             ) : (
                               <div className="prose prose-zinc max-w-none prose-p:leading-[1.7] prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13.5px] prose-a:text-blue-600 prose-a:font-medium">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                  {msg.content}
-                                </ReactMarkdown>
+                                  <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                                    rehypePlugins={[rehypeRaw]}
+                                    components={markdownComponents}
+                                  >
+                                    {processMarkdown(msg.content)}
+                                  </ReactMarkdown>
                               </div>
                             )}
                           </div>
@@ -538,7 +734,7 @@ export default function AIMentorPage() {
           </div>
 
           {/* Input Area (Vercel Template Style) */}
-          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pt-10 pb-6 px-4 md:px-0 z-20">
+          <div className={`absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pt-10 pb-6 px-4 md:px-0 z-20 transition-all duration-300 ${isSidebarOpen ? 'xl:pr-[260px]' : ''}`}>
             <div className="max-w-3xl w-full mx-auto relative">
               
               {/* Stop Generating Button */}
@@ -614,13 +810,12 @@ export default function AIMentorPage() {
                     <button 
                       onClick={handleSendMessage}
                       disabled={(!inputValue.trim() && !selectedFile) || isSending || isUploading}
-                      className="flex items-center justify-center w-8 h-8 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-lg transition-colors outline-none"
-                      title="Send message"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-900 text-white hover:bg-zinc-800 transition-colors outline-none disabled:opacity-50 disabled:hover:bg-zinc-900 shadow-sm"
                     >
                       {isUploading ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <div className="w-4 h-4" />
                       ) : (
-                        <ArrowUp size={18} strokeWidth={2.5} />
+                        <ArrowUp size={16} strokeWidth={2.5} />
                       )}
                     </button>
                   </div>
@@ -639,6 +834,50 @@ export default function AIMentorPage() {
         </section>
         </div>
       </main>
+
+      {/* External Link Warning Modal */}
+      <AnimatePresence>
+        {externalLink && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-zinc-200"
+            >
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Rời khỏi ứng dụng?</h3>
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                Bạn đang chuẩn bị rời khỏi hệ thống InteliPath để truy cập một trang web bên ngoài. Bạn có chắc chắn muốn tiếp tục không?
+              </p>
+              <div className="bg-zinc-50 p-3 rounded-lg mb-6 border border-zinc-100">
+                <p className="text-xs text-zinc-500 font-mono break-all line-clamp-2">{externalLink}</p>
+              </div>
+              <div className="flex items-center gap-3 justify-end">
+                <button 
+                  onClick={() => setExternalLink(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={() => {
+                    window.open(externalLink, '_blank', 'noopener,noreferrer');
+                    setExternalLink(null);
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm"
+                >
+                  Tiếp tục
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
