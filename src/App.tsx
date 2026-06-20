@@ -1,7 +1,13 @@
-import { AppRoutes } from "./routes/AppRoutes"
+import { AppRoutes } from "@/routes"
+import { GlobalLoadingBar } from "@/components/ui"
 
 function App() {
-  return <AppRoutes />
+  return (
+    <>
+      <GlobalLoadingBar />
+      <AppRoutes />
+    </>
+  )
 }
 
 export default App

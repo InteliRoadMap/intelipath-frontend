@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
-import ResetPasswordForm from '../features/auth/ResetPasswordForm'
-import Logo from '../components/Logo'
+import { ResetPasswordForm } from '@/features/auth'
+import { Logo } from '@/components'
 
 /* Floating orbs — same aesthetic as AuthLayout */
 const orbs = [

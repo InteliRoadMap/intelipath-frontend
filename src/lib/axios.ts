@@ -16,6 +16,8 @@ import axios, {
  */
 
 import { ENDPOINTS } from "../api/endpoints"
+import { API_BASE_URL } from "@/config/appConfig"
+import { ROUTES } from "@/shared"
 
 // Every request use client also go through interceptor
 // client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller
@@ -34,10 +36,6 @@ export interface ApiClientConfig {
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean //prevent infinite retry loops
 }
-
-//  Config & State
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1"
 
 let isRefreshing = false
 
@@ -62,6 +60,20 @@ const processQueue = (
   failedQueue = []
 }
 
+// Global API Loading State
+export let globalActiveRequests = 0;
+export const onLoadingChange = new Set<(isLoading: boolean) => void>();
+
+export const incrementLoading = () => {
+  globalActiveRequests++;
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+}
+
+export const decrementLoading = () => {
+  globalActiveRequests = Math.max(0, globalActiveRequests - 1);
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+}
+
 //Auth Helpers & Token Management
 export const getStoredToken = () => localStorage.getItem("accessToken")
 const defaultGetRefreshToken = () => localStorage.getItem("refreshToken")
@@ -82,9 +94,9 @@ export const handleUnauthorized = (error?: AxiosError) => {
   // check window to avoid redirect loops
   if (
     typeof window !== "undefined" &&
-    !window.location.pathname.includes("/login")
+    !window.location.pathname.includes(ROUTES.LOGIN)
   ) {
-    window.location.href = "/login"
+    window.location.href = ROUTES.LOGIN
   }
 }
 
@@ -112,28 +124,33 @@ export function createApiClient({
   // Request start -> run request interceptor ->  attach token if available -> send request
   client.interceptors.request.use(
     (config) => {
-      //LOGGING
-      console.group(
-        `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
-      )
-      console.log("Headers :", config.headers)
-      if (config.data) {
-        // Hide password in logs for security
-        const safeData = { ...config.data }
-        if (safeData.password) safeData.password = "••••••••"
-        if (safeData.confirmPassword) safeData.confirmPassword = "••••••••"
-        console.log("Body    :", safeData)
+      incrementLoading();
+      if (import.meta.env.DEV) {
+        console.group(
+          `[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
+        )
+        console.log("Headers :", config.headers)
+        if (config.data) {
+          const safeData = { ...config.data }
+          if (safeData.password) safeData.password = "••••••••"
+          if (safeData.confirmPassword) safeData.confirmPassword = "••••••••"
+          console.log("Body    :", safeData)
+        }
+        console.groupEnd()
       }
-      console.groupEnd()
 
       //ATTACH TOKEN
       const token = getToken()
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`
+      
+      if (config.headers) {
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
       }
       return config
     },
     (error) => {
+      decrementLoading();
       console.error(" [API REQUEST ERROR]", error)
       return Promise.reject(error)
     }
@@ -142,49 +159,48 @@ export function createApiClient({
   // 2. Response Interceptor: Handle Errors & Refresh Token & Beautiful Logging
   client.interceptors.response.use(
     (response) => {
-      //SUCCESS LOGGING
-      console.group(
-        `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
-        "color: #10b981; font-weight: bold"
-      )
-      console.log("Status  :", response.status, response.statusText)
-      console.log("Data    :", response.data)
-      console.groupEnd()
-
+      decrementLoading();
+      if (import.meta.env.DEV) {
+        console.group(
+          `%c [API RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
+          "color: #10b981; font-weight: bold"
+        )
+        console.log("Status  :", response.status, response.statusText)
+        console.log("Data    :", response.data)
+        console.groupEnd()
+      }
       return response
     },
     async (error: AxiosError) => {
+      decrementLoading();
       const originalRequest = error.config as CustomAxiosRequestConfig
       const res = error.response
       const status = res?.status
 
-      //ERROR LOGGING
-      if (res) {
-        console.group(
-          `%c [API ERROR] ${res.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
-          "color: #ef4444; font-weight: bold"
-        )
-        console.log("Status  :", res.status, res.statusText)
-        console.log("Message :", (res.data as any)?.message || res.data)
-        console.log("Full    :", res.data)
-        console.groupEnd()
-      } else {
-        console.group(
-          "%c [API ERROR] Network / No Response",
-          "color: #ef4444; font-weight: bold"
-        )
-        console.log("Error   :", error.message)
-        console.log("Hint    :", "Check if backend is running at:", baseURL)
-        console.groupEnd()
+      if (import.meta.env.DEV) {
+        if (res) {
+          console.group(
+            `%c [API ERROR] ${res.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
+            "color: #ef4444; font-weight: bold"
+          )
+          console.log("Status  :", res.status, res.statusText)
+          console.log("Message :", (res.data as any)?.message || res.data)
+          console.log("Full    :", res.data)
+          console.groupEnd()
+        } else {
+          console.group(
+            "%c [API ERROR] Network / No Response",
+            "color: #ef4444; font-weight: bold"
+          )
+          console.log("Error   :", error.message)
+          console.log("Hint    :", "Check if backend is running at:", baseURL)
+          console.groupEnd()
+        }
       }
 
       // 403 Forbidden
       if (status === 403) {
-        if (onForbidden) {
-          onForbidden(error)
-        } else {
-          onUnauthorized(error)
-        }
+        onForbidden?.(error)
         return Promise.reject(error)
       }
       //Refresh token when access token expired (401 Unauthorized)
@@ -209,22 +225,41 @@ export function createApiClient({
 
         try {
           const refreshToken = getRefreshToken()
+          if (!refreshToken) {
+            throw new Error("Refresh token is missing.")
+          }
+
+          if (import.meta.env.DEV) {
+            console.group("[AUTH REFRESH] Retrying request after 401")
+            console.log("endpoint:", `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`)
+            console.log("refreshToken:", refreshToken)
+            console.log("originalRequest:", originalRequest.url)
+            console.groupEnd()
+          }
+
           // Use a fresh axios instance to avoid infinite interceptor loops
           const refreshResponse = await axios.post(
             //Why cannot use client here?
             // Because client has interceptor that attach token,
             // if refresh token also expired  → infinite loop 401 → refresh again
             // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
-            `${baseURL}/auth/refresh`,
+            `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
             {
               refreshToken
             }
           )
 
-          const { accessToken, expiresIn } = refreshResponse.data
+          const {
+            accessToken,
+            refreshToken: rotatedRefreshToken,
+            expiresIn
+          } = refreshResponse.data
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
+            if (rotatedRefreshToken) {
+              localStorage.setItem("refreshToken", rotatedRefreshToken)
+            }
             if (expiresIn) {
               localStorage.setItem("tokenExpiresIn", expiresIn)
             }
@@ -234,6 +269,18 @@ export function createApiClient({
             processQueue(null, accessToken) // Retry queued requests with new token
             return client(originalRequest)
           } else {
+            const receivedHtml =
+              typeof refreshResponse.data === "string" &&
+              refreshResponse.data.trimStart().toLowerCase().startsWith("<!doctype html")
+
+            console.error("[AUTH REFRESH] Invalid backend response", {
+              endpoint: `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+              receivedHtml,
+              hint: receivedHtml
+                ? "Backend redirected /auth/refresh to /login. Permit the refresh endpoint in SecurityConfig."
+                : "Backend response must contain accessToken."
+            })
+
             throw new Error("No access token returned from refresh endpoint.")
           }
         } catch (refreshError) {

@@ -1,0 +1,41 @@
+/* Variables are controlled by React state via JS, but we define fallbacks and animations here */
+
+@keyframes morph {
+  0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+  100% { border-radius: 60% 40% 30% 70% / 50% 30% 70% 40%; }
+}
+
+.animate-morph {
+  animation: morph 8s ease-in-out infinite alternate;
+}
+
+.e-portfolio-wrapper {
+  /* Smooth transitions for theme switching */
+  transition: background-color 0.4s ease, color 0.4s ease;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.e-portfolio-wrapper a {
+  transition: all 0.3s ease;
+}
+
+/* Base tailwind override just in case */
+.e-portfolio-wrapper section {
+  overflow-x: hidden;
+}
+
+/* Typography Overrides */
+.e-portfolio-wrapper {
+  font-family: var(--body-font, 'Inter', sans-serif);
+}
+
+.e-portfolio-wrapper h1,
+.e-portfolio-wrapper h2,
+.e-portfolio-wrapper h3,
+.e-portfolio-wrapper h4,
+.e-portfolio-wrapper h5,
+.e-portfolio-wrapper h6,
+.e-portfolio-wrapper .font-outfit {
+  font-family: var(--heading-font, 'Outfit', sans-serif) !important;
+}

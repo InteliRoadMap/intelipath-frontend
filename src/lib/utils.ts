@@ -1,46 +1,44 @@
-// Validate email format
-export function isValidEmail(email) {
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { isAxiosError } from "axios"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
-// Validate password: 4-10 chars, at least 1 uppercase, 1 number, 1 special char
-export function isValidPassword(password) {
+export function isValidPassword(password: string): boolean {
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{4,10}$/
   return passwordRegex.test(password)
 }
 
-// Get error message from API response
-export function getErrorMessage(error: any) {
-  if (error.response) {
-    const { status, data } = error.response
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
 
-    if (status === 400) {
-      console.log("Validation error:", data)
-      return data.message || "Invalid input"
-    }
+export function toIsoDateOnly(value: string): string {
+  const trimmed = value.trim()
+  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  return ""
+}
 
-    if (status === 401) {
-      console.log("Unauthorized:", data)
-      return "Invalid email or password"
-    }
-    if (status === 409) {
-      console.log("Email already exists:", data)
-      return "Email already exists"
-    }
+export function getErrorMessage(error: unknown): string {
+  if (isAxiosError<{ message?: string }>(error)) {
+    const status = error.response?.status
+    const message = error.response?.data?.message
 
-    if (status === 403) {
-      console.log("Account suspended:", data)
-      return data?.message || "Account is suspended"
-    }
+    if (status === 400) return message || "Invalid input"
+    if (status === 401) return "Invalid email or password"
+    if (status === 403) return message || "Account is suspended"
+    if (status === 404) return message || "Email not found"
+    if (status === 409) return "Email already exists"
 
-    if (status === 404) {
-      console.log("Email not found:", data)
-      return data?.message || "Email not found"
-    }
-    console.log("Unexpected error:", data)
-    return data.message || "Something went wrong"
+    return message || "Something went wrong"
   }
-  console.log("Cannot connect to server")
   return "Cannot connect to server"
 }
