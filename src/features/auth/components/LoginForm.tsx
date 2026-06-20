@@ -1,5 +1,8 @@
 import React from "react"
+import { Link } from "react-router-dom"
+import { ArrowRight } from "@phosphor-icons/react"
 import { useLogin } from "@/features/auth"
+import { ROUTES } from "@/shared"
 
 const ChromeIcon = () => (
   <svg
@@ -45,12 +48,12 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-8 select-none">
-        <h2 className="mb-2 font-display text-5xl font-bold tracking-tight text-slate-900">
-          Welcome Back
+        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-[#0a0a0a] sm:text-5xl">
+          Welcome
         </h2>
-        <p className="font-sans text-sm font-light text-slate-600">
-          Continue your learning journey with{" "}
-          <span className="font-medium text-brand-cyan">InteliPath</span>
+        <p className="font-sans text-sm font-light text-slate-500">
+          Sign in or create an account to access{" "}
+          <span className="font-medium text-cyan-600">InteliPath</span>
         </p>
       </div>
 
@@ -82,7 +85,6 @@ export default function LoginForm() {
             : "An error occurred during authentication."}
         </div>
       )}
-
 
     </div>
   )

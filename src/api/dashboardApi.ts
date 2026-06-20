@@ -1,40 +1,25 @@
 import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
 
-/**
- * Dashboard API Service
- * Mocked to return exactly the data shown in the screenshot.
- */
 const dashboardApi = {
-  getRoadmapProgress: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.ROADMAP_PROGRESS)
-    return response.data
-  },
+  getOverview: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.OVERVIEW),
+    
+  getRoadmapProgress: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.ROADMAP_PROGRESS),
   
-  getSkillGaps: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.SKILL_GAPS)
-    return response.data
-  },
 
-  getMentorFeedback: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK)
-    return response.data
-  },
+  getMentorFeedback: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK),
 
-  getRecommendations: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.RECOMMENDATIONS)
-    return response.data
-  },
+  getRecommendations: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.RECOMMENDATIONS),
 
-  getMarketDemand: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MARKET_DEMAND)
-    return response.data
-  },
+  getMarketDemand: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MARKET_DEMAND),
   
-  getAiHistory: async () => {
-    const response = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.AI_HISTORY)
-    return response.data
-  }
+  getAiHistory: () =>
+    mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.AI_HISTORY)
 }
 
 export default dashboardApi

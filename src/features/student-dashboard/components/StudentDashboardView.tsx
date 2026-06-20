@@ -1,29 +1,41 @@
-import { useState } from "react"
-import { Bot, LayoutDashboard, Map, TrendingUp } from "lucide-react"
+import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { DashboardUserActions, Logo } from "@/components"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import robotHead from "@/assets/robot/head.png"
 import { useStudentSetup } from "../hooks"
 import {
-  AiMentorHistoryWidget,
-  MarketDemandWidget,
-  MentorFeedbackWidget,
-  PriorityLearningWidget,
-  RoadmapProgressWidget,
-  SkillComparisonWidget,
-  SkillGapsWidget,
-  StudentWelcomeHeader
+  StudentWelcomeHeader,
+  CurrentProgressBanner,
+  ActionableListWidget,
+  QuickStatsWidget,
+  MarketDemandChartWidget,
+  SkillRadarChartWidget
 } from "./StudentDashboardWidgets"
+import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
+import StudentHeader from "./StudentHeader"
+
+gsap.registerPlugin(useGSAP)
 
 export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [isAiMentorOpen, setIsAiMentorOpen] = useState(false)
+  const dashboardRef = useRef<HTMLDivElement>(null)
   const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+
+  useGSAP(() => {
+    // Minimalist staggered fade up
+    gsap.from(".anim-block", {
+      y: 30,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: "power3.out",
+    });
+  }, { scope: dashboardRef })
 
   const handleLogout = async () => {
     await logout()
@@ -31,76 +43,57 @@ export default function StudentDashboardView() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] pb-20 font-sans text-slate-900">
-      <nav className="sticky top-0 z-40 flex min-h-[74px] items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 md:px-8">
-        <div className="flex items-center gap-6 md:gap-12">
-          <Logo hideIcon className="scale-90 origin-left" />
+    <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
+      <SharedAppBackground />
+      
+      {/* We keep the Header but maybe make it solid white to blend in */}
+      <StudentHeader
+        user={user}
+        onLogout={handleLogout}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+      />
 
-          <div className="hidden items-center gap-8 text-[13px] font-bold text-slate-500 lg:flex">
-            <a href="#" className="flex items-center gap-2 border-b-[3px] border-[#00838f] py-4 -mb-3.5 text-[#00838f] transition-colors">
-              <LayoutDashboard size={16} />
-              Dashboard
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <Map size={16} />
-              My Roadmap
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <Bot size={16} />
-              AI Mentor
-            </a>
-            <a href="#" className="flex items-center gap-2 py-4 -mb-3.5 transition-colors hover:text-slate-800">
-              <TrendingUp size={16} />
-              Market Pulse
-            </a>
+      <main className="mx-auto w-full max-w-[1300px] px-5 py-8 md:px-10 lg:py-12">
+        <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
+          
+          {/* Left Column (Main Content) */}
+          <div className="flex-1 w-full min-w-0">
+            <div className="anim-block">
+              <StudentWelcomeHeader />
+            </div>
+            
+            <div className="anim-block">
+              <CurrentProgressBanner />
+            </div>
+            
+            <div className="anim-block">
+              <ActionableListWidget />
+            </div>
           </div>
-        </div>
 
-        <DashboardUserActions user={user} onLogout={handleLogout} />
-      </nav>
+          {/* Right Column (Sidebar Statistics) */}
+          <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col">
+            <div className="anim-block">
+              <QuickStatsWidget />
+            </div>
 
-      <main className="mx-auto max-w-[1440px] px-4 pt-6 md:px-6 xl:px-8">
-        <StudentWelcomeHeader />
+            <div className="anim-block mt-4">
+              <MarketDemandChartWidget />
+            </div>
 
-        <div className="flex min-w-0 flex-col gap-5 xl:gap-6">
-          <RoadmapProgressWidget />
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:gap-6">
-            <SkillGapsWidget />
-            <MarketDemandWidget />
+            <div className="anim-block">
+              <SkillRadarChartWidget />
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:gap-6">
-            <MentorFeedbackWidget />
-            <SkillComparisonWidget />
-          </div>
-          <PriorityLearningWidget />
+
         </div>
       </main>
 
-      <button
-        type="button"
-        onClick={() => setIsAiMentorOpen(true)}
-        className="ai-mentor-float fixed bottom-5 right-4 z-50 flex h-20 w-20 items-center justify-center bg-transparent p-0 transition-all hover:-translate-y-1 sm:bottom-6 sm:right-6 sm:h-24 sm:w-24 xl:h-28 xl:w-28"
-        title="Ask AI Mentor"
-      >
-        <img src={robotHead} alt="Ask AI Mentor" className="h-full w-full object-contain drop-shadow-xl" />
-      </button>
-
-      {isAiMentorOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close AI Mentor"
-            onClick={() => setIsAiMentorOpen(false)}
-            className="fixed inset-0 z-[60] bg-slate-950/25 backdrop-blur-[1px]"
-          />
-          <aside className="fixed inset-x-3 bottom-3 top-20 z-[70] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(680px,calc(100vh-3rem))] sm:w-[420px]">
-            <AiMentorHistoryWidget onClose={() => setIsAiMentorOpen(false)} />
-          </aside>
-        </>
-      )}
-
+      {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
-      <StudentSkillSelectionModal isOpen={activeSetupStep === "skills"} onComplete={completeSetup} />
+      {activeSetupStep === "skills" && (
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+      )}
     </div>
   )
 }

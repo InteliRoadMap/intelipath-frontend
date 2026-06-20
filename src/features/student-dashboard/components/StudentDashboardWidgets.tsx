@@ -1,536 +1,440 @@
 import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { ROUTES } from "@/shared"
 import {
-  Send,
-  Check,
-  MapPin,
-  Lock,
-  Info,
-  Network,
-  Box,
-  AlertTriangle,
-  Map,
-  Bot,
+  ArrowRight,
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  Clock,
   TrendingUp,
-  X
+  Target,
+  Zap,
+  Lock,
+  ChevronRight,
+  ChevronLeft,
+  Flame
 } from "lucide-react"
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis
+} from "recharts"
 import { useAuth } from "@/context"
-import { dashboardApi } from "@/api"
-import { skillApi, type SkillResponse } from "@/api"
+import { studentDashboardService } from "../services"
 import { useDashboardData } from "../hooks"
 import type {
-  AiHistoryItem,
   MarketDemand,
-  MentorFeedback,
-  Recommendation,
   RoadmapProgress,
-  SkillGap
+  SkillGap,
+  SkillResponse,
+  Recommendation
 } from "../types"
 
 const LoadingState = ({ rows = 3 }: { rows?: number }) => (
-  <div className="animate-pulse space-y-3 py-2">
+  <div className="animate-pulse space-y-3 py-2 w-full">
     {Array.from({ length: rows }).map((_, index) => (
       <div
         key={index}
-        className="h-3.5 rounded bg-slate-100"
+        className="h-4 rounded bg-slate-200"
         style={{ width: `${index % 3 === 0 ? 68 : index % 3 === 1 ? 100 : 82}%` }}
       />
     ))}
   </div>
 )
 
-const WidgetHeader = ({
-  title,
-  description,
-  icon
-}: {
-  title: string
-  description?: string
-  icon?: React.ReactNode
-}) => (
-  <div className="mb-5 flex min-w-0 items-start justify-between gap-4">
-    <div className="flex min-w-0 items-start gap-3">
-      {icon && (
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e0f2fe] text-[#006064]">
-          {icon}
-        </div>
-      )}
-      <div className="min-w-0">
-        <h3 className="text-[16px] font-bold leading-5 text-slate-900 md:text-[17px]">{title}</h3>
-        {description && (
-          <p className="mt-1 text-[12px] font-medium text-slate-500">{description}</p>
-        )}
-      </div>
+const EmptyState = ({ title, description }: { title: string; description?: string }) => (
+  <div className="flex h-full w-full flex-col items-center justify-center rounded-3xl bg-slate-50 p-8 text-center">
+    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+      <Zap size={20} className="text-slate-400" />
     </div>
+    <h3 className="text-[16px] font-bold text-slate-900">{title}</h3>
+    {description && <p className="mt-1 text-[13px] text-slate-500">{description}</p>}
   </div>
 )
 
+// 1. Welcome Header (Replaces Top Banner)
 export const StudentWelcomeHeader = () => {
   const { user } = useAuth()
-  const [data, setData] = useState<RoadmapProgress | null>(null)
-
-  useEffect(() => {
-    dashboardApi.getRoadmapProgress().then(setData).catch(() => setData(null))
-  }, [])
-
+  
+  const { data } = useDashboardData<any>(
+    () => studentDashboardService.getStudentRoadmap()
+  )
+  
+  // Progress from API or 0
+  const progress = data?.progress || 0
+  
+  // Calculate stroke dasharray for the circular progress (circumference = 2 * pi * r)
+  // r = 24, circumference ≈ 150.7
+  const circumference = 150.7
+  const strokeDashoffset = circumference - (progress / 100) * circumference
+  
   return (
-    <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between rounded-3xl bg-black p-8 text-white mb-8 gap-6">
       <div>
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#00838f]">
-          Student Dashboard
-        </p>
-        <h1 className="text-[26px] font-bold leading-tight text-slate-900 md:text-[30px]">
-          Good morning, {user?.fullName?.trim().split(" ").pop() || "User"}
-        </h1>
-        <p className="mt-1 text-[14px] font-medium text-slate-500">
-          Track your roadmap progress, skill gaps, mentor feedback, and market signals.
-        </p>
+        <h1 className="text-[32px] font-black tracking-tight mb-2">Hello, {user?.fullName || "Student"}!</h1>
+        <p className="text-[16px] text-slate-400 font-medium">It's a great day to expand your knowledge.</p>
       </div>
-      {data?.steps && (
-        <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-right shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            Current Track
-          </p>
-          <p className="text-[14px] font-bold text-slate-900">
-            {data.steps.find((step) => step.status === "current")?.title || "In Progress"}
-          </p>
+      <div className="flex items-center gap-5 bg-white/10 p-5 rounded-3xl border border-white/10">
+        <div className="flex flex-col">
+          <span className="text-[15px] font-black text-white">Course Progress</span>
+          <span className="text-[13px] text-slate-400 font-medium">Keep up the good work!</span>
         </div>
-      )}
+        
+        <div className="relative flex h-[64px] w-[64px] items-center justify-center">
+          <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 64 64">
+            {/* Background circle */}
+            <circle
+              cx="32"
+              cy="32"
+              r="24"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="6"
+              fill="none"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="32"
+              cy="32"
+              r="24"
+              stroke="white"
+              strokeWidth="6"
+              fill="none"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              className="transition-all duration-1000 ease-out"
+            />
+          </svg>
+          <span className="absolute text-[15px] font-black text-white">{progress}%</span>
+        </div>
+      </div>
     </div>
   )
 }
 
-export const RoadmapProgressWidget = () => {
-  const { data, status } = useDashboardData<RoadmapProgress>(
-    () => dashboardApi.getRoadmapProgress() as Promise<RoadmapProgress>
+// 2. Current Progress Banner
+export const CurrentProgressBanner = () => {
+  const navigate = useNavigate();
+  const { data: roadmapData, status: roadmapStatus } = useDashboardData<RoadmapProgress>(
+    () => studentDashboardService.getRoadmapProgress()
   )
 
+  const currentNode = roadmapData?.steps?.find(s => s.status === 'current') || roadmapData?.steps?.[0]
+  
+  if (roadmapStatus === 'loading') return <LoadingState rows={1} />
+  if (!currentNode) return null
+
   return (
-    <div className="flex min-h-[260px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <WidgetHeader
-          title="Roadmap Progress"
-          description="Follow your current learning path and next milestone."
-          icon={<Map size={18} />}
-        />
-        <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-[13px] font-semibold">
-          <button className="rounded-md bg-[#4fc3f7] px-4 py-1.5 text-white shadow-sm">
-            Foundations
+    <div className="mt-6 flex flex-col md:flex-row items-center justify-between rounded-3xl bg-[#f5f5f5] p-4 md:p-5 gap-4">
+      <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm font-bold text-[18px]">
+          <Target size={22} className="text-black" />
+        </div>
+        <div>
+          <h3 className="text-[16px] font-bold text-black">{currentNode.title}</h3>
+          <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[200px]">Next Milestone</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+        <button 
+          onClick={() => navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP)}
+          className="rounded-2xl bg-black px-6 py-3 text-[14px] font-bold text-white transition-transform hover:scale-105 active:scale-95"
+        >
+          Continue
+        </button>
+
+        <div className="hidden md:flex items-center gap-2">
+          <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 transition-colors hover:bg-slate-200">
+            <ArrowLeft size={18} />
           </button>
-          <button className="rounded-md px-4 py-1.5 text-slate-500 hover:text-slate-700">
-            Advanced
+          <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 transition-colors hover:bg-slate-200">
+            <ArrowRight size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 3. Actionable List (Skill Gaps / Courses style)
+export const ActionableListWidget = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'gaps' | 'recommendations'>('gaps')
+  const [page, setPage] = useState(1)
+  const ITEMS_PER_PAGE = 6
+
+  const { data, status } = useDashboardData<SkillGap[]>(
+    () => studentDashboardService.getSkillGaps()
+  )
+
+  const { data: recData } = useDashboardData<Recommendation[]>(
+    () => studentDashboardService.getRecommendations()
+  )
+
+  // Handle Tab Switch
+  const handleTabSwitch = (tab: 'gaps' | 'recommendations') => {
+    setActiveTab(tab)
+    setPage(1) // Reset page on tab switch
+  }
+
+  // Data processing
+  const highRecData = (recData as any)?.filter((item: any) => item.severity?.toUpperCase() === 'HIGH' || item.severity === 'High') || []
+  
+  const sourceData = activeTab === 'gaps' ? (data || []) : highRecData
+  const totalItems = sourceData.length
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
+  const currentData = sourceData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+
+  return (
+    <div className="mt-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+        <h2 className="text-[24px] font-black text-black tracking-tight">Your Action Items</h2>
+        
+        {/* Tabs */}
+        <div className="flex gap-6 text-[14px] font-bold text-slate-400">
+          <button 
+            onClick={() => handleTabSwitch('gaps')}
+            className={`pb-1 ${activeTab === 'gaps' ? 'text-black border-b-2 border-black' : 'hover:text-black transition-colors'}`}>
+            Skill Gaps
+          </button>
+          <button 
+            onClick={() => handleTabSwitch('recommendations')}
+            className={`pb-1 ${activeTab === 'recommendations' ? 'text-black border-b-2 border-black' : 'hover:text-black transition-colors'}`}>
+            Recommendations
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center">
+      <div className="flex flex-col gap-3 min-h-[660px]">
         {status === "loading" ? (
-          <LoadingState rows={4} />
-        ) : status === "error" ? (
-          <LoadingState rows={4} />
-        ) : data?.steps?.length ? (
-          <div className="relative mb-8 flex items-start justify-between overflow-x-auto px-4 pb-2">
-            <div className="absolute left-8 right-8 top-[14px] z-0 h-[2px] bg-slate-200" />
-            <div
-              className="absolute left-8 top-[14px] z-0 h-[2px] bg-[#006064] transition-all"
-              style={{ width: "60%" }}
-            />
-
-            {data.steps.map((step) => (
-              <div key={step.id} className="relative z-10 flex min-w-[88px] flex-col items-center gap-3">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 bg-white ${
-                    step.status === "completed"
-                      ? "border-[#006064] bg-[#006064] text-white"
-                      : step.status === "current"
-                        ? "border-[#006064] text-[#006064]"
-                        : "border-slate-200 text-slate-300"
-                  }`}
-                >
-                  {step.status === "completed" && <Check size={14} strokeWidth={3} />}
-                  {step.status === "current" && (
-                    <MapPin
-                      size={14}
-                      fill="currentColor"
-                      className="rounded-full bg-[#006064] p-0.5 text-white"
-                    />
-                  )}
-                  {step.status === "locked" && <Lock size={12} />}
+          <LoadingState rows={6} />
+        ) : status === "error" || currentData.length === 0 ? (
+          <EmptyState title="No action items yet" description={activeTab === 'gaps' ? "You are fully aligned with the market." : "No High-priority recommendations found."} />
+        ) : (
+          <>
+            {currentData.map((item: any, index: number) => (
+              <div key={item.id || index} className="group flex flex-col sm:flex-row items-center justify-between rounded-3xl bg-[#f9f9f9] p-4 pr-5 transition-colors hover:bg-[#f0f0f0] gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm`}>
+                    {index % 3 === 0 ? <BookOpen size={24} className="text-black" /> : index % 3 === 1 ? <Target size={24} className="text-black" /> : <Zap size={24} className="text-black" />}
+                  </div>
+                  <div>
+                    <h4 className="text-[16px] font-bold text-black">{item.title || item.skillName || 'Action Item'}</h4>
+                    <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[250px]">{item.description || item.category || 'Skill Gap'}</p>
+                  </div>
                 </div>
-                <span
-                  className={`text-[12px] font-bold ${
-                    step.status === "locked"
-                      ? "text-slate-300"
-                      : step.status === "current"
-                        ? "text-[#006064]"
-                        : "text-slate-700"
-                  }`}
-                >
-                  {step.title}
-                </span>
+
+                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500">
+                    <Clock size={16} />
+                    <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : 'Med Prio'}</span>
+                  </div>
+                  
+                  {/* Progress Bar for Skill Gaps */}
+                  {activeTab === 'gaps' && item.progress !== undefined && (
+                    <div className="flex items-center gap-3 min-w-[100px]">
+                      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-black rounded-full" style={{ width: `${item.progress}%` }} />
+                      </div>
+                      <span className="text-[13px] font-black text-black">{item.progress}%</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1.5 text-[14px] font-bold text-black min-w-[60px]">
+                    <Flame size={16} className="text-black" />
+                    {item.severity}
+                  </div>
+                  <button 
+                    onClick={() => navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP)}
+                    className="rounded-2xl bg-black px-5 py-2.5 text-[13px] font-bold text-white transition-transform hover:scale-105 active:scale-95"
+                  >
+                    View skill
+                  </button>
+                </div>
               </div>
             ))}
-          </div>
-        ) : (
-          <LoadingState rows={4} />
-        )}
 
-        {status === "success" && data?.aiTip && (
-          <div className="flex items-start gap-3 rounded-xl border border-[#e0f2fe] bg-[#f0f9ff] p-4">
-            <div className="mt-0.5 text-[#00838f]">
-              <Info size={20} />
-            </div>
-            <p className="text-[13px] leading-relaxed text-slate-700">
-              <span className="font-bold text-[#00838f]">AI Tip:</span>{" "}
-              {data.aiTip.split("**")[0]}
-              <span className="font-bold text-slate-900">{data.aiTip.split("**")[1]}</span>
-              {data.aiTip.split("**")[2]}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export const SkillGapsWidget = ({ onClose }: { onClose?: () => void }) => {
-  const { data, status } = useDashboardData<SkillGap[]>(
-    () => dashboardApi.getSkillGaps() as Promise<SkillGap[]>
-  )
-
-  return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <WidgetHeader
-          title="Skill Gaps"
-          description="Prioritized skills to improve next."
-          icon={<AlertTriangle size={18} strokeWidth={2.5} />}
-        />
-        {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      <div className="flex-1 space-y-3.5">
-        {status === "loading" ? (
-          <LoadingState />
-        ) : status === "error" ? (
-          <LoadingState />
-        ) : data && data.length > 0 ? (
-          data.map((gap) => (
-            <div
-              key={gap.id}
-              className={`rounded-xl border p-4 ${
-                gap.type === "critical" ? "border-[#ffe4e4] bg-[#fff5f5]" : "border-[#e0f2fe] bg-[#f0f9ff]"
-              }`}
-            >
-              <div className="mb-1.5 flex items-center justify-between">
-                <span
-                  className={`text-[9px] font-bold uppercase tracking-wider ${
-                    gap.type === "critical" ? "text-rose-600" : "text-[#0284c7]"
-                  }`}
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 transition-colors ${page === 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 text-black'}`}
                 >
-                  {gap.type === "critical" ? "CRITICAL GAP" : "MARKET REQUIREMENT"}
-                </span>
-                <span
-                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                    gap.type === "critical" ? "bg-[#fee2e2] text-rose-600" : "bg-[#bae6fd] text-[#0369a1]"
-                  }`}
-                >
-                  {gap.severity}
-                </span>
-              </div>
-              <h4 className="mb-1 text-[15px] font-bold text-slate-900">{gap.title}</h4>
-              <p className="text-[12px] leading-snug text-slate-600">{gap.description}</p>
-            </div>
-          ))
-        ) : (
-          <LoadingState />
-        )}
-      </div>
-
-      <button className="mt-5 w-full rounded-xl border border-slate-200 py-2.5 text-[14px] font-bold text-[#006064] transition-colors hover:bg-slate-50">
-        Download Detailed Report
-      </button>
-    </div>
-  )
-}
-
-export const MentorFeedbackWidget = () => {
-  const { data, status } = useDashboardData<MentorFeedback[]>(
-    () => dashboardApi.getMentorFeedback() as Promise<MentorFeedback[]>
-  )
-
-  return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <WidgetHeader
-        title="Mentor Feedback"
-        description="Latest notes from mentors and reviewers."
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-        }
-      />
-
-      <div className="flex-1 space-y-4">
-        {status === "loading" ? (
-          <LoadingState />
-        ) : status === "error" ? (
-          <LoadingState />
-        ) : data && data.length > 0 ? (
-          data.map((feedback) => (
-            <div key={feedback.id} className="relative pl-4">
-              <div className="absolute bottom-0 left-0 top-0 w-[5px] rounded-full bg-[#00838f] opacity-90" />
-              <div className="rounded-xl rounded-l-none border border-slate-100 bg-[#f8fafc] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h4 className="text-[14px] font-bold text-[#006064]">{feedback.name}</h4>
-                  <span className="text-[10px] font-semibold text-slate-400">{feedback.time}</span>
+                  <ArrowLeft size={16} />
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPage(i + 1)}
+                      className={`h-10 w-10 rounded-full text-[14px] font-bold transition-colors ${page === i + 1 ? 'bg-black text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-black'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-[13px] italic leading-relaxed text-slate-600">"{feedback.text}"</p>
+
+                <button 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 transition-colors ${page === totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 text-black'}`}
+                >
+                  <ArrowRight size={16} />
+                </button>
               </div>
-            </div>
-          ))
-        ) : (
-          <LoadingState />
+            )}
+          </>
         )}
       </div>
     </div>
   )
 }
 
-export const SkillComparisonWidget = () => {
+// 4. Quick Stats
+export const QuickStatsWidget = () => {
+  const { data } = useDashboardData<RoadmapProgress>(
+    () => studentDashboardService.getRoadmapProgress()
+  )
+  
+  const completed = data?.steps?.filter(s => s.status === 'completed').length || 0;
+  const inProgress = data?.steps?.filter(s => s.status === 'current').length || 1;
+
+  return (
+    <div className="grid grid-cols-2 gap-4 w-full">
+      <div className="flex flex-col justify-center rounded-3xl bg-[#f5f5f5] p-6">
+        <div className="flex items-end gap-2">
+          <span className="text-[42px] font-black leading-none text-black">{completed}</span>
+          <span className="mb-1 text-[14px] font-bold leading-tight text-slate-500 max-w-[60px]">Milestones completed</span>
+        </div>
+      </div>
+      <div className="flex flex-col justify-center rounded-3xl bg-[#f5f5f5] p-6">
+        <div className="flex items-end gap-2">
+          <span className="text-[42px] font-black leading-none text-black">{inProgress}</span>
+          <span className="mb-1 text-[14px] font-bold leading-tight text-slate-500 max-w-[60px]">Skills in progress</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 5. Market Demand Chart
+export const MarketDemandChartWidget = () => {
+  const { data, status } = useDashboardData<MarketDemand>(
+    () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
+  )
+
+  const chartData = data?.chart?.map((val, i) => ({
+    name: ['mon','tue','wed','thu','fri','sat','sun'][i % 7] || `M${i}`,
+    value: val 
+  })) || []
+
+  return (
+    <div className="mt-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-[20px] font-black text-black tracking-tight">Market Trend</h2>
+        <button className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-[12px] font-bold text-black">
+          Weekly <ChevronRight size={14} />
+        </button>
+      </div>
+
+      <div className="h-[220px] w-full mt-4">
+        {status === "loading" ? (
+          <LoadingState rows={4} />
+        ) : status === "error" || chartData.length === 0 ? (
+          <EmptyState title="No trend data" />
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorDemand" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#000000" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#000000" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} />
+              <RechartsTooltip 
+                contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: '#000', color: '#fff', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.2)', fontSize: '13px', fontWeight: 700, padding: '8px 12px' }} 
+                itemStyle={{ color: '#fff' }}
+                cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                name="Demand"
+                stroke="#000000" 
+                strokeWidth={3} 
+                fillOpacity={1} 
+                fill="url(#colorDemand)" 
+                activeDot={{ r: 6, fill: '#000', stroke: '#fff', strokeWidth: 3 }}
+                dot={{ r: 4, fill: '#000', stroke: '#fff', strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// 6. Skill Radar Chart
+export const SkillRadarChartWidget = () => {
   const { data, status } = useDashboardData<SkillResponse>(
-    () => skillApi.compareRoadmapSkills()
+    () => studentDashboardService.compareRoadmapSkills()
   )
   const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
   const missingIds = new Set(data?.missingSkills.map((skill) => skill.skillId) ?? [])
 
+  const chartData = data?.requiredSkills.map(({ skill, importanceLevel, progress }) => {
+    const current = progress !== undefined ? progress : (missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0)
+    const target = importanceLevel === "High" ? 100 : importanceLevel === "Medium" ? 70 : 40
+    return {
+      subject: skill.skillName.substring(0, 10),
+      Current: current,
+      Target: target,
+      fullMark: 100,
+    }
+  }) || []
+
   return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="mb-5 flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e0f2fe] text-[#006064]">
-            <TrendingUp size={18} />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-[17px] font-bold leading-5 text-slate-900">Skill Comparison</h3>
-            <p className="mt-1 text-[12px] font-medium text-slate-500">
-              Current level compared to target level.
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#006064]" />
-            Current
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#e0f2fe]" />
-            Target
-          </span>
-        </div>
+    <div className="mt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-[20px] font-black text-black tracking-tight">Skill Match</h2>
       </div>
 
-      <div className="flex-1 space-y-4">
+      <div className="h-[250px] w-full rounded-3xl bg-[#f9f9f9] p-4">
         {status === "loading" ? (
-          <LoadingState />
-        ) : status === "error" ? (
-          <LoadingState />
-        ) : data?.requiredSkills.length ? (
-          data.requiredSkills.map(({ skill, importanceLevel }) => {
-            const current = missingIds.has(skill.skillId)
-              ? 0
-              : selectedIds.has(skill.skillId)
-                ? 100
-                : 0
-            return (
-            <div key={skill.skillId}>
-              <div className="mb-2 flex items-end justify-between">
-                <span className="text-[12px] font-bold text-slate-800">{skill.skillName}</span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  {current}% / 100% · {importanceLevel}
-                </span>
-              </div>
-              <div className="relative flex h-2 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
-                <div className="absolute bottom-0 left-0 top-0 z-0 w-full bg-[#e0f2fe]" />
-                <div className="absolute bottom-0 left-0 top-0 z-10 rounded-r-full bg-[#006064]" style={{ width: `${current}%` }} />
-              </div>
-            </div>
-          )})
+          <LoadingState rows={4} />
+        ) : status === "error" || chartData.length === 0 ? (
+          <EmptyState title="No skills to compare" />
         ) : (
-          <LoadingState />
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
+              <PolarGrid stroke="#e2e8f0" />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+              <Radar name="Target" dataKey="Target" stroke="#94a3b8" strokeWidth={2} fill="#cbd5e1" fillOpacity={0.3} />
+              <Radar name="Current" dataKey="Current" stroke="#000000" strokeWidth={2} fill="#000000" fillOpacity={0.6} />
+              <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: '#000', color: '#fff', fontSize: '12px', fontWeight: 600 }} />
+            </RadarChart>
+          </ResponsiveContainer>
         )}
       </div>
-    </div>
-  )
-}
-
-export const AiMentorHistoryWidget = ({ onClose }: { onClose: () => void }) => {
-  const { data, status } = useDashboardData<AiHistoryItem[]>(
-    () => dashboardApi.getAiHistory() as Promise<AiHistoryItem[]>
-  )
-
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-white p-5 md:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <WidgetHeader
-          title="AI Mentor History"
-          description="Recent questions and guidance."
-          icon={<Bot size={18} />}
-        />
-        <button
-          type="button"
-          onClick={onClose}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-          title="Close AI Mentor"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-        {status === "loading" ? (
-          <LoadingState />
-        ) : status === "error" ? (
-          <LoadingState />
-        ) : data && data.length > 0 ? (
-          data.map((item, index) => (
-            <div
-              key={item.id}
-              className={`rounded-xl border p-4 ${
-                index === 1 ? "border-l-[3px] border-[#00838f] bg-white" : "border-slate-100 bg-[#f8fafc]"
-              }`}
-            >
-              <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">{item.tag}</span>
-              <h4 className="mb-1 truncate text-[14px] font-bold text-slate-900">{item.title}</h4>
-              <p className="truncate text-[12px] text-slate-500">{item.preview}</p>
-            </div>
-          ))
-        ) : (
-          <LoadingState />
-        )}
-      </div>
-
-      <div className="relative mt-5">
-        <input
-          type="text"
-          placeholder="Ask your AI Mentor..."
-          className="w-full rounded-xl border border-slate-200 bg-[#f8fafc] py-3 pl-4 pr-12 text-[13px] outline-none transition-colors focus:border-[#00838f]"
-        />
-        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00838f] hover:text-[#006064]">
-          <Send size={16} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-export const PriorityLearningWidget = () => {
-  const { data, status } = useDashboardData<Recommendation[]>(
-    () => dashboardApi.getRecommendations() as Promise<Recommendation[]>
-  )
-
-  return (
-    <div className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <WidgetHeader
-        title="Priority Learning"
-        description="Recommended actions to bridge the most important gaps."
-        icon={<Network size={18} />}
-      />
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {status === "loading" ? (
-          <div className="md:col-span-2">
-            <LoadingState />
-          </div>
-        ) : status === "error" ? (
-          <div className="md:col-span-2">
-            <LoadingState rows={4} />
-          </div>
-        ) : data && data.length > 0 ? (
-          data.map((item) => (
-            <div key={item.id} className="flex h-full flex-col rounded-lg border border-slate-200 bg-[#f8fafc] p-5">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e0f2fe] text-[#0284c7]">
-                  {item.icon === "Network" ? <Network size={20} strokeWidth={2.5} /> : <Box size={20} strokeWidth={2.5} />}
-                </div>
-                <span className="rounded-md bg-[#e0f2fe] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#0369a1]">
-                  {item.type}
-                </span>
-              </div>
-              <h4 className="mb-2 text-[16px] font-bold text-slate-900">{item.title}</h4>
-              <p className="mb-6 flex-1 text-[13px] leading-relaxed text-slate-500">{item.description}</p>
-              <div className="flex gap-3">
-                <button className="flex-1 rounded-xl bg-[#006064] py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#00838f]">
-                  Start Now
-                </button>
-                <button className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-bold text-slate-700 transition-colors hover:bg-slate-50">
-                  Details
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="md:col-span-2">
-            <LoadingState rows={4} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export const MarketDemandWidget = ({ onClose }: { onClose?: () => void }) => {
-  const { data, status } = useDashboardData<MarketDemand>(
-    () => dashboardApi.getMarketDemand() as Promise<MarketDemand>
-  )
-
-  return (
-    <div className="flex min-h-[280px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <WidgetHeader
-          title="Market Demand"
-          description="Projected demand for your target role."
-          icon={<TrendingUp size={18} />}
-        />
-        {onClose && (
-          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      {status === "loading" ? (
-        <LoadingState rows={5} />
-      ) : status === "error" ? (
-        <LoadingState rows={5} />
-      ) : data ? (
-        <>
-          <div className="mb-6 mt-2 flex items-center gap-3">
-            <span className="text-[32px] font-bold leading-none text-slate-900">{data.growth}%</span>
-            <div className="flex flex-col justify-center">
-              <span className="text-[10px] font-bold text-[#00838f]">YoY Growth</span>
-              <span className="text-[11px] leading-tight text-slate-500">{data.role}</span>
-            </div>
-          </div>
-          <div className="flex flex-1 flex-col justify-end">
-            <div className="mb-4 flex h-28 items-end justify-between gap-1.5">
-              {data.chart.map((height, i) => (
-                <div
-                  key={i}
-                  className={`w-full rounded-t-sm ${i === data.chart.length - 1 ? "bg-[#006064]" : "bg-[#a3c9c9]"}`}
-                  style={{ height: `${height}%` }}
-                />
-              ))}
-            </div>
-            <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-800">
-              Projected Demand For K8s Masters
-            </p>
-          </div>
-        </>
-      ) : <LoadingState rows={5} />}
     </div>
   )
 }

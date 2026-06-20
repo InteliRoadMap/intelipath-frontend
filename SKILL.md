@@ -8,7 +8,8 @@
 - React Router 7
 - Axios 1
 - React Context + `useReducer` for authentication
-- Lucide React for interface icons
+- Shadcn-style UI primitives backed by Radix UI
+- Phosphor Icons for new and migrated interface icons
 
 ## Project Structure
 
@@ -155,6 +156,8 @@ The profile modal submits user profile and student academic profile only after t
 - Use English for code comments, JSDoc, logs, and identifiers.
 - Keep route pages thin.
 - Keep API response normalization outside visual JSX when possible.
+- Use primitives from `src/components/ui/` before creating feature-specific buttons, cards, dialogs, inputs, badges, or skeletons.
+- Use Phosphor Icons for new UI and when migrating existing screens.
 - Preserve responsive behavior for mobile, tablet, and desktop.
 
 ## Verification
