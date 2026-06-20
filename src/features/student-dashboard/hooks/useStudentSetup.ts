@@ -24,6 +24,7 @@ const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
 
 export function useStudentSetup(userId?: string) {
   const [activeSetupStep, setActiveSetupStep] = useState<StudentSetupStep>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
     if (!userId) return
@@ -67,6 +68,8 @@ export function useStudentSetup(userId?: string) {
         }
       } catch (error) {
         console.error("[Student Setup] Failed to check profile and skills:", error)
+      } finally {
+        if (active) setIsInitializing(false)
       }
     }
 
@@ -79,6 +82,7 @@ export function useStudentSetup(userId?: string) {
 
   return {
     activeSetupStep,
+    isInitializing,
     openSkillSelection: () => setActiveSetupStep("skills"),
     completeSetup: () => setActiveSetupStep(null)
   }

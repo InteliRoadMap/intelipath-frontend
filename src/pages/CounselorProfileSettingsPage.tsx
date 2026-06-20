@@ -22,7 +22,9 @@ import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef, useState, useEffect } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import counselorApi from "../api/counselorApi"
+import { cn } from "@/shared/lib/utils"
+import counselorApi from '@/api/counselorApi'
+import { toast } from '@/utils/toast'
 gsap.registerPlugin(useGSAP)
 
 export default function CounselorProfileSettingsPage() {
@@ -53,7 +55,7 @@ export default function CounselorProfileSettingsPage() {
         university: profileData.university,
         department: profileData.department
       })
-      alert("Saved successfully!")
+      toast.success("Saved successfully!")
     } catch (error) {
       console.error("Error to save profile:", error)
     } finally {

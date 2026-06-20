@@ -27,10 +27,29 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
   const [step, setStep] = useState(1)
 
   const handleNext = () => {
+    const nextErrors: OnboardingErrors = {}
+
     if (!fullName.trim()) {
-      setErrors({ fullName: "Full Name is required" })
+      nextErrors.fullName = "Full Name is required"
+    }
+
+    if (!yob) {
+      nextErrors.yob = 'Select your date of birth.'
+    } else {
+      const birthDate = new Date(yob)
+      const today = new Date()
+      if (birthDate >= today) {
+        nextErrors.yob = 'Date of birth cannot be in the future.'
+      } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
+        nextErrors.yob = 'You must be at least 10 years old.'
+      }
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
       return
     }
+
     setErrors({})
     setStep(2)
   }
@@ -53,6 +72,18 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setIsSaving(true)
 
     const currentErrors: typeof errors = {}
+
+    if (!yearOfAdmission) {
+      currentErrors.yearOfAdmission = 'Select a valid admission date.'
+    } else if (yob) {
+      const birthDate = new Date(yob)
+      const admissionDate = new Date(yearOfAdmission)
+      if (admissionDate <= birthDate) {
+        currentErrors.yearOfAdmission = 'Admission date must be after your date of birth.'
+      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
+        currentErrors.yearOfAdmission = 'Admission date seems too early based on your age.'
+      }
+    }
 
     if (Object.keys(currentErrors).length > 0) {
       setErrors(currentErrors)

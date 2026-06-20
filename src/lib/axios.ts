@@ -18,6 +18,7 @@ import axios, {
 import { ENDPOINTS } from "../api/endpoints"
 import { API_BASE_URL } from "@/config/appConfig"
 import { ROUTES } from "@/shared"
+import { toast } from "@/utils/toast"
 
 // Every request use client also go through interceptor
 // client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller
@@ -289,6 +290,30 @@ export function createApiClient({
           return Promise.reject(refreshError)
         } finally {
           isRefreshing = false
+        }
+      }
+      // -------------------------------------------------------------
+      // GLOBAL ERROR HANDLING (Frontend API Error Handling Guide)
+      // -------------------------------------------------------------
+      if (status && status !== 401) {
+        const data = res?.data as any;
+        const beError = data?.error;
+        const beMessage = data?.message;
+
+        // 403: Forbidden
+        if (status === 403) {
+          toast.error("403 - Bạn không có quyền truy cập vào tài nguyên này.");
+        } 
+        // 400 & 404: Bad Request or Not Found
+        else if (status === 404 || status === 400) {
+          // If it's a validation error, let the component handle it natively
+          if (beError !== "VALIDATION_ERROR" && beMessage) {
+            toast.error(`Thông báo: ${beMessage}`);
+          }
+        } 
+        // 500: Internal Server Error
+        else if (status >= 500) {
+          toast.error("Đã có lỗi xảy ra từ máy chủ, vui lòng thử lại sau.");
         }
       }
 

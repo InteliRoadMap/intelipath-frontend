@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SharedAppBackground } from '@/components/ui';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 import { RecruitmentPost } from '../types/marketPulse';
@@ -101,6 +101,7 @@ export default function MarketPulsePageView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [trendingTimeRange, setTrendingTimeRange] = useState('30days');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -136,12 +137,35 @@ export default function MarketPulsePageView() {
     fetchDashboardData();
   }, []);
 
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
+  const tagGroups = useMemo(() => {
+    const groups: Record<string, Set<string>> = {
+      'Experience': new Set(),
+      'Education': new Set(),
+      'Perks & Benefits': new Set(),
+      'Roles & Skills': new Set(),
+    };
+    
     recruitmentPosts.forEach(post => {
-      post.recruitment?.tags?.forEach(tag => tags.add(tag));
+      post.recruitment?.tags?.forEach(tag => {
+        const lowerTag = tag.toLowerCase();
+        if (lowerTag.includes('kinh nghiệm') || lowerTag.includes('năm') || lowerTag.includes('experience') || lowerTag.includes('tháng')) {
+          groups['Experience'].add(tag);
+        } else if (lowerTag.includes('đại học') || lowerTag.includes('cao đẳng') || lowerTag.includes('thạc sĩ') || lowerTag.includes('cao học') || lowerTag.includes('chuyên môn') || lowerTag.includes('bằng')) {
+          groups['Education'].add(tag);
+        } else if (lowerTag.includes('bảo hiểm') || lowerTag.includes('hỗ trợ') || lowerTag.includes('thưởng') || lowerTag.includes('chế độ') || lowerTag.includes('trợ cấp') || lowerTag.includes('lương')) {
+          groups['Perks & Benefits'].add(tag);
+        } else {
+          groups['Roles & Skills'].add(tag);
+        }
+      });
     });
-    return Array.from(tags).sort();
+    
+    return Object.entries(groups)
+      .map(([category, tagsSet]) => ({
+        category,
+        tags: Array.from(tagsSet).sort()
+      }))
+      .filter(group => group.tags.length > 0);
   }, [recruitmentPosts]);
 
   const filteredData = useMemo(() => {
@@ -203,9 +227,13 @@ export default function MarketPulsePageView() {
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[16px] font-bold text-slate-800">Trending Skills Demand</h3>
-              <select className="text-[12px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none">
-                <option>Last 30 Days</option>
-                <option>Last 3 Months</option>
+              <select 
+                value={trendingTimeRange}
+                onChange={(e) => setTrendingTimeRange(e.target.value)}
+                className="text-[12px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none cursor-pointer"
+              >
+                <option value="30days">Last 30 Days</option>
+                <option value="3months">Last 3 Months</option>
               </select>
             </div>
             {loading ? (
@@ -244,13 +272,17 @@ export default function MarketPulsePageView() {
           
           <div className="flex gap-2 w-full md:w-auto">
             <select 
-              className="px-4 py-2 bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm outline-none cursor-pointer"
+              className="px-4 py-2 w-full md:w-[220px] bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm outline-none cursor-pointer truncate"
               value={selectedTag || ''}
               onChange={(e) => setSelectedTag(e.target.value || null)}
             >
               <option value="">Filter by Tags</option>
-              {allTags.map(tag => (
-                <option key={tag} value={tag}>{tag}</option>
+              {tagGroups.map(group => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.tags.map(tag => (
+                    <option key={tag} value={tag}>{tag}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 
@@ -264,7 +296,7 @@ export default function MarketPulsePageView() {
         </div>
 
         {/* Data Table Section */}
-        <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl overflow-hidden min-h-[600px]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -338,10 +370,19 @@ export default function MarketPulsePageView() {
                     </td>
                     <td className="px-6 py-5 align-middle text-right">
                       <a 
-                        href={post.recruitment?.recruitment_link}
-                        target="_blank"
+                        href={post.recruitment?.recruitment_link || '#'}
+                        target={post.recruitment?.recruitment_link ? "_blank" : "_self"}
                         rel="noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-slate-900 !text-white text-[13px] font-bold rounded-full hover:bg-[#00838f] transition-all shadow-sm"
+                        onClick={(e) => {
+                          if (!post.recruitment?.recruitment_link || post.recruitment.recruitment_link === '#') {
+                            e.preventDefault();
+                            // If no link is provided, fallback to opening the company website if available
+                            if (post.company?.company_link) {
+                              window.open(post.company.company_link, '_blank');
+                            }
+                          }
+                        }}
+                        className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-slate-900 !text-white text-[13px] font-bold rounded-full hover:bg-[#00838f] transition-all shadow-sm cursor-pointer"
                       >
                         View <ChevronRight size={14} strokeWidth={3} />
                       </a>

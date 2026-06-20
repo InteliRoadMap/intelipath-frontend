@@ -311,7 +311,7 @@ export const QuickStatsWidget = () => {
   )
   
   const completed = data?.steps?.filter(s => s.status === 'completed').length || 0;
-  const inProgress = data?.steps?.filter(s => s.status === 'current').length || 1;
+  const inProgress = data?.steps?.filter(s => s.status === 'current').length || 0;
 
   return (
     <div className="grid grid-cols-2 gap-4 w-full">
@@ -337,10 +337,16 @@ export const MarketDemandChartWidget = () => {
     () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
   )
 
-  const chartData = data?.chart?.map((val, i) => ({
+  let rawChart = data?.chart || []
+  if (rawChart.length > 0 && rawChart.length < 7) {
+    // Pad left with 0 to ensure we have a full week visual
+    rawChart = [...Array(7 - rawChart.length).fill(0), ...rawChart]
+  }
+
+  const chartData = rawChart.map((val, i) => ({
     name: ['mon','tue','wed','thu','fri','sat','sun'][i % 7] || `M${i}`,
     value: val 
-  })) || []
+  }))
 
   return (
     <div className="mt-8">

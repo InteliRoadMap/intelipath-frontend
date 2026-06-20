@@ -110,8 +110,26 @@ export default function StudentProfileSetupModal({
   }, [isOpen])
 
   const goToAcademicStep = () => {
+    const nextErrors: FormErrors = {}
+    
     if (!fullName.trim()) {
-      setErrors({ fullName: 'Enter your full name to continue.' })
+      nextErrors.fullName = 'Enter your full name to continue.'
+    }
+    
+    if (!yob) {
+      nextErrors.yob = 'Select your date of birth.'
+    } else {
+      const birthDate = new Date(yob)
+      const today = new Date()
+      if (birthDate >= today) {
+        nextErrors.yob = 'Date of birth cannot be in the future.'
+      } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
+        nextErrors.yob = 'You must be at least 10 years old.'
+      }
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
       return
     }
 
@@ -128,7 +146,19 @@ export default function StudentProfileSetupModal({
     const nextErrors: FormErrors = {}
     const normalizedAdmissionDate = toIsoDateOnly(yearOfAdmission)
     if (!university.trim()) nextErrors.university = 'Enter your university.'
-    if (!normalizedAdmissionDate) nextErrors.yearOfAdmission = 'Select a valid admission date.'
+    
+    if (!normalizedAdmissionDate) {
+      nextErrors.yearOfAdmission = 'Select a valid admission date.'
+    } else if (yob) {
+      const birthDate = new Date(yob)
+      const admissionDate = new Date(yearOfAdmission)
+      if (admissionDate <= birthDate) {
+        nextErrors.yearOfAdmission = 'Admission date must be after your date of birth.'
+      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
+        nextErrors.yearOfAdmission = 'Admission date seems too early based on your age.'
+      }
+    }
+    
     if (!major.trim()) nextErrors.major = 'Enter your major.'
     if (!isUuid(careerId)) nextErrors.careerId = 'Select a valid target career from the list.'
 
@@ -161,34 +191,29 @@ export default function StudentProfileSetupModal({
     }
   }
 
+  if (!isOpen) return null
+
   return (
-    <BaseModal isOpen={isOpen} hideCloseButton>
-      <div className="flex min-h-[610px] flex-col">
-        <header className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-8">
-          <div className="flex items-start justify-between gap-5">
-            <div>
-              <p className="text-xs font-bold uppercase text-[#00767b]">Student setup</p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">
-                {step === 1 ? 'Tell us about yourself' : 'Add your academic details'}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                We use this information to personalize your roadmap.
-              </p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+      <div className="w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
+        <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1 min-h-0">
+          <div className="px-6 py-5 md:px-8 md:py-6 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
+            <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight text-slate-900">
+              {step === 1 ? 'Tell us about yourself' : 'Add your academic details'}
+            </h1>
+            <p className="mt-2 text-[15px] font-medium text-slate-500">
+              We use this information to personalize your roadmap.
+            </p>
+            <div className="mt-6 flex justify-center gap-2" aria-label={`Step ${step} of 2`}>
+              <div className={`h-1.5 w-12 rounded-full transition-colors ${step >= 1 ? 'bg-black' : 'bg-slate-200'}`} />
+              <div className={`h-1.5 w-12 rounded-full transition-colors ${step >= 2 ? 'bg-black' : 'bg-slate-200'}`} />
             </div>
-            <span className="shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-              {step} of 2
-            </span>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2" aria-label={`Step ${step} of 2`}>
-            <div className={`h-1.5 rounded-full ${step >= 1 ? 'bg-[#00767b]' : 'bg-slate-200'}`} />
-            <div className={`h-1.5 rounded-full ${step >= 2 ? 'bg-[#00767b]' : 'bg-slate-200'}`} />
-          </div>
-        </header>
-
-        <div className="flex-1 px-6 py-6 sm:px-8">
+        <div className="flex-1 overflow-y-auto px-6 py-6 md:p-8 [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
           {errors.general && (
-            <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50/50 px-5 py-4 text-[14px] font-medium text-rose-600 text-center">
               {errors.general}
             </div>
           )}
@@ -224,11 +249,14 @@ export default function StudentProfileSetupModal({
                   />
                 </Field>
 
-                <Field label="Date of birth">
+                <Field label="Date of birth" required error={errors.yob}>
                   <input
                     type="date"
                     value={yob}
-                    onChange={(event) => setYob(event.target.value)}
+                    onChange={(event) => {
+                      setYob(event.target.value)
+                      setErrors((current) => ({ ...current, yob: undefined }))
+                    }}
                     className={inputClass}
                   />
                 </Field>
@@ -240,7 +268,7 @@ export default function StudentProfileSetupModal({
                       onChange={(event) => setBio(event.target.value.slice(0, 300))}
                       rows={4}
                       placeholder="Share your interests, goals, or learning experience."
-                      className={`${inputClass} h-auto min-h-28 resize-none py-3 leading-6`}
+                      className={`${inputClass} h-auto min-h-28 resize-none py-4 leading-6 rounded-[24px]`}
                     />
                   </Field>
                 </div>
@@ -295,28 +323,28 @@ export default function StudentProfileSetupModal({
 
                 <div className="sm:col-span-2">
                   <Field label="Target career" required error={errors.careerId}>
-                    <div className="rounded-md border border-slate-200 bg-white p-3">
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <div className="mt-2">
+                      <div className="relative mb-6">
+                        <Search className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input
                           value={careerSearch}
                           disabled={isLoadingCareers}
                           onChange={(event) => setCareerSearch(event.target.value)}
                           placeholder={isLoadingCareers ? 'Loading careers...' : 'Search by role, prerequisite, or description'}
-                          className={`${inputClass} pl-9 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500`}
+                          className="w-full h-14 pl-14 pr-6 bg-white rounded-full border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all text-[15px] font-medium text-slate-900 placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
 
-                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                      <div className="mb-6 flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
                         {careerCategories.map((category) => (
                           <button
                             key={category}
                             type="button"
                             onClick={() => setCareerCategory(category)}
-                            className={`shrink-0 cursor-pointer rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
+                            className={`shrink-0 cursor-pointer rounded-full px-5 py-2 text-[13px] font-bold transition-colors ${
                               careerCategory === category
-                                ? 'border-[#00767b] bg-cyan-50 text-[#006064]'
-                                : 'border-slate-200 bg-white text-slate-500 hover:border-cyan-200 hover:text-slate-700'
+                                ? 'bg-black text-white'
+                                : 'bg-white text-slate-600 hover:bg-slate-100 ring-1 ring-black/5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]'
                             }`}
                           >
                             {category}
@@ -324,14 +352,14 @@ export default function StudentProfileSetupModal({
                         ))}
                       </div>
 
-                      <div className="mt-3 max-h-56 space-y-4 overflow-y-auto pr-1">
+                      <div className="space-y-6 pb-2">
                         {filteredCareerGroups.length > 0 ? (
                           filteredCareerGroups.map((group) => (
                             <div key={group.category}>
-                              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                              <p className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-widest text-slate-400">
                                 {group.category}
                               </p>
-                              <div className="grid gap-2 sm:grid-cols-2">
+                              <div className="grid gap-3 sm:grid-cols-2">
                                 {group.items.map((career) => {
                                   const isSelected = careerId === career.careerId
 
@@ -343,16 +371,23 @@ export default function StudentProfileSetupModal({
                                         setCareerId(career.careerId)
                                         setErrors((current) => ({ ...current, careerId: undefined }))
                                       }}
-                                      className={`min-h-20 cursor-pointer rounded-md border p-3 text-left transition-all ${
+                                      className={`text-left p-5 rounded-2xl transition-all duration-300 ${
                                         isSelected
-                                          ? 'border-[#00767b] bg-cyan-50 ring-2 ring-[#00767b]/15'
-                                          : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-white'
+                                          ? 'bg-black shadow-[0_8px_20px_rgba(0,0,0,0.12)] scale-[1.01] ring-1 ring-black'
+                                          : 'bg-white hover:bg-black/5 ring-1 ring-black/5'
                                       }`}
                                     >
-                                      <span className="block text-sm font-bold text-slate-900">
-                                        {career.careerName}
-                                      </span>
-                                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className={`block text-[16px] font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                          {career.careerName}
+                                        </span>
+                                        {isSelected && (
+                                          <span className="px-2 py-0.5 rounded border border-white/20 bg-white/10 text-[10px] font-bold text-white tracking-widest uppercase">
+                                            Selected
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`line-clamp-2 block text-[13px] leading-relaxed ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
                                         {career.prerequisite || career.description || 'Career roadmap from backend data.'}
                                       </span>
                                     </button>
@@ -362,7 +397,7 @@ export default function StudentProfileSetupModal({
                             </div>
                           ))
                         ) : (
-                          <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-medium text-slate-500">
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-transparent px-4 py-12 text-center text-[15px] font-medium text-slate-500">
                             {isLoadingCareers ? 'Loading careers...' : 'No careers match your filters.'}
                           </div>
                         )}
@@ -380,34 +415,35 @@ export default function StudentProfileSetupModal({
           )}
         </div>
 
-        <footer className="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-4 sm:px-8">
+        <div className="px-6 py-5 md:px-8 border-t border-black/[0.04] bg-white w-full shrink-0 flex items-center justify-between">
           <button
             type="button"
             onClick={goToProfileStep}
-            className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 ${
+            className={`text-[15px] font-bold text-slate-500 hover:text-slate-900 transition-colors ${
               step === 1 ? 'invisible' : ''
             }`}
           >
-            <ArrowLeft size={16} /> Back
+            Back
           </button>
 
           <button
             type="button"
             onClick={step === 1 ? goToAcademicStep : handleSave}
             disabled={isSaving}
-            className="flex min-w-40 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#006064] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#007c82] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center gap-2 rounded-full bg-black px-8 py-3.5 text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
           >
             {isSaving ? 'Saving...' : step === 1 ? 'Continue' : 'Save and continue'}
-            {!isSaving && <ArrowRight size={16} />}
+            {!isSaving && <ArrowRight size={18} />}
           </button>
-        </footer>
+        </div>
+        </div>
       </div>
-    </BaseModal>
+    </div>
   )
 }
 
 const inputClass =
-  'block h-11 w-full rounded-md border border-slate-300 bg-white px-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#00767b] focus:ring-2 focus:ring-[#00767b]/15'
+  'w-full h-14 px-5 bg-white rounded-2xl border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all text-[15px] font-medium text-slate-900 placeholder:text-slate-400'
 
 function getCareerCategory(career: CareerRole) {
   const text = `${career.careerName} ${career.prerequisite ?? ''} ${career.description ?? ''}`.toLowerCase()
@@ -423,7 +459,6 @@ function getCareerCategory(career: CareerRole) {
 }
 
 function SectionTitle({
-  icon,
   title,
   description,
 }: {
@@ -432,13 +467,10 @@ function SectionTitle({
   description: string
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-cyan-50 text-[#00767b]">
-        {icon}
-      </div>
+    <div className="flex items-start gap-3 mb-2">
       <div>
-        <h3 className="text-base font-bold text-slate-900">{title}</h3>
-        <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+        <h3 className="text-[18px] font-bold text-slate-900">{title}</h3>
+        <p className="mt-1 text-[14px] text-slate-500">{description}</p>
       </div>
     </div>
   )
@@ -459,7 +491,7 @@ function Field({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1.5 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+      <span className="mb-2.5 flex items-center justify-between gap-3 text-[14px] font-bold text-slate-900">
         <span>
           {label} {required && <span className="text-rose-500">*</span>}
         </span>

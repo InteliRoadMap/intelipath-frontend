@@ -93,6 +93,34 @@ export function useProfileSettings() {
     setError(null)
     setSuccess(null)
 
+    if (profileData.yob) {
+      const birthDate = new Date(profileData.yob)
+      const today = new Date()
+      if (birthDate >= today) {
+        setError('Date of birth cannot be in the future.')
+        setSaving(false)
+        return
+      } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
+        setError('You must be at least 10 years old.')
+        setSaving(false)
+        return
+      }
+    }
+
+    if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission && profileData.yob) {
+      const birthDate = new Date(profileData.yob)
+      const admissionDate = new Date(profileData.year_of_admission)
+      if (admissionDate <= birthDate) {
+        setError('Admission date must be after your date of birth.')
+        setSaving(false)
+        return
+      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
+        setError('Admission date seems too early based on your age.')
+        setSaving(false)
+        return
+      }
+    }
+
     try {
       const tasks: Promise<any>[] = [
         profileApi.updateUserProfile({

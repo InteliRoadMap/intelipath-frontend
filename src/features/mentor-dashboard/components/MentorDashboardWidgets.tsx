@@ -26,18 +26,7 @@ export const WelcomeBanner = ({ user }: { user: any }) => {
   );
 };
 
-export const MetricWidget = ({ title, icon: Icon, apiFunction }: { title: string, icon: any, apiFunction: () => Promise<any> }) => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => { 
-    apiFunction().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => {
-      setIsLoading(false);
-    });
-  }, []);
+export const MetricWidget = ({ title, icon: Icon, data, isLoading }: { title: string, icon: any, data: any, isLoading: boolean }) => {
 
   return (
     <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -49,7 +38,7 @@ export const MetricWidget = ({ title, icon: Icon, apiFunction }: { title: string
         <div className="h-10 w-16 bg-slate-100 animate-pulse rounded-md"></div>
       ) : (
         <h2 className="text-[36px] font-bold text-slate-900 leading-none tracking-tight">
-          {data.value ?? data.count ?? data.score ?? data.hours ?? '0'}
+          {data !== null && data !== undefined ? data : '0'}
         </h2>
       )}
     </div>
