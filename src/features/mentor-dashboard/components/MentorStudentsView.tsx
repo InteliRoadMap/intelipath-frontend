@@ -24,7 +24,8 @@ import {
   CardTitle,
   UserHeaderActions,
   Input,
-  Logo
+  Logo,
+  Skeleton
 } from "@/components";
 
 const USERS_PER_PAGE = 7;
@@ -212,7 +213,16 @@ export function MentorStudentsView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {paginatedStudents.map((student) => (
+                  {isLoading && Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index}>
+                      <td className="px-5 py-4"><Skeleton className="h-9 w-48" /></td>
+                      <td className="px-5 py-4"><Skeleton className="h-6 w-24" /></td>
+                      <td className="px-5 py-4"><Skeleton className="h-5 w-32" /></td>
+                      <td className="px-5 py-4"><Skeleton className="ml-auto h-8 w-32" /></td>
+                    </tr>
+                  ))}
+                  
+                  {!isLoading && paginatedStudents.map((student) => (
                     <tr key={student.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                       <td className="px-5 py-4 align-middle">
                         <div className="flex items-center gap-3">

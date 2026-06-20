@@ -2,7 +2,7 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { RouteProgressBar } from '@/components'
 import { useAuth } from '@/context'
-import { ROUTES } from '@/shared'
+import { ROLES, ROUTES } from '@/shared'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -25,12 +25,15 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   }
 
   if (allowedRoles?.length) {
-    const userRole = user?.role?.toUpperCase()
+    const rawRole = user?.role?.toUpperCase()
+    const userRole = (rawRole === ROLES.ADMIN || rawRole === ROLES.MENTOR || rawRole === ROLES.COUNSELOR)
+      ? rawRole
+      : ROLES.STUDENT
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    if (!allowedRoles.includes(userRole)) {
       return <Navigate to={ROUTES.DASHBOARD} replace />
     }
   }
 
-  return children
+  return <>{children}</>
 }

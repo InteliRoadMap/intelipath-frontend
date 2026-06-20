@@ -94,10 +94,15 @@ export const ENDPOINTS = {
     METRICS_RATING: "/mentor/dashboard/metrics/rating",
     METRICS_RESPONSE_TIME: "/mentor/dashboard/metrics/response-time",
     METRICS_MENTEES: "/mentor/dashboard/metrics/mentees",
+    METRICS_PENDING_REVIEWS: "/mentor/dashboard/metrics/pending-reviews",
+    METRICS_FEEDBACK: "/mentor/dashboard/metrics/feedback",
     PENDING_REVIEWS: "/mentor/dashboard/pending-reviews",
     INSIGHT: "/mentor/dashboard/insight",
     CAREER_DISTRIBUTION: '/mentor/dashboard/career-distribution',
     STUDENT_LIST: '/mentor/feedback/students',
+    FEEDBACK_HISTORY: '/mentor/feedback/history',
+    SUBMIT_FEEDBACK: '/mentor/feedback/submit',
+    PROGRESS_REPORTS: '/mentor/dashboard/progress-reports',
     STUDENT_PORTFOLIO: (studentId: string) => `/mentor/portfolio/${studentId}`
   },
   MENTOR: {

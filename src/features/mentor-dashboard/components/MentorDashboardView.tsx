@@ -1,13 +1,13 @@
-import React, { useRef } from 'react';
-import { Gauge, Users, Layers } from 'lucide-react';
-import { Layout, ChatTeardropText, Users as UsersIcon } from '@phosphor-icons/react';
-import { UserHeaderActions, Logo } from '@/components/ui';
-import { useAuth } from '@/context';
-import { useNavigate, NavLink } from 'react-router-dom';
-import mentorApi from '@/api/mentorApi';
-import { ROUTES } from '@/shared';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { UserHeaderActions, Logo, SharedAppBackground } from '@/components/ui';
+import { useAuth } from '@/context';
+import { ROUTES } from '@/shared';
+import { MentorHeader } from './MentorHeader';
+
+// Sections
 import { 
   WelcomeBanner, 
   MetricWidget, 
@@ -16,25 +16,27 @@ import {
   QuickActionsWidget, 
   MentorInsightWidget 
 } from './MentorDashboardWidgets';
-
-const mentorSections = [
-  { id: "overview", label: "Overview" },
-  { id: "pending-reviews", label: "Pending Reviews" },
-  { id: "career-distribution", label: "Career Distribution" },
-  { id: "mentor-insight", label: "Mentor Insight" }
-];
+import mentorApi from '@/api/mentorApi';
+import { Users, Layers, Gauge } from 'lucide-react';
+import { ChatTeardropText } from '@phosphor-icons/react';
+import { MentorEPortfoliosView } from './MentorEPortfoliosView';
+import { MentorProgressReportsView } from './MentorProgressReportsView';
+import { MentorFeedbackHistoryView } from './MentorFeedbackHistoryView';
 
 export function MentorDashboardView() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate(ROUTES.LOGIN);
-  };
-
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'dashboard');
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clean up the state so refreshing doesn't get stuck
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   useGSAP(() => {
     gsap.from(".gsap-fade-section", {
       y: 40,
@@ -44,105 +46,67 @@ export function MentorDashboardView() {
       ease: "power3.out",
       clearProps: "all"
     });
-  }, { scope: containerRef });
+  }, { scope: containerRef, dependencies: [activeTab] });
+
+  const handleLogout = async () => {
+    await logout();
+    navigate(ROUTES.LOGIN);
+  };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#f8fafc] font-sans text-slate-950 pb-20">
-      {/* TOP NAVIGATION */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
-          <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
-            <nav className="hidden items-center gap-8 lg:flex">
-              <NavLink
-                end
-                to={ROUTES.DASHBOARD_MENTOR}
-                className={({ isActive }) =>
-                  `relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                    isActive ? "border-cyan-700 text-cyan-800" : "border-transparent text-slate-500 hover:text-slate-950"
-                  }`
-                }
-              >
-                <Layout size={17} weight="duotone" />
-                Dashboard
-              </NavLink>
-              <NavLink
-                to={ROUTES.DASHBOARD_MENTOR_STUDENTS}
-                className={({ isActive }) =>
-                  `relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                    isActive ? "border-cyan-700 text-cyan-800" : "border-transparent text-slate-500 hover:text-slate-950"
-                  }`
-                }
-              >
-                <UsersIcon size={17} weight="duotone" />
-                Students
-              </NavLink>
-            </nav>
-          </div>
-          <UserHeaderActions user={user} onLogout={handleLogout} onSettings={() => navigate(ROUTES.DASHBOARD_MENTOR_SETTINGS)} />
-        </div>
-      </header>
+    <div ref={containerRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
+      <SharedAppBackground />
+      
+      <MentorHeader 
+        user={user}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+      />
 
-      {/* MAIN CONTENT */}
-      <main className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-8 px-4 py-8 md:px-8 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[220px_minmax(0,860px)_260px]">
-        {/* LEFT SIDEBAR (SECTIONS) */}
-        <aside className="hidden xl:block">
-          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-hidden">
-            <p className="mb-4 text-[13px] font-medium text-slate-400">Sections</p>
-            <nav className="space-y-1.5">
-              {mentorSections.map((section, index) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className={`block rounded-md px-3 py-2 text-[14px] font-semibold transition-colors ${
-                    index === 0
-                      ? "bg-slate-100 text-slate-950"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
-                  }`}
-                >
-                  {section.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        {/* CENTER CONTENT */}
-        <div className="min-w-0">
-          <section id="overview" className="scroll-mt-28 mb-6 gsap-fade-section">
-            <WelcomeBanner user={user} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricWidget title="TOTAL STUDENTS" icon={Users} apiFunction={mentorApi.getTotalStudentsMetric} />
-              <MetricWidget title="PENDING REVIEWS" icon={Layers} apiFunction={mentorApi.getPendingReviewsCountMetric} />
-              <MetricWidget title="FEEDBACK SUBMITTED" icon={ChatTeardropText} apiFunction={mentorApi.getFeedbackSubmittedMetric} />
-              <MetricWidget title="AVG. RESPONSE TIME" icon={Gauge} apiFunction={mentorApi.getResponseTimeMetric} />
-            </div>
-          </section>
-
-          <div className="flex min-w-0 flex-col gap-5 xl:gap-6">
-            <section id="pending-reviews" className="scroll-mt-28 gsap-fade-section">
-              <PendingReviewsWidget />
+      <div className="mx-auto w-full max-w-[1200px] px-6 md:px-8">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-8">
+            <section className="gsap-fade-section">
+              <WelcomeBanner user={user} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                <MetricWidget title="TOTAL MENTEES" icon={Users} apiFunction={mentorApi.getTotalStudentsMetric} />
+                <MetricWidget title="PENDING REVIEWS" icon={Layers} apiFunction={mentorApi.getPendingReviewsCountMetric} />
+                <MetricWidget title="FEEDBACK SENT" icon={ChatTeardropText} apiFunction={mentorApi.getFeedbackSubmittedMetric} />
+                <MetricWidget title="AVG. PROGRESS" icon={Gauge} apiFunction={mentorApi.getResponseTimeMetric} />
+              </div>
             </section>
             
-            <section id="career-distribution" className="scroll-mt-28 gsap-fade-section">
-              <CareerDistributionWidget />
-            </section>
-
-            <section id="mentor-insight" className="scroll-mt-28 gsap-fade-section">
-              <MentorInsightWidget />
+            <section className="gsap-fade-section">
+              <PendingReviewsWidget />
             </section>
           </div>
-        </div>
+        )}
 
-        {/* RIGHT SIDEBAR (ON THIS PAGE & QUICK ACTIONS) */}
-        <aside className="hidden 2xl:block">
-          <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 pb-8">
-            <div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-              <QuickActionsWidget />
-            </div>
+        {activeTab === 'portfolios' && (
+          <div className="gsap-fade-section">
+            <MentorEPortfoliosView />
           </div>
-        </aside>
-      </main>
+        )}
+
+        {activeTab === 'progress' && (
+          <div className="gsap-fade-section">
+            <MentorProgressReportsView />
+          </div>
+        )}
+
+        {activeTab === 'feedback' && (
+          <div className="gsap-fade-section">
+            <MentorFeedbackHistoryView />
+          </div>
+        )}
+
+        {activeTab === 'market' && (
+          <div className="gsap-fade-section flex h-96 items-center justify-center text-slate-500 font-medium">
+            Market trends coming soon...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

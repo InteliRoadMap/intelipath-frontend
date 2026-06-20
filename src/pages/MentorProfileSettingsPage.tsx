@@ -5,18 +5,19 @@ import {
   Edit3,
   Mail,
   User,
-  Target,
-  MessageSquare,
+  GraduationCap,
   Sparkles,
   RefreshCw,
-  Briefcase,
-  ChevronLeft
+  ChevronLeft,
+  Target
 } from "lucide-react"
-import { Layout, ChatTeardropText, PencilSimple } from "@phosphor-icons/react"
+import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { UserHeaderActions, Logo } from "@/components"
+import { SharedAppBackground } from "@/components"
+import { MentorHeader } from "@/features/mentor-dashboard/components/MentorHeader"
+import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
@@ -30,6 +31,7 @@ export default function MentorProfileSettingsPage() {
     loading,
     saving,
     error,
+    success,
     handleChange,
     handleSave,
     loadProfile,
@@ -120,57 +122,29 @@ export default function MentorProfileSettingsPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans text-slate-900" ref={containerRef}>
-      {/* TOP NAVIGATION */}
-      <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
-          <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
-            <nav className="hidden items-center gap-8 lg:flex">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path
-                return (
-                  <a
-                    key={item.label}
-                    href="#"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { y: -3, scale: 1.05, duration: 0.3, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { y: 0, scale: 1, duration: 0.3, ease: "power2.out" })}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.3)" })
-                      navigate(item.path)
-                    }}
-                    className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
-                      isActive
-                        ? "border-cyan-700 text-cyan-800"
-                        : "border-transparent text-slate-500 hover:text-slate-950"
-                    }`}
-                  >
-                    <item.icon size={17} weight="duotone" />
-                    {item.label}
-                  </a>
-                )
-              })}
-            </nav>
-          </div>
-          <UserHeaderActions user={user} onLogout={handleLogout} />
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden" ref={containerRef}>
+      <SharedAppBackground />
+      <MentorHeader 
+        user={user}
+        activeTab=""
+        onTabChange={(tab) => navigate(ROUTES.DASHBOARD_MENTOR, { state: { activeTab: tab } })}
+        onLogout={handleLogout}
+      />
 
-      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 space-y-7">
+      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 pt-[120px] pb-16 space-y-7 relative z-10">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-[#4f46e5] transition-all w-fit group mb-4 hover:-translate-x-1"
+          className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-slate-900 transition-all w-fit group mb-4 hover:-translate-x-1"
         >
-          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-[#4f46e5] transition-colors" />
+          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-slate-900 transition-colors" />
           Back to home
         </button>
 
         {/* ── Hero Banner ─────────────────────────────────────── */}
-        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#312e81] via-[#4338ca] to-[#6366f1] p-7 md:p-9 shadow-[0_30px_60px_rgba(99,102,241,0.25)]">
+        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-7 md:p-9 shadow-[0_30px_60px_rgba(15,23,42,0.3)]">
           <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-[#818cf8]/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-slate-500/20 blur-3xl" />
           
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -198,7 +172,7 @@ export default function MentorProfileSettingsPage() {
                   void loadProfile()
                 }}
                 disabled={loading || saving}
-                className="flex items-center gap-2 text-[13px] font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
+                className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
               >
                 <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                 Reload
@@ -210,23 +184,9 @@ export default function MentorProfileSettingsPage() {
         <div className="flex flex-col lg:flex-row gap-6 pb-10">
           <div className="flex-[2] space-y-6">
             {/* Identity Card */}
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#6366f1]/30 transition-colors">
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-slate-800/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#4338ca] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#4f46e5]/30">
-                    {displayInitial}
-                  </div>
-                  <button
-                    type="button"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, rotation: 15, duration: 0.4, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.4, ease: "power2.out" })}
-                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" })}
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-[#4f46e5] rounded-xl flex items-center justify-center shadow-md border border-slate-100"
-                    aria-label="Edit avatar"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                </div>
+                <AvatarUpload initial={displayInitial} />
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
                     Professional Identity
@@ -252,26 +212,26 @@ export default function MentorProfileSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <User size={16} className="text-[#6366f1]" />
+                        <User size={16} className="text-slate-700" />
                         Full Name
                       </label>
                       <input
                         type="text"
-                        value={profileData.full_name}
+                        value={profileData.full_name || ''}
                         onChange={(e) => handleChange("full_name", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-[#6366f1]" />
+                        <Calendar size={16} className="text-slate-700" />
                         Year of Birth
                       </label>
                       <input
                         type="date"
-                        value={profileData.yob}
+                        value={profileData.yob || ''}
                         onChange={(e) => handleChange("yob", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
                   </div>
@@ -279,43 +239,43 @@ export default function MentorProfileSettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Building2 size={16} className="text-[#6366f1]" />
+                        <Building2 size={16} className="text-slate-700" />
                         Company / Organization
                       </label>
                       <input
                         type="text"
-                        value={profileData.company}
+                        value={profileData.company || ''}
                         placeholder="e.g. Google, FPT Software"
                         onChange={(e) => handleChange("company", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Target size={16} className="text-[#6366f1]" />
+                        <Target size={16} className="text-slate-700" />
                         Industry Focus
                       </label>
                       <input
                         type="text"
-                        value={profileData.industry_focus}
+                        value={profileData.industry_focus || ''}
                         placeholder="e.g. Software Engineering, Data Science"
                         onChange={(e) => handleChange("industry_focus", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
                   </div>
 
                   <div className="mb-8">
                     <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                      <Book size={16} className="text-[#6366f1]" />
+                      <Book size={16} className="text-slate-700" />
                       Professional Bio
                     </label>
                     <textarea
                       rows={4}
-                      value={profileData.bio}
+                      value={profileData.bio || ''}
                       placeholder="Share your experience and how you can help students..."
                       onChange={(e) => handleChange("bio", e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all hover:bg-white resize-none"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white resize-none"
                     />
                   </div>
 
@@ -335,14 +295,14 @@ export default function MentorProfileSettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(79, 70, 229, 0.3)", duration: 0.3, ease: "back.out(2)" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)", duration: 0.3, ease: "power2.out" })}
+                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(15, 23, 42, 0.3)", duration: 0.3, ease: "back.out(2)" })}
+                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)", duration: 0.3, ease: "power2.out" })}
                       onClick={(e) => {
                         gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
                         handleSave()
                       }}
                       disabled={saving}
-                      className="px-6 py-2.5 bg-[#4f46e5] text-white rounded-xl text-[13px] font-bold shadow-md shadow-[#4f46e5]/20 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-[13px] font-bold shadow-md shadow-slate-900/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
                     >
                       {saving ? "Saving..." : "Save Profile"}
                     </button>
@@ -353,7 +313,7 @@ export default function MentorProfileSettingsPage() {
           </div>
 
           <div className="flex-1 space-y-6">
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#6366f1]/30 transition-colors">
+            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-slate-800/30 transition-colors">
               <h3 className="text-[15px] font-bold text-slate-900 mb-5">
                 Account Security
               </h3>
@@ -374,7 +334,7 @@ export default function MentorProfileSettingsPage() {
                     onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.1, y: -2, duration: 0.3, ease: "back.out(2)" })}
                     onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.3, ease: "power2.out" })}
                     onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.1, duration: 0.4, ease: "elastic.out(1, 0.3)" })}
-                    className="text-[#6366f1] hover:text-[#4f46e5] bg-white p-2 rounded-lg shadow-sm border border-slate-200"
+                    className="text-slate-700 hover:text-slate-900 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
                     aria-label="Edit email"
                   >
                     <Edit3 size={15} />
@@ -382,10 +342,23 @@ export default function MentorProfileSettingsPage() {
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </main>
+
+      {/* Floating Success Toast */}
+      <div
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl shadow-slate-900/20 backdrop-blur transition-all duration-500 ${
+          success ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-500/20 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        {success}
+      </div>
     </div>
   )
 }
