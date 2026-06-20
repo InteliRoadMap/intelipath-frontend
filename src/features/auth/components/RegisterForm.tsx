@@ -1,20 +1,32 @@
 import React, { useState } from "react"
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react"
+import { Eye, EyeOff, LoaderCircle } from "lucide-react"
+import { isAxiosError } from "axios"
 import { useNavigate } from "react-router-dom"
-import { authApi } from "@/api";
-import { isValidEmail, isValidPassword, getErrorMessage } from "@/lib";
-import { ROUTES } from "@/shared";
+import { authApi } from "@/api"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  Input
+} from "@/components"
+import { getErrorMessage, isValidEmail, isValidPassword } from "@/lib"
+import { ROUTES } from "@/shared"
 
 export default function RegisterForm() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
-
   const [errors, setErrors] = useState<{
     fullName?: string
     email?: string
@@ -28,7 +40,10 @@ export default function RegisterForm() {
 
   const navigate = useNavigate()
 
-  //register logic POST JSON { email, password, fullName }
+  const clearError = (field: keyof typeof errors) => {
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }))
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -36,28 +51,16 @@ export default function RegisterForm() {
 
     const currentErrors: typeof errors = {}
 
-    if (!fullName.trim()) {
-      currentErrors.fullName = "Full Name is required"
+    if (!fullName.trim()) currentErrors.fullName = "Full Name is required"
+    if (!email) currentErrors.email = "Email address is required"
+    else if (!isValidEmail(email)) currentErrors.email = "Please provide a valid email format"
+    if (!password) currentErrors.password = "Password is required"
+    else if (!isValidPassword(password)) {
+      currentErrors.password = "Password must be 4-10 chars with uppercase, number & special character"
     }
-    if (!email) {
-      currentErrors.email = "Email address is required"
-    } else if (!isValidEmail(email)) {
-      currentErrors.email = "Please provide a valid email format"
-    }
-    if (!password) {
-      currentErrors.password = "Password is required"
-    } else if (!isValidPassword(password)) {
-      currentErrors.password =
-        "Password must be 4–10 chars with uppercase, number & special character"
-    }
-    if (!confirmPassword) {
-      currentErrors.confirmPassword = "Please confirm your password"
-    } else if (password !== confirmPassword) {
-      currentErrors.confirmPassword = "Passwords do not match"
-    }
-    if (!agreeTerms) {
-      currentErrors.agreeTerms = "You must agree to the terms"
-    }
+    if (!confirmPassword) currentErrors.confirmPassword = "Please confirm your password"
+    else if (password !== confirmPassword) currentErrors.confirmPassword = "Passwords do not match"
+    if (!agreeTerms) currentErrors.agreeTerms = "You must agree to the terms"
 
     if (Object.keys(currentErrors).length > 0) {
       setErrors(currentErrors)
@@ -66,24 +69,20 @@ export default function RegisterForm() {
 
     setIsSubmitting(true)
     try {
-      // POST /api/v1/auth/register — JSON body: { email, password, fullName }
       await authApi.register({ email, password, fullName })
       setSuccessMessage("Register successfully! You can now sign in.")
       navigate(ROUTES.LOGIN)
-
       setFullName("")
       setEmail("")
       setPassword("")
       setConfirmPassword("")
       setAgreeTerms(false)
-    } catch (err: any) {
-      if (!err?.response) {
-        return
-      } else if (err.response.status === 400) {
+    } catch (err: unknown) {
+      if (!isAxiosError(err)) {
+        setErrors({ general: getErrorMessage(err) })
+      } else if (err.response?.status === 400) {
         setErrors({
-          general:
-            err.response.data?.message ||
-            "Email already exists or invalid input."
+          general: err.response.data?.message || "Email already exists or invalid input."
         })
       } else {
         setErrors({ general: getErrorMessage(err) })
@@ -94,310 +93,167 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="w-full">
-      <div className="mb-6 select-none">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 mb-2">
+    <Card className="w-full border-0 bg-transparent shadow-none">
+      <CardHeader className="px-0 pb-5 pt-0">
+        <CardTitle className="font-display text-3xl font-bold tracking-tight">
           Create Your Account
-        </h2>
-        <p className="text-sm text-slate-600 font-light">
-          Join thousands of students building their future with InteliPath
-        </p>
-      </div>
+        </CardTitle>
+        <CardDescription>
+          Join thousands of students building their future with InteliPath.
+        </CardDescription>
+      </CardHeader>
 
-      {/* General API error banner */}
-      {errors.general && (
-        <div className="mb-5 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
-          {errors.general}
-        </div>
-      )}
-
-      {/* Success banner */}
-      {successMessage && (
-        <div className="mb-5 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-sm font-medium">
-          {successMessage}
-        </div>
-      )}
-
-      <form onSubmit={handleRegister} className="space-y-4">
-        {/* Full Name */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="reg-name"
-            className="text-xs font-semibold text-slate-600 tracking-wide"
-          >
-            Full Name
-          </label>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-              <User className="w-4 h-4" />
-            </span>
-            <input
-              id="reg-name"
-              type="text"
-              placeholder="e.g. Nguyen Van A"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value)
-                if (errors.fullName)
-                  setErrors({ ...errors, fullName: undefined })
-              }}
-              className={`w-full text-sm pl-10 pr-4 py-2.5 rounded-xl glass-input ${
-                errors.fullName
-                  ? "border-rose-500/50 focus:border-rose-500"
-                  : ""
-              }`}
-            />
+      <CardContent className="px-0 pb-0 pt-0">
+        {errors.general && (
+          <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {errors.general}
           </div>
-          {errors.fullName && (
-            <span className="text-rose-400 text-xs font-medium pl-1 leading-none">
-              {errors.fullName}
-            </span>
-          )}
-        </div>
+        )}
 
-        {/* Email */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="reg-email"
-            className="text-xs font-semibold text-slate-600 tracking-wide"
-          >
-            Email Address
-          </label>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-              <Mail className="w-4 h-4" />
-            </span>
-            <input
-              id="reg-email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                if (errors.email) setErrors({ ...errors, email: undefined })
-              }}
-              className={`w-full text-sm pl-10 pr-4 py-2.5 rounded-xl glass-input ${
-                errors.email ? "border-rose-500/50 focus:border-rose-500" : ""
-              }`}
-            />
+        {successMessage && (
+          <div className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            {successMessage}
           </div>
-          {errors.email && (
-            <span className="text-rose-400 text-xs font-medium pl-1 leading-none">
-              {errors.email}
-            </span>
-          )}
-        </div>
+        )}
 
-        {/* Password & Confirm Password — side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Password */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="reg-pass"
-              className="text-xs font-semibold text-slate-600 tracking-wide"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-                <Lock className="w-4 h-4" />
-              </span>
-              <input
-                id="reg-pass"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (errors.password)
-                    setErrors({ ...errors, password: undefined })
+        <form onSubmit={handleRegister}>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="reg-name">Full Name</FieldLabel>
+              <Input
+                id="reg-name"
+                type="text"
+                placeholder="Nguyen Van A"
+                value={fullName}
+                onChange={(event) => {
+                  setFullName(event.target.value)
+                  clearError("fullName")
                 }}
-                className={`w-full text-sm pl-10 pr-10 py-2.5 rounded-xl glass-input ${
-                  errors.password
-                    ? "border-rose-500/50 focus:border-rose-500"
-                    : ""
-                }`}
+                className={errors.fullName ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-3.5 h-3.5" />
-                ) : (
-                  <Eye className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <span className="text-rose-400 text-xs font-medium pl-1 leading-none">
-                {errors.password}
-              </span>
-            )}
-          </div>
+              {errors.fullName && <FieldDescription className="text-rose-600">{errors.fullName}</FieldDescription>}
+            </Field>
 
-          {/* Confirm Password */}
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="reg-confirm"
-              className="text-xs font-semibold text-slate-600 tracking-wide"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-                <Lock className="w-4 h-4" />
-              </span>
-              <input
-                id="reg-confirm"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                  if (errors.confirmPassword)
-                    setErrors({ ...errors, confirmPassword: undefined })
+            <Field>
+              <FieldLabel htmlFor="reg-email">Email</FieldLabel>
+              <Input
+                id="reg-email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  clearError("email")
                 }}
-                className={`w-full text-sm pl-10 pr-10 py-2.5 rounded-xl glass-input ${
-                  errors.confirmPassword
-                    ? "border-rose-500/50 focus:border-rose-500"
-                    : ""
-                }`}
+                className={errors.email ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-3.5 h-3.5" />
-                ) : (
-                  <Eye className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <span className="text-rose-400 text-xs font-medium pl-1 leading-none">
-                {errors.confirmPassword}
-              </span>
-            )}
-          </div>
-        </div>
+              <FieldDescription>
+                We use this email for sign-in and account notifications.
+              </FieldDescription>
+              {errors.email && <FieldDescription className="text-rose-600">{errors.email}</FieldDescription>}
+            </Field>
 
-        {/* Terms & Conditions Checkbox */}
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-row items-center justify-start gap-2.5 py-1 w-full">
-            <input
-              id="terms-checkbox"
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => {
-                setAgreeTerms(e.target.checked)
-                if (errors.agreeTerms && e.target.checked) {
-                  setErrors({ ...errors, agreeTerms: undefined })
-                }
-              }}
-              className="hidden"
-            />
-
-            {/* Custom styled checkbox acting as label */}
-            <label
-              htmlFor="terms-checkbox"
-              className={`w-4 h-4 rounded-sm border transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer select-none ${
-                agreeTerms
-                  ? "bg-linear-to-br from-brand-indigo to-brand-blue border-brand-indigo"
-                  : "bg-white-900/80 border-slate-700 hover:border-slate-500"
-              }`}
-            >
-              {agreeTerms && (
-                <svg
-                  className="w-3 h-3 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="reg-pass">Password</FieldLabel>
+                <div className="relative">
+                  <Input
+                    id="reg-pass"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      clearError("password")
+                    }}
+                    className={`pr-10 ${errors.password ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}`}
                   />
-                </svg>
-              )}
-            </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <FieldDescription>Must be 4-10 chars with uppercase, number and special character.</FieldDescription>
+                {errors.password && <FieldDescription className="text-rose-600">{errors.password}</FieldDescription>}
+              </Field>
 
-            <label
-              htmlFor="terms-checkbox"
-              className="text-xs text-slate-600 hover:text-slate-500 transition-colors duration-200 cursor-pointer select-none leading-none pt-0.5"
-            >
-              I agree to the{" "}
-              <span className="text-brand-cyan font-medium hover:underline">
-                Terms of Service
-              </span>{" "}
-              and{" "}
-              <span className="text-brand-cyan font-medium hover:underline">
-                Privacy Policy
-              </span>
-            </label>
-          </div>
-          {errors.agreeTerms && (
-            <span className="text-rose-400 text-xs font-medium pl-1">
-              * {errors.agreeTerms}
-            </span>
-          )}
-        </div>
+              <Field>
+                <FieldLabel htmlFor="reg-confirm">Confirm Password</FieldLabel>
+                <div className="relative">
+                  <Input
+                    id="reg-confirm"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => {
+                      setConfirmPassword(event.target.value)
+                      clearError("confirmPassword")
+                    }}
+                    className={`pr-10 ${errors.confirmPassword ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <FieldDescription>Please confirm your password.</FieldDescription>
+                {errors.confirmPassword && (
+                  <FieldDescription className="text-rose-600">{errors.confirmPassword}</FieldDescription>
+                )}
+              </Field>
+            </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          id="register-submit-btn"
-          disabled={isSubmitting}
-          className="relative w-full py-3.5 px-4 rounded-xl text-sm font-semibold tracking-wide text-white bg-linear-to-r from-brand-indigo to-brand-blue hover:brightness-110 active:brightness-95 transition-all duration-300 shadow-md flex items-center justify-center gap-2 overflow-hidden group cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? (
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
-          ) : (
-            <>
-              <span>Create Account</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-            </>
-          )}
-          {/* Shimmer */}
-          <div className="absolute top-0 -inset-full h-full w-1/2 z-10 block transform -skew-x-12 bg-linear-to-r from-transparent to-white/10 opacity-40 group-hover:animate-[shimmer_1.2s_ease-in-out_infinite]" />
-        </button>
-      </form>
+            <Field>
+              <label className="flex items-start gap-2.5 text-xs leading-5 text-slate-600">
+                <input
+                  id="terms-checkbox"
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(event) => {
+                    setAgreeTerms(event.target.checked)
+                    if (event.target.checked) clearError("agreeTerms")
+                  }}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600/20"
+                />
+                <span>
+                  I agree to the <span className="font-semibold text-cyan-700">Terms of Service</span> and{" "}
+                  <span className="font-semibold text-cyan-700">Privacy Policy</span>.
+                </span>
+              </label>
+              {errors.agreeTerms && <FieldDescription className="text-rose-600">{errors.agreeTerms}</FieldDescription>}
+            </Field>
 
-      {/* Footer */}
-      <div className="text-center mt-6 select-none">
-        <span className="text-xm text-slate-600 font-light">
-          Already have an account?{" "}
-        </span>
-        <button
-          onClick={() => navigate(ROUTES.LOGIN)}
-          className="text-xs font-bold text-brand-cyan hover:text-brand-blue hover:underline underline-offset-4 transition-all duration-150 cursor-pointer"
-        >
-          Sign in
-        </button>
-      </div>
-    </div>
+            <Field>
+              <Button type="submit" variant="brand" disabled={isSubmitting} className="h-11 w-full">
+                {isSubmitting ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </Button>
+              <FieldDescription className="text-center">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.LOGIN)}
+                  className="font-semibold text-cyan-700 hover:underline"
+                >
+                  Sign in
+                </button>
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

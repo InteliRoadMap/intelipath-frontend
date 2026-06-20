@@ -1,3 +1,11 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { isAxiosError } from "axios"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
@@ -8,21 +16,29 @@ export function isValidPassword(password: string): boolean {
   return passwordRegex.test(password)
 }
 
-export function getErrorMessage(error: unknown): string {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error
-  ) {
-    const { status, data } = (error as any).response
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
 
-    if (status === 400) return (data as any)?.message || "Invalid input"
+export function toIsoDateOnly(value: string): string {
+  const trimmed = value.trim()
+  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  return ""
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (isAxiosError<{ message?: string }>(error)) {
+    const status = error.response?.status
+    const message = error.response?.data?.message
+
+    if (status === 400) return message || "Invalid input"
     if (status === 401) return "Invalid email or password"
-    if (status === 403) return (data as any)?.message || "Account is suspended"
-    if (status === 404) return (data as any)?.message || "Email not found"
+    if (status === 403) return message || "Account is suspended"
+    if (status === 404) return message || "Email not found"
     if (status === 409) return "Email already exists"
 
-    return (data as any)?.message || "Something went wrong"
+    return message || "Something went wrong"
   }
   return "Cannot connect to server"
 }

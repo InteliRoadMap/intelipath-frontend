@@ -1,8 +1,8 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
+import { RouteProgressBar } from '@/components'
 import { useAuth } from '@/context'
-import { Spinner } from 'react-bootstrap'
-import { ROUTES } from '@/shared'
+import { ROLES, ROUTES } from '@/shared'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -14,8 +14,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" variant="primary" />
+      <div className="min-h-screen bg-slate-50">
+        <RouteProgressBar />
       </div>
     )
   }
@@ -25,12 +25,15 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   }
 
   if (allowedRoles?.length) {
-    const userRole = user?.role?.toUpperCase()
+    const rawRole = user?.role?.toUpperCase()
+    const userRole = (rawRole === ROLES.ADMIN || rawRole === ROLES.MENTOR || rawRole === ROLES.COUNSELOR)
+      ? rawRole
+      : ROLES.STUDENT
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    if (!allowedRoles.includes(userRole)) {
       return <Navigate to={ROUTES.DASHBOARD} replace />
     }
   }
 
-  return children
+  return <>{children}</>
 }

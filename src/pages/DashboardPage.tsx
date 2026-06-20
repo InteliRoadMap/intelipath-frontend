@@ -5,7 +5,11 @@ import { ROLES, ROUTES } from '@/shared'
 export default function DashboardPage() {
   const { user } = useAuth()
 
-  const role = user?.role?.toUpperCase() || ROLES.STUDENT
+  // Default missing or unknown roles to STUDENT
+  const rawRole = user?.role?.toUpperCase()
+  const role = (rawRole === ROLES.ADMIN || rawRole === ROLES.MENTOR || rawRole === ROLES.COUNSELOR)
+    ? rawRole
+    : ROLES.STUDENT
 
   if (role === ROLES.ADMIN) {
     return <Navigate to={ROUTES.DASHBOARD_ADMIN} replace />

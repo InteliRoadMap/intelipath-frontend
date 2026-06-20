@@ -1,7 +1,26 @@
 import { useEffect, useState } from "react"
 import { isAxiosError } from "axios"
-import { skillApi, updateApi } from "@/api"
+import { isUuid } from "@/lib/utils"
+import { studentDashboardService } from "../services"
 import type { StudentSetupStep } from "../types"
+
+type SetupProfile = {
+  careerId?: string
+  career_id?: string
+  career?: {
+    careerId?: string
+    career_id?: string
+    id?: string
+  }
+}
+
+const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
+  profile?.careerId ||
+  profile?.career_id ||
+  profile?.career?.careerId ||
+  profile?.career?.career_id ||
+  profile?.career?.id ||
+  ""
 
 export function useStudentSetup(userId?: string) {
   const [activeSetupStep, setActiveSetupStep] = useState<StudentSetupStep>(null)
@@ -14,8 +33,8 @@ export function useStudentSetup(userId?: string) {
     const loadSetupStatus = async () => {
       try {
         const [profileResult, skillsResult] = await Promise.allSettled([
-          updateApi.getStudentProfile(),
-          skillApi.getSelectedSkills()
+          studentDashboardService.getStudentProfile(),
+          studentDashboardService.getSelectedSkills()
         ])
 
         if (!active) return
@@ -30,13 +49,14 @@ export function useStudentSetup(userId?: string) {
           throw skillsError
         }
 
-        const profileResponse = profileResult.status === "fulfilled" ? profileResult.value.data : null
-        const profile = profileResponse?.data ?? profileResponse
+        const profile = profileResult.status === "fulfilled" ? profileResult.value : null
         const skills = skillsResult.status === "fulfilled" ? skillsResult.value : []
+        const profileCareerId = getProfileCareerId(profile)
         const isProfileMissing =
           !profile?.university ||
           !(profile?.yearOfAdmission || profile?.year_of_admission) ||
-          !profile?.major
+          !profile?.major ||
+          !isUuid(profileCareerId)
 
         if (isProfileMissing) {
           setActiveSetupStep("profile")
