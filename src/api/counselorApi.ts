@@ -124,14 +124,6 @@ const counselorApi = {
       payload
     )
     return res.data
-  },
-  updateCounselorProfile: (data: UpdateCounselorProfilePayload) =>
-    mainClient.patch(ENDPOINTS.COUNSELOR_DASHBOARD.COUNSELOR_PROFILE, data),
-  getCounselorProfile: async () => {
-    const res = await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE
-    )
-    return res.data
   }
 }
 

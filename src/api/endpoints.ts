@@ -86,7 +86,7 @@ export const ENDPOINTS = {
     GET_STUDENT_LIST: "/counselor/feedback/students",
     HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
-    COUNSELOR_PROFILE: "/counselor/profile",
+
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {

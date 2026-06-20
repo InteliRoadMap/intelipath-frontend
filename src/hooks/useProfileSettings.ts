@@ -34,7 +34,7 @@ const EMPTY_PROFILE: ProfileData = {
   company: "",
   industry_focus: "",
   department: "",
-  githubProfile: ""
+  github_profile: ""
 }
 
 export function useProfileSettings() {
@@ -49,17 +49,21 @@ export function useProfileSettings() {
     setLoading(true)
     setError(null)
 
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out")), 5000)
+    )
+
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await profileApi.getStudentProfile()
-        data = res.data
+        const res = await Promise.race([profileApi.getStudentProfile(), timeout])
+        data = (res as any).data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
-        const res = await profileApi.getMentorProfile()
-        data = res.data
+        const res = await Promise.race([profileApi.getMentorProfile(), timeout])
+        data = (res as any).data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await profileApi.getCounselorProfile()
-        data = res.data
+        const res = await Promise.race([profileApi.getCounselorProfile(), timeout])
+        data = (res as any).data
       }
 
       setProfileData({
@@ -70,13 +74,21 @@ export function useProfileSettings() {
         email: data?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || ""
+        year_of_admission:
+          data?.yearOfAdmission || data?.year_of_admission || ""
       })
     } catch (err) {
-      console.error("[ProfileSettingsPage] Error fetching profile data:", err)
-      setError("Cannot load profile information. Please try again.")
+      console.warn("[ProfileSettingsPage] Cannot load profile (API may be offline):", err)
+      // Fallback to user data from auth context so form still shows something
+      setProfileData({
+        ...EMPTY_PROFILE,
+        full_name: user?.fullName || "",
+        email: user?.email || "",
+        role: user?.role || "Student"
+      })
     } finally {
       setLoading(false)
+
     }
   }
 
@@ -169,7 +181,7 @@ export function useProfileSettings() {
   const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
-    profileData.githubProfile?.split("/").filter(Boolean).pop() ||
+    profileData.github_profile?.split("/").filter(Boolean).pop() ||
     profileData.full_name.split(" ").join("").toLowerCase() ||
     "user"
 

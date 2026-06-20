@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import {
   Bell,
   X,
@@ -156,8 +157,22 @@ function NotifItem({
   )
 }
 
+function NotifSkeletonItem() {
+  return (
+    <div className="flex items-center gap-4 p-4">
+      <div className="h-10 w-10 shrink-0 rounded-full bg-slate-100 animate-pulse" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
+        <div className="h-3 w-1/2 rounded bg-slate-100 animate-pulse" />
+      </div>
+      <div className="hidden md:block h-4 w-1/4 rounded bg-slate-100 animate-pulse" />
+      <div className="h-8 w-16 shrink-0 rounded-lg bg-slate-100 animate-pulse" />
+    </div>
+  )
+}
+
 // ─── Full-page panel (fixed overlay) ──────────────────────────────────────────
-function NotifFullPage({
+export function NotifFullPage({
   notifications,
   onRead,
   onReadAll,
@@ -170,7 +185,7 @@ function NotifFullPage({
 }) {
   const unread = notifications.filter((n) => !n.read).length
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 flex flex-col bg-white"
       style={{
@@ -216,9 +231,17 @@ function NotifFullPage({
 
       {/* Notification list */}
       <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-w-2xl w-full mx-auto">
-        {notifications.map((n) => (
-          <NotifItem key={n.id} notif={n} onRead={onRead} />
-        ))}
+        {notifications.length > 0 ? (
+          notifications.map((n) => (
+            <NotifItem key={n.id} notif={n} onRead={onRead} />
+          ))
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <NotifSkeletonItem key={i} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Footer — collapse button */}
@@ -240,14 +263,14 @@ function NotifFullPage({
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 // ─── Main exported component ───────────────────────────────────────────────────
-export default function NotificationBell() {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(MOCK_NOTIFICATIONS)
+export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFullPage, setIsFullPage] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -284,31 +307,57 @@ export default function NotificationBell() {
   const handleViewAll = () => {
     setIsDropdownOpen(false)
     setIsFullPage(true)
+    if (onCloseMenu) onCloseMenu()
   }
 
   return (
     <>
       {/* Bell button + Dropdown */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          id="notification-bell-btn"
-          onClick={() => setIsDropdownOpen((v) => !v)}
-          className="relative w-10 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors"
-          title="Notifications"
-        >
-          <Bell size={20} />
-          {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
-          )}
-        </button>
+      <div className={asMenuItem ? "w-full" : "relative"} ref={dropdownRef}>
+        {asMenuItem ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsDropdownOpen((v) => !v)
+            }}
+            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative text-slate-500">
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-rose-500" />
+                )}
+              </div>
+              <span className="text-[14px] font-medium text-slate-700">Notifications</span>
+            </div>
+            {unreadCount > 0 && (
+              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">{unreadCount}</span>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            id="notification-bell-btn"
+            onClick={() => setIsDropdownOpen((v) => !v)}
+            className="relative w-10 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors"
+            title="Notifications"
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+            )}
+          </button>
+        )}
 
         {/* Dropdown */}
         {isDropdownOpen && (
           <div
-            className="absolute right-0 mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? '' : 'right-0'}`}
             style={{
-              top: "100%",
+              top: asMenuItem ? "0" : "100%",
+              right: asMenuItem ? "100%" : "0",
+              marginRight: asMenuItem ? "8px" : "0",
               zIndex: 9998,
               animation: "notif-dropdown-in 0.18s cubic-bezier(0.22,1,0.36,1)"
             }}
@@ -341,9 +390,17 @@ export default function NotificationBell() {
 
             {/* Notification list */}
             <div className="divide-y divide-slate-100 max-h-[320px] overflow-y-auto">
-              {previewNotifs.map((n) => (
-                <NotifItem key={n.id} notif={n} onRead={markRead} compact />
-              ))}
+              {notifications.length > 0 ? (
+                previewNotifs.map((n) => (
+                  <NotifItem key={n.id} notif={n} onRead={markRead} compact />
+                ))
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <NotifSkeletonItem key={i} />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* View all button */}
@@ -369,7 +426,6 @@ export default function NotificationBell() {
           onReadAll={markAllRead}
           onClose={() => {
             setIsFullPage(false)
-            setIsDropdownOpen(true)
           }}
         />
       )}
