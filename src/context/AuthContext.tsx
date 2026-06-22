@@ -192,50 +192,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true
 
     const restoreSession = async () => {
-      const storedToken = localStorage.getItem("accessToken")
-      const storedUser = localStorage.getItem("user")
-      const storedRefreshToken = localStorage.getItem("refreshToken")
-      const storedExpiresIn = localStorage.getItem("tokenExpiresIn")
-
-      if (!storedToken || !storedUser) {
-        dispatch({ type: "SET_LOADING", payload: false })
-        return
+      // FAKE LOGIN - dùng để test local, xóa khi deploy
+      const fakeUser = {
+        id: "fake-user-id",
+        fullName: "Fake Counselor",
+        email: "counselor@test.com",
+        role: "COUNSELOR"
       }
+      localStorage.setItem("user", JSON.stringify(fakeUser))
+      localStorage.setItem("accessToken", "fake-access-token")
 
-      try {
-        const profileRes = await userApi.getMe()
-        let userInfo = profileRes.data?.data || profileRes.data
-
-        try {
-          const decoded: any = jwtDecode(storedToken)
-          if (decoded && decoded.role && !userInfo.role) {
-            userInfo = { ...userInfo, role: decoded.role }
+      if (active) {
+        dispatch({
+          type: "LOGIN",
+          payload: {
+            user: fakeUser as any,
+            accessToken: "fake-access-token",
+            refreshToken: null
           }
-        } catch {
-          // ignore decode errors
-        }
-
-        localStorage.setItem("user", JSON.stringify(userInfo))
-
-        if (active) {
-          dispatch({
-            type: "LOGIN",
-            payload: {
-              user: userInfo,
-              accessToken: storedToken,
-              refreshToken: storedRefreshToken
-            }
-          })
-          if (storedRefreshToken) {
-            setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
-          }
-        }
-      } catch {
-        // Token expired or invalid - clear and force re-login
-        clearStoredAuth()
-        if (active) {
-          dispatch({ type: "SET_LOADING", payload: false })
-        }
+        })
       }
     }
 

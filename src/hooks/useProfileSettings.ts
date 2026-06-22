@@ -20,6 +20,7 @@ export interface ProfileData {
   department: string
   // Common
   github_profile?: string
+  avatar_url?: string
 }
 
 const EMPTY_PROFILE: ProfileData = {
@@ -34,7 +35,8 @@ const EMPTY_PROFILE: ProfileData = {
   company: "",
   industry_focus: "",
   department: "",
-  github_profile: ""
+  github_profile: "",
+  avatar_url: ""
 }
 
 export function useProfileSettings() {
@@ -56,13 +58,19 @@ export function useProfileSettings() {
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await Promise.race([profileApi.getStudentProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getStudentProfile(),
+          timeout
+        ])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         const res = await Promise.race([profileApi.getMentorProfile(), timeout])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await Promise.race([profileApi.getCounselorProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getCounselorProfile(),
+          timeout
+        ])
         data = (res as any).data
       }
 
@@ -78,7 +86,10 @@ export function useProfileSettings() {
           data?.yearOfAdmission || data?.year_of_admission || ""
       })
     } catch (err) {
-      console.warn("[ProfileSettingsPage] Cannot load profile (API may be offline):", err)
+      console.warn(
+        "[ProfileSettingsPage] Cannot load profile (API may be offline):",
+        err
+      )
       // Fallback to user data from auth context so form still shows something
       setProfileData({
         ...EMPTY_PROFILE,
@@ -88,7 +99,6 @@ export function useProfileSettings() {
       })
     } finally {
       setLoading(false)
-
     }
   }
 
