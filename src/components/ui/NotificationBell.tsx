@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import dashboardApi from "../../api/dashboardApi"
 import { createPortal } from "react-dom"
 import {
   Bell,
@@ -277,6 +278,50 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
 
   const unreadCount = notifications.filter((n) => !n.read).length
   const previewNotifs = notifications.slice(0, 4)
+
+  useEffect(() => {
+    // Fetch notifications from backend
+    const fetchNotifications = async () => {
+      try {
+        const res = await dashboardApi.getMentorFeedback()
+        const data = res.data?.data || res.data
+        
+        let mappedNotifs: Notification[] = []
+        
+        if (data && Array.isArray(data)) {
+          mappedNotifs = data.map((fb: any) => ({
+            id: fb.feedbackId || fb.id || Math.random().toString(),
+            type: "info",
+            title: `New Feedback from ${fb.senderName || 'Mentor/Counselor'}`,
+            message: fb.content || "No content provided",
+            time: new Date(fb.createAt || Date.now()).toLocaleDateString(),
+            read: false,
+          }))
+        }
+
+        // Check local storage mock notification
+        const localNotif = localStorage.getItem('student_notification')
+        if (localNotif) {
+          try {
+            const parsed = JSON.parse(localNotif)
+            mappedNotifs.unshift({
+              id: "local-mock-1",
+              type: "success",
+              title: `New Feedback from ${parsed.senderName || 'Mentor'}`,
+              message: "Your portfolio has received a new review!",
+              time: new Date().toLocaleDateString(),
+              read: false,
+            })
+          } catch(e) {}
+        }
+        
+        setNotifications(mappedNotifs)
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err)
+      }
+    }
+    fetchNotifications()
+  }, [])
 
   // Close dropdown on outside click
   useEffect(() => {

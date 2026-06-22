@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react"
 import { isAxiosError } from "axios"
 import { isUuid } from "@/lib/utils"
-import { studentDashboardService } from "../services"
+import { studentDashboardService } from "../services/studentDashboardService"
 import type { StudentSetupStep } from "../types"
 
-type SetupProfile = {
-  careerId?: string
-  career_id?: string
+// Add missing interface
+interface SetupProfile {
+  university?: string;
+  yearOfAdmission?: string | number;
+  year_of_admission?: string | number;
+  major?: string;
+  careerPath?: { id?: string };
   career?: {
     careerId?: string
     career_id?: string
     id?: string
   }
+  careerId?: string
+  career_id?: string
 }
 
 const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
@@ -24,6 +30,7 @@ const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
 
 export function useStudentSetup(userId?: string) {
   const [activeSetupStep, setActiveSetupStep] = useState<StudentSetupStep>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
     if (!userId) return
@@ -49,7 +56,8 @@ export function useStudentSetup(userId?: string) {
           throw skillsError
         }
 
-        const profile = profileResult.status === "fulfilled" ? profileResult.value : null
+        // Original: const profile = profileResult.status === "fulfilled" ? profileResult.value : null
+        const profile = profileResult.status === "fulfilled" ? (profileResult.value as SetupProfile) : null
         const skills = skillsResult.status === "fulfilled" ? skillsResult.value : []
         const profileCareerId = getProfileCareerId(profile)
         const isProfileMissing =
@@ -67,6 +75,8 @@ export function useStudentSetup(userId?: string) {
         }
       } catch (error) {
         console.error("[Student Setup] Failed to check profile and skills:", error)
+      } finally {
+        if (active) setIsInitializing(false)
       }
     }
 
@@ -79,6 +89,7 @@ export function useStudentSetup(userId?: string) {
 
   return {
     activeSetupStep,
+    isInitializing,
     openSkillSelection: () => setActiveSetupStep("skills"),
     completeSetup: () => setActiveSetupStep(null)
   }

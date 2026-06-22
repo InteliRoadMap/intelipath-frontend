@@ -1,10 +1,12 @@
 export type RoadmapStep = {
   id: string
-  status: "completed" | "current" | "locked"
+  // Original: status: "completed" | "current" | "locked"
+  status: "completed" | "current" | "locked" | "in_progress"
   title: string
 }
 
-export type RoadmapNodeStatus = "completed" | "current" | "locked"
+// Original: export type RoadmapNodeStatus = "completed" | "current" | "locked"
+export type RoadmapNodeStatus = "completed" | "current" | "locked" | "in_progress"
 
 export type RoadmapResource = {
   title: string
@@ -50,6 +52,7 @@ export type SkillItem = {
 export type RequiredSkill = {
   skill: SkillItem
   importanceLevel: string
+  progress?: number
 }
 
 export type SkillResponse = {
@@ -65,6 +68,7 @@ export type SkillGap = {
   severity: string
   title: string
   description: string
+  progress?: number
 }
 
 export type MentorFeedback = {

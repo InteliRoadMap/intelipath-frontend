@@ -90,7 +90,7 @@ const defaultPortfolioData: PortfolioData = {
 };
 
 // Mapper from Backend PortfolioResponse to Frontend PortfolioData
-const mapToFrontendData = (backendData: any): PortfolioData => {
+export const mapToFrontendData = (backendData: any): PortfolioData => {
   if (!backendData) return defaultPortfolioData;
   
   const uiData: PortfolioData = JSON.parse(JSON.stringify(defaultPortfolioData)); // deep clone
@@ -120,7 +120,37 @@ const mapToFrontendData = (backendData: any): PortfolioData => {
     uiData.projects = backendData.projects.map((p: any) => ({
       id: p.projectId || `proj-${Date.now()}-${Math.random()}`,
       title: p.projectName || 'Untitled',
-      tech: p.techStack ? (typeof p.techStack === 'string' ? p.techStack : JSON.stringify(p.techStack)) : 'Tech Stack',
+      tech: (() => {
+        if (!p.techStack) return 'Tech Stack';
+        
+        // Helper to recursively parse JSON if it's a string
+        const deepParse = (val: any): any => {
+          if (typeof val === 'string') {
+            try {
+              const parsed = JSON.parse(val);
+              // Only return parsed if it's an object or array to avoid infinite loops on primitive strings
+              if (parsed && typeof parsed === 'object') {
+                return deepParse(parsed);
+              }
+            } catch (e) {
+              return val;
+            }
+          }
+          if (val && typeof val === 'object' && val.text) {
+             return deepParse(val.text);
+          }
+          return val;
+        };
+
+        const cleaned = deepParse(p.techStack);
+        
+        if (typeof cleaned === 'string') return cleaned;
+        if (typeof cleaned === 'object' && cleaned !== null) {
+          return Object.values(cleaned).flat().join(', ');
+        }
+        
+        return 'Tech Stack';
+      })(),
       description: p.description || '',
       codeLink: p.repoUrl || '#',
       demoLink: p.demoUrl || '#',
@@ -160,23 +190,46 @@ const mapToBackendRequest = (uiData: PortfolioData): any => {
       themeColors: uiData.themeColors,
       fonts: uiData.fonts,
       heroSection: uiData.hero,
-      skillsSection: null
+      // Original: skillsSection: null
+      skillsSection: undefined
     },
-    projects: uiData.projects.map(p => ({
-      projectName: p.title,
-      repoUrl: p.codeLink,
-      demoUrl: p.demoLink,
-      description: p.description,
-      techStack: { text: p.tech }, // Map string back to object if necessary
-      icon: p.icon,
-      stars: 0
+    // Original: skills: uiData.skills.map(...) (was absent in mapping)
+    skills: uiData.skills.map(s => ({
+      skillName: s.category,
+      techStack: s.stack,
+      customDescription: s.description
     })),
-    education: uiData.education.map(e => ({
-      university: e.university,
-      degree: e.degree,
-      period: e.period,
-      description: e.description
-    }))
+    // Original: projects: uiData.projects.map(...)
+    projects: uiData.projects.map(p => {
+      const proj: any = {
+        projectName: p.title,
+        repoUrl: p.codeLink,
+        demoUrl: p.demoLink,
+        description: p.description,
+        techStack: { text: p.tech }, // Map string back to object if necessary
+        icon: p.icon,
+        stars: 0
+      };
+      // Only attach projectId if it was assigned by the backend (UUID/Long), ignore placeholder 'proj-...'
+      if (p.id && !p.id.startsWith('proj-')) {
+        proj.projectId = p.id;
+      }
+      return proj;
+    }),
+    // Original: education: uiData.education.map(...)
+    education: uiData.education.map(e => {
+      const edu: any = {
+        university: e.university,
+        degree: e.degree,
+        period: e.period,
+        description: e.description
+      };
+      // Only attach educationId if assigned by backend
+      if (e.id && !e.id.startsWith('edu-') && !e.id.startsWith('edu-mock-')) {
+        edu.educationId = e.id;
+      }
+      return edu;
+    })
   };
 };
 
@@ -238,5 +291,10 @@ export const portfolioApi = {
       // If endpoint doesn't exist yet (404), just assume it's true to not block the UI for now
       return true;
     }
+  },
+
+  importGithubProject: async (repoUrl: string) => {
+    const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT, { repoUrl });
+    return res.data;
   }
 };

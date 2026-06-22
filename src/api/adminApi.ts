@@ -40,6 +40,16 @@ const adminApi = {
 
   deleteUser: async (userId: string) => {
     await mainClient.delete(ENDPOINTS.ADMIN_DASHBOARD.USER(userId))
+  },
+
+  triggerSkillExtraction: async () => {
+    const response = await mainClient.post(ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_SKILL_EXTRACTION)
+    return response.data
+  },
+
+  triggerJobScraper: async () => {
+    const response = await mainClient.post(ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_JOB_SCRAPER)
+    return response.data
   }
 }
 

@@ -8,10 +8,12 @@ export interface UpdateUserProfilePayload {
 }
 
 export interface UpdateStudentProfilePayload {
-  university: string
+  universityId: string
   yearOfAdmission: string
   major: string
-  careerId: string
+  // Original: careerId: string
+  // Made optional to prevent Profile Settings from patching and wiping out data, but Onboarding still uses it.
+  careerId?: string
 }
 
 export interface UpdateMentorProfilePayload {
@@ -21,13 +23,14 @@ export interface UpdateMentorProfilePayload {
 
 export interface UpdateCounselorProfilePayload {
   department: string
-  university: string
+  universityId: string
 }
 
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
-  getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR.PROFILE),
+  getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
+  getUniversities: () => mainClient.get(ENDPOINTS.UNIVERSITIES.LIST),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>
     mainClient.patch(ENDPOINTS.USERS.PROFILE, data),
@@ -46,6 +49,17 @@ const profileApi = {
     formData.append('file', file)
     // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
     return mainClient.patch('/users/profile/avatar', formData, {
+      transformRequest: [(data, headers) => {
+        delete headers['Content-Type'];
+        return data;
+      }],
+    })
+  },
+
+  uploadTranscript: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return mainClient.post(ENDPOINTS.STUDENT.UPLOAD_TRANSCRIPT, formData, {
       transformRequest: [(data, headers) => {
         delete headers['Content-Type'];
         return data;

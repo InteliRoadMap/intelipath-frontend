@@ -18,6 +18,7 @@ export const publicClient = createApiClient({
  */
 export const mainClient = createApiClient({
   baseURL: API_BASE_URL,
+  // withCredentials: true,
   getToken: getStoredToken,
   onUnauthorized: handleUnauthorized
 })

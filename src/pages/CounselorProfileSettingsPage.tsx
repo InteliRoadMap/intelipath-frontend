@@ -22,6 +22,9 @@ import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { cn } from "@/lib/utils"
+import counselorApi from '@/api/counselorApi'
+import { toast } from '@/utils/toast'
 gsap.registerPlugin(useGSAP)
 
 export default function CounselorProfileSettingsPage() {
@@ -42,6 +45,7 @@ export default function CounselorProfileSettingsPage() {
   const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
+
 
   useGSAP(
     () => {

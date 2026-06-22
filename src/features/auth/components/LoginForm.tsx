@@ -48,12 +48,12 @@ export default function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-8 select-none">
-        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+        <h2 className="mb-2 font-display text-4xl font-bold tracking-tight text-[#0a0a0a] sm:text-5xl">
           Welcome
         </h2>
-        <p className="font-sans text-sm font-light text-slate-600">
+        <p className="font-sans text-sm font-light text-slate-500">
           Sign in or create an account to access{" "}
-          <span className="font-medium text-brand-cyan">InteliPath</span>
+          <span className="font-medium text-cyan-600">InteliPath</span>
         </p>
       </div>
 
@@ -86,15 +86,6 @@ export default function LoginForm() {
         </div>
       )}
 
-      <div className="mt-6 flex justify-end">
-        <Link
-          to={ROUTES.HOME}
-          className="group inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-cyan-600"
-        >
-          Back to Welcome
-          <ArrowRight size={14} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
-        </Link>
-      </div>
     </div>
   )
 }

@@ -82,8 +82,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           initial
         )}
         {uploading && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <Loader2 className="animate-spin text-white w-6 h-6" />
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
           </div>
         )}
       </div>

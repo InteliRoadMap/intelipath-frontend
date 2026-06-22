@@ -189,9 +189,10 @@ export const ActionableListWidget = () => {
   }
 
   // Data processing
-  const highRecData = (recData as any)?.filter((item: any) => item.severity?.toUpperCase() === 'HIGH' || item.severity === 'High') || []
-  
-  const sourceData = activeTab === 'gaps' ? (data || []) : highRecData
+  // OLD CODE:
+  // const highRecData = (recData as any)?.filter((item: any) => item.severity?.toUpperCase() === 'HIGH' || item.severity === 'High') || []
+  // const sourceData = activeTab === 'gaps' ? (data || []) : highRecData
+  const sourceData = activeTab === 'gaps' ? (data || []) : (Array.isArray(recData) ? recData : [])
   const totalItems = sourceData.length
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
   const currentData = sourceData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
@@ -220,7 +221,7 @@ export const ActionableListWidget = () => {
         {status === "loading" ? (
           <LoadingState rows={6} />
         ) : status === "error" || currentData.length === 0 ? (
-          <EmptyState title="No action items yet" description={activeTab === 'gaps' ? "You are fully aligned with the market." : "No High-priority recommendations found."} />
+          <EmptyState title="No action items yet" description={activeTab === 'gaps' ? "You are fully aligned with the market." : "No recommendations found."} />
         ) : (
           <>
             {currentData.map((item: any, index: number) => (
@@ -230,16 +231,27 @@ export const ActionableListWidget = () => {
                     {index % 3 === 0 ? <BookOpen size={24} className="text-black" /> : index % 3 === 1 ? <Target size={24} className="text-black" /> : <Zap size={24} className="text-black" />}
                   </div>
                   <div>
-                    <h4 className="text-[16px] font-bold text-black">{item.title}</h4>
-                    <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[250px]">{item.description}</p>
+                    <h4 className="text-[16px] font-bold text-black">{item.title || item.skillName || 'Action Item'}</h4>
+                    <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[250px]">{item.description || item.category || 'Skill Gap'}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                   <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500">
                     <Clock size={16} />
-                    <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : 'Med Prio'}</span>
+                    <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : (item.type || 'Med Prio')}</span>
                   </div>
+                  
+                  {/* Progress Bar for Skill Gaps */}
+                  {activeTab === 'gaps' && item.progress !== undefined && (
+                    <div className="flex items-center gap-3 min-w-[100px]">
+                      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-black rounded-full" style={{ width: `${item.progress}%` }} />
+                      </div>
+                      <span className="text-[13px] font-black text-black">{item.progress}%</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5 text-[14px] font-bold text-black min-w-[60px]">
                     <Flame size={16} className="text-black" />
                     {item.severity}
@@ -300,7 +312,7 @@ export const QuickStatsWidget = () => {
   )
   
   const completed = data?.steps?.filter(s => s.status === 'completed').length || 0;
-  const inProgress = data?.steps?.filter(s => s.status === 'current').length || 1;
+  const inProgress = data?.steps?.filter(s => s.status === 'current').length || 0;
 
   return (
     <div className="grid grid-cols-2 gap-4 w-full">
@@ -326,10 +338,16 @@ export const MarketDemandChartWidget = () => {
     () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
   )
 
-  const chartData = data?.chart?.map((val, i) => ({
+  let rawChart = data?.chart || []
+  if (rawChart.length > 0 && rawChart.length < 7) {
+    // Pad left with 0 to ensure we have a full week visual
+    rawChart = [...Array(7 - rawChart.length).fill(0), ...rawChart]
+  }
+
+  const chartData = rawChart.map((val, i) => ({
     name: ['mon','tue','wed','thu','fri','sat','sun'][i % 7] || `M${i}`,
     value: val 
-  })) || []
+  }))
 
   return (
     <div className="mt-8">
@@ -389,8 +407,8 @@ export const SkillRadarChartWidget = () => {
   const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
   const missingIds = new Set(data?.missingSkills.map((skill) => skill.skillId) ?? [])
 
-  const chartData = data?.requiredSkills.map(({ skill, importanceLevel }) => {
-    const current = missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0
+  const chartData = data?.requiredSkills.map(({ skill, importanceLevel, progress }) => {
+    const current = progress !== undefined ? progress : (missingIds.has(skill.skillId) ? 0 : selectedIds.has(skill.skillId) ? 100 : 0)
     const target = importanceLevel === "High" ? 100 : importanceLevel === "Medium" ? 70 : 40
     return {
       subject: skill.skillName.substring(0, 10),

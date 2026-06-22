@@ -1,5 +1,6 @@
 import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
+import { mapToFrontendData } from "./portfolioApi"
 
 /**
  * Mentor Dashboard API Functions
@@ -10,77 +11,92 @@ const mentorApi = {
     return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.WELCOME_ALERT)
   },
   
-  getRatingMetric: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve({ score: 4.8, increase: 0.2 }), 500));
-  },
-  getResponseTimeMetric: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve({ hours: 2, increase: -0.5 }), 500));
-  },
-  getTotalStudentsMetric: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve({ count: 15, increase: 3 }), 500));
-  },
-  getPendingReviewsCountMetric: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve({ count: 4, increase: -1 }), 500));
-  },
-  getFeedbackSubmittedMetric: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve({ count: 120, increase: 15 }), 500));
+  getMetrics: async () => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.METRICS);
+      return res.data?.data || res.data;
+    } catch { return null; }
   },
 
-  getPendingReviews: async () => {
-    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.PENDING_REVIEWS)
+  getPendingReviews: async (page = 0, size = 10) => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.PENDING_REVIEWS, { params: { page, size } });
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch { return []; }
   },
 
   getInsight: async () => {
-    return await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.INSIGHT)
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.INSIGHT);
+      return res.data?.data || res.data;
+    } catch { return null; }
   },
 
   getCareerDistribution: async () => {
     try {
-      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.CAREER_DISTRIBUTION)
-      return res.data
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.CAREER_DISTRIBUTION);
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch {
-      return []
+      return [];
     }
   },
 
-  getStudentsList: async () => {
-    // Return empty array to show no data
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([]), 500);
-    });
+  getStudentsList: async (page = 0, size = 10) => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.STUDENT_LIST, { params: { page, size } });
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch { return []; }
   },
 
   getStudentPortfolio: async (studentId: string) => {
     try {
-      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.STUDENT_PORTFOLIO(studentId))
-      return res.data
+      // FE routes to the public portfolio API as suggested by BE
+      const res = await mainClient.get(`/public-portfolio/${studentId}`);
+      const rawData = res.data?.data || res.data;
+      return mapToFrontendData(rawData);
     } catch {
-      // Return empty state or basic object to show empty UI
-      return {
-        id: studentId,
-        fullName: "",
-        email: "",
-        university: "",
-        major: "",
-        career: "",
-        github_profile: "",
-        bio: "",
-        skills: [],
-        projects: []
-      }
+      return null;
     }
   },
 
   getFeedbackHistory: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([]), 500);
-    });
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.FEEDBACK_HISTORY);
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch { return []; }
   },
 
-  submitFeedback: async (studentId: string, payload: { type: string, content: string }) => {
-    // Just simulate network latency for mock
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return { success: true, message: "Feedback submitted successfully." };
+  submitFeedback: async (receiverId: string, payload: { type: string, content: string }) => {
+    try {
+      const res = await mainClient.post(ENDPOINTS.MENTOR_DASHBOARD.SUBMIT_FEEDBACK, { receiverId, ...payload });
+      return res.data?.data || res.data || { success: true, message: "Feedback submitted successfully." };
+    } catch { return { success: false, message: "Failed to submit feedback." }; }
+  },
+
+  getProgressReports: async () => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.PROGRESS_REPORTS);
+      return res.data?.data || res.data;
+    } catch {
+      return {
+        metrics: [],
+        studentsProgress: [],
+        needsAttention: [],
+        skillGaps: []
+      };
+    }
   }
 }
 

@@ -86,7 +86,8 @@ export function StudentFeedbackPageView() {
                     <h3 className="font-bold text-slate-900 text-lg">{item.mentorName}</h3>
                     <p className="text-xs font-medium text-slate-500">{item.mentorRole}</p>
                   </div>
-                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                  {/* Original: <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200"> */}
+                  <Badge variant="info" className="bg-indigo-50 text-indigo-700 border-indigo-200">
                     {item.type}
                   </Badge>
                 </div>

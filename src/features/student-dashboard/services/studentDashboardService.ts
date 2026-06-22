@@ -59,6 +59,7 @@ type RawStudentRoadmap = {
 
 type StudentProfilePayload = {
   university: string
+  universityId?: string
   yearOfAdmission: string
   major: string
   careerId: string
@@ -283,6 +284,7 @@ export const studentDashboardService = {
 
     return profileApi.updateStudentProfile({
       ...payload,
+      universityId: payload.universityId || payload.university,
       yearOfAdmission
     })
   },

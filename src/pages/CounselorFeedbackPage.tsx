@@ -17,14 +17,14 @@ import {
   Clock,
   ChevronDown,
   LayoutDashboard,
-  Loader2,
   Send,
   CheckCircle,
   Users,
   AlertCircle,
   Star,
   Sparkles,
-  Check
+  Check,
+  MoreHorizontal
 } from "lucide-react"
 import {
   Briefcase as BriefcasePhos,
@@ -44,14 +44,6 @@ import {
 } from "@/hooks/useCounselorFeedback"
 
 // ─── Shared UI ───────────────────────────────────────────────────
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse bg-slate-100 rounded-lg ${className ?? ""}`}
-    />
-  )
-}
-
 function EmptyState({
   icon: Icon,
   label
@@ -533,11 +525,7 @@ function FeedbackTab({ student }: { student: MyStudent }) {
             onClick={handleSend}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-bold bg-gradient-to-r from-[#006064] to-[#00838f] text-white hover:from-[#00838f] hover:to-[#00acc1] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
-            {sending ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
+            {!sending && <Send size={16} />}
             {sending ? "Sending..." : "Send Message"}
           </button>
         </div>
@@ -560,11 +548,7 @@ function FeedbackTab({ student }: { student: MyStudent }) {
         </div>
 
         {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
-            ))}
-          </div>
+          <div className="space-y-4"></div>
         ) : feedbacks.length === 0 ? (
           <EmptyState
             icon={MessageSquare}
@@ -1014,11 +998,7 @@ export default function CounselorFeedbackPage() {
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f0fafa] text-[#006064] rounded-xl text-[13px] font-bold shadow-sm border border-[#e0f2fe]">
               <Users size={16} />
-              {loading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <span>{filtered.length} Students</span>
-              )}
+              <span>{filtered.length} Students</span>
             </div>
           </div>
         </div>
