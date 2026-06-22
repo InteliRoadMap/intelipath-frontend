@@ -29,7 +29,10 @@ export const ENDPOINTS = {
     SELECT_SKILLS: "/student/skills/select",
     PORTFOLIO_ME: "/student/portfolio/me",
     PORTFOLIO_SLUG: "/student/portfolio/slug",
-    PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import"
+    // OLD CODE: (no old code for UPLOAD_TRANSCRIPT, just adding new endpoint)
+    PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import",
+    PORTFOLIO_REQUEST_REVIEW: '/student/portfolio/request-review',
+    UPLOAD_TRANSCRIPT: "/student/profile/transcript"
   },
   CAREER_ROLES: {
     LIST: "/careers"
@@ -57,6 +60,9 @@ export const ENDPOINTS = {
     TRENDING_SKILLS: '/market-trends/skills/trending',
     SALARY_OVERVIEW: '/market-trends/salary-overview'
   },
+  UNIVERSITIES: {
+    LIST: '/universities'
+  },
   RECRUITMENT_POSTS: {
     ALL: '/recruitment-posts/',
     COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,
@@ -69,7 +75,8 @@ export const ENDPOINTS = {
     USERS: "/admin/dashboard/users",
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
     USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
-    TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction"
+    TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction",
+    TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
   COUNSELOR: {
     PROFILE: '/counselor/profile',
@@ -86,6 +93,8 @@ export const ENDPOINTS = {
     GET_STUDENT_LIST: "/counselor/feedback/students",
     HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
+    MODIFY_FEEDBACK: "/counselor/dashboard/modify-feedback",
+    DELETE_FEEDBACK: (feedbackId: string) => `/counselor/dashboard/delete-feedback/${feedbackId}`,
 
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },

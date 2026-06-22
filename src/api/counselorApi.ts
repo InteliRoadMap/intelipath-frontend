@@ -99,7 +99,10 @@ const counselorApi = {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_FEEDBACK
     )
-    return res.data
+    const data = res.data?.data || res.data;
+    if (data && Array.isArray(data.content)) return { feedbacks: data.content };
+    if (Array.isArray(data)) return { feedbacks: data };
+    return data;
   },
 
   getMyStudent: async (search?: string): Promise<MyStudent[]> => {
@@ -107,8 +110,15 @@ const counselorApi = {
       search && search.trim()
         ? `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/${encodeURIComponent(search.trim())}`
         : ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST
-    const res = await mainClient.get(url)
-    return res.data?.students ?? []
+    try {
+      const res = await mainClient.get(url)
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return data?.students ?? [];
+    } catch {
+      return [];
+    }
   },
   getHistoryFeedback: async (
     studentId: string
@@ -122,6 +132,19 @@ const counselorApi = {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.CREATE_FEEDBACK,
       payload
+    )
+    return res.data
+  },
+  modifyFeedback: async (payload: { feedbackId: string, content: string, type: string }): Promise<any> => {
+    const res = await mainClient.patch(
+      ENDPOINTS.COUNSELOR_DASHBOARD.MODIFY_FEEDBACK,
+      payload
+    )
+    return res.data
+  },
+  deleteFeedback: async (feedbackId: string): Promise<any> => {
+    const res = await mainClient.delete(
+      ENDPOINTS.COUNSELOR_DASHBOARD.DELETE_FEEDBACK(feedbackId)
     )
     return res.data
   }

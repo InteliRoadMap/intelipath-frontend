@@ -80,10 +80,8 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         </div>
 
         <div className="p-2 flex flex-col gap-1">
-          {/* Notifications (Counselor only) */}
-          {role === 'COUNSELOR' && (
-            <NotificationBell asMenuItem onCloseMenu={() => setShowDropdown(false)} />
-          )}
+          {/* Notifications */}
+          <NotificationBell asMenuItem onCloseMenu={() => setShowDropdown(false)} />
 
           {/* Settings */}
           <button

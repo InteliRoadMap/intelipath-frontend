@@ -75,7 +75,6 @@ export const decrementLoading = () => {
   onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
-//Auth Helpers & Token Management
 export const getStoredToken = () => localStorage.getItem("accessToken")
 const defaultGetRefreshToken = () => localStorage.getItem("refreshToken")
 
@@ -256,7 +255,8 @@ export function createApiClient({
             expiresIn
           } = refreshResponse.data
 
-          if (accessToken) {
+          // Assuming refreshResponse being successful means cookies are set
+          if (refreshResponse.status === 200 || refreshResponse.status === 201) {
             localStorage.setItem("accessToken", accessToken)
             if (rotatedRefreshToken) {
               localStorage.setItem("refreshToken", rotatedRefreshToken)
@@ -302,18 +302,18 @@ export function createApiClient({
 
         // 403: Forbidden
         if (status === 403) {
-          toast.error("403 - Bạn không có quyền truy cập vào tài nguyên này.");
+          toast.error("403 - You do not have permission to access this resource.");
         } 
         // 400 & 404: Bad Request or Not Found
         else if (status === 404 || status === 400) {
           // If it's a validation error, let the component handle it natively
           if (beError !== "VALIDATION_ERROR" && beMessage) {
-            toast.error(`Thông báo: ${beMessage}`);
+            toast.error(`Error: ${beMessage}`);
           }
         } 
         // 500: Internal Server Error
         else if (status >= 500) {
-          toast.error("Đã có lỗi xảy ra từ máy chủ, vui lòng thử lại sau.");
+          toast.error("An internal server error occurred. Please try again later.");
         }
       }
 

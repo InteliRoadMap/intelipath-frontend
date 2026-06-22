@@ -21,7 +21,7 @@ import { Users, Layers, Gauge } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
 import { MentorProgressReportsView } from './MentorProgressReportsView';
-import { MentorFeedbackHistoryView } from './MentorFeedbackHistoryView';
+import MarketPulsePageView from '../../student-dashboard/components/MarketPulsePageView';
 
 export function MentorDashboardView() {
   const { user, logout } = useAuth();
@@ -29,6 +29,15 @@ export function MentorDashboardView() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'dashboard');
   const containerRef = useRef<HTMLDivElement>(null);
+  const [metrics, setMetrics] = useState<any>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  useEffect(() => {
+    mentorApi.getMetrics().then(res => {
+      setMetrics(res);
+      setMetricsLoading(false);
+    }).catch(() => setMetricsLoading(false));
+  }, []);
 
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -70,10 +79,10 @@ export function MentorDashboardView() {
             <section className="gsap-fade-section">
               <WelcomeBanner user={user} />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-                <MetricWidget title="TOTAL MENTEES" icon={Users} apiFunction={mentorApi.getTotalStudentsMetric} />
-                <MetricWidget title="PENDING REVIEWS" icon={Layers} apiFunction={mentorApi.getPendingReviewsCountMetric} />
-                <MetricWidget title="FEEDBACK SENT" icon={ChatTeardropText} apiFunction={mentorApi.getFeedbackSubmittedMetric} />
-                <MetricWidget title="AVG. PROGRESS" icon={Gauge} apiFunction={mentorApi.getResponseTimeMetric} />
+                <MetricWidget title="TOTAL MENTEES" icon={Users} data={metrics?.mentees} isLoading={metricsLoading} />
+                <MetricWidget title="PENDING REVIEWS" icon={Layers} data={metrics?.pendingReviews} isLoading={metricsLoading} />
+                <MetricWidget title="FEEDBACK SENT" icon={ChatTeardropText} data={metrics?.feedbacks} isLoading={metricsLoading} />
+                <MetricWidget title="AVG. PROGRESS" icon={Gauge} data={metrics?.responseTime} isLoading={metricsLoading} />
               </div>
             </section>
             
@@ -95,15 +104,11 @@ export function MentorDashboardView() {
           </div>
         )}
 
-        {activeTab === 'feedback' && (
-          <div className="gsap-fade-section">
-            <MentorFeedbackHistoryView />
-          </div>
-        )}
+
 
         {activeTab === 'market' && (
-          <div className="gsap-fade-section flex h-96 items-center justify-center text-slate-500 font-medium">
-            Market trends coming soon...
+          <div className="gsap-fade-section pt-10">
+            <MarketPulsePageView hideLayout={true} />
           </div>
         )}
       </div>

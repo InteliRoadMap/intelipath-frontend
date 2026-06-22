@@ -90,7 +90,7 @@ const defaultPortfolioData: PortfolioData = {
 };
 
 // Mapper from Backend PortfolioResponse to Frontend PortfolioData
-const mapToFrontendData = (backendData: any): PortfolioData => {
+export const mapToFrontendData = (backendData: any): PortfolioData => {
   if (!backendData) return defaultPortfolioData;
   
   const uiData: PortfolioData = JSON.parse(JSON.stringify(defaultPortfolioData)); // deep clone
@@ -190,23 +190,46 @@ const mapToBackendRequest = (uiData: PortfolioData): any => {
       themeColors: uiData.themeColors,
       fonts: uiData.fonts,
       heroSection: uiData.hero,
-      skillsSection: null
+      // Original: skillsSection: null
+      skillsSection: undefined
     },
-    projects: uiData.projects.map(p => ({
-      projectName: p.title,
-      repoUrl: p.codeLink,
-      demoUrl: p.demoLink,
-      description: p.description,
-      techStack: { text: p.tech }, // Map string back to object if necessary
-      icon: p.icon,
-      stars: 0
+    // Original: skills: uiData.skills.map(...) (was absent in mapping)
+    skills: uiData.skills.map(s => ({
+      skillName: s.category,
+      techStack: s.stack,
+      customDescription: s.description
     })),
-    education: uiData.education.map(e => ({
-      university: e.university,
-      degree: e.degree,
-      period: e.period,
-      description: e.description
-    }))
+    // Original: projects: uiData.projects.map(...)
+    projects: uiData.projects.map(p => {
+      const proj: any = {
+        projectName: p.title,
+        repoUrl: p.codeLink,
+        demoUrl: p.demoLink,
+        description: p.description,
+        techStack: { text: p.tech }, // Map string back to object if necessary
+        icon: p.icon,
+        stars: 0
+      };
+      // Only attach projectId if it was assigned by the backend (UUID/Long), ignore placeholder 'proj-...'
+      if (p.id && !p.id.startsWith('proj-')) {
+        proj.projectId = p.id;
+      }
+      return proj;
+    }),
+    // Original: education: uiData.education.map(...)
+    education: uiData.education.map(e => {
+      const edu: any = {
+        university: e.university,
+        degree: e.degree,
+        period: e.period,
+        description: e.description
+      };
+      // Only attach educationId if assigned by backend
+      if (e.id && !e.id.startsWith('edu-') && !e.id.startsWith('edu-mock-')) {
+        edu.educationId = e.id;
+      }
+      return edu;
+    })
   };
 };
 

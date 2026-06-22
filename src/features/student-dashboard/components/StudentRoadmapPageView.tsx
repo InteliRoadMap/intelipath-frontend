@@ -232,6 +232,7 @@ export default function StudentRoadmapPageView() {
 
   const handleUpdateNodeStatus = async (newStatus: string) => {
     if (!selectedNodeData || isUpdatingNode) return;
+    const prevStatus = selectedNodeData.status; // Added to prevent ReferenceError
     setIsUpdatingNode(true);
     try {
       // 1. Gửi request lên Backend (nếu lỗi sẽ văng xuống catch)

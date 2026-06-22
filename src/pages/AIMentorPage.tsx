@@ -35,88 +35,10 @@ import { useGSAP } from "@gsap/react"
 import { motion, AnimatePresence } from 'framer-motion'
 
 const processMarkdown = (text: string) => {
-  if (!text) return text;
-  
-  // 1. Basic formatting: newlines before headings/bullets, and clean dirty markdown in tables
-  let processed = text
-    .replace(/([^\n])(#{1,6}\s)/g, '$1\n\n$2')
-    .replace(/([^\n])(-\s)/g, '$1\n$2')
-    .replace(/([^\n])(\d+\.\s)/g, '$1\n$2')
-    // Clean up rogue ### inside table cells caused by blind AI copying
-    .replace(/\|(\s*)#{1,6}\s+/g, '|$1');
-
-  // 2. Advanced table repairing for broken rows & squished tables
-  const lines = processed.split('\n');
-  let inTable = false;
-  let expectedCols = 0;
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    
-    // Detect table separator line (e.g. |---|---|)
-    if (line.match(/^\|?[-: ]+\|[-:| ]*$/) && i > 0 && lines[i-1].includes('|')) {
-      inTable = true;
-      // Ensure the header row starts and ends with '|'
-      if (!lines[i-1].trim().startsWith('|')) lines[i-1] = '| ' + lines[i-1].trim();
-      if (!lines[i-1].trim().endsWith('|')) lines[i-1] = lines[i-1].trim() + ' |';
-      
-      expectedCols = lines[i-1].split('|').length;
-      
-      // Fix separator column count to match header
-      let sepLine = line;
-      if (!sepLine.startsWith('|')) sepLine = '|' + sepLine;
-      if (!sepLine.endsWith('|')) sepLine = sepLine + '|';
-      
-      const sepCols = sepLine.split('|').length;
-      if (sepCols < expectedCols) {
-        sepLine = sepLine.slice(0, -1) + '|---|'.repeat(expectedCols - sepCols);
-      }
-      lines[i] = sepLine;
-      
-      // Ensure a blank line exists before the header
-      if (i > 1 && lines[i-2].trim() !== '') {
-        lines.splice(i - 1, 0, '');
-        i++; // adjust index because we inserted a line
-      }
-    } else if (inTable && line === '') {
-      // Look ahead to see if the table continues
-      let nextNonEmptyIndex = i + 1;
-      while (nextNonEmptyIndex < lines.length && lines[nextNonEmptyIndex].trim() === '') {
-        nextNonEmptyIndex++;
-      }
-      
-      if (nextNonEmptyIndex < lines.length && lines[nextNonEmptyIndex].trim().startsWith('|')) {
-        // Table continues! Delete this blank line.
-        lines[i] = '__TO_DELETE__';
-      } else {
-        inTable = false;
-      }
-    }
-    
-    if (inTable && i > 0 && lines[i] !== '__TO_DELETE__') {
-      // If current line does NOT start with '|' and we are inside a table,
-      // it means the row was broken into multiple lines!
-      if (line.length > 0 && !line.startsWith('|') && !line.match(/^\|?[-: ]+\|[-:| ]*$/)) {
-        // Join it with the previous line
-        let prevIndex = i - 1;
-        while (prevIndex >= 0 && lines[prevIndex] === '__TO_DELETE__') {
-          prevIndex--;
-        }
-        if (prevIndex >= 0) {
-          lines[prevIndex] = lines[prevIndex] + ' ' + line;
-          lines[i] = '__TO_DELETE__';
-        }
-      } else if (line.length > 0 && line.startsWith('|')) {
-        // Normal row, ensure it ends with '|'
-        if (!lines[i].trim().endsWith('|')) lines[i] = lines[i].trim() + ' |';
-        
-        // Very basic fix for broken rows: if this row has too few cols and the NEXT row starts with '|' and also has few cols
-        // We just leave it for now, as joining them safely requires complex parsing.
-      }
-    }
-  }
-  
-  return lines.filter(l => l !== '__TO_DELETE__').join('\n');
+  // Markdown from the model is data, not source code to repair. Heuristics that
+  // insert headings/lists or rebuild tables corrupt valid content such as C#.
+  // remark-gfm below is responsible for rendering valid GitHub-flavoured Markdown.
+  return text.replace(/\r\n?/g, '\n');
 }
 
 export default function AIMentorPage() {

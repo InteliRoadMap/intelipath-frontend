@@ -40,6 +40,7 @@ const chatApi = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
+      // credentials: 'include',
       body: JSON.stringify({ message }),
       signal
     })
@@ -57,6 +58,53 @@ const chatApi = {
     let done = false
     let buffer = ""
     let fullText = ""
+    const isEventStream = response.headers.get('content-type')?.includes('text/event-stream') ?? false
+
+    const emitSseEvent = (eventStr: string) => {
+      const lines = eventStr.split('\n')
+      let eventData = ""
+
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const content = line.substring(5)
+          // Spring WebFlux can omit the optional space after `data:`. Keep all
+          // payload characters so token spacing is not accidentally removed.
+          eventData += eventData === "" ? content : '\n' + content
+        } else if (line.startsWith('event:') || line.startsWith('id:') || line.startsWith('retry:')) {
+          continue
+        } else if (line.trim() === '' && eventData === '') {
+          continue
+        } else {
+          // Some Spring WebFlux chunks contain continuation lines without `data:`.
+          eventData += eventData === "" ? line : '\n' + line
+        }
+      }
+
+      if (eventData !== "") {
+        fullText += eventData
+        onMessage(fullText)
+      } else if (eventStr.includes('data:')) {
+        // An empty SSE data block represents a newline token from the LLM.
+        fullText += '\n'
+        onMessage(fullText)
+      }
+    }
+
+    const drainSseBuffer = (includeTrailingEvent = false) => {
+      let eventEndIndex: number
+      while ((eventEndIndex = buffer.indexOf('\n\n')) >= 0) {
+        const eventStr = buffer.substring(0, eventEndIndex)
+        buffer = buffer.substring(eventEndIndex + 2)
+        emitSseEvent(eventStr)
+      }
+
+      // Servers occasionally close the stream without the final blank-line
+      // delimiter. Treat its remaining payload as the last SSE event.
+      if (includeTrailingEvent && buffer.trim() !== '') {
+        emitSseEvent(buffer)
+        buffer = ""
+      }
+    }
 
     while (!done) {
       const { value, done: readerDone } = await reader.read()
@@ -64,50 +112,22 @@ const chatApi = {
       if (value) {
         buffer += decoder.decode(value, { stream: true }).replace(/\r/g, '')
         
-        if (response.headers.get('content-type')?.includes('text/event-stream')) {
-          let eventEndIndex;
-          while ((eventEndIndex = buffer.indexOf('\n\n')) >= 0) {
-            const eventStr = buffer.substring(0, eventEndIndex)
-            buffer = buffer.substring(eventEndIndex + 2)
-            
-            const lines = eventStr.split('\n')
-            let eventData = ""
-            
-            for (const line of lines) {
-              if (line.startsWith('data:')) {
-                const content = line.substring(5)
-                // We DO NOT strip the leading space here because Spring WebFlux Flux<String> 
-                // does not append the mandatory space. Stripping it will swallow actual spaces.
-                eventData += eventData === "" ? content : '\n' + content
-              } else if (line.startsWith('event:') || line.startsWith('id:') || line.startsWith('retry:')) {
-                // Ignore standard SSE metadata fields
-                continue
-              } else if (line.trim() === '' && eventData === '') {
-                // Ignore leading empty lines in the event block
-                continue
-              } else {
-                // Spring WebFlux bug: string chunk contains newlines but subsequent lines lack 'data:' prefix.
-                // We treat these lines as part of the data payload.
-                eventData += eventData === "" ? line : '\n' + line
-              }
-            }
-            
-            if (eventData !== "") {
-              fullText += eventData
-              onMessage(fullText)
-            } else if (eventStr.includes('data:')) {
-              // An empty data block in SSE typically represents a newline token (\n) 
-              // that was streamed by the backend LLM
-              fullText += '\n'
-              onMessage(fullText)
-            }
-          }
+        if (isEventStream) {
+          drainSseBuffer()
         } else {
           fullText += buffer
           onMessage(fullText)
           buffer = ""
         }
       }
+    }
+
+    buffer += decoder.decode().replace(/\r/g, '')
+    if (isEventStream) {
+      drainSseBuffer(true)
+    } else if (buffer) {
+      fullText += buffer
+      onMessage(fullText)
     }
   },
 
@@ -116,7 +136,8 @@ const chatApi = {
     const formData = new FormData()
     formData.append("file", file)
     // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
-    return mainClient.post<{ url: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
+    // Original: return mainClient.post<{ url: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
+    return mainClient.post<{ url: string, extractedText?: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
       transformRequest: [(data, headers) => {
         delete headers['Content-Type'];
         return data;

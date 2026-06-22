@@ -22,7 +22,7 @@ import { useProfileSettings } from "../hooks/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import { cn } from "@/shared/lib/utils"
+import { cn } from "@/lib/utils"
 import counselorApi from '@/api/counselorApi'
 import { toast } from '@/utils/toast'
 gsap.registerPlugin(useGSAP)

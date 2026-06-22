@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react"
 import { isAxiosError } from "axios"
 import { isUuid } from "@/lib/utils"
-import { studentDashboardService } from "../services"
+import { studentDashboardService } from "../services/studentDashboardService"
 import type { StudentSetupStep } from "../types"
 
-type SetupProfile = {
-  careerId?: string
-  career_id?: string
+// Add missing interface
+interface SetupProfile {
+  university?: string;
+  yearOfAdmission?: string | number;
+  year_of_admission?: string | number;
+  major?: string;
+  careerPath?: { id?: string };
   career?: {
     careerId?: string
     career_id?: string
     id?: string
   }
+  careerId?: string
+  career_id?: string
 }
 
 const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
@@ -50,7 +56,8 @@ export function useStudentSetup(userId?: string) {
           throw skillsError
         }
 
-        const profile = profileResult.status === "fulfilled" ? profileResult.value : null
+        // Original: const profile = profileResult.status === "fulfilled" ? profileResult.value : null
+        const profile = profileResult.status === "fulfilled" ? (profileResult.value as SetupProfile) : null
         const skills = skillsResult.status === "fulfilled" ? skillsResult.value : []
         const profileCareerId = getProfileCareerId(profile)
         const isProfileMissing =

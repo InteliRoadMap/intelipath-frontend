@@ -389,6 +389,7 @@ export default function AdminDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [isTriggering, setIsTriggering] = useState(false)
+  const [isTriggeringScraper, setIsTriggeringScraper] = useState(false)
   const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
 
   const showToast = (text: string, type: 'error' | 'success') => {
@@ -405,11 +406,23 @@ export default function AdminDashboardView() {
     setIsTriggering(true)
     try {
       await adminApi.triggerSkillExtraction()
-      showToast("Skill extraction job started successfully!", "success")
+      showToast("Skill extraction job started successfully.", "success")
     } catch (error) {
       showToast("Failed to trigger skill extraction job.", "error")
     } finally {
       setIsTriggering(false)
+    }
+  }
+
+  const handleTriggerScraper = async () => {
+    setIsTriggeringScraper(true)
+    try {
+      await adminApi.triggerJobScraper()
+      showToast("Job scraper started successfully.", "success")
+    } catch (error) {
+      showToast("Failed to trigger job scraper.", "error")
+    } finally {
+      setIsTriggeringScraper(false)
     }
   }
 
@@ -459,16 +472,28 @@ export default function AdminDashboardView() {
             <p className="mt-2 mb-4 max-w-[280px] text-sm leading-5 text-slate-500">
               Monitor platform health and manage user access.
             </p>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="gap-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800"
-              onClick={handleTriggerJob}
-              disabled={isTriggering}
-            >
-              <Lightning size={16} weight="duotone" className={isTriggering ? "animate-pulse" : ""} /> 
-              {isTriggering ? "Triggering..." : "Force Run Skill Extraction"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 justify-start"
+                onClick={handleTriggerJob}
+                disabled={isTriggering || isTriggeringScraper}
+              >
+                <Lightning size={16} weight="duotone" className={isTriggering ? "animate-pulse" : ""} /> 
+                {isTriggering ? "Triggering..." : "Force Run Skill Extraction"}
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 justify-start"
+                onClick={handleTriggerScraper}
+                disabled={isTriggeringScraper || isTriggering}
+              >
+                <Lightning size={16} weight="duotone" className={isTriggeringScraper ? "animate-pulse" : ""} /> 
+                {isTriggeringScraper ? "Triggering..." : "Force Run Job Scraper"}
+              </Button>
+            </div>
           </div>
           <AdminMetrics className="min-w-0" />
         </section>

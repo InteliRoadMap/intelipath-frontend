@@ -97,7 +97,11 @@ const mockData: RecruitmentPost[] = [
   }
 ];
 
-export default function MarketPulsePageView() {
+interface MarketPulsePageViewProps {
+  hideLayout?: boolean;
+}
+
+export default function MarketPulsePageView({ hideLayout = false }: MarketPulsePageViewProps = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -114,13 +118,18 @@ export default function MarketPulsePageView() {
   React.useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [companiesRes, skillsRes, salaryRes, postsRes] = await Promise.all([
+        const results = await Promise.allSettled([
           marketPulseApi.getTopHiringCompanies(5),
           marketPulseApi.getTrendingSkills(),
           marketPulseApi.getSalaryOverview(),
           marketPulseApi.getRecruitmentPosts()
         ]);
         
+        const companiesRes = results[0].status === 'fulfilled' ? results[0].value : { data: [] };
+        const skillsRes = results[1].status === 'fulfilled' ? results[1].value : { data: [] };
+        const salaryRes = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
+        const postsRes = results[3].status === 'fulfilled' ? results[3].value : { data: [] };
+
         setTopCompanies(companiesRes.data || []);
         setTrendingSkills(skillsRes.data || []);
         setSalaryOverview(salaryRes.data || []);
@@ -187,13 +196,17 @@ export default function MarketPulsePageView() {
   }, [recruitmentPosts, searchTerm, sortOrder, selectedTag]);
 
   return (
-    <div className="flex flex-col min-h-screen w-full relative overflow-hidden bg-transparent pt-24 pb-20">
-      <SharedAppBackground />
-      <StudentHeader
-        user={user}
-        onLogout={logout}
-        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
-      />
+    <div className={hideLayout ? "w-full" : "flex flex-col min-h-screen w-full relative overflow-hidden bg-transparent pt-24 pb-20"}>
+      {!hideLayout && (
+        <>
+          <SharedAppBackground />
+          <StudentHeader
+            user={user}
+            onLogout={logout}
+            onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+          />
+        </>
+      )}
       
       <div className="max-w-6xl mx-auto w-full px-6 relative z-10 flex flex-col h-full gap-8">
         
@@ -215,6 +228,10 @@ export default function MarketPulsePageView() {
             {loading ? (
               <div className="animate-pulse flex flex-col gap-4">
                 {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl w-full"></div>)}
+              </div>
+            ) : topCompanies.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-4">
+                <p className="text-[13px] text-slate-500 font-medium text-center">No data available at the moment.</p>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">

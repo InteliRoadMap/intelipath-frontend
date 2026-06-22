@@ -20,6 +20,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
   const [yob, setyob] = useState("")
   const [bio, setBio] = useState("")
   const [university, setUniversity] = useState("")
+  const [universityId, setUniversityId] = useState("")
   const [yearOfAdmission, setYearOfAdmission] = useState("")
   const [major, setMajor] = useState("Software Engineering")
   const [isSaving, setIsSaving] = useState(false)
@@ -59,6 +60,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setyob("")
     setBio("")
     setUniversity("")
+    setUniversityId("")
     setYearOfAdmission("")
     setMajor("Software Engineering")
     setErrors({})
@@ -92,19 +94,20 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     }
 
     try {
-      await Promise.all([
-        profileApi.updateUserProfile({
-          fullName,
-          yob,
-          bio
-        }),
-        profileApi.updateStudentProfile({
-          university,
+      await profileApi.updateUserProfile({
+        fullName,
+        yob,
+        bio
+      })
+
+      if (user?.role === "STUDENT") {
+        await profileApi.updateStudentProfile({
+          universityId: universityId || university,
           yearOfAdmission,
           major,
           careerId: ""
         })
-      ])
+      }
 
       setStep(1)
       handleClose()
@@ -137,6 +140,8 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setBio,
     university,
     setUniversity,
+    universityId,
+    setUniversityId,
     yearOfAdmission,
     setYearOfAdmission,
     major,

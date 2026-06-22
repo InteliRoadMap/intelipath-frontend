@@ -15,6 +15,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
+import { RequestReviewModal } from './RequestReviewModal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,6 +47,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
 
   // Mentor Feedback State
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isRequestReviewOpen, setIsRequestReviewOpen] = useState(false);
 
   // GitHub Import State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -299,15 +301,37 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
             </div>
             
           {!isPublicView && !isMentor && (
-            <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
-              <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
+            <div className="flex items-center gap-4 border-l border-slate-200/20 pl-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
+                <button 
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
+              </div>
+              
               <button 
-                onClick={() => setIsEditMode(!isEditMode)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
+                onClick={() => setIsRequestReviewOpen(true)}
+                className="px-4 py-1.5 bg-[var(--primary-color)] text-white font-semibold text-[13px] rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                <Send size={14} />
+                Request Review
               </button>
-              <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
+            </div>
+          )}
+
+          {isMentor && isPublicView && (
+            <div className="flex items-center gap-4 border-l border-slate-200/20 pl-4 ml-2">
+              <button 
+                onClick={() => setIsFeedbackOpen(true)}
+                className="px-4 py-1.5 bg-[var(--title-color)] text-[var(--bg-primary)] font-semibold text-[13px] rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
+              >
+                <Send size={14} />
+                Provide Feedback
+              </button>
             </div>
           )}
         </div>
@@ -325,29 +349,27 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         </button>
       )}
 
-      {/* MENTOR FLOATING FEEDBACK BUTTON */}
-      {isMentor && !isPublicView && (
-        <>
-          <button 
-            onClick={() => setIsFeedbackOpen(true)}
-            className="fixed bottom-8 right-4 md:right-8 z-50 px-6 py-3 bg-[#0f172a] text-white font-bold text-[14px] rounded-full shadow-xl hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group cursor-pointer border-2 border-white/10"
-          >
-            <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            Provide Feedback
-          </button>
+      {/* MENTOR FEEDBACK MODAL */}
+      {isMentor && isPublicView && (
+        <FeedbackModal 
+          isOpen={isFeedbackOpen} 
+          onClose={() => setIsFeedbackOpen(false)}
+          studentData={{
+            id: data.studentId || 'unknown',
+            name: data.hero.name,
+            role: data.hero.role,
+            avatarUrl: data.hero.avatarUrl,
+            completionPercent: 85
+          }}
+        />
+      )}
 
-          <FeedbackModal 
-            isOpen={isFeedbackOpen} 
-            onClose={() => setIsFeedbackOpen(false)}
-            studentData={{
-              id: data.studentId || 'unknown',
-              name: data.hero.name,
-              role: data.hero.role,
-              avatarUrl: data.hero.avatarUrl,
-              completionPercent: 85
-            }}
-          />
-        </>
+      {/* STUDENT REQUEST REVIEW MODAL */}
+      {!isMentor && !isPublicView && (
+        <RequestReviewModal
+          isOpen={isRequestReviewOpen}
+          onClose={() => setIsRequestReviewOpen(false)}
+        />
       )}
 
       {/* HERO SECTION */}

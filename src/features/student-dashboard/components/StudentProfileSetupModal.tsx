@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, Search, UserRound } from 'lucide-react'
 import { BaseModal } from '@/components/modals'
+import { UniversitySelect } from '@/components/ui/UniversitySelect'
 import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, toIsoDateOnly } from '@/lib/utils'
 import { studentDashboardService } from '../services'
@@ -13,6 +14,7 @@ interface StudentProfileSetupModalProps {
 
 interface FormErrors {
   fullName?: string
+  yob?: string // Added yob
   university?: string
   yearOfAdmission?: string
   major?: string
@@ -30,6 +32,7 @@ export default function StudentProfileSetupModal({
   const [yob, setYob] = useState('')
   const [bio, setBio] = useState('')
   const [university, setUniversity] = useState('')
+  const [universityId, setUniversityId] = useState('')
   const [yearOfAdmission, setYearOfAdmission] = useState('')
   const [major, setMajor] = useState('Software Engineering')
   const [careers, setCareers] = useState<CareerRole[]>([])
@@ -145,8 +148,9 @@ export default function StudentProfileSetupModal({
   const handleSave = async () => {
     const nextErrors: FormErrors = {}
     const normalizedAdmissionDate = toIsoDateOnly(yearOfAdmission)
-    if (!university.trim()) nextErrors.university = 'Enter your university.'
-    
+      if (!universityId && !university) {
+        nextErrors.university = 'Select your university.'
+      }
     if (!normalizedAdmissionDate) {
       nextErrors.yearOfAdmission = 'Select a valid admission date.'
     } else if (yob) {
@@ -177,7 +181,7 @@ export default function StudentProfileSetupModal({
           bio: bio.trim(),
         }),
         studentDashboardService.updateStudentProfile({
-          university: university.trim(),
+          university: universityId || university,
           yearOfAdmission: normalizedAdmissionDate,
           major: major.trim(),
           careerId,
@@ -285,14 +289,14 @@ export default function StudentProfileSetupModal({
               <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Field label="University" required error={errors.university}>
-                    <input
-                      value={university}
-                      onChange={(event) => {
-                        setUniversity(event.target.value)
+                    <UniversitySelect
+                      value={universityId || university}
+                      onChange={(id, name) => {
+                        setUniversityId(id)
+                        setUniversity(name)
                         setErrors((current) => ({ ...current, university: undefined }))
                       }}
-                      placeholder="Enter your university name"
-                      className={inputClass}
+                      className="w-full text-[15px]"
                     />
                   </Field>
                 </div>

@@ -17,13 +17,12 @@ interface FeedbackModalProps {
 
 const CATEGORIES = [
   { value: 'GENERAL', label: 'General', icon: <MessageSquare size={18} />, desc: 'Overall portfolio review' },
-  { value: 'TECHNICAL', label: 'Technical', icon: <Code size={18} />, desc: 'Code & tech stack evaluation' },
-  { value: 'SOFT_SKILL', label: 'Soft Skills', icon: <Users size={18} />, desc: 'Communication & presentation' },
-  { value: 'CAREER_ADVICE', label: 'Career', icon: <Compass size={18} />, desc: 'Career path guidance' }
+  { value: 'SKILL', label: 'Skills & Tech', icon: <Code size={18} />, desc: 'Code, tech stack & soft skills' },
+  { value: 'CAREER', label: 'Career', icon: <Compass size={18} />, desc: 'Career path guidance' }
 ];
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, studentData }) => {
-  const [category, setCategory] = useState('TECHNICAL');
+  const [category, setCategory] = useState('SKILL');
   
   const [strengths, setStrengths] = useState('');
   const [improvements, setImprovements] = useState('');
@@ -41,7 +40,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, s
       const draft = localStorage.getItem(`draft_feedback_${studentData.id}`);
       if (draft) {
         const parsed = JSON.parse(draft);
-        setCategory(parsed.category || 'TECHNICAL');
+        setCategory(parsed.category || 'SKILL');
         setStrengths(parsed.strengths || '');
         setImprovements(parsed.improvements || '');
         setRecommendations(parsed.recommendations || '');
@@ -132,14 +131,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, s
             <div className="p-8 overflow-y-auto flex-1 bg-slate-50/30 custom-scrollbar">
               {/* STUDENT SUMMARY */}
               <div className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-[12px] mb-8 shadow-sm">
-                <img src={studentData.avatarUrl} alt={studentData.name} className="w-14 h-14 rounded-full object-cover border border-slate-200" />
+                <img 
+                  src={studentData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentData.name)}&background=e0e7ff&color=4f46e5`} 
+                  alt={studentData.name} 
+                  className="w-14 h-14 rounded-full object-cover border border-slate-200" 
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentData.name)}&background=e0e7ff&color=4f46e5`;
+                  }}
+                />
                 <div className="flex-1">
                   <h4 className="text-[16px] font-bold text-slate-900">{studentData.name}</h4>
                   <p className="text-[13px] text-slate-500 font-medium">{studentData.role}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-[20px] font-bold text-indigo-600">{studentData.completionPercent}%</div>
-                  <div className="text-[12px] text-slate-400 font-medium uppercase tracking-wider">Completion</div>
                 </div>
               </div>
 

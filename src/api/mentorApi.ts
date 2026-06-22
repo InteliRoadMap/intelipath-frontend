@@ -1,5 +1,6 @@
 import { mainClient } from "./apiClients"
 import { ENDPOINTS } from "./endpoints"
+import { mapToFrontendData } from "./portfolioApi"
 
 /**
  * Mentor Dashboard API Functions
@@ -20,7 +21,10 @@ const mentorApi = {
   getPendingReviews: async (page = 0, size = 10) => {
     try {
       const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.PENDING_REVIEWS, { params: { page, size } });
-      return res.data?.data || res.data || [];
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch { return []; }
   },
 
@@ -34,7 +38,10 @@ const mentorApi = {
   getCareerDistribution: async () => {
     try {
       const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.CAREER_DISTRIBUTION);
-      return res.data?.data || res.data || [];
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch {
       return [];
     }
@@ -43,7 +50,10 @@ const mentorApi = {
   getStudentsList: async (page = 0, size = 10) => {
     try {
       const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.STUDENT_LIST, { params: { page, size } });
-      return res.data?.data || res.data || [];
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch { return []; }
   },
 
@@ -51,7 +61,8 @@ const mentorApi = {
     try {
       // FE routes to the public portfolio API as suggested by BE
       const res = await mainClient.get(`/public-portfolio/${studentId}`);
-      return res.data?.data || res.data;
+      const rawData = res.data?.data || res.data;
+      return mapToFrontendData(rawData);
     } catch {
       return null;
     }
@@ -60,7 +71,10 @@ const mentorApi = {
   getFeedbackHistory: async () => {
     try {
       const res = await mainClient.get(ENDPOINTS.MENTOR_DASHBOARD.FEEDBACK_HISTORY);
-      return res.data?.data || res.data || [];
+      const data = res.data?.data || res.data;
+      if (data && Array.isArray(data.content)) return data.content;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch { return []; }
   },
 

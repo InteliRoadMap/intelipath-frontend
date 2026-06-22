@@ -15,11 +15,10 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
 
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "portfolios", label: "Portfolios" },
-    { id: "progress", label: "Progress" },
-    { id: "feedback", label: "Feedback" },
+    // { id: "portfolios", label: "Portfolios" },
+    // { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
-    { id: "aichat", label: "AI Mentor" },
+    // { id: "aichat", label: "AI Mentor" },
   ]
 
   return (

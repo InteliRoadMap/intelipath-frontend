@@ -189,9 +189,10 @@ export const ActionableListWidget = () => {
   }
 
   // Data processing
-  const highRecData = (recData as any)?.filter((item: any) => item.severity?.toUpperCase() === 'HIGH' || item.severity === 'High') || []
-  
-  const sourceData = activeTab === 'gaps' ? (data || []) : highRecData
+  // OLD CODE:
+  // const highRecData = (recData as any)?.filter((item: any) => item.severity?.toUpperCase() === 'HIGH' || item.severity === 'High') || []
+  // const sourceData = activeTab === 'gaps' ? (data || []) : highRecData
+  const sourceData = activeTab === 'gaps' ? (data || []) : (Array.isArray(recData) ? recData : [])
   const totalItems = sourceData.length
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
   const currentData = sourceData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
@@ -220,7 +221,7 @@ export const ActionableListWidget = () => {
         {status === "loading" ? (
           <LoadingState rows={6} />
         ) : status === "error" || currentData.length === 0 ? (
-          <EmptyState title="No action items yet" description={activeTab === 'gaps' ? "You are fully aligned with the market." : "No High-priority recommendations found."} />
+          <EmptyState title="No action items yet" description={activeTab === 'gaps' ? "You are fully aligned with the market." : "No recommendations found."} />
         ) : (
           <>
             {currentData.map((item: any, index: number) => (
@@ -238,7 +239,7 @@ export const ActionableListWidget = () => {
                 <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                   <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500">
                     <Clock size={16} />
-                    <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : 'Med Prio'}</span>
+                    <span>{item.type === 'critical' || item.severity?.toUpperCase() === 'HIGH' ? 'High Prio' : (item.type || 'Med Prio')}</span>
                   </div>
                   
                   {/* Progress Bar for Skill Gaps */}

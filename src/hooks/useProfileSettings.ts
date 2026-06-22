@@ -10,6 +10,7 @@ export interface ProfileData {
   role: string
   // Student & Counselor
   university: string
+  universityId?: string
   // Student
   major: string
   year_of_admission: string
@@ -29,6 +30,7 @@ const EMPTY_PROFILE: ProfileData = {
   email: "",
   role: "Student",
   university: "",
+  universityId: "",
   major: "",
   year_of_admission: "",
   company: "",
@@ -70,12 +72,15 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
-        full_name: data?.fullName || user?.fullName || data?.full_name || "",
-        email: data?.email || user?.email || "",
+        full_name: data?.fullName || data?.userInfo?.fullName || user?.fullName || data?.full_name || "",
+        email: data?.email || data?.userInfo?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission:
-          data?.yearOfAdmission || data?.year_of_admission || ""
+        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
+        universityId: data?.universityId || data?.userInfo?.universityId || "",
+        industry_focus: data?.industryFocus || data?.industry_focus || "",
+        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
+        yob: (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")?.toString().split("T")[0] || ""
       })
     } catch (err) {
       console.warn("[ProfileSettingsPage] Cannot load profile (API may be offline):", err)
@@ -145,9 +150,11 @@ export function useProfileSettings() {
       if (user?.role?.toUpperCase() === "STUDENT") {
         tasks.push(
           profileApi.updateStudentProfile({
-            university: profileData.university,
+            universityId: profileData.universityId || profileData.university,
             yearOfAdmission: profileData.year_of_admission,
-            major: profileData.major
+            major: profileData.major,
+            // Original: careerId: "" 
+            // Removed to prevent wiping out data
           })
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
@@ -161,7 +168,7 @@ export function useProfileSettings() {
         tasks.push(
           profileApi.updateCounselorProfile({
             department: profileData.department,
-            university: profileData.university
+            universityId: profileData.universityId || profileData.university
           })
         )
       }
