@@ -82,30 +82,30 @@ export default function StudentProfileSettingsPage() {
           duration: 0.35,
           ease: "power2.in"
         })
-        .to(sparkleRef.current, {
-          scale: 1.15,
-          opacity: 1,
-          rotate: -15,
-          duration: 0.25,
-          ease: "power2.out"
-        })
-        .to(sparkleRef.current, {
-          scale: 1.4,
-          opacity: 0.6,
-          rotate: 10,
-          duration: 0.3,
-          ease: "power2.inOut"
-        })
-        .to(sparkleRef.current, {
-          scale: 1,
-          opacity: 1,
-          rotate: 0,
-          duration: 0.5,
-          ease: "elastic.out(1, 0.5)"
-        })
-        .to(sparkleRef.current, {
-          duration: 2.5
-        })
+          .to(sparkleRef.current, {
+            scale: 1.15,
+            opacity: 1,
+            rotate: -15,
+            duration: 0.25,
+            ease: "power2.out"
+          })
+          .to(sparkleRef.current, {
+            scale: 1.4,
+            opacity: 0.6,
+            rotate: 10,
+            duration: 0.3,
+            ease: "power2.inOut"
+          })
+          .to(sparkleRef.current, {
+            scale: 1,
+            opacity: 1,
+            rotate: 0,
+            duration: 0.5,
+            ease: "elastic.out(1, 0.5)"
+          })
+          .to(sparkleRef.current, {
+            duration: 2.5
+          })
       }
     },
     { scope: containerRef }
@@ -121,7 +121,10 @@ export default function StudentProfileSettingsPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden" ref={containerRef}>
+    <div
+      className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden"
+      ref={containerRef}
+    >
       <SharedAppBackground />
       <StudentHeader
         user={user}
@@ -135,7 +138,11 @@ export default function StudentProfileSettingsPage() {
           onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-emerald-600 transition-all w-fit group mb-4 hover:-translate-x-1"
         >
-          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
+          <ChevronLeft
+            size={16}
+            strokeWidth={2.5}
+            className="text-slate-400 group-hover:text-emerald-600 transition-colors"
+          />
           Back to Dashboard
         </button>
 
@@ -143,14 +150,20 @@ export default function StudentProfileSettingsPage() {
         <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-600 to-teal-500 p-7 md:p-9 shadow-[0_30px_60px_rgba(16,185,129,0.25)]">
           <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-teal-300/30 blur-3xl" />
-          
+
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-5">
               <div className="hero-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
-                <Sparkles ref={sparkleRef} size={28} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                <Sparkles
+                  ref={sparkleRef}
+                  size={28}
+                  className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                />
               </div>
               <div>
-                <p className="text-white/70 text-[12px] font-semibold uppercase tracking-widest mb-1">Student Portal</p>
+                <p className="text-white/70 text-[12px] font-semibold uppercase tracking-widest mb-1">
+                  Student Portal
+                </p>
                 <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
                   Profile Settings
                 </h1>
@@ -163,16 +176,37 @@ export default function StudentProfileSettingsPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", duration: 0.3, ease: "back.out(2)" })}
-                onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, boxShadow: "none", duration: 0.3, ease: "power2.out" })}
+                onMouseEnter={(e) =>
+                  gsap.to(e.currentTarget, {
+                    scale: 1.05,
+                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    duration: 0.3,
+                    ease: "back.out(2)"
+                  })
+                }
+                onMouseLeave={(e) =>
+                  gsap.to(e.currentTarget, {
+                    scale: 1,
+                    boxShadow: "none",
+                    duration: 0.3,
+                    ease: "power2.out"
+                  })
+                }
                 onClick={(e) => {
-                  gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                  gsap.fromTo(
+                    e.currentTarget,
+                    { scale: 0.95 },
+                    { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" }
+                  )
                   void loadProfile()
                 }}
                 disabled={loading || saving}
                 className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
               >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={14}
+                  className={loading ? "animate-spin" : ""}
+                />
                 Reload
               </button>
             </div>
@@ -203,131 +237,181 @@ export default function StudentProfileSettingsPage() {
 
               {/* Form Content - Always visible even when loading */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <User size={16} className="text-emerald-600" />
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.full_name}
-                        onChange={(e) => handleChange("full_name", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-emerald-600" />
-                        Year of Birth
-                      </label>
-                      <input
-                        type="date"
-                        value={profileData.yob}
-                        onChange={(e) => handleChange("yob", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                  </div>
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <User size={16} className="text-emerald-600" />
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.full_name}
+                    onChange={(e) => handleChange("full_name", e.target.value)}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <Calendar size={16} className="text-emerald-600" />
+                    Year of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={profileData.yob}
+                    onChange={(e) => handleChange("yob", e.target.value)}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Building2 size={16} className="text-emerald-600" />
-                        University
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.university}
-                        placeholder="e.g. FPT University"
-                        onChange={(e) => handleChange("university", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <GraduationCap size={16} className="text-emerald-600" />
-                        Major
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.major}
-                        placeholder="e.g. Software Engineering"
-                        onChange={(e) => handleChange("major", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-emerald-600" />
-                        Year of Admission
-                      </label>
-                      <input
-                        type="date"
-                        value={profileData.year_of_admission}
-                        onChange={(e) => handleChange("year_of_admission", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5 font-medium text-slate-700">
-                        <GithubLogo size={16} className="text-emerald-600" />
-                        GitHub Profile
-                      </div>
-                      <input
-                        type="url"
-                        value={profileData.github_profile || ''}
-                        placeholder="e.g. https://github.com/username"
-                        onChange={(e) => handleChange("github_profile", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <Building2 size={16} className="text-emerald-600" />
+                    University
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.university}
+                    placeholder="e.g. FPT University"
+                    onChange={(e) => handleChange("university", e.target.value)}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <GraduationCap size={16} className="text-emerald-600" />
+                    Major
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.major}
+                    placeholder="e.g. Software Engineering"
+                    onChange={(e) => handleChange("major", e.target.value)}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+              </div>
 
-                  <div className="mb-8">
-                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                      <Book size={16} className="text-emerald-600" />
-                      About Me (Bio)
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={profileData.bio}
-                      placeholder="Share a little bit about yourself, your career goals..."
-                      onChange={(e) => handleChange("bio", e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white resize-none"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <Calendar size={16} className="text-emerald-600" />
+                    Year of Admission
+                  </label>
+                  <input
+                    type="date"
+                    value={profileData.year_of_admission}
+                    onChange={(e) =>
+                      handleChange("year_of_admission", e.target.value)
+                    }
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5 font-medium text-slate-700">
+                    <GithubLogo size={16} className="text-emerald-600" />
+                    GitHub Profile
                   </div>
+                  <input
+                    type="url"
+                    value={profileData.github_profile || ""}
+                    placeholder="e.g. https://github.com/username"
+                    onChange={(e) =>
+                      handleChange("github_profile", e.target.value)
+                    }
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
+                  />
+                </div>
+              </div>
 
-                  <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
-                    <button
-                      type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, duration: 0.3, ease: "back.out(2)", backgroundColor: "#f1f5f9" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.3, ease: "power2.out", backgroundColor: "transparent" })}
-                      onClick={(e) => {
-                        gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
-                        void loadProfile()
-                      }}
-                      disabled={saving}
-                      className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 disabled:opacity-50 px-4 py-2.5 rounded-xl"
-                    >
-                      Discard Changes
-                    </button>
-                    <button
-                      type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(16, 185, 129, 0.3)", duration: 0.3, ease: "back.out(2)" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(16, 185, 129, 0.2)", duration: 0.3, ease: "power2.out" })}
-                      onClick={(e) => {
-                        gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
-                        handleSave()
-                      }}
-                      disabled={saving}
-                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-bold shadow-md shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
-                    >
-                      {saving ? "Saving..." : "Save Profile"}
-                    </button>
-                  </div>
+              <div className="mb-8">
+                <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                  <Book size={16} className="text-emerald-600" />
+                  About Me (Bio)
+                </label>
+                <textarea
+                  rows={4}
+                  value={profileData.bio}
+                  placeholder="Share a little bit about yourself, your career goals..."
+                  onChange={(e) => handleChange("bio", e.target.value)}
+                  className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
+                <button
+                  type="button"
+                  onMouseEnter={(e) =>
+                    gsap.to(e.currentTarget, {
+                      scale: 1.05,
+                      duration: 0.3,
+                      ease: "back.out(2)",
+                      backgroundColor: "#f1f5f9"
+                    })
+                  }
+                  onMouseLeave={(e) =>
+                    gsap.to(e.currentTarget, {
+                      scale: 1,
+                      duration: 0.3,
+                      ease: "power2.out",
+                      backgroundColor: "transparent"
+                    })
+                  }
+                  onClick={(e) => {
+                    gsap.fromTo(
+                      e.currentTarget,
+                      { scale: 0.95 },
+                      {
+                        scale: 1.05,
+                        duration: 0.4,
+                        ease: "elastic.out(1, 0.3)"
+                      }
+                    )
+                    void loadProfile()
+                  }}
+                  disabled={saving}
+                  className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 disabled:opacity-50 px-4 py-2.5 rounded-xl"
+                >
+                  Discard Changes
+                </button>
+                <button
+                  type="button"
+                  onMouseEnter={(e) =>
+                    gsap.to(e.currentTarget, {
+                      scale: 1.05,
+                      y: -2,
+                      boxShadow: "0 10px 15px -3px rgba(16, 185, 129, 0.3)",
+                      duration: 0.3,
+                      ease: "back.out(2)"
+                    })
+                  }
+                  onMouseLeave={(e) =>
+                    gsap.to(e.currentTarget, {
+                      scale: 1,
+                      y: 0,
+                      boxShadow: "0 4px 6px -1px rgba(16, 185, 129, 0.2)",
+                      duration: 0.3,
+                      ease: "power2.out"
+                    })
+                  }
+                  onClick={(e) => {
+                    gsap.fromTo(
+                      e.currentTarget,
+                      { scale: 0.9 },
+                      {
+                        scale: 1.05,
+                        duration: 0.5,
+                        ease: "elastic.out(1, 0.3)"
+                      }
+                    )
+                    handleSave()
+                  }}
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-bold shadow-md shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
+                >
+                  {saving ? "Saving..." : "Save Profile"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -350,9 +434,33 @@ export default function StudentProfileSettingsPage() {
                   </div>
                   <button
                     type="button"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.1, y: -2, duration: 0.3, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.3, ease: "power2.out" })}
-                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.1, duration: 0.4, ease: "elastic.out(1, 0.3)" })}
+                    onMouseEnter={(e) =>
+                      gsap.to(e.currentTarget, {
+                        scale: 1.1,
+                        y: -2,
+                        duration: 0.3,
+                        ease: "back.out(2)"
+                      })
+                    }
+                    onMouseLeave={(e) =>
+                      gsap.to(e.currentTarget, {
+                        scale: 1,
+                        y: 0,
+                        duration: 0.3,
+                        ease: "power2.out"
+                      })
+                    }
+                    onClick={(e) =>
+                      gsap.fromTo(
+                        e.currentTarget,
+                        { scale: 0.8 },
+                        {
+                          scale: 1.1,
+                          duration: 0.4,
+                          ease: "elastic.out(1, 0.3)"
+                        }
+                      )
+                    }
                     className="text-emerald-600 hover:text-emerald-700 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
                     aria-label="Edit email"
                   >
@@ -361,7 +469,6 @@ export default function StudentProfileSettingsPage() {
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </main>
@@ -369,11 +476,23 @@ export default function StudentProfileSettingsPage() {
       {/* Floating Success Toast */}
       <div
         className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl shadow-emerald-900/20 backdrop-blur transition-all duration-500 ${
-          success ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+          success
+            ? "translate-y-0 opacity-100"
+            : "translate-y-10 opacity-0 pointer-events-none"
         }`}
       >
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>

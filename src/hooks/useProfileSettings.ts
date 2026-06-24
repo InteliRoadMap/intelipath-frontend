@@ -42,7 +42,7 @@ const EMPTY_PROFILE: ProfileData = {
 }
 
 export function useProfileSettings() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -80,15 +80,24 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
-        full_name: data?.fullName || data?.userInfo?.fullName || user?.fullName || data?.full_name || "",
+        full_name:
+          data?.fullName ||
+          data?.userInfo?.fullName ||
+          user?.fullName ||
+          data?.full_name ||
+          "",
         email: data?.email || data?.userInfo?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
+        year_of_admission:
+          data?.yearOfAdmission || data?.year_of_admission || "",
         universityId: data?.universityId || data?.userInfo?.universityId || "",
         industry_focus: data?.industryFocus || data?.industry_focus || "",
         bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
-        yob: (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")?.toString().split("T")[0] || ""
+        yob:
+          (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")
+            ?.toString()
+            .split("T")[0] || ""
       })
     } catch (err) {
       console.warn(
@@ -124,25 +133,29 @@ export function useProfileSettings() {
       const birthDate = new Date(profileData.yob)
       const today = new Date()
       if (birthDate >= today) {
-        setError('Date of birth cannot be in the future.')
+        setError("Date of birth cannot be in the future.")
         setSaving(false)
         return
       } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('You must be at least 10 years old.')
+        setError("You must be at least 10 years old.")
         setSaving(false)
         return
       }
     }
 
-    if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission && profileData.yob) {
+    if (
+      user?.role?.toUpperCase() === "STUDENT" &&
+      profileData.year_of_admission &&
+      profileData.yob
+    ) {
       const birthDate = new Date(profileData.yob)
       const admissionDate = new Date(profileData.year_of_admission)
       if (admissionDate <= birthDate) {
-        setError('Admission date must be after your date of birth.')
+        setError("Admission date must be after your date of birth.")
         setSaving(false)
         return
       } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('Admission date seems too early based on your age.')
+        setError("Admission date seems too early based on your age.")
         setSaving(false)
         return
       }
@@ -162,8 +175,8 @@ export function useProfileSettings() {
           profileApi.updateStudentProfile({
             universityId: profileData.universityId || profileData.university,
             yearOfAdmission: profileData.year_of_admission,
-            major: profileData.major,
-            // Original: careerId: "" 
+            major: profileData.major
+            // Original: careerId: ""
             // Removed to prevent wiping out data
           })
         )
@@ -195,6 +208,28 @@ export function useProfileSettings() {
     }
   }
 
+  const handleAvatarUpload = async (file: File) => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await profileApi.updateAvatar(file)
+      // the backend returns the updated UserResponse, which has avatarUrl
+      const updatedUser = res.data?.data || res.data
+      const newUrl = updatedUser?.avatarUrl || ""
+
+      setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
+      updateUser({ avatarUrl: newUrl })
+      setSuccess("Avatar updated successfully!")
+      setTimeout(() => setSuccess(null), 4000)
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error uploading avatar:", err)
+      setError("Failed to upload avatar. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
@@ -210,6 +245,7 @@ export function useProfileSettings() {
     success,
     handleChange,
     handleSave,
+    handleAvatarUpload,
     loadProfile,
     displayInitial,
     role,
