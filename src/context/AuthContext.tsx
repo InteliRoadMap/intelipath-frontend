@@ -192,6 +192,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true
 
     const restoreSession = async () => {
+      // ==== FAKE USER FOR LOCAL TESTING ====
+      const FAKE_USER: any = {
+        userId: "counselor123",
+        email: "counselor@intelipath.com",
+        firstName: "Sarah",
+        lastName: "Counselor",
+        role: "COUNSELOR",
+        profilePictureUrl: null,
+      }
+
+      if (active) {
+        dispatch({
+          type: "LOGIN",
+          payload: {
+            user: FAKE_USER,
+            accessToken: "fake-token",
+            refreshToken: null
+          }
+        })
+      }
+      return
+      // =====================================
+
       const storedToken = localStorage.getItem("accessToken")
       const storedUser = localStorage.getItem("user")
       const storedRefreshToken = localStorage.getItem("refreshToken")
