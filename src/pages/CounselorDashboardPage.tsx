@@ -1,26 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
-import gsap from "gsap";
-import { Users, TrendingDown, MessageSquare } from "lucide-react";
-import { CounselorDashboardTemplate } from "@/counselor-dashboard/components/templates/CounselorDashboardTemplate";
-import { CounselorHero } from "@/counselor-dashboard/components/organisms/CounselorHero";
-import { CareerDistributionChart } from "@/counselor-dashboard/components/organisms/CareerDistributionChart";
-import { MissingSkillsChart } from "@/counselor-dashboard/components/organisms/MissingSkillsChart";
-import { FeedbackListWidget } from "@/counselor-dashboard/components/organisms/FeedbackListWidget";
-import { StatItem } from "@/types/dashboard";
+import React, { useState, useRef, useEffect } from "react"
+import gsap from "gsap"
+import { Users, TrendingDown, MessageSquare } from "lucide-react"
+import { CounselorDashboardTemplate } from "@/components/counselor-dashboard/templates/CounselorDashboardTemplate"
+import { CounselorHero } from "@/components/counselor-dashboard/organisms/CounselorHero"
+import { CareerDistributionChart } from "@/components/counselor-dashboard/organisms/CareerDistributionChart"
+import { MissingSkillsChart } from "@/components/counselor-dashboard/organisms/MissingSkillsChart"
+import { FeedbackListWidget } from "@/components/counselor-dashboard/organisms/FeedbackListWidget"
+import { StatItem } from "@/types/dashboard"
 
 export function CounselorDashboardPage() {
-  const [selectedCareer, setSelectedCareer] = useState("");
-  const sparkleRef = useRef<SVGSVGElement>(null);
+  const [selectedCareer, setSelectedCareer] = useState("")
+  const sparkleRef = useRef<SVGSVGElement>(null)
 
   // Totals for hero stat pills — populated by widget callbacks
-  const [totalStudents, setTotalStudents] = useState<number | null>(null);
-  const [totalSkillGaps, setTotalSkillGaps] = useState<number | null>(null);
-  const [totalFeedbacks, setTotalFeedbacks] = useState<number | null>(null);
+  const [totalStudents, setTotalStudents] = useState<number | null>(null)
+  const [totalSkillGaps, setTotalSkillGaps] = useState<number | null>(null)
+  const [totalFeedbacks, setTotalFeedbacks] = useState<number | null>(null)
 
   useEffect(() => {
     // Sparkle twinkle (infinite loop)
     if (sparkleRef.current) {
-      const tl = gsap.timeline({ repeat: -1, delay: 1.2 });
+      const tl = gsap.timeline({ repeat: -1, delay: 1.2 })
       tl.to(sparkleRef.current, {
         scale: 1.3,
         opacity: 0.4,
@@ -51,19 +51,19 @@ export function CounselorDashboardPage() {
         })
         .to(sparkleRef.current, {
           duration: 2.5 // idle pause before next twinkle
-        });
-      
+        })
+
       return () => {
-        tl.kill();
-      };
+        tl.kill()
+      }
     }
-  }, []);
+  }, [])
 
   const stats: StatItem[] = [
     { icon: Users, label: "Students", value: totalStudents },
     { icon: TrendingDown, label: "Missing Skills", value: totalSkillGaps },
     { icon: MessageSquare, label: "Feedbacks", value: totalFeedbacks }
-  ];
+  ]
 
   return (
     <CounselorDashboardTemplate
@@ -80,11 +80,9 @@ export function CounselorDashboardPage() {
           onTotalLoaded={setTotalSkillGaps}
         />
       }
-      feedbackList={
-        <FeedbackListWidget onTotalLoaded={setTotalFeedbacks} />
-      }
+      feedbackList={<FeedbackListWidget onTotalLoaded={setTotalFeedbacks} />}
     />
-  );
+  )
 }
 
-export default CounselorDashboardPage;
+export default CounselorDashboardPage

@@ -1,8 +1,8 @@
-import React from "react";
-import { Clock, ArrowRight } from "lucide-react";
-import type { Feedback } from "@/api/counselorApi";
-import { ROUTES } from "@/shared";
-import { useNavigate } from "react-router-dom";
+import React from "react"
+import { Clock, ArrowRight } from "lucide-react"
+import type { Feedback } from "@/features/counselor-dashboard/api/counselorApi"
+import { ROUTES } from "@/shared"
+import { useNavigate } from "react-router-dom"
 
 const FEEDBACK_TYPE_COLOR: Record<string, string> = {
   CAREER: "bg-[#e0f2fe] text-[#0284c7]",
@@ -13,9 +13,9 @@ const FEEDBACK_TYPE_COLOR: Record<string, string> = {
 }
 
 export function FeedbackItem({ feedback: fb }: { feedback: Feedback }) {
-  const navigate = useNavigate();
-  
-  const name = fb.senderName || "Unknown Student";
+  const navigate = useNavigate()
+
+  const name = fb.senderName || "Unknown Student"
   const initials =
     name
       .split(" ")
@@ -23,18 +23,16 @@ export function FeedbackItem({ feedback: fb }: { feedback: Feedback }) {
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "UN";
-  const typeStyle = FEEDBACK_TYPE_COLOR[fb.type] ?? FEEDBACK_TYPE_COLOR.OTHER;
+      .toUpperCase() || "UN"
+  const typeStyle = FEEDBACK_TYPE_COLOR[fb.type] ?? FEEDBACK_TYPE_COLOR.OTHER
   const dateStr = new Date(fb.createAt).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
-  });
+  })
 
   return (
-    <div
-      className="feedback-item py-4 flex gap-3 hover:bg-slate-50 -mx-2 px-3 rounded-xl transition-all hover:shadow-sm group/fb"
-    >
+    <div className="feedback-item py-4 flex gap-3 hover:bg-slate-50 -mx-2 px-3 rounded-xl transition-all hover:shadow-sm group/fb">
       <div className="w-9 h-9 rounded-full bg-[#e0f2fe] text-[#006064] flex items-center justify-center text-[12px] font-bold shrink-0 shadow-sm group-hover/fb:shadow-md transition-shadow">
         {initials}
       </div>

@@ -1,26 +1,26 @@
-export { default as WelcomePage } from './WelcomePage'
-export { default as LoginPage } from './LoginPage'
-export { default as RegisterPage } from './RegisterPage'
-export { default as ForgotPasswordPage } from './ForgotPasswordPage'
-export { default as ResetPasswordPage } from './ResetPasswordPage'
-export { default as DashboardPage } from './DashboardPage'
-export { default as StudentDashboardPage } from './StudentDashboardPage'
-export { default as StudentRoadmapPage } from './StudentRoadmapPage'
-export { default as AIMentorPage } from './AIMentorPage'
-export { default as StudentFeedbackPage } from './StudentFeedbackPage'
-export { default as CounselorDashboardPage } from '../counselor-dashboard/components/pages/CounselorDashboardPage'
-export { default as CounselorFeedbackPage } from './CounselorFeedbackPage'
-export { default as MentorDashboardPage } from './MentorDashboardPage'
-export { default as MentorStudentsPage } from './MentorStudentsPage'
-export { default as MentorFeedbackPage } from './MentorFeedbackPage'
-export { default as MentorPortfolioPage } from './MentorPortfolioPage'
-export { default as AdminDashboardPage } from './AdminDashboardPage'
-export { default as OAuthCallbackPage } from './OAuthCallbackPage'
-export { default as NotFoundPage } from './NotFoundPage'
-export { default as ProfileSettingsPage } from './StudentProfileSettingsPage'
-export { default as StudentProfileSettingsPage } from './StudentProfileSettingsPage'
-export { default as MentorProfileSettingsPage } from './MentorProfileSettingsPage'
-export { default as CounselorProfileSettingsPage } from './CounselorProfileSettingsPage'
-export * from './StudentPortfolioPage'
-export * from './PublicPortfolioPage'
-export { default as StudentMarketPulsePage } from './StudentMarketPulsePage'
+export { default as WelcomePage } from "./WelcomePage"
+export { default as LoginPage } from "./LoginPage"
+export { default as RegisterPage } from "./RegisterPage"
+export { default as ForgotPasswordPage } from "./ForgotPasswordPage"
+export { default as ResetPasswordPage } from "./ResetPasswordPage"
+export { default as DashboardPage } from "./DashboardPage"
+export { default as StudentDashboardPage } from "./StudentDashboardPage"
+export { default as StudentRoadmapPage } from "./StudentRoadmapPage"
+export { default as AIMentorPage } from "./AIMentorPage"
+export { default as StudentFeedbackPage } from "./StudentFeedbackPage"
+export { default as CounselorDashboardPage } from "./CounselorDashboardPage"
+export { default as CounselorFeedbackPage } from "./CounselorFeedbackPage"
+export { default as MentorDashboardPage } from "./MentorDashboardPage"
+export { default as MentorStudentsPage } from "./MentorStudentsPage"
+export { default as MentorFeedbackPage } from "./MentorFeedbackPage"
+export { default as MentorPortfolioPage } from "./MentorPortfolioPage"
+export { default as AdminDashboardPage } from "./AdminDashboardPage"
+export { default as OAuthCallbackPage } from "./OAuthCallbackPage"
+export { default as NotFoundPage } from "./NotFoundPage"
+export { default as ProfileSettingsPage } from "./StudentProfileSettingsPage"
+export { default as StudentProfileSettingsPage } from "./StudentProfileSettingsPage"
+export { default as MentorProfileSettingsPage } from "./MentorProfileSettingsPage"
+export { default as CounselorProfileSettingsPage } from "./CounselorProfileSettingsPage"
+export * from "./StudentPortfolioPage"
+export * from "./PublicPortfolioPage"
+export { default as StudentMarketPulsePage } from "./StudentMarketPulsePage"

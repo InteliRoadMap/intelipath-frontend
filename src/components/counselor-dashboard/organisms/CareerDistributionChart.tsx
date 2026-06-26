@@ -1,10 +1,10 @@
 import React from "react"
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts"
 import { BookOpen } from "lucide-react"
-import { useCareerDistribution } from "@/counselor-dashboard/hooks/useCounselorDashboard"
-import { ErrorBanner } from "@/counselor-dashboard/components/atoms/ErrorBanner"
-import { EmptyState } from "@/counselor-dashboard/components/atoms/EmptyState"
-import { ChartTooltip } from "@/counselor-dashboard/components/atoms/ChartTooltip"
+import { useCareerDistribution } from "@/features/counselor-dashboard/hooks/useCounselorDashboard"
+import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
+import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
+import { ChartTooltip } from "@/components/counselor-dashboard/atoms/ChartTooltip"
 
 const CAREER_COLORS = [
   "#024abd",

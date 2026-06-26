@@ -1,10 +1,10 @@
-import React, { forwardRef } from "react";
-import { Sparkles, RefreshCw } from "lucide-react";
-import { StatPill } from "@/counselor-dashboard/components/molecules/StatPill";
-import { StatItem } from "@/types/dashboard";
+import React, { forwardRef } from "react"
+import { Sparkles, RefreshCw } from "lucide-react"
+import { StatPill } from "@/components/counselor-dashboard/molecules/StatPill"
+import { StatItem } from "@/types/dashboard"
 
 interface CounselorHeroProps {
-  stats: StatItem[];
+  stats: StatItem[]
 }
 
 export const CounselorHero = forwardRef<SVGSVGElement, CounselorHeroProps>(
@@ -60,8 +60,8 @@ export const CounselorHero = forwardRef<SVGSVGElement, CounselorHeroProps>(
           </div>
         </div>
       </div>
-    );
+    )
   }
-);
+)
 
-CounselorHero.displayName = "CounselorHero";
+CounselorHero.displayName = "CounselorHero"

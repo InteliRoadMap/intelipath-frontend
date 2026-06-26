@@ -36,7 +36,11 @@ import { useNavigate, useSearchParams, NavLink } from "react-router-dom"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import type { MyStudent, MissingSkillItem, Feedback } from "@/api/counselorApi"
+import type {
+  MyStudent,
+  MissingSkillItem,
+  Feedback
+} from "@/features/counselor-dashboard/api/counselorApi"
 import {
   useStudentList,
   useFeedbackHistory,
@@ -329,20 +333,30 @@ function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
   )
 }
 
-// ─── Tab: Feedback (uses hooks: useFeedbackHistory + useSendFeedback) ─
-function FeedbackTab({ student }: { student: MyStudent }) {
+// ─── Tab: Feedback (uses hooks: useSendFeedback) ───
+function FeedbackTab({
+  student,
+  feedbacks,
+  onFeedbackSent
+}: {
+  student: MyStudent
+  feedbacks: Feedback[]
+  onFeedbackSent: () => void
+}) {
   const [content, setContent] = useState("")
   const [type, setType] = useState("GENERAL")
   const tabRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  const { feedbacks, loading, refetch } = useFeedbackHistory(student.studentId)
-  const { send, sending, sent } = useSendFeedback(refetch)
+  const { send, sending, sent } = useSendFeedback(onFeedbackSent)
 
   // Close dropdown on outside click
   const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target as Node)
+    ) {
       setDropdownOpen(false)
     }
   }, [])
@@ -355,29 +369,27 @@ function FeedbackTab({ student }: { student: MyStudent }) {
 
   useGSAP(
     () => {
-      if (!loading) {
+      gsap.fromTo(
+        ".feedback-form",
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.4, ease: "power2.out", delay: 0.1 }
+      )
+      if (feedbacks?.length) {
         gsap.fromTo(
-          ".feedback-form",
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" }
+          ".feedback-item",
+          { x: 30, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.3,
+            stagger: 0.08,
+            ease: "power2.out",
+            delay: 0.2
+          }
         )
-        if (feedbacks.length) {
-          gsap.fromTo(
-            ".feedback-item",
-            { y: 20, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.5,
-              stagger: 0.08,
-              ease: "power2.out",
-              delay: 0.2
-            }
-          )
-        }
       }
     },
-    { scope: tabRef, dependencies: [feedbacks, loading] }
+    { scope: tabRef, dependencies: [feedbacks] }
   )
 
   const handleSend = async () => {
@@ -547,9 +559,7 @@ function FeedbackTab({ student }: { student: MyStudent }) {
           </h3>
         </div>
 
-        {loading ? (
-          <div className="space-y-4"></div>
-        ) : feedbacks.length === 0 ? (
+        {feedbacks.length === 0 ? (
           <EmptyState
             icon={MessageSquare}
             label="No communication history yet"
@@ -630,6 +640,26 @@ function StudentDetailPanel({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(defaultTab)
+  const [detail, setDetail] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchDetail = useCallback(() => {
+    setLoading(true)
+    import("@/features/counselor-dashboard/api/counselorApi").then((m) => {
+      m.default
+        .getStudentInfo(student.studentId)
+        .then((data) => {
+          setDetail(data)
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    })
+  }, [student.studentId])
+
+  useEffect(() => {
+    fetchDetail()
+  }, [fetchDetail])
+
   const fullName = student.fullName || "Unknown Student"
   const initials =
     fullName
@@ -652,6 +682,10 @@ function StudentDetailPanel({
     },
     { scope: panelRef }
   )
+
+  const progress = detail?.roadmapProgress ?? 0
+  const missing = detail?.missingSkills ?? []
+  const feedbacks = detail?.feedbacks ?? []
 
   return (
     <div
@@ -714,11 +748,11 @@ function StudentDetailPanel({
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] text-slate-600 rounded-lg text-[12px] font-medium border border-slate-200/80 shadow-sm">
                 <Map size={13} className="text-slate-400" />
-                {student.roadmapProgress}% progress
+                {loading ? "..." : progress}% progress
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[12px] font-medium border border-rose-100 shadow-sm">
                 <TrendingDown size={13} />
-                {student.missingSkills?.length ?? 0} missing skills
+                {loading ? "..." : missing.length} missing skills
               </div>
             </div>
           </div>
@@ -745,11 +779,27 @@ function StudentDetailPanel({
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {tab === "roadmap" && <RoadmapTab student={student} />}
-          {tab === "skillgap" && (
-            <SkillGapTab skills={student.missingSkills ?? []} />
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              Loading...
+            </div>
+          ) : (
+            <>
+              {tab === "roadmap" && (
+                <RoadmapTab
+                  student={{ ...student, roadmapProgress: progress }}
+                />
+              )}
+              {tab === "skillgap" && <SkillGapTab skills={missing} />}
+              {tab === "feedback" && (
+                <FeedbackTab
+                  student={student}
+                  feedbacks={feedbacks}
+                  onFeedbackSent={fetchDetail}
+                />
+              )}
+            </>
           )}
-          {tab === "feedback" && <FeedbackTab student={student} />}
         </div>
       </aside>
     </div>
@@ -765,7 +815,7 @@ export default function CounselorFeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const autoOpenStudentId =
     searchParams.get("studentId") || searchParams.get("userId")
-  const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
+  const defaultTab = (searchParams.get("tab") as TabKey) || "roadmap"
 
   const [search, setSearch] = useState("")
   const [filterUni, setFilterUni] = useState("")
@@ -866,7 +916,10 @@ export default function CounselorFeedbackPage() {
   )
 
   return (
-    <div className="relative min-h-screen bg-transparent font-sans pb-16" ref={pageRef}>
+    <div
+      className="relative min-h-screen bg-transparent font-sans pb-16"
+      ref={pageRef}
+    >
       <SharedAppBackground />
       {/* HEADER (Glass Pill Style) */}
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
@@ -881,7 +934,9 @@ export default function CounselorFeedbackPage() {
               end
               className={({ isActive }) =>
                 `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
-                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
                 }`
               }
             >
@@ -892,7 +947,9 @@ export default function CounselorFeedbackPage() {
               to={ROUTES.COUNSELOR_FEEDBACK}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
-                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
                 }`
               }
             >
@@ -1006,10 +1063,10 @@ export default function CounselorFeedbackPage() {
         {/* Student list */}
         <div className="bg-white border border-slate-200/80 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.06)] overflow-hidden mt-8">
           <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            <div className="col-span-4">Student</div>
+            <div className="col-span-3">Student</div>
+            <div className="col-span-3">Email</div>
             <div className="col-span-2">University</div>
             <div className="col-span-3">Career Path</div>
-            <div className="col-span-2">Progress</div>
             <div className="col-span-1 text-right">Action</div>
           </div>
 
@@ -1020,21 +1077,21 @@ export default function CounselorFeedbackPage() {
                   key={i}
                   className="grid grid-cols-12 gap-4 px-6 py-4 items-center animate-pulse"
                 >
-                  <div className="col-span-4 flex items-center gap-3">
+                  <div className="col-span-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0" />
                     <div className="space-y-2 flex-1">
                       <div className="h-3.5 bg-slate-100 rounded w-3/4" />
                       <div className="h-3 bg-slate-100 rounded w-1/2" />
                     </div>
                   </div>
+                  <div className="col-span-3">
+                    <div className="h-3.5 bg-slate-100 rounded w-4/5" />
+                  </div>
                   <div className="col-span-2">
                     <div className="h-3.5 bg-slate-100 rounded w-4/5" />
                   </div>
                   <div className="col-span-3">
                     <div className="h-6 bg-slate-100 rounded-full w-3/4" />
-                  </div>
-                  <div className="col-span-2">
-                    <div className="h-3 bg-slate-100 rounded w-full" />
                   </div>
                   <div className="col-span-1 flex justify-end">
                     <div className="h-8 w-16 bg-slate-100 rounded-lg" />
@@ -1074,7 +1131,7 @@ export default function CounselorFeedbackPage() {
                     className="student-card grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#f0fafa] transition-all duration-300 group cursor-pointer border-l-4 border-transparent hover:border-[#00838f]"
                     onClick={() => setSelected(student)}
                   >
-                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div className="col-span-3 flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-full bg-[#e0f2fe] text-[#006064] flex items-center justify-center text-[13px] font-bold shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                         {initials}
                       </div>
@@ -1082,11 +1139,13 @@ export default function CounselorFeedbackPage() {
                         <p className="text-[14px] font-bold text-slate-900 truncate">
                           {fullName}
                         </p>
-                        <p className="text-[12px] text-slate-400 truncate">
-                          {missingCount} skill{missingCount !== 1 ? "s" : ""}{" "}
-                          missing
-                        </p>
                       </div>
+                    </div>
+                    <div className="col-span-3 min-w-0">
+                      <p className="text-[13px] text-slate-700 truncate flex items-center gap-1.5">
+                        <Mail size={12} className="text-slate-400 shrink-0" />
+                        {student.email || "No email"}
+                      </p>
                     </div>
                     <div className="col-span-2 min-w-0">
                       <p className="text-[13px] text-slate-700 truncate flex items-center gap-1.5">
@@ -1108,19 +1167,6 @@ export default function CounselorFeedbackPage() {
                           No career path
                         </span>
                       )}
-                    </div>
-                    <div className="col-span-2 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className={`h-full rounded-full ${barColor}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-[12px] font-bold text-slate-700 shrink-0 w-8">
-                          {pct}%
-                        </span>
-                      </div>
                     </div>
                     <div className="col-span-1 flex justify-end">
                       <button

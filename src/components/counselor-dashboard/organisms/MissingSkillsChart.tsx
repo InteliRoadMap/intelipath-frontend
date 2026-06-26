@@ -10,10 +10,10 @@ import {
   Cell
 } from "recharts"
 import { Search, TrendingDown } from "lucide-react"
-import { useMissingSkills } from "@/counselor-dashboard/hooks/useCounselorDashboard"
-import { ErrorBanner } from "@/counselor-dashboard/components/atoms/ErrorBanner"
-import { EmptyState } from "@/counselor-dashboard/components/atoms/EmptyState"
-import { ChartTooltip } from "@/counselor-dashboard/components/atoms/ChartTooltip"
+import { useMissingSkills } from "@/features/counselor-dashboard/hooks/useCounselorDashboard"
+import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
+import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
+import { ChartTooltip } from "@/components/counselor-dashboard/atoms/ChartTooltip"
 
 export function MissingSkillsChart({
   careerFilter,

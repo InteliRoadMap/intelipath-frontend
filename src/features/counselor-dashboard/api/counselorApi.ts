@@ -1,62 +1,26 @@
-import { mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
+import { mainClient } from "../../../api/apiClients"
+import { ENDPOINTS } from "../../../api/endpoints"
 
-/**
- * Counselor API Service
- * Fetches dashboard metrics for the Counselor role.
- */
-export interface UpdateCounselorProfilePayload {
-  fullName: string
-  yob: string
-  bio: string
-  email: string
-  university: string
-  department: string
-}
-export interface CareerStatistics {
-  careerName: string
-  studentCount: number
-}
+import type {
+  UpdateCounselorProfilePayload,
+  CareerStatistics,
+  CounselorResponse,
+  MissingSkillItem,
+  Feedback,
+  FeedbackListResponse,
+  MyStudent,
+  CreateFeedback
+} from "../types"
 
-export interface CounselorResponse {
-  total: number
-  careerStatistics: Record<string, number> | null
-  missingSkills: Record<string, number>
-  careerName?: string
-}
-
-export interface MissingSkillItem {
-  skillName: string
-  count: number
-}
-
-export interface Feedback {
-  feedbackId: string
-  senderId: string
-  receiverId: string
-  senderName: string
-  content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
-  createAt: string
-  updateAt: string
-}
-
-export interface FeedbackListResponse {
-  feedbacks: Feedback[]
-}
-export interface MyStudent {
-  studentId: string
-  fullName: string
-  email?: string
-  university: string
-  careerPath: string | null
-  roadmapProgress: number
-  missingSkills: MissingSkillItem[]
-}
-export interface CreateFeedback {
-  receiverId: string
-  content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
+export type {
+  UpdateCounselorProfilePayload,
+  CareerStatistics,
+  CounselorResponse,
+  MissingSkillItem,
+  Feedback,
+  FeedbackListResponse,
+  MyStudent,
+  CreateFeedback
 }
 
 const counselorApi = {
@@ -81,7 +45,7 @@ const counselorApi = {
   getLearningActivity: async () => {
     return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
   },
-
+  // counselor dashboard
   getCareerDistribution: async (): Promise<CareerStatistics[]> => {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.CAREER_DISTRIBUTION
@@ -99,12 +63,12 @@ const counselorApi = {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_FEEDBACK
     )
-    const data = res.data?.data || res.data;
-    if (data && Array.isArray(data.content)) return { feedbacks: data.content };
-    if (Array.isArray(data)) return { feedbacks: data };
-    return data;
+    const data = res.data?.data || res.data
+    if (data && Array.isArray(data.content)) return { feedbacks: data.content }
+    if (Array.isArray(data)) return { feedbacks: data }
+    return data
   },
-
+  // counselor feedbackS
   getMyStudent: async (search?: string): Promise<MyStudent[]> => {
     const url =
       search && search.trim()
@@ -112,13 +76,20 @@ const counselorApi = {
         : ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST
     try {
       const res = await mainClient.get(url)
-      const data = res.data?.data || res.data;
-      if (data && Array.isArray(data.content)) return data.content;
-      if (Array.isArray(data)) return data;
-      return data?.students ?? [];
+      const data = res.data?.data || res.data
+      if (data && Array.isArray(data.content)) return data.content
+      if (Array.isArray(data)) return data
+      return data?.students ?? []
     } catch {
-      return [];
+      return []
     }
+  },
+  // New Add
+  getStudentInfo: async (studentId: string): Promise<any> => {
+    const res = await mainClient.get(
+      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId)
+    )
+    return res.data?.data || res.data
   },
   getHistoryFeedback: async (
     studentId: string
@@ -135,7 +106,11 @@ const counselorApi = {
     )
     return res.data
   },
-  modifyFeedback: async (payload: { feedbackId: string, content: string, type: string }): Promise<any> => {
+  modifyFeedback: async (payload: {
+    feedbackId: string
+    content: string
+    type: string
+  }): Promise<any> => {
     const res = await mainClient.patch(
       ENDPOINTS.COUNSELOR_DASHBOARD.MODIFY_FEEDBACK,
       payload

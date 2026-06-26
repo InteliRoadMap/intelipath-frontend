@@ -82,20 +82,63 @@ export function useProfileSettings() {
         ...data,
         full_name:
           data?.fullName ||
+          data?.user?.fullName ||
           data?.userInfo?.fullName ||
           user?.fullName ||
           data?.full_name ||
           "",
-        email: data?.email || data?.userInfo?.email || user?.email || "",
-        role: data?.role || user?.role || "Student",
-        major: data?.major || EMPTY_PROFILE.major,
+        email:
+          data?.email ||
+          data?.user?.email ||
+          data?.userInfo?.email ||
+          user?.email ||
+          "",
+        role: data?.role || data?.user?.role || user?.role || "Student",
+        major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
         year_of_admission:
-          data?.yearOfAdmission || data?.year_of_admission || "",
-        universityId: data?.universityId || data?.userInfo?.universityId || "",
-        industry_focus: data?.industryFocus || data?.industry_focus || "",
-        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
+          data?.yearOfAdmission ||
+          data?.year_of_admission ||
+          data?.student?.yearOfAdmission ||
+          "",
+        universityId:
+          data?.universityId ||
+          data?.userInfo?.universityId ||
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        university:
+          data?.university ||
+          data?.userInfo?.university ||
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        department:
+          data?.department || data?.academicCounselor?.department || "",
+        industry_focus:
+          data?.industryFocus ||
+          data?.industry_focus ||
+          data?.industryMentor?.industryFocus ||
+          "",
+        bio:
+          data?.bio ||
+          data?.user?.bio ||
+          data?.userInfo?.bio ||
+          (user as any)?.bio ||
+          "",
+        avatar_url:
+          data?.avatarUrl ||
+          data?.user?.avatarUrl ||
+          data?.userInfo?.avatarUrl ||
+          user?.avatarUrl ||
+          "",
         yob:
-          (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")
+          (
+            data?.yob ||
+            data?.user?.yob ||
+            data?.userInfo?.yob ||
+            (user as any)?.yob ||
+            ""
+          )
             ?.toString()
             .split("T")[0] || ""
       })

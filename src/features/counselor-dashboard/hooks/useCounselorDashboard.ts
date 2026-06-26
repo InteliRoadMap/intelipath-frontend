@@ -3,7 +3,7 @@ import counselorApi, {
   type CareerStatistics,
   type MissingSkillItem,
   type Feedback
-} from "@/api/counselorApi"
+} from "../api/counselorApi"
 
 // ─── useCareerDistribution ────────────────────────────────────────────────────
 export interface UseCareerDistributionResult {
@@ -25,7 +25,16 @@ export function useCareerDistribution(
       .getCareerDistribution()
       .then((payload: any) => {
         let formatted: CareerStatistics[] = []
-        if (payload?.careerStatistics) {
+        if (payload?.totalCareerStatistics) {
+          formatted = Object.entries(
+            payload.totalCareerStatistics as Record<string, number>
+          )
+            .map(([name, count]) => ({
+              careerName: name,
+              studentCount: Number(count)
+            }))
+            .sort((a, b) => b.studentCount - a.studentCount)
+        } else if (payload?.careerStatistics) {
           formatted = Object.entries(
             payload.careerStatistics as Record<string, number>
           )
@@ -82,7 +91,9 @@ export function useMissingSkills(
   const [error, setError] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState(careerFilter || "")
   const [activeSearch, setActiveSearch] = useState(careerFilter || "")
-  const [resolvedCareerName, setResolvedCareerName] = useState<string | null>(null)
+  const [resolvedCareerName, setResolvedCareerName] = useState<string | null>(
+    null
+  )
 
   useEffect(() => {
     setSearchInput(careerFilter || "")
@@ -104,9 +115,9 @@ export function useMissingSkills(
       .getSkillMissing(activeSearch)
       .then((res: any) => {
         setTotalStudents(res.total ?? 0)
-        const items: MissingSkillItem[] = Object.entries(
-          res.missingSkills ?? {}
-        )
+        const missingSkillsData =
+          res.totalMissingSkills ?? res.missingSkills ?? {}
+        const items: MissingSkillItem[] = Object.entries(missingSkillsData)
           .map(([skillName, count]) => ({ skillName, count: Number(count) }))
           .sort((a, b) => b.count - a.count)
         setData(items)
@@ -114,7 +125,8 @@ export function useMissingSkills(
         onTotalLoaded?.(items.length)
       })
       .catch((err: any) => {
-        const msg = err?.response?.data?.message || "Cannot load missing skill data."
+        const msg =
+          err?.response?.data?.message || "Cannot load missing skill data."
         setError(msg)
       })
       .finally(() => setLoading(false))

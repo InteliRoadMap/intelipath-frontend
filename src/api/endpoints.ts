@@ -12,14 +12,14 @@ export const ENDPOINTS = {
     REFRESH_TOKEN: "/auth/refresh"
   },
   USERS: {
-    ME: '/users/me',
-    PROFILE: '/users/profile',
+    ME: "/users/me",
+    PROFILE: "/users/profile"
   },
   STUDENT_OLD: {
-    PROFILE: '/students/profile',
-    TARGET_CAREER: '/students/target-career',
-    SKILLS: '/students/skills',
-    SELECT_SKILLS: '/students/skills/select',
+    PROFILE: "/students/profile",
+    TARGET_CAREER: "/students/target-career",
+    SKILLS: "/students/skills",
+    SELECT_SKILLS: "/students/skills/select",
     ME: "/user/me",
     PROFILE_USER: "/user/profile"
   },
@@ -31,7 +31,7 @@ export const ENDPOINTS = {
     PORTFOLIO_SLUG: "/student/portfolio/slug",
     // OLD CODE: (no old code for UPLOAD_TRANSCRIPT, just adding new endpoint)
     PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import",
-    PORTFOLIO_REQUEST_REVIEW: '/student/portfolio/request-review',
+    PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
     UPLOAD_TRANSCRIPT: "/student/profile/transcript"
   },
   CAREER_ROLES: {
@@ -40,33 +40,34 @@ export const ENDPOINTS = {
   ROADMAP: {
     CAREER_ROADMAP: (careerId: string) => `/roadmaps/${careerId}`,
     CAREER_PROGRESS: (careerId: string) => `/roadmaps/${careerId}/progress`,
-    STUDENT_ROADMAP: '/roadmaps/student',
+    STUDENT_ROADMAP: "/roadmaps/student",
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
-    UPDATE_NODE_PROGRESS: '/roadmaps/nodes/progress',
-    COMPARE_SKILLS: '/roadmap/skills/compare',
+    UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
+    COMPARE_SKILLS: "/roadmap/skills/compare"
   },
   STUDENT_DASHBOARD: {
-    OVERVIEW: '/student/dashboard',
-    ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',
-    SKILL_GAPS: '/student/dashboard/skill-gaps',
-    MENTOR_FEEDBACK: '/student/dashboard/mentor-feedback',
-    RECOMMENDATIONS: '/student/dashboard/recommendations',
-    MARKET_DEMAND: '/student/dashboard/market-demand',
-    AI_HISTORY: '/student/dashboard/ai-history',
+    OVERVIEW: "/student/dashboard",
+    ROADMAP_PROGRESS: "/student/dashboard/roadmap-progress",
+    SKILL_GAPS: "/student/dashboard/skill-gaps",
+    MENTOR_FEEDBACK: "/student/dashboard/mentor-feedback",
+    RECOMMENDATIONS: "/student/dashboard/recommendations",
+    MARKET_DEMAND: "/student/dashboard/market-demand",
+    AI_HISTORY: "/student/dashboard/ai-history",
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
   MARKET_TRENDS: {
-    TOP_HIRING: '/market-trends/companies/top-hiring',
-    TRENDING_SKILLS: '/market-trends/skills/trending',
-    SALARY_OVERVIEW: '/market-trends/salary-overview'
+    TOP_HIRING: "/market-trends/companies/top-hiring",
+    TRENDING_SKILLS: "/market-trends/skills/trending",
+    SALARY_OVERVIEW: "/market-trends/salary-overview"
   },
   UNIVERSITIES: {
-    LIST: '/universities'
+    LIST: "/universities"
   },
   RECRUITMENT_POSTS: {
-    ALL: '/recruitment-posts/',
+    ALL: "/recruitment-posts/",
     COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,
-    RECRUITMENT: (recruitmentId: string) => `/recruitment-posts/recruitment/${recruitmentId}`
+    RECRUITMENT: (recruitmentId: string) =>
+      `/recruitment-posts/recruitment/${recruitmentId}`
   },
   ADMIN_DASHBOARD: {
     METRICS_USERS: "/admin/dashboard/metrics/users",
@@ -79,7 +80,7 @@ export const ENDPOINTS = {
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
   COUNSELOR: {
-    PROFILE: '/counselor/profile',
+    PROFILE: "/counselor/profile"
   },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
@@ -91,10 +92,13 @@ export const ENDPOINTS = {
     MISSING_SKILLS: "/counselor/dashboard/missing-skills",
     GET_STUDENT_FEEDBACK: "/counselor/dashboard/feedback/me",
     GET_STUDENT_LIST: "/counselor/feedback/students",
+    GET_STUDENT_INFO: (studentId: string) =>
+      `/counselor/feedback/student/info/${studentId}`,
     HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
     MODIFY_FEEDBACK: "/counselor/dashboard/modify-feedback",
-    DELETE_FEEDBACK: (feedbackId: string) => `/counselor/dashboard/delete-feedback/${feedbackId}`,
+    DELETE_FEEDBACK: (feedbackId: string) =>
+      `/counselor/dashboard/delete-feedback/${feedbackId}`,
 
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
@@ -103,14 +107,14 @@ export const ENDPOINTS = {
     METRICS: "/mentor/dashboard/metrics",
     PENDING_REVIEWS: "/mentor/dashboard/pending-reviews",
     INSIGHT: "/mentor/dashboard/insight",
-    CAREER_DISTRIBUTION: '/mentor/dashboard/career-distribution',
-    STUDENT_LIST: '/mentor/feedback/students',
-    FEEDBACK_HISTORY: '/mentor/feedback/history',
-    SUBMIT_FEEDBACK: '/mentor/feedback/submit',
-    PROGRESS_REPORTS: '/mentor/dashboard/progress-reports'
+    CAREER_DISTRIBUTION: "/mentor/dashboard/career-distribution",
+    STUDENT_LIST: "/mentor/feedback/students",
+    FEEDBACK_HISTORY: "/mentor/feedback/history",
+    SUBMIT_FEEDBACK: "/mentor/feedback/submit",
+    PROGRESS_REPORTS: "/mentor/dashboard/progress-reports"
   },
   MENTOR: {
-    PROFILE: '/mentor/profile',
+    PROFILE: "/mentor/profile"
   },
   CHAT: {
     SESSIONS: "/chat/sessions",
