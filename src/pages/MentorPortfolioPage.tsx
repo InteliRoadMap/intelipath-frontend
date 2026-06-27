@@ -1,4 +1,4 @@
-import { MentorPortfolioView } from '@/features/mentor-dashboard';
+import { MentorPortfolioView } from '@/features/mentor/mentor-dashboard';
 
 export default function MentorPortfolioPage() {
   return <MentorPortfolioView />;

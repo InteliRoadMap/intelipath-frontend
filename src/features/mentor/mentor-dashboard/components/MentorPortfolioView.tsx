@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, MessageSquare, ArrowLeft, Mail, MapPin, GraduationCap, Briefcase, ExternalLink, Send, Users } from 'lucide-react';
-import { UserHeaderActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui';
+import { UserHeaderActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components';
 import { useAuth } from '@/context';
 import { useNavigate, useParams } from 'react-router-dom';
 import mentorApi from '@/api/mentorApi';

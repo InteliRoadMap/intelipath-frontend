@@ -1,5 +1,5 @@
 import { AppRoutes } from "@/routes"
-import { GlobalLoadingBar } from "@/components/ui"
+import { GlobalLoadingBar } from "@/components"
 
 function App() {
   return (

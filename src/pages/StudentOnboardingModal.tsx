@@ -1,5 +1,4 @@
-import BaseModal from "../components/modals/BaseModal"
-import { DatePicker } from "@/components"
+import { BaseModal, DatePicker } from "@/components"
 import {
   User,
   Mail,

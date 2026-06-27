@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components';
 import { MessageSquare, Code, Users, Compass, Star, CheckCircle2, Save, Send, X, AlertCircle } from 'lucide-react';
 import mentorApi from '@/api/mentorApi';
 

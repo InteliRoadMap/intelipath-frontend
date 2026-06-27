@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, Search, UserRound } from 'lucide-react'
-import { BaseModal } from '@/components/modals'
+import { BaseModal } from '@/components'
 import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, toIsoDateOnly } from '@/lib/utils'
 import { studentDashboardService } from '../services'

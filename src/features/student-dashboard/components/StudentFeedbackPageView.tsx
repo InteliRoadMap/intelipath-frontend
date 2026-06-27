@@ -3,8 +3,7 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import StudentHeader from './StudentHeader';
-import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardDescription, Badge, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';
 import studentApi from '@/api/studentApi';
 

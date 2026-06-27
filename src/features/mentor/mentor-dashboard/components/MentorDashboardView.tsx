@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { UserHeaderActions, Logo, SharedAppBackground } from '@/components/ui';
+import { UserHeaderActions, Logo, SharedAppBackground } from '@/components';
 import { useAuth } from '@/context';
 import { ROUTES } from '@/shared';
 import { MentorHeader } from './MentorHeader';

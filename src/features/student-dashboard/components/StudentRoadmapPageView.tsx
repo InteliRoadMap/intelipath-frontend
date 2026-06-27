@@ -19,7 +19,7 @@ import {
   TreeStructure,
   X
 } from "@phosphor-icons/react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components"
 import { useAuth } from "@/context"
 import { isUuid } from "@/lib/utils"
 import { ROUTES } from "@/shared"

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, LoaderCircle, Search } from 'lucide-react'
-import { BaseModal } from '@/components/modals'
+import { BaseModal } from '@/components'
 import { isUuid } from '@/lib/utils'
 import {
   Button,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SharedAppBackground } from '@/components/ui';
+import { SharedAppBackground } from '@/components';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 import { RecruitmentPost } from '../types/marketPulse';
 import StudentHeader from './StudentHeader';

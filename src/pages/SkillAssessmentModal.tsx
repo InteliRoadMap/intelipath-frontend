@@ -1,5 +1,5 @@
 import { Check, Search, Sparkles, X } from "lucide-react"
-import BaseModal from "../components/modals/BaseModal"
+import { BaseModal } from "@/components"
 import { useSkillAssessment } from "../hooks/useSkillAssessment"
 
 interface SkillsModalProps {

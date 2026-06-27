@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
-import { SharedAppBackground } from '@/components/ui';
+import { SharedAppBackground } from '@/components';
 
 
 export const PublicPortfolioPage = () => {

@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "motion/react"
 import type { ReactNode } from "react"
-import AbstractIllustration from "@/components/ui/AbstractIllustration"
-import { Logo, SharedAppBackground } from "@/components"
+import { Logo, SharedAppBackground, AbstractIllustration } from "@/components"
 import { Link } from "react-router-dom"
 import { ArrowLeft } from "@phosphor-icons/react"
 import { ROUTES } from "@/shared"

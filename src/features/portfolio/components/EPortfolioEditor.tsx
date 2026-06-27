@@ -11,7 +11,7 @@ import '@/features/portfolio/styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
 import mentorApi from '@/api/mentorApi';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components/ui';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components';
 import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
