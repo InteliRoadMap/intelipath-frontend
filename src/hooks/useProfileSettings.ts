@@ -21,6 +21,7 @@ export interface ProfileData {
   department: string
   // Common
   github_profile?: string
+  avatar_url?: string
 }
 
 const EMPTY_PROFILE: ProfileData = {
@@ -36,11 +37,12 @@ const EMPTY_PROFILE: ProfileData = {
   company: "",
   industry_focus: "",
   department: "",
-  github_profile: ""
+  github_profile: "",
+  avatar_url: ""
 }
 
 export function useProfileSettings() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -58,13 +60,19 @@ export function useProfileSettings() {
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await Promise.race([profileApi.getStudentProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getStudentProfile(),
+          timeout
+        ])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         const res = await Promise.race([profileApi.getMentorProfile(), timeout])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await Promise.race([profileApi.getCounselorProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getCounselorProfile(),
+          timeout
+        ])
         data = (res as any).data
       }
 
@@ -72,18 +80,73 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
-        full_name: data?.fullName || data?.userInfo?.fullName || user?.fullName || data?.full_name || "",
-        email: data?.email || data?.userInfo?.email || user?.email || "",
-        role: data?.role || user?.role || "Student",
-        major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
-        universityId: data?.universityId || data?.userInfo?.universityId || "",
-        industry_focus: data?.industryFocus || data?.industry_focus || "",
-        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
-        yob: (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")?.toString().split("T")[0] || ""
+        full_name:
+          data?.fullName ||
+          data?.user?.fullName ||
+          data?.userInfo?.fullName ||
+          user?.fullName ||
+          data?.full_name ||
+          "",
+        email:
+          data?.email ||
+          data?.user?.email ||
+          data?.userInfo?.email ||
+          user?.email ||
+          "",
+        role: data?.role || data?.user?.role || user?.role || "Student",
+        major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
+        year_of_admission:
+          data?.yearOfAdmission ||
+          data?.year_of_admission ||
+          data?.student?.yearOfAdmission ||
+          "",
+        universityId:
+          data?.universityId ||
+          data?.userInfo?.universityId ||
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        university:
+          data?.university ||
+          data?.userInfo?.university ||
+          data?.student?.university ||
+          data?.academicCounselor?.university ||
+          "",
+        department:
+          data?.department || data?.academicCounselor?.department || "",
+        industry_focus:
+          data?.industryFocus ||
+          data?.industry_focus ||
+          data?.industryMentor?.industryFocus ||
+          "",
+        bio:
+          data?.bio ||
+          data?.user?.bio ||
+          data?.userInfo?.bio ||
+          (user as any)?.bio ||
+          "",
+        avatar_url:
+          data?.avatarUrl ||
+          data?.user?.avatarUrl ||
+          data?.userInfo?.avatarUrl ||
+          user?.avatarUrl ||
+          "",
+        yob:
+          (
+            data?.yob ||
+            data?.user?.yob ||
+            data?.userInfo?.yob ||
+            (user as any)?.yob ||
+            ""
+          )
+            ?.toString()
+            .split("T")[0] || ""
       })
     } catch (err) {
-      console.warn("[ProfileSettingsPage] Cannot load profile (API may be offline):", err)
+      console.warn(
+        "[ProfileSettingsPage] Cannot load profile (API may be offline):",
+        err
+      )
       // Fallback to user data from auth context so form still shows something
       setProfileData({
         ...EMPTY_PROFILE,
@@ -93,7 +156,6 @@ export function useProfileSettings() {
       })
     } finally {
       setLoading(false)
-
     }
   }
 
@@ -114,25 +176,29 @@ export function useProfileSettings() {
       const birthDate = new Date(profileData.yob)
       const today = new Date()
       if (birthDate >= today) {
-        setError('Date of birth cannot be in the future.')
+        setError("Date of birth cannot be in the future.")
         setSaving(false)
         return
       } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('You must be at least 10 years old.')
+        setError("You must be at least 10 years old.")
         setSaving(false)
         return
       }
     }
 
-    if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission && profileData.yob) {
+    if (
+      user?.role?.toUpperCase() === "STUDENT" &&
+      profileData.year_of_admission &&
+      profileData.yob
+    ) {
       const birthDate = new Date(profileData.yob)
       const admissionDate = new Date(profileData.year_of_admission)
       if (admissionDate <= birthDate) {
-        setError('Admission date must be after your date of birth.')
+        setError("Admission date must be after your date of birth.")
         setSaving(false)
         return
       } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('Admission date seems too early based on your age.')
+        setError("Admission date seems too early based on your age.")
         setSaving(false)
         return
       }
@@ -152,8 +218,8 @@ export function useProfileSettings() {
           profileApi.updateStudentProfile({
             universityId: profileData.universityId || profileData.university,
             yearOfAdmission: profileData.year_of_admission,
-            major: profileData.major,
-            // Original: careerId: "" 
+            major: profileData.major
+            // Original: careerId: ""
             // Removed to prevent wiping out data
           })
         )
@@ -185,6 +251,28 @@ export function useProfileSettings() {
     }
   }
 
+  const handleAvatarUpload = async (file: File) => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await profileApi.updateAvatar(file)
+      // the backend returns the updated UserResponse, which has avatarUrl
+      const updatedUser = res.data?.data || res.data
+      const newUrl = updatedUser?.avatarUrl || ""
+
+      setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
+      updateUser({ avatarUrl: newUrl })
+      setSuccess("Avatar updated successfully!")
+      setTimeout(() => setSuccess(null), 4000)
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error uploading avatar:", err)
+      setError("Failed to upload avatar. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
@@ -200,6 +288,7 @@ export function useProfileSettings() {
     success,
     handleChange,
     handleSave,
+    handleAvatarUpload,
     loadProfile,
     displayInitial,
     role,

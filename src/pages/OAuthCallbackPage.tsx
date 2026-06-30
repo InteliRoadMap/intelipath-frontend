@@ -16,12 +16,30 @@ export default function OAuthCallbackPage() {
   const navigate = useNavigate()
 
   const urlError = searchParams.get("error")
-  const token = searchParams.get("token")
-  const refreshToken = searchParams.get("refreshToken")
+
+  const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || null
+    return null
+  }
+
+  const deleteCookie = (name: string) => {
+    document.cookie = name + "=; Max-Age=-99999999; path=/"
+  }
+
+  const [token] = useState(() => getCookie("token"))
+  const [refreshToken] = useState(() => getCookie("refreshToken") || null)
+
+  useEffect(() => {
+    if (token) deleteCookie("token")
+    if (refreshToken) deleteCookie("refreshToken")
+  }, [token, refreshToken])
+
   const callbackError = urlError
     ? `URL Error: ${urlError}`
     : !token
-      ? "No token in URL"
+      ? "No token found in cookies"
       : null
 
   const tokenResult = useMemo(() => {

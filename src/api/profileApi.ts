@@ -29,7 +29,8 @@ export interface UpdateCounselorProfilePayload {
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
-  getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
+  getCounselorProfile: () =>
+    mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
   getUniversities: () => mainClient.get(ENDPOINTS.UNIVERSITIES.LIST),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>
@@ -46,26 +47,30 @@ const profileApi = {
 
   updateAvatar: (file: File) => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append("file", file)
     // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
-    return mainClient.patch('/users/profile/avatar', formData, {
-      transformRequest: [(data, headers) => {
-        delete headers['Content-Type'];
-        return data;
-      }],
+    return mainClient.patch("/users/profile/avatar", formData, {
+      transformRequest: [
+        (data, headers) => {
+          delete headers["Content-Type"]
+          return data
+        }
+      ]
     })
   },
 
   uploadTranscript: (file: File) => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append("file", file)
     return mainClient.post(ENDPOINTS.STUDENT.UPLOAD_TRANSCRIPT, formData, {
-      transformRequest: [(data, headers) => {
-        delete headers['Content-Type'];
-        return data;
-      }],
+      transformRequest: [
+        (data, headers) => {
+          delete headers["Content-Type"]
+          return data
+        }
+      ]
     })
-  },
+  }
 }
 
 export default profileApi

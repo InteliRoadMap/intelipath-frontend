@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback } from "react"
-import counselorApi, { type MyStudent, type Feedback } from "@/api/counselorApi"
+import counselorApi, {
+  type MyStudent,
+  type Feedback
+} from "@/features/counselor-dashboard/api/counselorApi"
 
 // ─── useStudentList ───────────────────────────────────────────────────────────
 export interface UseStudentListResult {
@@ -40,7 +43,9 @@ export interface UseFeedbackHistoryResult {
   refetch: () => void
 }
 
-export function useFeedbackHistory(studentId: string): UseFeedbackHistoryResult {
+export function useFeedbackHistory(
+  studentId: string
+): UseFeedbackHistoryResult {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
 

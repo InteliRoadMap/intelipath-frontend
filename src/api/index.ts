@@ -1,14 +1,14 @@
-export { default as authApi } from './authApi'
-export { default as adminApi } from './adminApi'
-export { default as counselorApi } from './counselorApi'
-export { default as mentorApi } from './mentorApi'
-export { default as careerApi } from './careerApi'
-export { default as marketPulseApi } from './marketPulseApi'
-export { default as dashboardApi } from './dashboardApi'
-export { default as roadmapApi } from './roadmapApi'
-export { default as userApi } from './userApi'
-export { default as skillApi } from './skillApi'
-export * from './skillApi'
-export { default as profileApi } from './profileApi'
-export * from './endpoints'
-export * from './apiClients'
+export { default as authApi } from "./authApi"
+export { default as adminApi } from "./adminApi"
+export { default as counselorApi } from "../features/counselor-dashboard/api/counselorApi"
+export { default as mentorApi } from "./mentorApi"
+export { default as careerApi } from "./careerApi"
+export { default as marketPulseApi } from "./marketPulseApi"
+export { default as dashboardApi } from "./dashboardApi"
+export { default as roadmapApi } from "./roadmapApi"
+export { default as userApi } from "./userApi"
+export { default as skillApi } from "./skillApi"
+export * from "./skillApi"
+export { default as profileApi } from "./profileApi"
+export * from "./endpoints"
+export * from "./apiClients"
