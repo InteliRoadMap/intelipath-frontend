@@ -6,7 +6,7 @@ import StudentHeader from './StudentHeader';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import marketPulseApi from '@/api/marketPulseApi';
+import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
 import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';

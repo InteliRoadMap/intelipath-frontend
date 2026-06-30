@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
-import counselorApi, { type MyStudent, type Feedback } from "@/api/counselorApi"
+import counselorApi, { type MyStudent, type Feedback } from "@/features/counselor-dashboard/api/counselorApi"
 
 // ─── useStudentList ───────────────────────────────────────────────────────────
 export interface UseStudentListResult {

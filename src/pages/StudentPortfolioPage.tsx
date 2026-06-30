@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
+import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 // We will create this component next
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
 

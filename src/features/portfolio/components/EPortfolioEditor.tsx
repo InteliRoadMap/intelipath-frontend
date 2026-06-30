@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
+import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import { EditableText } from './EditableText';
 import { ThemeEditor } from './ThemeEditor';
@@ -10,7 +10,7 @@ import { useGSAP } from '@gsap/react';
 import '@/features/portfolio/styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components/ui';
 import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
 import { MessageSquare, Code, Users, Compass, Star, CheckCircle2, Save, Send, X, AlertCircle } from 'lucide-react';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 
 interface FeedbackModalProps {
   isOpen: boolean;

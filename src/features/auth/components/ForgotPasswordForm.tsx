@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Mail, ArrowLeft, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { authApi } from "@/api";
+import authApi from "@/features/auth/api/authApi";
 import { isValidEmail, getErrorMessage } from "@/lib";
 import { ROUTES } from "@/shared";
 

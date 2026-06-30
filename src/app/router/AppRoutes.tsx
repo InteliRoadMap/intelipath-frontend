@@ -8,7 +8,7 @@ import {
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
   PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
-import { ProtectedRoute, GuestRoute } from "@/routes"
+import { ProtectedRoute, GuestRoute } from "@/app/router"
 import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {

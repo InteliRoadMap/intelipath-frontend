@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
+import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
 import { SharedAppBackground } from '@/components/ui';
 

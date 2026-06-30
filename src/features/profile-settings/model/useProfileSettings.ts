@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import profileApi from "../api/profileApi"
-import { useAuth } from "../context/AuthContext"
+import profileApi from "@/api/profileApi"
+import { useAuth } from "@/context/AuthContext"
 
 export interface ProfileData {
   full_name: string

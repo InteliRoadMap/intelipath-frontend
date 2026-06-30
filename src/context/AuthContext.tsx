@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useRef } from "react"
-import authApi from "@/api/authApi"
+import authApi from "@/features/auth/api/authApi"
 import { userApi } from "@/api"
 import { User, AuthState } from "@/features/auth"
 import { jwtDecode } from "jwt-decode"

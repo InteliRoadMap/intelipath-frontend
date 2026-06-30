@@ -15,8 +15,8 @@ import axios, {
  * logging request/response
  */
 
-import { ENDPOINTS } from "../api/endpoints"
-import { API_BASE_URL } from "@/config/appConfig"
+import { ENDPOINTS } from "./endpoints"
+import { API_BASE_URL } from "@/app/config/appConfig"
 import { ROUTES } from "@/shared"
 import { toast } from "@/utils/toast"
 

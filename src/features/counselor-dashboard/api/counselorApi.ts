@@ -1,5 +1,4 @@
-import { mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
+import { ENDPOINTS, mainClient } from "@/shared/api"
 
 /**
  * Counselor API Service

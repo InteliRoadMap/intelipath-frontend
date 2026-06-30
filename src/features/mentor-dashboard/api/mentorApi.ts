@@ -1,6 +1,5 @@
-import { mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
-import { mapToFrontendData } from "./portfolioApi"
+import { ENDPOINTS, mainClient } from "@/shared/api"
+import { mapToFrontendData } from "@/features/portfolio/api/portfolioApi"
 
 /**
  * Mentor Dashboard API Functions

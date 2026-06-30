@@ -1,5 +1,5 @@
-import { createApiClient, getStoredToken, handleUnauthorized } from '../lib/axios';
-import { API_BASE_URL } from '@/config/appConfig';
+import { createApiClient, getStoredToken, handleUnauthorized } from './httpClient';
+import { API_BASE_URL } from '@/app/config/appConfig';
 
 /**
  * Public client for endpoints that must not attach tokens.

@@ -16,7 +16,7 @@ import {
   QuickActionsWidget, 
   MentorInsightWidget 
 } from './MentorDashboardWidgets';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { Users, Layers, Gauge } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';

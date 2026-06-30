@@ -1,5 +1,4 @@
-import { publicClient, mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
+import { ENDPOINTS, mainClient, publicClient } from "@/shared/api"
 
 const authApi = {
   login: async (email: string, password: string) => {

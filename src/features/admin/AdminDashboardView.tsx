@@ -15,7 +15,7 @@ import {
   Lightning
 } from "@phosphor-icons/react"
 import { useNavigate } from "react-router-dom"
-import { adminApi } from "@/api"
+import adminApi from "@/features/admin/api/adminApi"
 import {
   Badge,
   Button,

@@ -1,7 +1,5 @@
-import { mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
-import { getStoredToken } from "@/lib/axios"
-import { API_BASE_URL } from "@/config/appConfig"
+import { ENDPOINTS, getStoredToken, mainClient } from "@/shared/api"
+import { API_BASE_URL } from "@/app/config/appConfig"
 
 export interface ChatSession {
   sessionId: string
@@ -15,11 +13,17 @@ export interface ChatMessage {
   sessionId: string
   role: 'USER' | 'AI' | 'SYSTEM'
   content: string
+  attachmentName?: string
   createAt: string
 }
 
 export interface CreateSessionPayload {
   sessionName: string
+}
+
+export interface VirtualMentorChatRequest {
+  message: string
+  fileUrl?: string
 }
 
 const chatApi = {
@@ -30,7 +34,13 @@ const chatApi = {
   getMessages: (sessionId: string) => mainClient.get<ChatMessage[]>(ENDPOINTS.CHAT.MESSAGES(sessionId)),
   
   // Custom fetch function for SSE streaming
-  streamMessage: async (sessionId: string, message: string, onMessage: (chunk: string) => void, signal?: AbortSignal) => {
+  streamMessage: async (
+    sessionId: string,
+    request: VirtualMentorChatRequest,
+    onMessage: (chunk: string) => void,
+    signal?: AbortSignal,
+    onStarted?: () => void
+  ) => {
     const token = getStoredToken()
     const url = `${API_BASE_URL}${ENDPOINTS.CHAT.STREAM(sessionId)}`
     
@@ -40,8 +50,9 @@ const chatApi = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      // credentials: 'include',
-      body: JSON.stringify({ message }),
+      // The current backend authenticates this endpoint with the Bearer token.
+      // Do not opt into cookie credentials here until its CORS policy supports it.
+      body: JSON.stringify(request),
       signal
     })
 
@@ -52,6 +63,8 @@ const chatApi = {
     if (!response.body) {
       throw new Error('Response body is empty')
     }
+
+    onStarted?.()
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder('utf-8')
@@ -136,8 +149,8 @@ const chatApi = {
     const formData = new FormData()
     formData.append("file", file)
     // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
-    // Original: return mainClient.post<{ url: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
-    return mainClient.post<{ url: string, extractedText?: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
+    return mainClient.post<{ url: string }>(ENDPOINTS.CHAT.UPLOAD_FILE, formData, {
+      withCredentials: true,
       transformRequest: [(data, headers) => {
         delete headers['Content-Type'];
         return data;

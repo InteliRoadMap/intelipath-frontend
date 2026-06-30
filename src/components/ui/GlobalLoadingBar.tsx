@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { onLoadingChange } from "@/lib/axios"
+import { onLoadingChange } from "@/shared/api"
 import gsap from "gsap"
 
 export default function GlobalLoadingBar() {
