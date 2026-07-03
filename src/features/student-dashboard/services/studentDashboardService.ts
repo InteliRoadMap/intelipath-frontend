@@ -539,76 +539,64 @@ export const studentDashboardService = {
         });
       });
 
+      // roadmap.sh model:
+      // - main/spine nodes (explicit level) chain to each other via previousNode,
+      //   falling back to level order only when the data has no previous reference;
+      // - child nodes hang off their parentNode (dashed) and may additionally
+      //   chain between themselves via previousNode.
+      const resolveRef = (raw: any): string | null => {
+        if (!raw) return null;
+        let refId = typeof raw === 'object'
+          ? String(raw.nodeId || raw.id || raw.node_id || raw.title || raw.name || raw.nodeName || raw.node_name || raw.NodeName || '').trim()
+          : String(raw).trim();
+        if (refId && nameToId[refId]) refId = nameToId[refId];
+        return refId || null;
+      };
+
+      const pushEdge = (sourceId: string, targetId: string, row: any, isSpineEdge: boolean) => {
+        if (!sourceId || sourceId === targetId) return;
+        if (edges.some(e => e.source === sourceId && e.target === targetId)) return;
+        const status = normalizeStatus(row.Status || row.status);
+        edges.push({
+          id: `e-${sourceId}-${targetId}`,
+          source: sourceId,
+          target: targetId,
+          type: 'smoothstep',
+          animated: status === 'in_progress' || status === 'current',
+          style: {
+            strokeWidth: isSpineEdge ? 3 : 2,
+            strokeDasharray: isSpineEdge ? 'none' : '5 5'
+          }
+        });
+        adjacencyList[sourceId] = adjacencyList[sourceId] || [];
+        adjacencyList[sourceId].push(targetId);
+        inDegree[targetId] = (inDegree[targetId] || 0) + 1;
+      };
+
       rows.forEach(row => {
         const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId;
         const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
         const isMainNode = actualMainNodes.some(m => m === row);
-        
-        let parentId = null;
-        const rawParent = row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id;
-        
-        if (rawParent) {
-          if (typeof rawParent === 'object') {
-            parentId = rawParent.nodeId || rawParent.id || rawParent.node_id || rawParent.title || rawParent.name || rawParent.nodeName || rawParent.node_name || rawParent.NodeName;
-          } else {
-            parentId = String(rawParent).trim();
-            if (nameToId[parentId]) {
-              parentId = nameToId[parentId];
-            }
-          }
-        }
-        
-        // Auto-connect main spine nodes sequentially based on actualMainNodes array order
-        if (isMainNode && !parentId) {
-          const mainNodeIndex = actualMainNodes.findIndex(m => m === row);
-          if (mainNodeIndex > 0) {
-            const prevMainNode = actualMainNodes[mainNodeIndex - 1];
-            parentId = String(prevMainNode.nodeId || prevMainNode.id || prevMainNode.node_id || prevMainNode.title || prevMainNode.name || prevMainNode.NodeName || prevMainNode.nodeName || prevMainNode.node_name).trim();
-          }
-        }
-        
-        if (parentId) {
-          const status = normalizeStatus(row.Status || row.status);
-          edges.push({
-            id: `e-${parentId}-${nodeId}`,
-            source: parentId,
-            target: nodeId,
-            type: 'smoothstep',
-            animated: status === 'in_progress' || status === 'current',
-            style: {
-              strokeWidth: isMainNode ? 3 : 2,
-              strokeDasharray: isMainNode ? 'none' : '5 5'
-            }
-          });
-          adjacencyList[parentId] = adjacencyList[parentId] || [];
-          adjacencyList[parentId].push(nodeId);
-          inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
-        }
 
-        // Sequence edge: previousNode chains nodes that follow one another.
-        const rawPrevious = row.previousNode || row.previous_node || row.PreviousNode;
-        if (rawPrevious) {
-          let previousId =
-            typeof rawPrevious === 'object'
-              ? String(rawPrevious.nodeId || rawPrevious.id || rawPrevious.node_id || '').trim()
-              : String(rawPrevious).trim();
-          if (previousId && nameToId[previousId]) {
-            previousId = nameToId[previousId];
+        const parentId = resolveRef(row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id);
+        let previousId = resolveRef(row.previousNode || row.previous_node || row.PreviousNode);
+
+        if (isMainNode) {
+          // Spine: previousNode is the source of truth; level order is only a fallback.
+          if (!previousId && !parentId) {
+            const mainNodeIndex = actualMainNodes.findIndex(m => m === row);
+            if (mainNodeIndex > 0) {
+              const prevMainNode = actualMainNodes[mainNodeIndex - 1];
+              previousId = resolveRef(prevMainNode.nodeId || prevMainNode.id || prevMainNode.node_id || prevMainNode.title || prevMainNode.name || prevMainNode.NodeName || prevMainNode.nodeName || prevMainNode.node_name);
+            }
           }
-          if (previousId && previousId !== nodeId && !edges.some(e => e.source === previousId && e.target === nodeId)) {
-            const status = normalizeStatus(row.Status || row.status);
-            edges.push({
-              id: `e-${previousId}-${nodeId}`,
-              source: previousId,
-              target: nodeId,
-              type: 'smoothstep',
-              animated: status === 'in_progress' || status === 'current',
-              style: { strokeWidth: 2, strokeDasharray: 'none' }
-            });
-            adjacencyList[previousId] = adjacencyList[previousId] || [];
-            adjacencyList[previousId].push(nodeId);
-            inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
-          }
+          if (previousId) pushEdge(previousId, nodeId, row, true);
+          if (parentId) pushEdge(parentId, nodeId, row, true);
+        } else {
+          // Children: dashed hierarchy edge from the parent, plus an optional
+          // dashed sequence edge chaining siblings via previousNode.
+          if (parentId) pushEdge(parentId, nodeId, row, false);
+          if (previousId) pushEdge(previousId, nodeId, row, false);
         }
       });
 
