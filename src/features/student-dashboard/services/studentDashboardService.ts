@@ -532,7 +532,9 @@ export const studentDashboardService = {
             description: row.Description || row.description || row.NodeDescription || row.nodeDescription || row.content || row.desc || '',
             links: resources,
             level: level,
-            status: normalizeStatus(row.Status || row.status)
+            status: normalizeStatus(row.Status || row.status),
+            stage: row.stage || row.Stage || null,
+            completionPolicy: row.completionPolicy || row.completion_policy || null
           }
         });
       });
@@ -543,7 +545,7 @@ export const studentDashboardService = {
         const isMainNode = actualMainNodes.some(m => m === row);
         
         let parentId = null;
-        const rawParent = row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id;
+        const rawParent = row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id;
         
         if (rawParent) {
           if (typeof rawParent === 'object') {
@@ -573,14 +575,40 @@ export const studentDashboardService = {
             target: nodeId,
             type: 'smoothstep',
             animated: status === 'in_progress' || status === 'current',
-            style: { 
-              strokeWidth: isMainNode ? 3 : 2, 
+            style: {
+              strokeWidth: isMainNode ? 3 : 2,
               strokeDasharray: isMainNode ? 'none' : '5 5'
             }
           });
           adjacencyList[parentId] = adjacencyList[parentId] || [];
           adjacencyList[parentId].push(nodeId);
           inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
+        }
+
+        // Sequence edge: previousNode chains nodes that follow one another.
+        const rawPrevious = row.previousNode || row.previous_node || row.PreviousNode;
+        if (rawPrevious) {
+          let previousId =
+            typeof rawPrevious === 'object'
+              ? String(rawPrevious.nodeId || rawPrevious.id || rawPrevious.node_id || '').trim()
+              : String(rawPrevious).trim();
+          if (previousId && nameToId[previousId]) {
+            previousId = nameToId[previousId];
+          }
+          if (previousId && previousId !== nodeId && !edges.some(e => e.source === previousId && e.target === nodeId)) {
+            const status = normalizeStatus(row.Status || row.status);
+            edges.push({
+              id: `e-${previousId}-${nodeId}`,
+              source: previousId,
+              target: nodeId,
+              type: 'smoothstep',
+              animated: status === 'in_progress' || status === 'current',
+              style: { strokeWidth: 2, strokeDasharray: 'none' }
+            });
+            adjacencyList[previousId] = adjacencyList[previousId] || [];
+            adjacencyList[previousId].push(nodeId);
+            inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
+          }
         }
       });
 

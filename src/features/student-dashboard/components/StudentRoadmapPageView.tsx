@@ -541,7 +541,12 @@ export default function StudentRoadmapPageView() {
                 
                 <div className="shrink-0 pt-4 mt-auto space-y-3">
                   {/* Premium Compact Action Buttons */}
-                  {selectedNodeData.status === 'completed' ? (
+                  {selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
+                    <div className="w-full flex items-center justify-center gap-2 bg-slate-50 text-slate-500 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-medium text-[12px]">
+                      <TreeStructure size={14} weight="bold" />
+                      Group topic — completes automatically via its child nodes
+                    </div>
+                  ) : selectedNodeData.status === 'completed' ? (
                     <div className="space-y-3">
                       <button disabled className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-5 py-3 rounded-xl ring-1 ring-emerald-500/20 font-semibold text-[13px] shadow-sm">
                         <Check size={16} weight="bold" /> Completed
