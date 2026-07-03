@@ -66,10 +66,16 @@ export function MentorDashboardView() {
     <div ref={containerRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
       <SharedAppBackground />
       
-      <MentorHeader 
+      <MentorHeader
         user={user}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          if (tab === 'roadmap') {
+            navigate(ROUTES.DASHBOARD_MENTOR_ROADMAP_EDITOR);
+            return;
+          }
+          setActiveTab(tab);
+        }}
         onLogout={handleLogout}
       />
 

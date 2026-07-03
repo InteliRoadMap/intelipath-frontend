@@ -51,6 +51,13 @@ export const ENDPOINTS = {
     ACCEPT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/accept`,
     REJECT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/reject`
   },
+  ROADMAP_EDITOR: {
+    CAREER_NODES: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    CREATE_NODE: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    UPDATE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
+    DELETE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
+    SAVE_POSITIONS: '/roadmaps/editor/nodes/positions'
+  },
   STUDENT_DASHBOARD: {
     OVERVIEW: '/student/dashboard',
     ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',

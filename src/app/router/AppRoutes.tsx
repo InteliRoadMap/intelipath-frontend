@@ -6,7 +6,7 @@ import {
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
-  PublicPortfolioPage, StudentMarketPulsePage
+  PublicPortfolioPage, StudentMarketPulsePage, MentorRoadmapEditorPage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
 import { ROLES, ROUTES } from "@/shared"
@@ -134,6 +134,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorPortfolioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_MENTOR_ROADMAP_EDITOR}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
+            <MentorRoadmapEditorPage />
           </ProtectedRoute>
         }
       />

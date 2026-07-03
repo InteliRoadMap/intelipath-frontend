@@ -18,6 +18,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
     // { id: "portfolios", label: "Portfolios" },
     // { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
+    { id: "roadmap", label: "Roadmap Editor" },
     // { id: "aichat", label: "AI Mentor" },
   ]
 

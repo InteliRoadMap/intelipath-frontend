@@ -534,7 +534,10 @@ export const studentDashboardService = {
             level: level,
             status: normalizeStatus(row.Status || row.status),
             stage: row.stage || row.Stage || null,
-            completionPolicy: row.completionPolicy || row.completion_policy || null
+            completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // Hand-placed coordinates from the mentor editor; null = auto-layout.
+            positionX: row.positionX ?? row.position_x ?? null,
+            positionY: row.positionY ?? row.position_y ?? null
           }
         });
       });
