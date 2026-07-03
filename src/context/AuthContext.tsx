@@ -122,17 +122,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setupRefreshTimer = (
     currentAccessToken: string,
-    currentRefreshToken: string,
+    currentRefreshToken?: string,
     expiresIn?: string | null
   ) => {
     clearRefreshTimer()
     const expireTime = getExpirationTime(currentAccessToken, expiresIn)
-    if (!expireTime || !currentRefreshToken) {
+
+    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+    // if (!expireTime || !currentRefreshToken) {
+    //   if (import.meta.env.DEV) {
+    //     console.warn("[AUTH REFRESH] Cannot schedule refresh", {
+    //       hasExpirationTime: Boolean(expireTime),
+    //       hasRefreshToken: Boolean(currentRefreshToken)
+    //     })
+    //   }
+    //   return
+    // }
+
+    // NEW LOGIC: Allow scheduling refresh even without a refresh token on frontend (HttpOnly Cookie mode)
+    if (!expireTime) {
       if (import.meta.env.DEV) {
-        console.warn("[AUTH REFRESH] Cannot schedule refresh", {
-          hasExpirationTime: Boolean(expireTime),
-          hasRefreshToken: Boolean(currentRefreshToken)
-        })
+        console.warn("[AUTH REFRESH] Cannot schedule refresh: missing expiration time")
       }
       return
     }
@@ -168,13 +178,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
-            localStorage.setItem("refreshToken", nextRefreshToken)
+            if (nextRefreshToken) {
+              localStorage.setItem("refreshToken", nextRefreshToken)
+            }
             if (nextExpiresIn) {
               localStorage.setItem("tokenExpiresIn", nextExpiresIn)
             }
             dispatch({
               type: "UPDATE_TOKENS",
-              payload: { accessToken, refreshToken: nextRefreshToken }
+              payload: { accessToken, refreshToken: nextRefreshToken || null }
             })
             setupRefreshTimer(accessToken, nextRefreshToken, nextExpiresIn)
           }
@@ -226,9 +238,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               refreshToken: storedRefreshToken
             }
           })
-          if (storedRefreshToken) {
-            setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
-          }
+          
+          // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+          // if (storedRefreshToken) {
+          //   setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
+          // }
+
+          // NEW LOGIC: Schedule refresh timer even if storedRefreshToken is null (relying on HttpOnly Cookie)
+          setupRefreshTimer(storedToken, storedRefreshToken || undefined, storedExpiresIn)
         }
       } catch {
         // Token expired or invalid - clear and force re-login
@@ -287,7 +304,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         payload: { user: userInfo, accessToken, refreshToken }
       })
 
-      if (refreshToken) setupRefreshTimer(accessToken, refreshToken, expiresIn)
+      // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+      // if (refreshToken) setupRefreshTimer(accessToken, refreshToken, expiresIn)
+
+      // NEW LOGIC: Schedule refresh even if refreshToken is null/undefined (for HttpOnly Cookie)
+      setupRefreshTimer(accessToken, refreshToken || undefined, expiresIn)
     } catch (error) {
       clearStoredAuth()
       throw error

@@ -77,7 +77,7 @@ const normalizeCareerRole = (career: RawCareerRole): CareerRole | null => {
   const careerId = career.careerId || career.career_id || career.id
   const careerName = career.careerName || career.career_name || career.name
 
-  if (!careerId || !careerName || !isUuid(careerId)) return null
+  if (!careerId || !careerName) return null
 
   return {
     careerId,
@@ -277,15 +277,41 @@ export const studentDashboardService = {
   updateUserProfile: (payload: Parameters<typeof profileApi.updateUserProfile>[0]) =>
     profileApi.updateUserProfile(payload),
 
-  updateStudentProfile: (payload: StudentProfilePayload) => {
-    const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
-    if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
-    if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
+  updateStudentProfile: (payload: any) => {
+    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Aligning with new SetupStudentProfileRequest contract):
+    // const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
+    // if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
+    // if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
+    //
+    // return profileApi.updateStudentProfile({
+    //   ...payload,
+    //   universityId: payload.universityId || payload.university,
+    //   yearOfAdmission
+    // })
+
+    // NEW LOGIC: Support new hybrid contract (yearOfAdmission as number, universityId/universityName separate)
+    if (payload.careerId && typeof payload.careerId !== "string") {
+      throw new Error("Career ID must be a valid string ID.")
+    }
+
+    let yearNum: number | null = null
+    if (payload.yearOfAdmission) {
+      const parsed = parseInt(String(payload.yearOfAdmission), 10)
+      if (Number.isFinite(parsed)) {
+        yearNum = parsed
+      }
+    }
+
+    const isUnivUuid = isUuid(payload.universityId)
 
     return profileApi.updateStudentProfile({
-      ...payload,
-      universityId: payload.universityId || payload.university,
-      yearOfAdmission
+      universityId: isUnivUuid ? payload.universityId : null,
+      universityName: isUnivUuid ? (payload.university || payload.universityName || null) : (payload.universityId || payload.universityName || payload.university || null),
+      yearOfAdmission: yearNum,
+      major: payload.major || null,
+      careerId: payload.careerId || null,
+      bio: payload.bio || null,
+      yob: payload.yob || null
     })
   },
 
@@ -301,7 +327,7 @@ export const studentDashboardService = {
   },
 
   updateTargetCareer: async (careerId: string) => {
-    if (!isUuid(careerId)) throw new Error("Career ID must be a valid UUID.")
+    if (!careerId) throw new Error("Career ID must be a valid string ID.")
 
     const response = await careerApi.updateTargetCareer(careerId)
     return unwrapResponse(response.data)
@@ -343,7 +369,8 @@ export const studentDashboardService = {
     const response = await roadmapApi.getStudentRoadmap()
     return normalizeStudentRoadmap(response.data)
   },
-
+
+
 
   updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
     const response = await roadmapApi.updateNodeProgress(nodeId, status);

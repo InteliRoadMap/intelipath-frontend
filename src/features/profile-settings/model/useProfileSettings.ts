@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
+import { isUuid } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 
 export interface ProfileData {
@@ -148,14 +149,21 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
+        const isUnivUuid = isUuid(profileData.universityId)
+        let yearNum: number | null = null
+        if (profileData.year_of_admission) {
+          const parsed = parseInt(String(profileData.year_of_admission), 10)
+          if (Number.isFinite(parsed)) {
+            yearNum = parsed
+          }
+        }
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: profileData.year_of_admission,
+            universityId: isUnivUuid ? profileData.universityId : null,
+            universityName: isUnivUuid ? (profileData.university || null) : (profileData.universityId || profileData.university || null),
+            yearOfAdmission: yearNum,
             major: profileData.major,
-            // Original: careerId: "" 
-            // Removed to prevent wiping out data
-          })
+          } as any)
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
@@ -168,7 +176,7 @@ export function useProfileSettings() {
         tasks.push(
           profileApi.updateCounselorProfile({
             department: profileData.department,
-            universityId: profileData.universityId || profileData.university
+            universityId: profileData.universityId || ""
           })
         )
       }

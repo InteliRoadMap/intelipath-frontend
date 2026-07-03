@@ -11,13 +11,14 @@ interface GuestRouteProps {
 export default function GuestRoute({ children }: GuestRouteProps) {
   const { isAuthenticated, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <RouteProgressBar />
-      </div>
-    )
-  }
+  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading state for instant load):
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-slate-50">
+  //       <RouteProgressBar />
+  //     </div>
+  //   )
+  // }
 
   // If the user is already logged in, send them to the smart dashboard routing
   if (isAuthenticated) {

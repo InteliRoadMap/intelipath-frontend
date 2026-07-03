@@ -370,7 +370,7 @@ function MissingSkillsChart({
                     angle: -45,
                     textAnchor: "end",
                     dy: 10
-                  }}
+                  } as any}
                   tickLine={false}
                   axisLine={false}
                   interval={0}

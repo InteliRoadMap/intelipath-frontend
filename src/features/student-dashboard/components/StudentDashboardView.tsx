@@ -24,7 +24,7 @@ export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const dashboardRef = useRef<HTMLDivElement>(null)
-  const { activeSetupStep, isInitializing, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+  const { activeSetupStep, isInitializing, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
 
   useGSAP(() => {
     if (!isInitializing && activeSetupStep === null) {
@@ -109,7 +109,7 @@ export default function StudentDashboardView() {
       {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
       )}
     </div>
   )

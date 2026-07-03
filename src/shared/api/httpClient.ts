@@ -66,13 +66,15 @@ export let globalActiveRequests = 0;
 export const onLoadingChange = new Set<(isLoading: boolean) => void>();
 
 export const incrementLoading = () => {
-  globalActiveRequests++;
-  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
+  // globalActiveRequests++;
+  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const decrementLoading = () => {
-  globalActiveRequests = Math.max(0, globalActiveRequests - 1);
-  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
+  // globalActiveRequests = Math.max(0, globalActiveRequests - 1);
+  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const getStoredToken = () => localStorage.getItem("accessToken")
@@ -104,7 +106,9 @@ export const handleUnauthorized = (error?: AxiosError) => {
 //Create Axios Client Facctoty
 export function createApiClient({
   baseURL = API_BASE_URL,
-  timeout = 300000,
+  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing timeout):
+  // timeout = 300000,
+  timeout = 0, // 0 means no timeout
   headers = {},
   withCredentials = true,
   getToken = getStoredToken, //Get access token from localStorage
@@ -224,28 +228,47 @@ export function createApiClient({
         isRefreshing = true // Set refreshing flag to prevent multiple refresh attempts
 
         try {
-          const refreshToken = getRefreshToken()
-          if (!refreshToken) {
-            throw new Error("Refresh token is missing.")
-          }
+          // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+          // const refreshToken = getRefreshToken()
+          // if (!refreshToken) {
+          //   throw new Error("Refresh token is missing.")
+          // }
+          //
+          // if (import.meta.env.DEV) {
+          //   console.group("[AUTH REFRESH] Retrying request after 401")
+          //   console.log("endpoint:", `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`)
+          //   console.log("refreshToken:", refreshToken)
+          //   console.log("originalRequest:", originalRequest.url)
+          //   console.groupEnd()
+          // }
+          //
+          // // Use a fresh axios instance to avoid infinite interceptor loops
+          // const refreshResponse = await axios.post(
+          //   //Why cannot use client here?
+          //   // Because client has interceptor that attach token,
+          //   // if refresh token also expired  → infinite loop 401 → refresh again
+          //   // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
+          //   `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+          //   {
+          //     refreshToken
+          //   }
+          // )
 
+          // NEW LOGIC (HttpOnly Cookie compat / Backward Compat):
+          const refreshToken = getRefreshToken()
           if (import.meta.env.DEV) {
             console.group("[AUTH REFRESH] Retrying request after 401")
             console.log("endpoint:", `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`)
-            console.log("refreshToken:", refreshToken)
+            console.log("refreshToken:", refreshToken || "Using HttpOnly Cookie")
             console.log("originalRequest:", originalRequest.url)
             console.groupEnd()
           }
 
-          // Use a fresh axios instance to avoid infinite interceptor loops
           const refreshResponse = await axios.post(
-            //Why cannot use client here?
-            // Because client has interceptor that attach token,
-            // if refresh token also expired  → infinite loop 401 → refresh again
-            // Using axios directly to call refresh endpoint without interceptors to avoid infinite loops
             `${baseURL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+            refreshToken ? { refreshToken } : {},
             {
-              refreshToken
+              withCredentials: true
             }
           )
 

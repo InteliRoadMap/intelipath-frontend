@@ -40,10 +40,14 @@ const studentApi = {
   },
 
   replyFeedback: async (feedbackId: string, content: string) => {
-    // In reality: await mainClient.post(ENDPOINTS.STUDENT.REPLY_FEEDBACK(feedbackId), { content })
-    return new Promise((resolve) => {
-      setTimeout(() => resolve({ success: true }), 500);
-    });
+    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+    // // In reality: await mainClient.post(ENDPOINTS.STUDENT.REPLY_FEEDBACK(feedbackId), { content })
+    // return new Promise((resolve) => {
+    //   setTimeout(() => resolve({ success: true }), 500);
+    // });
+
+    // NEW LOGIC: Instant resolve for mock
+    return { success: true };
   },
 
   requestPortfolioReview: async (mentorEmail: string) => {

@@ -7,12 +7,13 @@ export interface UpdateUserProfilePayload {
 }
 
 export interface UpdateStudentProfilePayload {
-  universityId: string
-  yearOfAdmission: string
-  major: string
-  // Original: careerId: string
-  // Made optional to prevent Profile Settings from patching and wiping out data, but Onboarding still uses it.
-  careerId?: string
+  universityId?: string | null
+  universityName?: string | null
+  yearOfAdmission?: number | null
+  major?: string | null
+  careerId?: string | null
+  bio?: string | null
+  yob?: string | null
 }
 
 export interface UpdateMentorProfilePayload {
