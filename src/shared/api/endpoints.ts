@@ -45,6 +45,12 @@ export const ENDPOINTS = {
     UPDATE_NODE_PROGRESS: '/roadmaps/nodes/progress',
     COMPARE_SKILLS: '/roadmap/skills/compare',
   },
+  ROADMAP_RECOMMENDATIONS: {
+    PENDING: '/roadmaps/recommendations',
+    GENERATE: '/roadmaps/recommendations/generate',
+    ACCEPT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/accept`,
+    REJECT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/reject`
+  },
   STUDENT_DASHBOARD: {
     OVERVIEW: '/student/dashboard',
     ROADMAP_PROGRESS: '/student/dashboard/roadmap-progress',

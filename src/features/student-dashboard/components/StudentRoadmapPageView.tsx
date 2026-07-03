@@ -21,7 +21,7 @@ import {
 } from "@phosphor-icons/react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
-import { isUuid } from "@/lib/utils"
+import { isUuid, formatPrerequisite } from "@/lib/utils"
 import { ROUTES } from "@/shared"
 import { useStudentSetup } from "../hooks"
 import { studentDashboardService } from "../services"
@@ -30,6 +30,7 @@ import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
+import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 
 gsap.registerPlugin(useGSAP)
 
@@ -156,7 +157,7 @@ const CareerSelector = ({
                       <p className={`text-[12px] leading-relaxed line-clamp-2 mt-auto transition-colors
                         ${isSelected ? 'text-white/60' : 'text-slate-500'}
                       `}>
-                        {career.description || career.prerequisite || 'Select to view roadmap.'}
+                        {career.description || formatPrerequisite(career.prerequisite) || 'Select to view roadmap.'}
                       </p>
                    </div>
                  </button>
@@ -213,7 +214,7 @@ export default function StudentRoadmapPageView() {
   const [isUpdatingNode, setIsUpdatingNode] = useState(false);
   const [optimisticStatusMap, setOptimisticStatusMap] = useState<Record<string, string>>({});
 
-  const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+  const { activeSetupStep, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
 
   const loadRoadmap = async () => {
     setIsRoadmapLoading(true)
@@ -432,14 +433,20 @@ export default function StudentRoadmapPageView() {
             <div className="absolute inset-0 z-10 bg-transparent">
               {/* React Flow Provider must wrap the Canvas */}
               <ReactFlowProvider>
-                <RoadmapVectorGraph 
-                  onNodeClick={handleNodeClick} 
-                  themeColor={themeColor} 
-                  roadmapData={roadmapData} 
+                <RoadmapVectorGraph
+                  onNodeClick={handleNodeClick}
+                  themeColor={themeColor}
+                  roadmapData={roadmapData}
                   optimisticStatusMap={optimisticStatusMap}
                 />
               </ReactFlowProvider>
             </div>
+
+            {/* AI Roadmap Personalization suggestions (floating panel) */}
+            <RoadmapRecommendationsPanel
+              hasCareer={Boolean(currentCareerId)}
+              onApplied={loadRoadmap}
+            />
         </div>
 
         {/* Right Column (Details) - High-End Redesign */}
@@ -607,7 +614,7 @@ export default function StudentRoadmapPageView() {
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
       )}
     </div>
   )

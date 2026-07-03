@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, Search, UserRound } from 'lucide-react'
 import { BaseModal } from '@/components/modals'
 import { UniversitySelect } from '@/components/ui/UniversitySelect'
+import DatePicker from '@/components/ui/DatePicker'
 import { useAuth } from '@/context'
-import { getErrorMessage, isUuid, toIsoDateOnly } from '@/lib/utils'
+import { getErrorMessage, isUuid, toIsoDateOnly, formatPrerequisite } from '@/lib/utils'
 import { studentDashboardService } from '../services'
 import type { CareerRole } from '../types'
 
@@ -254,14 +255,14 @@ export default function StudentProfileSetupModal({
                 </Field>
 
                 <Field label="Date of birth" required error={errors.yob}>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={yob}
-                    onChange={(event) => {
-                      setYob(event.target.value)
+                    onChange={(val) => {
+                      setYob(val)
                       setErrors((current) => ({ ...current, yob: undefined }))
                     }}
-                    className={inputClass}
+                    pastOnly
+                    placeholder="Select date of birth"
                   />
                 </Field>
 
@@ -302,14 +303,13 @@ export default function StudentProfileSetupModal({
                 </div>
 
                 <Field label="Admission date" required error={errors.yearOfAdmission}>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={yearOfAdmission}
-                    onChange={(event) => {
-                      setYearOfAdmission(event.target.value)
+                    onChange={(val) => {
+                      setYearOfAdmission(val)
                       setErrors((current) => ({ ...current, yearOfAdmission: undefined }))
                     }}
-                    className={inputClass}
+                    placeholder="Select admission date"
                   />
                 </Field>
 
@@ -392,7 +392,7 @@ export default function StudentProfileSetupModal({
                                         )}
                                       </div>
                                       <span className={`line-clamp-2 block text-[13px] leading-relaxed ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
-                                        {career.prerequisite || career.description || 'Career roadmap from backend data.'}
+                                        {formatPrerequisite(career.prerequisite) || career.description || 'Career roadmap from backend data.'}
                                       </span>
                                     </button>
                                   )
