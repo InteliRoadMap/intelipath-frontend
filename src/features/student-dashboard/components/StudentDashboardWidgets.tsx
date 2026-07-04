@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared"
 import {
   ArrowRight,
   ArrowLeft,
   BookOpen,
+  Check,
   CheckCircle2,
   Clock,
   TrendingUp,
@@ -12,8 +13,7 @@ import {
   Zap,
   Lock,
   ChevronRight,
-  ChevronLeft,
-  Flame
+  ChevronLeft
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -25,13 +25,16 @@ import {
   YAxis
 } from "recharts"
 import { useAuth } from "@/context"
+import roadmapApi from "@/api/roadmapApi"
+import { toast } from "@/utils/toast"
 import { studentDashboardService } from "../services"
 import { useDashboardData, useRoadmapProgress } from "../hooks"
 import type {
   MarketDemand,
   RoadmapProgress,
   SkillResponse,
-  Recommendation
+  RoadmapRecommendation,
+  RoadmapRecommendationDecision
 } from "../types"
 
 const LoadingState = ({ rows = 3 }: { rows?: number }) => (
@@ -196,20 +199,160 @@ const buildPageList = (current: number, total: number): (number | "ellipsis")[] 
   return out
 }
 
-// 3. Your Action Items — "what to do next" (roadmap queue + AI suggestions),
-// deliberately task-oriented so it complements rather than repeats Skill Match.
+// Roadmap Personalization shortcuts: real, actionable "skip what you already
+// know" suggestions from the student's skills/evidence (rule-based, not an LLM).
+// Applying one marks nodes complete and reloads the shared roadmap progress.
+const ShortcutSuggestions = () => {
+  const { reload } = useRoadmapProgress()
+  const [recs, setRecs] = useState<RoadmapRecommendation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const [decidingId, setDecidingId] = useState<string | null>(null)
+
+  const loadPending = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await roadmapApi.getPendingRecommendations()
+      setRecs(Array.isArray(res.data) ? res.data : [])
+    } catch (error) {
+      console.error("[Shortcuts] Failed to load pending recommendations:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadPending() }, [loadPending])
+
+  const handleGenerate = async () => {
+    if (generating) return
+    setGenerating(true)
+    try {
+      const res = await roadmapApi.generateRecommendations()
+      const created: RoadmapRecommendation[] = Array.isArray(res.data) ? res.data : []
+      toast[created.length === 0 ? "info" : "success"](
+        created.length === 0
+          ? "No shortcuts found — your roadmap already matches your skills."
+          : "New shortcuts are ready to review."
+      )
+      await loadPending()
+    } catch (error) {
+      console.error("[Shortcuts] Failed to generate:", error)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleDecision = async (id: string, decision: "accept" | "reject") => {
+    if (decidingId) return
+    setDecidingId(id)
+    try {
+      const res = decision === "accept"
+        ? await roadmapApi.acceptRecommendation(id)
+        : await roadmapApi.rejectRecommendation(id)
+      const result: RoadmapRecommendationDecision = res.data
+      setRecs(prev => prev.filter(r => r.recommendationId !== id))
+      if (decision === "accept") {
+        toast.success(result.roadmapProgress != null
+          ? `Roadmap updated — you're now at ${result.roadmapProgress}%.`
+          : "Roadmap updated.")
+        reload()
+      } else {
+        toast.info("Shortcut dismissed.")
+      }
+    } catch (error) {
+      console.error(`[Shortcuts] Failed to ${decision}:`, error)
+    } finally {
+      setDecidingId(null)
+    }
+  }
+
+  if (loading) return <LoadingState rows={4} />
+
+  if (recs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl bg-[#f9f9f9] py-12 px-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-4">
+          <Zap size={22} className="text-black" />
+        </div>
+        <p className="text-[15px] font-bold text-black">No shortcuts yet</p>
+        <p className="text-[13px] text-slate-500 mt-1 max-w-[280px]">Scan your skills and evidence to find roadmap nodes you can skip.</p>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="mt-4 rounded-2xl bg-black px-5 py-2.5 text-[13px] font-bold text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+        >
+          {generating ? "Scanning…" : "Scan for shortcuts"}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {recs.map((rec) => {
+        const deciding = decidingId === rec.recommendationId
+        const confidence = rec.confidence != null ? `${Math.round(Number(rec.confidence) * 100)}%` : null
+        return (
+          <div key={rec.recommendationId} className="rounded-3xl bg-[#f9f9f9] p-5">
+            <div className="flex items-start justify-between gap-3 mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full bg-indigo-50 text-indigo-600">
+                  <Zap size={12} /> Shortcut
+                </span>
+                <h4 className="text-[16px] font-bold text-black">{rec.title || "Skip skills you already know"}</h4>
+              </div>
+              {confidence && (
+                <span className="shrink-0 text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">{confidence}</span>
+              )}
+            </div>
+            {rec.summary && <p className="text-[13px] text-slate-500 mb-3">{rec.summary}</p>}
+
+            <div className="flex flex-col gap-1.5 mb-4">
+              {rec.items.map((item) => (
+                <div key={item.recItemId} className="flex items-start gap-2 rounded-xl bg-white p-2.5">
+                  <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-slate-700 truncate">{item.nodeName || "Roadmap node"}</p>
+                    {item.reason && <p className="text-[11px] text-slate-400 leading-snug">{item.reason}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleDecision(rec.recommendationId, "accept")}
+                disabled={deciding}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-black px-4 py-2.5 text-[13px] font-bold text-white transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+              >
+                <Check size={14} /> {deciding ? "Applying…" : "Apply"}
+              </button>
+              <button
+                onClick={() => handleDecision(rec.recommendationId, "reject")}
+                disabled={deciding}
+                className="flex items-center justify-center gap-1.5 rounded-2xl bg-white px-4 py-2.5 text-[13px] font-bold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// 3. Your Action Items — "what to do next": the roadmap queue plus real,
+// applyable shortcuts. Task-oriented, so it complements (not repeats) Skill Match.
 export const ActionableListWidget = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'next' | 'recommendations'>('next')
+  const [activeTab, setActiveTab] = useState<'next' | 'shortcuts'>('next')
   const [page, setPage] = useState(1)
   const ITEMS_PER_PAGE = 6
 
   const { data: roadmap, status } = useRoadmapProgress()
-  const { data: recData } = useDashboardData<Recommendation[]>(
-    () => studentDashboardService.getRecommendations()
-  )
 
-  const handleTabSwitch = (tab: 'next' | 'recommendations') => {
+  const handleTabSwitch = (tab: 'next' | 'shortcuts') => {
     setActiveTab(tab)
     setPage(1)
   }
@@ -219,12 +362,10 @@ export const ActionableListWidget = () => {
   const UP_NEXT_LIMIT = 15
   const pending = (roadmap?.steps ?? []).filter(s => s.status !== 'completed')
   const upNext = pending.slice(0, UP_NEXT_LIMIT)
-  const recs = Array.isArray(recData) ? recData : []
 
   const isNext = activeTab === 'next'
-  const source: any[] = isNext ? upNext : recs
-  const totalPages = Math.ceil(source.length / ITEMS_PER_PAGE)
-  const currentData = source.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(upNext.length / ITEMS_PER_PAGE)
+  const currentData = upNext.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   return (
     <div className="mt-8">
@@ -238,52 +379,44 @@ export const ActionableListWidget = () => {
             Up Next
           </button>
           <button
-            onClick={() => handleTabSwitch('recommendations')}
+            onClick={() => handleTabSwitch('shortcuts')}
             className={`pb-1 ${!isNext ? 'text-black border-b-2 border-black' : 'hover:text-black transition-colors'}`}>
-            AI Suggestions
+            Shortcuts
           </button>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 min-h-[660px]">
-        {status === "loading" ? (
+        {!isNext ? (
+          <ShortcutSuggestions />
+        ) : status === "loading" ? (
           <LoadingState rows={6} />
         ) : currentData.length === 0 ? (
           <EmptyState
-            title={isNext ? "You're all caught up" : "No suggestions right now"}
-            description={isNext ? "Every roadmap milestone is complete. Nice work." : "Generate roadmap suggestions from the roadmap page."}
+            title="You're all caught up"
+            description="Every roadmap milestone is complete. Nice work."
           />
         ) : (
           <>
             {currentData.map((item: any, index: number) => {
-              const active = isNext && (item.status === 'current' || item.status === 'in_progress')
-              const title = isNext ? item.title : (item.title || 'Suggestion')
-              const subtitle = isNext
-                ? (active ? 'In progress' : 'Up next')
-                : (item.description || item.type || 'Roadmap suggestion')
+              const active = item.status === 'current' || item.status === 'in_progress'
               return (
                 <div key={item.id || index} className="group flex flex-col sm:flex-row items-center justify-between rounded-3xl bg-[#f9f9f9] p-4 pr-5 transition-colors hover:bg-[#f0f0f0] gap-4">
                   <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
-                      {isNext ? (active ? <Zap size={24} className="text-black" /> : <BookOpen size={24} className="text-black" />) : <Target size={24} className="text-black" />}
+                      {active ? <Zap size={24} className="text-black" /> : <BookOpen size={24} className="text-black" />}
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-[16px] font-bold text-black line-clamp-1">{title}</h4>
-                      <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[280px]">{subtitle}</p>
+                      <h4 className="text-[16px] font-bold text-black line-clamp-1">{item.title}</h4>
+                      <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[280px]">{active ? 'In progress' : 'Up next'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto shrink-0">
-                    {isNext ? (
-                      <span className={`flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full ${active ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
-                        {active ? <Zap size={13} /> : <Clock size={13} />}
-                        {active ? 'Current' : 'Locked'}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">
-                        <Flame size={13} /> AI
-                      </span>
-                    )}
+                    <span className={`flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full ${active ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+                      {active ? <Zap size={13} /> : <Clock size={13} />}
+                      {active ? 'Current' : 'Locked'}
+                    </span>
                     <button
                       onClick={() => navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP)}
                       className="rounded-2xl bg-black px-5 py-2.5 text-[13px] font-bold text-white transition-transform hover:scale-105 active:scale-95"
