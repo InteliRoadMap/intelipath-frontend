@@ -11,7 +11,7 @@ import {
   ActionableListWidget,
   QuickStatsWidget,
   MarketDemandChartWidget,
-  SkillRadarChartWidget
+  SkillMatchWidget
 } from "./StudentDashboardWidgets"
 import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
@@ -89,7 +89,7 @@ export default function StudentDashboardView() {
               </div>
 
               <div className="anim-block">
-                <SkillRadarChartWidget />
+                <SkillMatchWidget />
               </div>
             </div>
           </div>
