@@ -182,6 +182,22 @@ export const CurrentProgressBanner = () => {
   )
 }
 
+// Windowed page list: always first/last + current neighbours, gaps become "…".
+const buildPageList = (current: number, total: number): (number | "ellipsis")[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const wanted = [1, total, current, current - 1, current + 1]
+    .filter(p => p >= 1 && p <= total)
+  const unique = Array.from(new Set(wanted)).sort((a, b) => a - b)
+  const out: (number | "ellipsis")[] = []
+  let prev = 0
+  for (const p of unique) {
+    if (p - prev > 1) out.push("ellipsis")
+    out.push(p)
+    prev = p
+  }
+  return out
+}
+
 // 3. Your Action Items — "what to do next" (roadmap queue + AI suggestions),
 // deliberately task-oriented so it complements rather than repeats Skill Match.
 export const ActionableListWidget = () => {
@@ -292,14 +308,18 @@ export const ActionableListWidget = () => {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i + 1)}
-                      className={`h-10 w-10 rounded-full text-[14px] font-bold transition-colors ${page === i + 1 ? 'bg-black text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-black'}`}
-                    >
-                      {i + 1}
-                    </button>
+                  {buildPageList(page, totalPages).map((p, i) => (
+                    p === "ellipsis" ? (
+                      <span key={`e${i}`} className="h-10 w-8 flex items-center justify-center text-[14px] font-bold text-slate-300 select-none">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`h-10 w-10 rounded-full text-[14px] font-bold transition-colors ${page === p ? 'bg-black text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-black'}`}
+                      >
+                        {p}
+                      </button>
+                    )
                   ))}
                 </div>
 
