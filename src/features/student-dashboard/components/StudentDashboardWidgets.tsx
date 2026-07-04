@@ -218,8 +218,11 @@ export const ActionableListWidget = () => {
     setPage(1)
   }
 
-  // Up-next queue = the roadmap steps you haven't finished, in order.
-  const upNext = (roadmap?.steps ?? []).filter(s => s.status !== 'completed')
+  // Up-next queue = the immediate roadmap steps you haven't finished, in order.
+  // Capped so the list stays a short "what's next", not the whole roadmap.
+  const UP_NEXT_LIMIT = 15
+  const pending = (roadmap?.steps ?? []).filter(s => s.status !== 'completed')
+  const upNext = pending.slice(0, UP_NEXT_LIMIT)
   const recs = Array.isArray(recData) ? recData : []
 
   const isNext = activeTab === 'next'
