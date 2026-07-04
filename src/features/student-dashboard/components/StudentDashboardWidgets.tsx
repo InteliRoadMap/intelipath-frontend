@@ -26,7 +26,7 @@ import {
 } from "recharts"
 import { useAuth } from "@/context"
 import { studentDashboardService } from "../services"
-import { useDashboardData } from "../hooks"
+import { useDashboardData, useRoadmapProgress } from "../hooks"
 import type {
   MarketDemand,
   RoadmapProgress,
@@ -119,9 +119,7 @@ export const StudentWelcomeHeader = () => {
 // 2. Current Progress Banner
 export const CurrentProgressBanner = () => {
   const navigate = useNavigate();
-  const { data: roadmapData, status: roadmapStatus } = useDashboardData<RoadmapProgress>(
-    () => studentDashboardService.getRoadmapProgress()
-  )
+  const { data: roadmapData, status: roadmapStatus } = useRoadmapProgress()
 
   const steps = roadmapData?.steps ?? []
   const currentIdx = Math.max(0, steps.findIndex(s => s.status === 'current' || s.status === 'in_progress'))
@@ -206,9 +204,7 @@ export const ActionableListWidget = () => {
   const [page, setPage] = useState(1)
   const ITEMS_PER_PAGE = 6
 
-  const { data: roadmap, status } = useDashboardData<RoadmapProgress>(
-    () => studentDashboardService.getRoadmapProgress()
-  )
+  const { data: roadmap, status } = useRoadmapProgress()
   const { data: recData } = useDashboardData<Recommendation[]>(
     () => studentDashboardService.getRecommendations()
   )
@@ -345,10 +341,8 @@ export const ActionableListWidget = () => {
 
 // 4. Quick Stats
 export const QuickStatsWidget = () => {
-  const { data } = useDashboardData<RoadmapProgress>(
-    () => studentDashboardService.getRoadmapProgress()
-  )
-  
+  const { data } = useRoadmapProgress()
+
   const completed = data?.steps?.filter(s => s.status === 'completed').length || 0;
   const inProgress = data?.steps?.filter(s => s.status === 'current').length || 0;
 
