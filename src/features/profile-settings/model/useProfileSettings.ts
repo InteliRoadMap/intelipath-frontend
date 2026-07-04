@@ -78,6 +78,11 @@ export function useProfileSettings() {
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
         year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
+        // Show the university NAME; guard against a UUID slipping into the display.
+        university: (() => {
+          const raw = data?.university || data?.universityName || ""
+          return raw && !isUuid(raw) ? raw : ""
+        })(),
         universityId: data?.universityId || data?.userInfo?.universityId || "",
         industry_focus: data?.industryFocus || data?.industry_focus || "",
         bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
@@ -157,10 +162,13 @@ export function useProfileSettings() {
             yearNum = parsed
           }
         }
+        // The University field is free text holding the display name. Never let a
+        // UUID leak into universityName; the id (if any) goes to universityId only.
+        const typedUniversity = (profileData.university || "").trim()
         tasks.push(
           profileApi.updateStudentProfile({
             universityId: isUnivUuid ? profileData.universityId : null,
-            universityName: isUnivUuid ? (profileData.university || null) : (profileData.universityId || profileData.university || null),
+            universityName: typedUniversity && !isUuid(typedUniversity) ? typedUniversity : null,
             yearOfAdmission: yearNum,
             major: profileData.major,
           } as any)
