@@ -265,7 +265,11 @@ export default function StudentProfileSettingsPage() {
                         Year of Admission
                       </label>
                       <input
-                        type="date"
+                        type="number"
+                        inputMode="numeric"
+                        min={1970}
+                        max={new Date().getFullYear()}
+                        placeholder="e.g. 2023"
                         value={profileData.year_of_admission}
                         onChange={(e) => handleChange("year_of_admission", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
