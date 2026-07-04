@@ -31,6 +31,8 @@ import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
+import StageLegend from "./StageLegend"
+import { getStageStyle } from "../lib/stageColors"
 
 gsap.registerPlugin(useGSAP)
 
@@ -442,6 +444,9 @@ export default function StudentRoadmapPageView() {
               </ReactFlowProvider>
             </div>
 
+            {/* Stage colour legend (top-left) */}
+            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && <StageLegend />}
+
             {/* AI Roadmap Personalization suggestions (floating panel) */}
             <RoadmapRecommendationsPanel
               hasCareer={Boolean(currentCareerId)}
@@ -479,14 +484,26 @@ export default function StudentRoadmapPageView() {
             {selectedNodeData ? (
               <>
                 <div className="flex flex-col shrink-0 gap-2.5 mb-6">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ${
-                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' : 
-                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' : 
+                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' :
+                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' :
                       'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
                     }`}>
                       {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' ? 'Current Focus' : 'Locked'}
                     </span>
+                    {getStageStyle(selectedNodeData.stage) && (
+                      <span
+                        className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ring-1 ring-black/10 text-slate-700"
+                        style={{ backgroundColor: `${getStageStyle(selectedNodeData.stage)!.color}40` }}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-[3px] border border-black/40"
+                          style={{ backgroundColor: getStageStyle(selectedNodeData.stage)!.color }}
+                        />
+                        {getStageStyle(selectedNodeData.stage)!.label}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-[20px] font-bold tracking-tight leading-snug text-slate-950">{selectedNodeData.label}</h2>
                 </div>

@@ -1,12 +1,14 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Check, LockKeyhole } from 'lucide-react';
+import { getStageColor } from '../lib/stageColors';
 
 interface CustomRoadmapNodeProps {
   data: {
     label: string;
     status: 'completed' | 'current' | 'in_progress' | 'locked';
     level?: number;
+    stage?: string | null;
     themeColor?: string;
     isIsolated?: boolean;
   };
@@ -19,40 +21,32 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   const isLocked = data.status === 'locked' || (!isCompleted && !isCurrent);
   const isMain = data.level !== undefined && data.level > 0;
   const isIsolated = !!data.isIsolated;
-  
-  const themeColor = data.themeColor || 'amber';
 
-  const getVividColor = () => {
-    if (isCompleted) return 'bg-[#00ffa3]'; 
-    if (isLocked && !isCurrent) return 'bg-slate-300'; 
-    
-    switch (themeColor) {
-      case 'cyan': return 'bg-[#00f0ff]';
-      case 'emerald': return 'bg-[#00ffa3]';
-      case 'violet': return 'bg-[#b05dff]';
-      case 'amber': return 'bg-[#ffe500]';
-      case 'rose': return 'bg-[#ff3b8d]';
-      case 'monochrome': return 'bg-white';
-      default: return 'bg-[#ffe500]';
-    }
-  };
+  // Node fill is its STAGE colour (so stages read as colour bands down the
+  // spine); status is layered on top via opacity + badges rather than by
+  // swapping the colour, so stage grouping survives every state.
+  const stageColor = getStageColor(data.stage);
 
   if (isMain) {
-    const bgColor = getVividColor();
-    const shadowClass = selected || isCurrent 
-      ? 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-[4px] translate-y-[4px]' 
+    const shadowClass = selected || isCurrent
+      ? 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-[4px] translate-y-[4px]'
       : 'shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-[2px] group-hover:-translate-x-[2px]';
 
     return (
       <div className="relative group cursor-pointer w-[280px]">
-        <div className={`
-          flex items-center justify-center min-h-[64px] px-6 py-4 
-          rounded-full border-[3.5px] border-black
-          transition-all duration-200 ease-out
-          ${bgColor} ${shadowClass}
-        `}>
+        <div
+          style={{ backgroundColor: stageColor }}
+          className={`
+            flex items-center justify-center min-h-[64px] px-6 py-4
+            rounded-full border-[3.5px] border-black
+            transition-all duration-200 ease-out
+            ${shadowClass}
+            ${isLocked ? 'opacity-45 saturate-50' : ''}
+            ${isCompleted ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}
+          `}
+        >
           {isCompleted && <Check size={20} strokeWidth={4} className="text-black absolute left-5" />}
-          {isLocked && !isCompleted && !isCurrent && <LockKeyhole size={18} strokeWidth={3} className="text-black/50 absolute left-5" />}
+          {isLocked && <LockKeyhole size={18} strokeWidth={3} className="text-black/50 absolute left-5" />}
           <p className="text-[15px] font-black uppercase tracking-[0.08em] text-black text-center w-full px-6">
             {data.label}
           </p>
@@ -76,15 +70,22 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   return (
     <div className="relative group cursor-pointer w-[240px]">
       <div className={`
-        flex items-center justify-between min-h-[56px] px-5 py-3 
-        rounded-xl border-[3px] border-black bg-white
+        relative flex items-center justify-between min-h-[56px] pl-6 pr-5 py-3
+        rounded-xl border-[3px] border-black bg-white overflow-hidden
         transition-all duration-200 ease-out
         ${subShadowClass}
         ${isIsolated ? 'border-dashed' : ''}
         ${isCurrent ? 'ring-2 ring-black ring-offset-2' : ''}
+        ${isLocked ? 'opacity-60' : ''}
       `}>
+        {/* Stage accent stripe: keeps the card white/readable while still
+            carrying the node's stage identity. */}
+        <span
+          style={{ backgroundColor: stageColor }}
+          className="absolute left-0 top-0 h-full w-[6px]"
+        />
         <div className="flex-1">
-          <p className={`text-[14px] font-bold tracking-wide leading-tight text-black ${isLocked && !isCurrent ? 'opacity-50' : ''}`}>
+          <p className={`text-[14px] font-bold tracking-wide leading-tight text-black ${isLocked ? 'opacity-60' : ''}`}>
             {data.label}
           </p>
         </div>
@@ -94,7 +95,7 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
               <Check size={14} strokeWidth={4} className="text-black" />
             </div>
           )}
-          {isLocked && !isCompleted && !isCurrent && (
+          {isLocked && (
             <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-black flex items-center justify-center">
               <LockKeyhole size={12} strokeWidth={3} className="text-black/50" />
             </div>
@@ -109,7 +110,7 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
       <Handle type="source" position={Position.Right} id="s-right" className="w-1 h-1 opacity-0" />
       <Handle type="source" position={Position.Left} id="s-left" className="w-1 h-1 opacity-0" />
       <Handle type="target" position={Position.Right} id="t-right" className="w-1 h-1 opacity-0" />
-      
+
       {isCurrent && (
         <div className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_4px_10px_rgba(59,130,246,0.3)] ring-2 ring-white animate-pulse z-10 transition-transform group-hover:scale-110 duration-500">
           <div className="h-2 w-2 rounded-full bg-white"></div>
