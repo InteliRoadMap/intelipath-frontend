@@ -476,15 +476,14 @@ export const studentDashboardService = {
         flattenNode(extractedData);
       }
 
-      // Identify main nodes: strictly those with explicit level > 0 from the database
-      const actualMainNodes = rows.filter(r => {
-        const explicitLevel = parseInt(String(r.Level || r.level || 0));
-        return explicitLevel > 0;
-      }).sort((a, b) => {
-        const levelA = parseInt(String(a.Level || a.level || 0));
-        const levelB = parseInt(String(b.Level || b.level || 0));
-        return levelA - levelB;
-      });
+      // The backend exposes the field as `nodeLevel`; keep the other aliases for safety.
+      const readLevel = (r: any) => parseInt(String(r.nodeLevel ?? r.node_level ?? r.Level ?? r.level ?? 0)) || 0;
+
+      // Main (spine) nodes are strictly those with an explicit level > 0.
+      // Only their children rely on parent/previous; the spine itself is ordered by level.
+      const actualMainNodes = rows
+        .filter(r => readLevel(r) > 0)
+        .sort((a, b) => readLevel(a) - readLevel(b));
 
       const nodes: any[] = [];
       const edges: any[] = [];
@@ -495,7 +494,7 @@ export const studentDashboardService = {
       rows.forEach((row, index) => {
         const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId || `Node_${index}`;
         const isMainNode = actualMainNodes.some(m => m === row);
-        const level = isMainNode ? parseInt(String(row.Level || row.level || 1)) : 0; // Maintain explicit level for UI
+        const level = isMainNode ? (readLevel(row) || 1) : 0; // Maintain explicit level for UI
         
         const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
 
