@@ -114,6 +114,14 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
     if (backendData.config.heroSection) uiData.hero = { ...uiData.hero, ...backendData.config.heroSection };
   }
 
+  // Avatar: prefer a portfolio-specific one saved in heroSection; otherwise fall
+  // back to the account avatar. This is what makes the avatar show on the public
+  // page, where there is no logged-in user to fall back to on the client.
+  const savedAvatar = uiData.hero.avatarUrl;
+  if ((!savedAvatar || savedAvatar === 'https://via.placeholder.com/150') && backendData.userInfo?.avatarUrl) {
+    uiData.hero.avatarUrl = backendData.userInfo.avatarUrl;
+  }
+
   // Projects
   if (backendData.projects && Array.isArray(backendData.projects)) {
     uiData.projects = backendData.projects.map((p: any) => ({
