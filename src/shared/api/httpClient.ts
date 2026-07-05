@@ -325,18 +325,18 @@ export function createApiClient({
 
         // 403: Forbidden
         if (status === 403) {
-          toast.error("403 - You do not have permission to access this resource.");
+          toast.error("403 - Bạn không có quyền truy cập tài nguyên này.");
         } 
         // 400 & 404: Bad Request or Not Found
         else if (status === 404 || status === 400) {
           // If it's a validation error, let the component handle it natively
           if (beError !== "VALIDATION_ERROR" && beMessage) {
-            toast.error(`Error: ${beMessage}`);
+            toast.error(`Lỗi: ${beMessage}`);
           }
         } 
         // 500: Internal Server Error
         else if (status >= 500) {
-          toast.error("An internal server error occurred. Please try again later.");
+          toast.error("Đã xảy ra lỗi máy chủ. Vui lòng thử lại sau.");
         }
       }
 

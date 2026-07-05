@@ -16,6 +16,7 @@ import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { RequestReviewModal } from './RequestReviewModal';
+import { toast } from '@/utils/toast';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -53,11 +54,12 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [githubUrl, setGithubUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
+  // Delegate to the app-wide toast so notifications look/behave the same
+  // everywhere (bottom-center glass card), instead of a portfolio-only one.
   const showToast = (text: string, type: 'error' | 'success') => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 4000);
+    if (type === 'error') toast.error(text);
+    else toast.success(text);
   };
 
   const handleImport = async () => {
@@ -578,26 +580,38 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                     }} multiline />
                   </p>
                   <div className="flex gap-4 border-t border-[var(--border-color)] pt-6">
-                    <a href={proj.codeLink} className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                      if(!isEditMode) return;
-                      e.preventDefault();
-                      const link = prompt("Enter Code Link URL", proj.codeLink);
-                      if (link) {
-                        const newProj = [...data.projects];
-                        newProj[idx].codeLink = link;
-                        setData({ ...data, projects: newProj });
-                      }
-                    }}><i className="fab fa-github"></i> Code</a>
-                    <a href={proj.demoLink} className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                      if(!isEditMode) return;
-                      e.preventDefault();
-                      const link = prompt("Enter Demo Link URL", proj.demoLink);
-                      if (link) {
-                        const newProj = [...data.projects];
-                        newProj[idx].demoLink = link;
-                        setData({ ...data, projects: newProj });
-                      }
-                    }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                    {/* In edit mode always show the link so it can be set; in view mode only
+                        show it when there is a real URL (skip dead "#" links), open in new tab. */}
+                    {(isEditMode || (proj.codeLink && proj.codeLink !== '#')) && (
+                      <a href={proj.codeLink || '#'}
+                        target={!isEditMode ? '_blank' : undefined}
+                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
+                        if(!isEditMode) return;
+                        e.preventDefault();
+                        const link = prompt("Enter Code Link URL", proj.codeLink);
+                        if (link) {
+                          const newProj = [...data.projects];
+                          newProj[idx].codeLink = link;
+                          setData({ ...data, projects: newProj });
+                        }
+                      }}><i className="fab fa-github"></i> Code</a>
+                    )}
+                    {(isEditMode || (proj.demoLink && proj.demoLink !== '#')) && (
+                      <a href={proj.demoLink || '#'}
+                        target={!isEditMode ? '_blank' : undefined}
+                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
+                        if(!isEditMode) return;
+                        e.preventDefault();
+                        const link = prompt("Enter Demo Link URL", proj.demoLink);
+                        if (link) {
+                          const newProj = [...data.projects];
+                          newProj[idx].demoLink = link;
+                          setData({ ...data, projects: newProj });
+                        }
+                      }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -687,22 +701,6 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           onClose={() => setIconPickerProjectIdx(null)}
         />
       )}
-
-      {/* Floating Toast */}
-      <div
-        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
-          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        } ${toastMessage?.type === 'error' ? 'bg-red-900/95 shadow-red-900/20' : 'bg-emerald-900/95 shadow-emerald-900/20'}`}
-      >
-        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-          {toastMessage?.type === 'error' ? (
-            <i className="fas fa-exclamation-triangle"></i>
-          ) : (
-            <i className="fas fa-check"></i>
-          )}
-        </div>
-        {toastMessage?.text}
-      </div>
     </div>
   );
 };

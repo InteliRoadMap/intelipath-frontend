@@ -212,18 +212,18 @@ const MentorRoadmapEditorView = () => {
 
   const handleSaveNode = async () => {
     if (!form.nodeName.trim()) {
-      toast.error("Node name is required.")
+      toast.error("Vui lòng nhập tên node.")
       return
     }
     setIsSaving(true)
     try {
       if (selectedId) {
         await roadmapEditorApi.updateNode(selectedId, buildPayload())
-        toast.success("Node updated.")
+        toast.success("Đã cập nhật node.")
       } else {
         if (!careerId) return
         await roadmapEditorApi.createNode(careerId, buildPayload())
-        toast.success("Node created.")
+        toast.success("Đã tạo node.")
       }
       await loadNodes(careerId)
     } catch (error) {
@@ -235,11 +235,11 @@ const MentorRoadmapEditorView = () => {
 
   const handleDeleteNode = async () => {
     if (!selectedId) return
-    if (!window.confirm("Delete this node? This cannot be undone.")) return
+    if (!window.confirm("Xóa node này? Hành động không thể hoàn tác.")) return
     setIsSaving(true)
     try {
       await roadmapEditorApi.deleteNode(selectedId)
-      toast.success("Node deleted.")
+      toast.success("Đã xóa node.")
       await loadNodes(careerId)
     } catch (error) {
       console.error("[Roadmap Editor] Failed to delete node:", error)
@@ -256,7 +256,7 @@ const MentorRoadmapEditorView = () => {
       await roadmapEditorApi.savePositions(
         entries.map(([nodeId, pos]) => ({ nodeId, positionX: pos.x, positionY: pos.y }))
       )
-      toast.success(`Layout saved (${entries.length} node${entries.length > 1 ? "s" : ""}).`)
+      toast.success(`Đã lưu bố cục (${entries.length} node).`)
       setDirtyPositions({})
       await loadNodes(careerId)
     } catch (error) {

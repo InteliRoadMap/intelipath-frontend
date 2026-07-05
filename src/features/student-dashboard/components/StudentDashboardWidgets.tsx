@@ -253,11 +253,11 @@ const ShortcutSuggestions = () => {
       setRecs(prev => prev.filter(r => r.recommendationId !== id))
       if (decision === "accept") {
         toast.success(result.roadmapProgress != null
-          ? `Roadmap updated — you're now at ${result.roadmapProgress}%.`
-          : "Roadmap updated.")
+          ? `Đã cập nhật lộ trình — bạn đang ở mức ${result.roadmapProgress}%.`
+          : "Đã cập nhật lộ trình.")
         reload()
       } else {
-        toast.info("Shortcut dismissed.")
+        toast.info("Đã bỏ qua lối tắt.")
       }
     } catch (error) {
       console.error(`[Shortcuts] Failed to ${decision}:`, error)
