@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react"
 import { isAxiosError } from "axios"
 import { isUuid } from "@/lib/utils"
-import { studentDashboardService } from "../services"
+import { studentDashboardService } from "../services/studentDashboardService"
 import type { StudentSetupStep } from "../types"
 
-type SetupProfile = {
-  careerId?: string
-  career_id?: string
+// Add missing interface
+interface SetupProfile {
+  university?: string;
+  yearOfAdmission?: string | number;
+  year_of_admission?: string | number;
+  major?: string;
+  careerPath?: { id?: string };
   career?: {
     careerId?: string
     career_id?: string
     id?: string
   }
+  careerId?: string
+  career_id?: string
 }
 
 const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
@@ -24,6 +30,7 @@ const getProfileCareerId = (profile: SetupProfile | null | undefined) =>
 
 export function useStudentSetup(userId?: string) {
   const [activeSetupStep, setActiveSetupStep] = useState<StudentSetupStep>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
     if (!userId) return
@@ -32,41 +39,59 @@ export function useStudentSetup(userId?: string) {
 
     const loadSetupStatus = async () => {
       try {
-        const [profileResult, skillsResult] = await Promise.allSettled([
-          studentDashboardService.getStudentProfile(),
-          studentDashboardService.getSelectedSkills()
-        ])
+        // 1. Fetch profile first
+        let profile: SetupProfile | null = null
+        let profileError = false
+        try {
+          profile = await studentDashboardService.getStudentProfile() as SetupProfile
+        } catch (err) {
+          console.warn("[Student Setup] Profile fetch failed, assuming onboarding needed:", err)
+          profileError = true
+        }
 
         if (!active) return
 
-        const profileError = profileResult.status === "rejected" ? profileResult.reason : null
-        const skillsError = skillsResult.status === "rejected" ? skillsResult.reason : null
-
-        if (profileError && (!isAxiosError(profileError) || profileError.response?.status !== 404)) {
-          throw profileError
-        }
-        if (skillsError && (!isAxiosError(skillsError) || skillsError.response?.status !== 404)) {
-          throw skillsError
-        }
-
-        const profile = profileResult.status === "fulfilled" ? profileResult.value : null
-        const skills = skillsResult.status === "fulfilled" ? skillsResult.value : []
         const profileCareerId = getProfileCareerId(profile)
         const isProfileMissing =
-          !profile?.university ||
-          !(profile?.yearOfAdmission || profile?.year_of_admission) ||
-          !profile?.major ||
+          profileError ||
+          !profile ||
+          !profile.university ||
+          !(profile.yearOfAdmission || profile.year_of_admission) ||
+          !profile.major ||
           !isUuid(profileCareerId)
 
+        // If profile is missing, force profile onboarding immediately and DO NOT call getSelectedSkills()
         if (isProfileMissing) {
           setActiveSetupStep("profile")
-        } else if (!Array.isArray(skills) || skills.length === 0) {
+          return
+        }
+
+        // 2. Only fetch Selected Skills if profile is already complete
+        let skills: any = []
+        let skillsError = false
+        try {
+          skills = await studentDashboardService.getSelectedSkills()
+        } catch (err) {
+          console.warn("[Student Setup] Skills fetch failed:", err)
+          skillsError = true
+        }
+
+        if (!active) return
+
+        const isSkillsMissing =
+          skillsError ||
+          !Array.isArray(skills) ||
+          skills.length === 0
+
+        if (isSkillsMissing) {
           setActiveSetupStep("skills")
         } else {
           setActiveSetupStep(null)
         }
       } catch (error) {
         console.error("[Student Setup] Failed to check profile and skills:", error)
+      } finally {
+        if (active) setIsInitializing(false)
       }
     }
 
@@ -79,7 +104,9 @@ export function useStudentSetup(userId?: string) {
 
   return {
     activeSetupStep,
+    isInitializing,
     openSkillSelection: () => setActiveSetupStep("skills"),
+    goBackToProfile: () => setActiveSetupStep("profile"),
     completeSetup: () => setActiveSetupStep(null)
   }
 }

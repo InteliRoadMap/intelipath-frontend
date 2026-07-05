@@ -1,4 +1,4 @@
-import RouteProtectedRoute from "@/routes/ProtectedRoute"
+import RouteProtectedRoute from "@/app/router/ProtectedRoute"
 
 export default function ProtectedRoute({
   children

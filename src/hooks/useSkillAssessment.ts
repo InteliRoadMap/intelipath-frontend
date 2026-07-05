@@ -39,7 +39,9 @@ export function useSkillAssessment(isOpen: boolean, onClose: () => void) {
       try {
         const res = await skillApi.getSkills()
         if (isMounted) {
-          setSkills(res.skills)
+          // Original: setSkills(res.skills)
+          // setSkills((res as any).skills || res.data?.data || res.data || [])
+          setSkills((res as any).data?.data || (res as any).data || [])
         }
       } catch (error) {
         console.error("Error to get list of skills:", error)
@@ -69,7 +71,9 @@ export function useSkillAssessment(isOpen: boolean, onClose: () => void) {
       try {
         const res = await skillApi.searchSkills(trimmedQuery)
         if (isMounted) {
-          setSkills(res)
+          // Original: setSkills(res)
+          // setSkills(res as any)
+          setSkills((res as any).data?.data || (res as any).data || [])
         }
       } catch (error) {
         console.error("Error to filter skill:", error)
@@ -103,7 +107,8 @@ export function useSkillAssessment(isOpen: boolean, onClose: () => void) {
 
     setIsSaving(true)
     try {
-      await skillApi.selectSkills(selectedSkillIds)
+      // Original: await skillApi.selectSkills(selectedSkillIds)
+      await skillApi.selectSkills({ skillIds: selectedSkillIds })
       onClose()
     } catch (error) {
       console.error("Error to save skills:", error)

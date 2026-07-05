@@ -199,13 +199,18 @@ const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor
     }
   });
 
-  // Gắn themeColor và trạng thái isIsolated vào tất cả các node đã được layout
+  // Gắn themeColor và trạng thái isIsolated vào tất cả các node đã được layout.
+  // Node nào có toạ độ vẽ tay từ mentor editor thì ưu tiên dùng, bỏ qua auto-layout.
   const finalNodes = positionedNodes.map(node => {
     const currentStatus = optimisticStatusMap[node.id] || node.data.status;
+    const hasFixedPosition = node.data.positionX != null && node.data.positionY != null;
     return {
       ...node,
-      data: { 
-        ...node.data, 
+      position: hasFixedPosition
+        ? { x: Number(node.data.positionX), y: Number(node.data.positionY) }
+        : node.position,
+      data: {
+        ...node.data,
         themeColor,
         status: currentStatus,
         isIsolated: inDegree[node.id] === 0 && adjacencyList[node.id].length === 0

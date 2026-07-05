@@ -42,3 +42,17 @@ export function getErrorMessage(error: unknown): string {
   }
   return "Cannot connect to server"
 }
+
+export function formatPrerequisite(prerequisite: any): string {
+  if (!prerequisite) return ""
+  if (Array.isArray(prerequisite)) {
+    return prerequisite
+      .map((p) => (p && typeof p === "object" ? p.careerName || p.name : String(p)))
+      .filter(Boolean)
+      .join(", ")
+  }
+  if (typeof prerequisite === "object") {
+    return prerequisite.careerName || prerequisite.name || ""
+  }
+  return String(prerequisite)
+}
