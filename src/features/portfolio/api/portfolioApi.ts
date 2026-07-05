@@ -255,9 +255,8 @@ export const portfolioApi = {
 
   getPublicPortfolio: async (slug: string): Promise<PortfolioData | null> => {
     try {
-      // Calling the backend to get the public portfolio by slug
-      // If the endpoint differs, it can be updated here.
-      const response = await publicClient.get(`/public/portfolio/${slug}`);
+      // Backend endpoint: GET /api/v1/public-portfolio/slug/{slug}
+      const response = await publicClient.get(`/public-portfolio/slug/${slug}`);
       return mapToFrontendData(response.data);
     } catch (error) {
       console.error('Failed to fetch public portfolio', error);
