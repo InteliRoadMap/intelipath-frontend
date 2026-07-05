@@ -1,10 +1,12 @@
 export type RoadmapStep = {
   id: string
-  status: "completed" | "current" | "locked"
+  // Original: status: "completed" | "current" | "locked"
+  status: "completed" | "current" | "locked" | "in_progress"
   title: string
 }
 
-export type RoadmapNodeStatus = "completed" | "current" | "locked"
+// Original: export type RoadmapNodeStatus = "completed" | "current" | "locked"
+export type RoadmapNodeStatus = "completed" | "current" | "locked" | "in_progress"
 
 export type RoadmapResource = {
   title: string
@@ -100,3 +102,39 @@ export type MarketDemand = {
 export type DashboardLoadStatus = "loading" | "success" | "error"
 
 export type StudentSetupStep = "profile" | "skills" | null
+
+// ─── Roadmap Personalization (AI recommendations) ──────────────
+export type RoadmapRecommendationAction =
+  | "MARK_COMPLETE" | "SKIP" | "UNLOCK" | "PRIORITIZE" | "ADD" | "REMOVE"
+
+export type RoadmapRecommendationStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED"
+
+export type RoadmapRecommendationItem = {
+  recItemId: string
+  nodeId: string
+  nodeName: string | null
+  action: RoadmapRecommendationAction
+  reason: string | null
+  confidence: number | null
+  evidenceIds: string[] | null
+}
+
+export type RoadmapRecommendation = {
+  recommendationId: string
+  type: string
+  title: string | null
+  summary: string | null
+  reason: string | null
+  confidence: number | null
+  status: RoadmapRecommendationStatus
+  createdAt: string
+  decidedAt: string | null
+  items: RoadmapRecommendationItem[]
+}
+
+export type RoadmapRecommendationDecision = {
+  recommendationId: string
+  status: RoadmapRecommendationStatus
+  decidedAt: string | null
+  roadmapProgress: number | null
+}

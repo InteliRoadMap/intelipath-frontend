@@ -1,5 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+// Original: import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { Award, TrendingUp, AlertCircle, BookOpen, GraduationCap, ChevronRight } from 'lucide-react';
 
 export interface GradeReportData {
@@ -26,6 +27,7 @@ interface GradeReportUIProps {
   data: GradeReportData;
 }
 
+/* Original containerVariants:
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -35,8 +37,24 @@ const containerVariants = {
     }
   }
 };
+*/
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
+/* Original itemVariants:
 const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+*/
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };

@@ -10,7 +10,7 @@ import {
   ShieldCheck
 } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { authApi } from "@/api";
+import authApi from "@/features/auth/api/authApi";
 import { isValidPassword, getErrorMessage } from "@/lib";
 import { ROUTES } from "@/shared";
 

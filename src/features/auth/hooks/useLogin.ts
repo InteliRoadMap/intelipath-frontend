@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom"
-import { buildOAuthAuthorizationUrl, OAUTH_PROVIDERS } from "@/config/appConfig"
+import { buildOAuthAuthorizationUrl, OAUTH_PROVIDERS } from "@/app/config/appConfig"
 
 export function useLogin() {
   const [searchParams] = useSearchParams()

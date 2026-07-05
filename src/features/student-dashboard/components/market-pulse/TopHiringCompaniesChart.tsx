@@ -36,8 +36,8 @@ export default function TopHiringCompaniesChart({ data }: Props) {
           </div>
           <div className="flex-1">
             <div className="flex justify-between items-end mb-1">
-              <h4 className="text-[14px] font-bold text-slate-800 group-hover:text-[#00838f] transition-colors">{company.name}</h4>
-              <span className="text-[12px] font-bold text-slate-500">{company.recruitmentCount} jobs</span>
+              <h4 className="text-[14px] font-bold text-slate-800 group-hover:text-[#00838f] transition-colors line-clamp-2 pr-2">{company.name}</h4>
+              <span className="text-[12px] font-bold text-slate-500 whitespace-nowrap">{company.recruitmentCount} jobs</span>
             </div>
             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <motion.div 

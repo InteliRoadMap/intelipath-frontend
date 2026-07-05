@@ -3,7 +3,7 @@ import { LayoutDashboard, MessageSquare, ArrowLeft, Mail, MapPin, GraduationCap,
 import { UserHeaderActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui';
 import { useAuth } from '@/context';
 import { useNavigate, useParams } from 'react-router-dom';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { ROUTES } from '@/shared';
 
 export function MentorPortfolioView() {

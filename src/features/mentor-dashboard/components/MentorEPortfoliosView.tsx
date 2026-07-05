@@ -7,7 +7,7 @@ import { ROUTES } from '@/shared';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 
 export function MentorEPortfoliosView() {
   const [data, setData] = useState<any>(null);

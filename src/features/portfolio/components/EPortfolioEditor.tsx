@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { portfolioApi, PortfolioData } from '@/api/portfolioApi';
+import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import { EditableText } from './EditableText';
 import { ThemeEditor } from './ThemeEditor';
@@ -10,11 +10,14 @@ import { useGSAP } from '@gsap/react';
 import '@/features/portfolio/styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components/ui';
 import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
+import { RequestReviewModal } from './RequestReviewModal';
+import { toast } from '@/utils/toast';
+import profileApi from '@/api/profileApi';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -25,7 +28,7 @@ interface Props {
 
 export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = false }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const isMentor = user?.role === 'MENTOR';
 
   const [data, setData] = useState<PortfolioData>(initialData);
@@ -46,16 +49,57 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
 
   // Mentor Feedback State
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isRequestReviewOpen, setIsRequestReviewOpen] = useState(false);
 
   // GitHub Import State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [githubUrl, setGithubUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
+  // Avatar upload state (real file upload, not a URL prompt)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Delegate to the app-wide toast so notifications look/behave the same
+  // everywhere (bottom-center glass card), instead of a portfolio-only one.
   const showToast = (text: string, type: 'error' | 'success') => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 4000);
+    if (type === 'error') toast.error(text);
+    else toast.success(text);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file.', 'error');
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image is too large. Please choose a file under 5MB.', 'error');
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      // Reuse the account avatar endpoint (uploads to Supabase, returns a hosted URL).
+      const res: any = await profileApi.updateAvatar(file);
+      let newAvatarUrl = res.data?.avatarUrl || res.avatarUrl;
+      if (!newAvatarUrl) throw new Error('Server did not return an avatar URL');
+      // Cache-bust so the same URL refreshes in the browser.
+      if (newAvatarUrl.startsWith('http')) {
+        newAvatarUrl += (newAvatarUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+      }
+      updateHero('avatarUrl', newAvatarUrl);
+      updateUser({ avatarUrl: newAvatarUrl });
+      showToast('Avatar updated.', 'success');
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+      showToast('Upload failed. Please try again.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
   };
 
   const handleImport = async () => {
@@ -80,17 +124,17 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       
       setIsImportModalOpen(false);
       setGithubUrl('');
-      showToast("Import dự án thành công!", "success");
+      showToast("Project imported successfully!", "success");
     } catch (error: any) {
-      console.error("Lỗi khi import github:", error);
-      let errorMsg = "Hệ thống AI đang bận, vui lòng thử lại sau!"; // Lỗi 500 hoặc mặc định
-      
+      console.error("GitHub import failed:", error);
+      let errorMsg = "The AI service is busy. Please try again later!"; // 500 or default
+
       if (error.response?.status === 400) {
-        errorMsg = "Đường dẫn GitHub không đúng định dạng!";
+        errorMsg = "Invalid GitHub URL format!";
       } else if (error.response?.status === 404) {
-        errorMsg = "Không tìm thấy dự án này, hoặc đây là dự án Private!";
+        errorMsg = "Repository not found, or it is private!";
       } else if (error.response?.status === 429) {
-        errorMsg = "Bạn đã thao tác quá nhiều, vui lòng chờ một lát!";
+        errorMsg = "Too many requests. Please wait a moment!";
       }
       
       showToast(errorMsg, "error");
@@ -244,8 +288,8 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       )}
 
       {isEditMode && !isPublicView && (
-        <ThemeEditor 
-          primaryColor={data.themeColors.primaryColor} 
+        <ThemeEditor
+          primaryColor={data.themeColors.primaryColor}
           titleColor={data.themeColors.titleColor}
           textColor={data.themeColors.textColor}
           radius={data.themeColors.radius || '16px'}
@@ -299,15 +343,37 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
             </div>
             
           {!isPublicView && !isMentor && (
-            <div className="flex items-center gap-2 border-l border-slate-200/20 pl-4">
-              <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
+            <div className="flex items-center gap-4 border-l border-slate-200/20 pl-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-[var(--text-color)]">Preview</span>
+                <button 
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
+              </div>
+              
               <button 
-                onClick={() => setIsEditMode(!isEditMode)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEditMode ? 'bg-[var(--primary-color)]' : 'bg-slate-400'}`}
+                onClick={() => setIsRequestReviewOpen(true)}
+                className="px-4 py-1.5 bg-[var(--primary-color)] text-white font-semibold text-[13px] rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEditMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                <Send size={14} />
+                Request Review
               </button>
-              <span className="text-sm font-semibold text-[var(--title-color)]">Edit</span>
+            </div>
+          )}
+
+          {isMentor && isPublicView && (
+            <div className="flex items-center gap-4 border-l border-slate-200/20 pl-4 ml-2">
+              <button 
+                onClick={() => setIsFeedbackOpen(true)}
+                className="px-4 py-1.5 bg-[var(--title-color)] text-[var(--bg-primary)] font-semibold text-[13px] rounded-full shadow-md hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
+              >
+                <Send size={14} />
+                Provide Feedback
+              </button>
             </div>
           )}
         </div>
@@ -325,29 +391,27 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         </button>
       )}
 
-      {/* MENTOR FLOATING FEEDBACK BUTTON */}
-      {isMentor && !isPublicView && (
-        <>
-          <button 
-            onClick={() => setIsFeedbackOpen(true)}
-            className="fixed bottom-8 right-4 md:right-8 z-50 px-6 py-3 bg-[#0f172a] text-white font-bold text-[14px] rounded-full shadow-xl hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group cursor-pointer border-2 border-white/10"
-          >
-            <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            Provide Feedback
-          </button>
+      {/* MENTOR FEEDBACK MODAL */}
+      {isMentor && isPublicView && (
+        <FeedbackModal 
+          isOpen={isFeedbackOpen} 
+          onClose={() => setIsFeedbackOpen(false)}
+          studentData={{
+            id: data.studentId || 'unknown',
+            name: data.hero.name,
+            role: data.hero.role,
+            avatarUrl: data.hero.avatarUrl,
+            completionPercent: 85
+          }}
+        />
+      )}
 
-          <FeedbackModal 
-            isOpen={isFeedbackOpen} 
-            onClose={() => setIsFeedbackOpen(false)}
-            studentData={{
-              id: data.studentId || 'unknown',
-              name: data.hero.name,
-              role: data.hero.role,
-              avatarUrl: data.hero.avatarUrl,
-              completionPercent: 85
-            }}
-          />
-        </>
+      {/* STUDENT REQUEST REVIEW MODAL */}
+      {!isMentor && !isPublicView && (
+        <RequestReviewModal
+          isOpen={isRequestReviewOpen}
+          onClose={() => setIsRequestReviewOpen(false)}
+        />
       )}
 
       {/* HERO SECTION */}
@@ -420,12 +484,30 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                 <>
                   <img src={displayAvatar} alt="Profile" className="hero-img-pill w-[360px] h-[480px] object-cover rounded-[200px] relative z-10 border-4 border-[var(--bg-secondary)] shadow-2xl" />
                   {isEditMode && (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-[200px]">
-                      <button className="bg-white text-slate-900 px-4 py-2 rounded-full font-semibold text-sm cursor-pointer" onClick={() => {
-                        const url = prompt("Enter new image URL", displayAvatar);
-                        if (url) updateHero('avatarUrl', url);
-                      }}>Change Image</button>
-                    </div>
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={avatarInputRef}
+                        onChange={handleAvatarUpload}
+                        disabled={isUploadingAvatar}
+                      />
+                      <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity bg-black/40 rounded-[200px] ${isUploadingAvatar ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}>
+                        <button
+                          type="button"
+                          disabled={isUploadingAvatar}
+                          className="bg-white text-slate-900 px-4 py-2 rounded-full font-semibold text-sm cursor-pointer disabled:opacity-70 flex items-center gap-2"
+                          onClick={() => avatarInputRef.current?.click()}
+                        >
+                          {isUploadingAvatar ? (
+                            <><i className="fas fa-spinner fa-spin"></i> Uploading...</>
+                          ) : (
+                            <><i className="fas fa-camera"></i> Change Photo</>
+                          )}
+                        </button>
+                      </div>
+                    </>
                   )}
                 </>
               );
@@ -556,26 +638,38 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                     }} multiline />
                   </p>
                   <div className="flex gap-4 border-t border-[var(--border-color)] pt-6">
-                    <a href={proj.codeLink} className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                      if(!isEditMode) return;
-                      e.preventDefault();
-                      const link = prompt("Enter Code Link URL", proj.codeLink);
-                      if (link) {
-                        const newProj = [...data.projects];
-                        newProj[idx].codeLink = link;
-                        setData({ ...data, projects: newProj });
-                      }
-                    }}><i className="fab fa-github"></i> Code</a>
-                    <a href={proj.demoLink} className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                      if(!isEditMode) return;
-                      e.preventDefault();
-                      const link = prompt("Enter Demo Link URL", proj.demoLink);
-                      if (link) {
-                        const newProj = [...data.projects];
-                        newProj[idx].demoLink = link;
-                        setData({ ...data, projects: newProj });
-                      }
-                    }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                    {/* In edit mode always show the link so it can be set; in view mode only
+                        show it when there is a real URL (skip dead "#" links), open in new tab. */}
+                    {(isEditMode || (proj.codeLink && proj.codeLink !== '#')) && (
+                      <a href={proj.codeLink || '#'}
+                        target={!isEditMode ? '_blank' : undefined}
+                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
+                        if(!isEditMode) return;
+                        e.preventDefault();
+                        const link = prompt("Enter Code Link URL", proj.codeLink);
+                        if (link) {
+                          const newProj = [...data.projects];
+                          newProj[idx].codeLink = link;
+                          setData({ ...data, projects: newProj });
+                        }
+                      }}><i className="fab fa-github"></i> Code</a>
+                    )}
+                    {(isEditMode || (proj.demoLink && proj.demoLink !== '#')) && (
+                      <a href={proj.demoLink || '#'}
+                        target={!isEditMode ? '_blank' : undefined}
+                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
+                        if(!isEditMode) return;
+                        e.preventDefault();
+                        const link = prompt("Enter Demo Link URL", proj.demoLink);
+                        if (link) {
+                          const newProj = [...data.projects];
+                          newProj[idx].demoLink = link;
+                          setData({ ...data, projects: newProj });
+                        }
+                      }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -665,22 +759,6 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           onClose={() => setIconPickerProjectIdx(null)}
         />
       )}
-
-      {/* Floating Toast */}
-      <div
-        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
-          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        } ${toastMessage?.type === 'error' ? 'bg-red-900/95 shadow-red-900/20' : 'bg-emerald-900/95 shadow-emerald-900/20'}`}
-      >
-        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-          {toastMessage?.type === 'error' ? (
-            <i className="fas fa-exclamation-triangle"></i>
-          ) : (
-            <i className="fas fa-check"></i>
-          )}
-        </div>
-        {toastMessage?.text}
-      </div>
     </div>
   );
 };
