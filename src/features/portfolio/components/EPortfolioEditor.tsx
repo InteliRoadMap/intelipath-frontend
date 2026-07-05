@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import { EditableText } from './EditableText';
-// import { ThemeEditor } from './ThemeEditor'; // tạm ẩn - xem chú thích ở chỗ render bên dưới
+import { ThemeEditor } from './ThemeEditor';
 import { IconPicker } from './IconPicker';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
@@ -287,10 +287,6 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         </div>
       )}
 
-      {/*
-        Theme Editor tạm ẩn: màu của panel đang lệch với UI portfolio và khó
-        chỉnh. Giữ nguyên code (không xóa) để không mất phần đóng góp của member;
-        khi tinh chỉnh lại giao diện xong thì bỏ comment để bật lại.
       {isEditMode && !isPublicView && (
         <ThemeEditor
           primaryColor={data.themeColors.primaryColor}
@@ -305,7 +301,6 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           onChangeFont={updateFont}
         />
       )}
-      */}
 
       {/* NAVBAR */}
       <nav className="fixed top-0 w-full z-50 flex items-center justify-between border-b border-slate-200/20 px-4 py-3 md:px-8 transition-colors backdrop-blur-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-primary) 50%, transparent)' }}>
