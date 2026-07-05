@@ -71,12 +71,12 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      showToast('Vui lòng chọn một tệp ảnh.', 'error');
+      showToast('Please select an image file.', 'error');
       if (avatarInputRef.current) avatarInputRef.current.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      showToast('Ảnh quá lớn, vui lòng chọn tệp dưới 5MB.', 'error');
+      showToast('Image is too large. Please choose a file under 5MB.', 'error');
       if (avatarInputRef.current) avatarInputRef.current.value = '';
       return;
     }
@@ -92,10 +92,10 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       }
       updateHero('avatarUrl', newAvatarUrl);
       updateUser({ avatarUrl: newAvatarUrl });
-      showToast('Đã cập nhật ảnh đại diện.', 'success');
+      showToast('Avatar updated.', 'success');
     } catch (err) {
-      console.error('Lỗi khi upload avatar:', err);
-      showToast('Tải ảnh lên thất bại, vui lòng thử lại.', 'error');
+      console.error('Avatar upload failed:', err);
+      showToast('Upload failed. Please try again.', 'error');
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -124,17 +124,17 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       
       setIsImportModalOpen(false);
       setGithubUrl('');
-      showToast("Import dự án thành công!", "success");
+      showToast("Project imported successfully!", "success");
     } catch (error: any) {
-      console.error("Lỗi khi import github:", error);
-      let errorMsg = "Hệ thống AI đang bận, vui lòng thử lại sau!"; // Lỗi 500 hoặc mặc định
-      
+      console.error("GitHub import failed:", error);
+      let errorMsg = "The AI service is busy. Please try again later!"; // 500 or default
+
       if (error.response?.status === 400) {
-        errorMsg = "Đường dẫn GitHub không đúng định dạng!";
+        errorMsg = "Invalid GitHub URL format!";
       } else if (error.response?.status === 404) {
-        errorMsg = "Không tìm thấy dự án này, hoặc đây là dự án Private!";
+        errorMsg = "Repository not found, or it is private!";
       } else if (error.response?.status === 429) {
-        errorMsg = "Bạn đã thao tác quá nhiều, vui lòng chờ một lát!";
+        errorMsg = "Too many requests. Please wait a moment!";
       }
       
       showToast(errorMsg, "error");
@@ -501,9 +501,9 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                           onClick={() => avatarInputRef.current?.click()}
                         >
                           {isUploadingAvatar ? (
-                            <><i className="fas fa-spinner fa-spin"></i> Đang tải...</>
+                            <><i className="fas fa-spinner fa-spin"></i> Uploading...</>
                           ) : (
-                            <><i className="fas fa-camera"></i> Đổi ảnh</>
+                            <><i className="fas fa-camera"></i> Change Photo</>
                           )}
                         </button>
                       </div>

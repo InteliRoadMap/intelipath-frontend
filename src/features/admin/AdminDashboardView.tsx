@@ -406,9 +406,9 @@ export default function AdminDashboardView() {
     setIsTriggering(true)
     try {
       await adminApi.triggerSkillExtraction()
-      showToast("Đã khởi chạy tác vụ trích xuất kỹ năng.", "success")
+      showToast("Skill extraction job started successfully.", "success")
     } catch (error) {
-      showToast("Không thể khởi chạy tác vụ trích xuất kỹ năng.", "error")
+      showToast("Failed to trigger skill extraction job.", "error")
     } finally {
       setIsTriggering(false)
     }
@@ -418,9 +418,9 @@ export default function AdminDashboardView() {
     setIsTriggeringScraper(true)
     try {
       await adminApi.triggerJobScraper()
-      showToast("Đã khởi chạy trình thu thập việc làm.", "success")
+      showToast("Job scraper started successfully.", "success")
     } catch (error) {
-      showToast("Không thể khởi chạy trình thu thập việc làm.", "error")
+      showToast("Failed to trigger job scraper.", "error")
     } finally {
       setIsTriggeringScraper(false)
     }

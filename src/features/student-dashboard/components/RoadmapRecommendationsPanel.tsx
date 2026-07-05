@@ -53,9 +53,9 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommenda
       const response = await roadmapApi.generateRecommendations()
       const created: RoadmapRecommendation[] = Array.isArray(response.data) ? response.data : []
       if (created.length === 0) {
-        toast.info("Chưa có gợi ý mới — lộ trình đã khớp với kỹ năng của bạn.")
+        toast.info("No new suggestions — your roadmap already matches your skills.")
       } else {
-        toast.success("Đã có gợi ý lộ trình mới, hãy xem qua nhé!")
+        toast.success("New roadmap suggestions are ready for review.")
         setIsCollapsed(false)
       }
       await loadPending()
@@ -80,12 +80,12 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommenda
       if (decision === "accept") {
         toast.success(
           result.roadmapProgress != null
-            ? `Đã cập nhật lộ trình — bạn đang ở mức ${result.roadmapProgress}%.`
-            : "Đã cập nhật lộ trình."
+            ? `Roadmap updated — you are now at ${result.roadmapProgress}%.`
+            : "Roadmap updated."
         )
         onApplied?.()
       } else {
-        toast.info("Đã bỏ qua gợi ý.")
+        toast.info("Suggestion dismissed.")
       }
     } catch (error) {
       console.error(`[Roadmap Recommendations] Failed to ${decision} recommendation:`, error)
