@@ -90,8 +90,6 @@ export function MissingSkillsChart({
               icon={Search}
               label="Search a career to see skill gaps"
             />
-          ) : loading ? (
-            <div className="w-[280px] h-[280px] rounded-full bg-slate-100 animate-pulse mx-auto" />
           ) : error ? (
             <ErrorBanner message={error} />
           ) : data.length === 0 ? (

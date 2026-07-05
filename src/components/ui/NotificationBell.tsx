@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { useAuth } from "@/context"
 import dashboardApi from "../../api/dashboardApi"
 import { createPortal } from "react-dom"
 import {
@@ -271,6 +272,7 @@ export function NotifFullPage({
 
 // ─── Main exported component ───────────────────────────────────────────────────
 export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFullPage, setIsFullPage] = useState(false)
@@ -280,6 +282,9 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
   const previewNotifs = notifications.slice(0, 4)
 
   useEffect(() => {
+    // Only fetch for students
+    if (user?.role !== "STUDENT") return
+
     // Fetch notifications from backend
     const fetchNotifications = async () => {
       try {

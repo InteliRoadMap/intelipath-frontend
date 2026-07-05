@@ -1,3 +1,5 @@
+import { MyStudent } from "./counselorDashboard.types"
+
 export interface Feedback {
   feedbackId: string
   senderId: string
@@ -17,4 +19,10 @@ export interface CreateFeedback {
   receiverId: string
   content: string
   type: "GENERAL" | "SKILL" | "CAREER"
+}
+
+export interface PaginatedStudentResponse {
+  totalPages: number
+  currentPage: number
+  students: MyStudent[]
 }

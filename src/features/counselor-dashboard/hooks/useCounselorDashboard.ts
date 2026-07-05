@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import counselorApi, {
   type CareerStatistics,
   type MissingSkillItem,
@@ -8,7 +8,6 @@ import counselorApi, {
 // ─── useCareerDistribution ────────────────────────────────────────────────────
 export interface UseCareerDistributionResult {
   data: CareerStatistics[]
-  loading: boolean
   error: boolean
   total: number
 }
@@ -17,7 +16,6 @@ export function useCareerDistribution(
   onTotalLoaded?: (total: number) => void
 ): UseCareerDistributionResult {
   const [data, setData] = useState<CareerStatistics[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
@@ -60,12 +58,11 @@ export function useCareerDistribution(
         onTotalLoaded?.(total)
       })
       .catch(() => setError(true))
-      .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = data.reduce((s, c) => s + c.studentCount, 0)
 
-  return { data, loading, error, total }
+  return { data, error, total }
 }
 
 // ─── useMissingSkills ─────────────────────────────────────────────────────────
@@ -153,7 +150,6 @@ export function useMissingSkills(
 // ─── useFeedbackList ──────────────────────────────────────────────────────────
 export interface UseFeedbackListResult {
   feedbacks: Feedback[]
-  loading: boolean
   error: boolean
 }
 
@@ -161,7 +157,6 @@ export function useFeedbackList(
   onTotalLoaded?: (total: number) => void
 ): UseFeedbackListResult {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
   useEffect(() => {
@@ -173,8 +168,7 @@ export function useFeedbackList(
         onTotalLoaded?.(list.length)
       })
       .catch(() => setError(true))
-      .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { feedbacks, loading, error }
+  return { feedbacks, error }
 }

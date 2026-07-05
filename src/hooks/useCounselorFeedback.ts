@@ -8,32 +8,47 @@ import counselorApi, {
 export interface UseStudentListResult {
   students: MyStudent[]
   loading: boolean
-  refetch: () => void
+  page: number
+  setPage: (page: number) => void
+  search: string
+  setSearch: (search: string) => void
+  totalPages: number
+  refetch: (signal?: AbortSignal) => void
 }
 
 export function useStudentList(): UseStudentListResult {
   const [students, setStudents] = useState<MyStudent[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0) // 0-indexed for backend
+  const [search, setSearch] = useState("")
+  const [totalPages, setTotalPages] = useState(1)
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback((signal?: AbortSignal) => {
     setLoading(true)
     counselorApi
-      .getMyStudent()
+      .getMyStudent(page, 7, search, signal)
       .then((r) => {
-        setStudents(Array.isArray(r) ? r : [])
+        setStudents(r.students)
+        setTotalPages(r.totalPages)
       })
       .catch((error) => {
+        if (error?.name === "CanceledError" || error?.message === "canceled") return // Axios aborted
         console.error("Failed to fetch students:", error)
         setStudents([])
+        setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [page, search])
 
   useEffect(() => {
-    refetch()
+    const controller = new AbortController()
+    refetch(controller.signal)
+    return () => {
+      controller.abort()
+    }
   }, [refetch])
 
-  return { students, loading, refetch }
+  return { students, loading, page, setPage, search, setSearch, totalPages, refetch }
 }
 
 // ─── useFeedbackHistory ───────────────────────────────────────────────────────

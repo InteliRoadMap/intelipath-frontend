@@ -54,7 +54,7 @@ export function CareerDistributionChart({
   onSelectCareer?: (name: string) => void
   onTotalLoaded?: (total: number) => void
 }) {
-  const { data, loading, error, total } = useCareerDistribution(onTotalLoaded)
+  const { data, error, total } = useCareerDistribution(onTotalLoaded)
 
   const getDistributionColor = (idx: number) => {
     if (data.length <= 1) return CAREER_COLORS[0]
@@ -78,9 +78,7 @@ export function CareerDistributionChart({
           </div>
 
           <div className="h-[320px] w-full flex items-center justify-center relative">
-            {loading ? (
-              <div className="w-[280px] h-[280px] rounded-full bg-slate-100 animate-pulse mx-auto" />
-            ) : error ? (
+            {error ? (
               <ErrorBanner message="Cannot load career distribution data." />
             ) : data.length === 0 ? (
               <EmptyState icon={BookOpen} label="No career data available" />
@@ -124,7 +122,7 @@ export function CareerDistributionChart({
         </div>
 
         {/* Legend on the right, aligned to top */}
-        {!loading && !error && data.length > 0 && (
+        {!error && data.length > 0 && (
           <div className="w-full md:w-[35%] flex flex-col self-stretch min-h-0 bg-transparent md:pl-5 pt-2 legend-container">
             <div className="flex items-center justify-between pb-3 mb-3 shrink-0">
               <span className="text-[15px] font-bold text-slate-800">

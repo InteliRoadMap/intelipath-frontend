@@ -641,23 +641,24 @@ function StudentDetailPanel({
 }) {
   const [tab, setTab] = useState<TabKey>(defaultTab)
   const [detail, setDetail] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
-  const fetchDetail = useCallback(() => {
-    setLoading(true)
+  const fetchDetail = useCallback((signal?: AbortSignal) => {
     import("@/features/counselor-dashboard/api/counselorApi").then((m) => {
       m.default
-        .getStudentInfo(student.studentId)
+        .getStudentInfo(student.studentId, signal)
         .then((data) => {
           setDetail(data)
-          setLoading(false)
         })
-        .catch(() => setLoading(false))
+        .catch((err) => {
+          if (err?.code !== "ERR_CANCELED") console.error(err)
+        })
     })
   }, [student.studentId])
 
   useEffect(() => {
-    fetchDetail()
+    const controller = new AbortController()
+    fetchDetail(controller.signal)
+    return () => controller.abort()
   }, [fetchDetail])
 
   const fullName = student.fullName || "Unknown Student"
@@ -748,11 +749,11 @@ function StudentDetailPanel({
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] text-slate-600 rounded-lg text-[12px] font-medium border border-slate-200/80 shadow-sm">
                 <Map size={13} className="text-slate-400" />
-                {loading ? "..." : progress}% progress
+                {progress}% progress
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[12px] font-medium border border-rose-100 shadow-sm">
                 <TrendingDown size={13} />
-                {loading ? "..." : missing.length} missing skills
+                {missing.length} missing skills
               </div>
             </div>
           </div>
@@ -779,27 +780,21 @@ function StudentDetailPanel({
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              Loading...
-            </div>
-          ) : (
-            <>
-              {tab === "roadmap" && (
-                <RoadmapTab
-                  student={{ ...student, roadmapProgress: progress }}
-                />
-              )}
-              {tab === "skillgap" && <SkillGapTab skills={missing} />}
-              {tab === "feedback" && (
-                <FeedbackTab
-                  student={student}
-                  feedbacks={feedbacks}
-                  onFeedbackSent={fetchDetail}
-                />
-              )}
-            </>
-          )}
+          <>
+            {tab === "roadmap" && (
+              <RoadmapTab
+                student={{ ...student, roadmapProgress: progress }}
+              />
+            )}
+            {tab === "skillgap" && <SkillGapTab skills={missing} />}
+            {tab === "feedback" && (
+              <FeedbackTab
+                student={student}
+                feedbacks={feedbacks}
+                onFeedbackSent={fetchDetail}
+              />
+            )}
+          </>
         </div>
       </aside>
     </div>
@@ -817,20 +812,19 @@ export default function CounselorFeedbackPage() {
     searchParams.get("studentId") || searchParams.get("userId")
   const defaultTab = (searchParams.get("tab") as TabKey) || "roadmap"
 
-  const [search, setSearch] = useState("")
-  const [filterUni, setFilterUni] = useState("")
-  const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
   // ── Data from hook ──────────────────────────────────────────────
-  const { students, loading } = useStudentList()
+  const { students, loading, page, setPage, search, setSearch, totalPages } = useStudentList()
 
-  const uniqueUnis = Array.from(
-    new Set(students.map((s) => s.university).filter(Boolean))
-  )
-  const uniqueCareers = Array.from(
-    new Set(students.map((s) => s.careerPath).filter(Boolean))
-  )
+  const [localSearch, setLocalSearch] = useState(search)
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setPage(0)
+      setSearch(localSearch)
+    }
+  }
 
   // Auto-open from dashboard link
   useEffect(() => {
@@ -845,18 +839,8 @@ export default function CounselorFeedbackPage() {
     }
   }, [students, autoOpenStudentId, searchParams, setSearchParams, selected])
 
-  const filtered = students.filter((s) => {
-    const matchSearch =
-      !search ||
-      s.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      (s.email && s.email.toLowerCase().includes(search.toLowerCase()))
-
-    const matchUni = !filterUni || s.university === filterUni
-    const matchCareer = !filterCareer || s.careerPath === filterCareer
-
-    return matchSearch && matchUni && matchCareer
-  })
-
+  // No local filtering anymore since search is done by backend
+  // and we don't have backend support for university/career filters yet.
   const handleLogout = async () => {
     await logout()
     navigate(ROUTES.LOGIN)
@@ -896,7 +880,7 @@ export default function CounselorFeedbackPage() {
 
   useGSAP(
     () => {
-      if (filtered.length > 0) {
+      if (students.length > 0) {
         gsap.fromTo(
           ".student-card",
           { y: 30, opacity: 0, rotationX: 10 },
@@ -912,7 +896,7 @@ export default function CounselorFeedbackPage() {
         )
       }
     },
-    { scope: pageRef, dependencies: [filtered] }
+    { scope: pageRef, dependencies: [students] }
   )
 
   return (
@@ -1009,26 +993,40 @@ export default function CounselorFeedbackPage() {
 
         {/* Search & Filter - Floating overlapping the banner */}
         <div className="page-anim-filter relative z-20 -mt-16 mx-4 md:mx-10 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl px-6 py-4 flex flex-wrap items-center gap-4 shadow-[0_15px_35px_rgba(15,23,42,0.08)]">
-          <div className="flex-1 min-w-[200px] relative group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#00838f] transition-colors">
-              <Search size={16} />
+          <div className="flex-1 min-w-[200px] flex items-center gap-2">
+            <div className="relative flex-1 group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#00838f] transition-colors">
+                <Search size={16} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by name or email (Press Enter)..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className="w-full pl-11 pr-4 py-3 text-[14px] font-medium border-none rounded-xl bg-slate-100/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#006064]/20 transition-all shadow-inner"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 text-[14px] font-medium border-none rounded-xl bg-slate-100/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#006064]/20 transition-all shadow-inner"
-            />
-          </div>
-
-          {(search || filterUni || filterCareer) && (
             <button
               type="button"
               onClick={() => {
+                setPage(0)
+                setSearch(localSearch)
+              }}
+              className="flex items-center justify-center w-[46px] h-[46px] bg-[#00838f] hover:bg-[#006064] text-white rounded-xl transition-all shadow-md shadow-[#00838f]/20 hover:shadow-[#00838f]/40 shrink-0"
+              title="Search"
+            >
+              <Search size={18} />
+            </button>
+          </div>
+
+          {(search || localSearch) && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocalSearch("")
                 setSearch("")
-                setFilterUni("")
-                setFilterCareer("")
+                setPage(0)
               }}
               className="flex items-center gap-1.5 text-[13px] font-bold text-slate-500 hover:text-slate-800 px-4 py-2.5 rounded-xl hover:bg-slate-200/50 transition-colors"
             >
@@ -1036,26 +1034,10 @@ export default function CounselorFeedbackPage() {
             </button>
           )}
 
-          <FilterDropdown
-            icon={Briefcase}
-            value={filterCareer}
-            placeholder="All Careers"
-            options={uniqueCareers}
-            onChange={setFilterCareer}
-          />
-
-          <FilterDropdown
-            icon={Building2}
-            value={filterUni}
-            placeholder="All Universities"
-            options={uniqueUnis}
-            onChange={setFilterUni}
-          />
-
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f0fafa] text-[#006064] rounded-xl text-[13px] font-bold shadow-sm border border-[#e0f2fe]">
               <Users size={16} />
-              <span>{filtered.length} Students</span>
+              <span>{students.length} Students (Page {page + 1})</span>
             </div>
           </div>
         </div>
@@ -1070,43 +1052,14 @@ export default function CounselorFeedbackPage() {
             <div className="col-span-1 text-right">Action</div>
           </div>
 
-          {loading ? (
-            <div className="divide-y divide-slate-100">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-12 gap-4 px-6 py-4 items-center animate-pulse"
-                >
-                  <div className="col-span-3 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3.5 bg-slate-100 rounded w-3/4" />
-                      <div className="h-3 bg-slate-100 rounded w-1/2" />
-                    </div>
-                  </div>
-                  <div className="col-span-3">
-                    <div className="h-3.5 bg-slate-100 rounded w-4/5" />
-                  </div>
-                  <div className="col-span-2">
-                    <div className="h-3.5 bg-slate-100 rounded w-4/5" />
-                  </div>
-                  <div className="col-span-3">
-                    <div className="h-6 bg-slate-100 rounded-full w-3/4" />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
-                    <div className="h-8 w-16 bg-slate-100 rounded-lg" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
+          {students.length === 0 ? (
             <EmptyState
               icon={Users}
               label="No assigned students found matching your criteria"
             />
           ) : (
             <div className="divide-y divide-slate-100">
-              {filtered.map((student) => {
+              {students.map((student) => {
                 const fullName = student.fullName || "Unknown"
                 const initials =
                   fullName
@@ -1128,7 +1081,7 @@ export default function CounselorFeedbackPage() {
                 return (
                   <div
                     key={student.studentId}
-                    className="student-card grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#f0fafa] transition-all duration-300 group cursor-pointer border-l-4 border-transparent hover:border-[#00838f]"
+                    className="student-card opacity-0 grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#f0fafa] transition-all duration-300 group cursor-pointer border-l-4 border-transparent hover:border-[#00838f]"
                     onClick={() => setSelected(student)}
                   >
                     <div className="col-span-3 flex items-center gap-3 min-w-0">
@@ -1187,6 +1140,46 @@ export default function CounselorFeedbackPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-6 border-t border-slate-200 bg-slate-50/50">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+                className="flex items-center gap-1 px-4 py-2 text-[13px] font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowLeft size={14} /> Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-colors ${
+                      page === i
+                        ? "bg-[#00838f] text-white shadow-md shadow-[#00838f]/20"
+                        : "bg-transparent text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(page + 1)}
+                className="flex items-center gap-1 px-4 py-2 text-[13px] font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>

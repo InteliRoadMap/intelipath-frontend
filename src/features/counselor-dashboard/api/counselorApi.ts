@@ -9,7 +9,8 @@ import type {
   Feedback,
   FeedbackListResponse,
   MyStudent,
-  CreateFeedback
+  CreateFeedback,
+  PaginatedStudentResponse
 } from "../types"
 
 export type {
@@ -20,7 +21,8 @@ export type {
   Feedback,
   FeedbackListResponse,
   MyStudent,
-  CreateFeedback
+  CreateFeedback,
+  PaginatedStudentResponse
 }
 
 const counselorApi = {
@@ -69,25 +71,33 @@ const counselorApi = {
     return data
   },
   // counselor feedbackS
-  getMyStudent: async (search?: string): Promise<MyStudent[]> => {
-    const url =
-      search && search.trim()
-        ? `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/${encodeURIComponent(search.trim())}`
-        : ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST
+  getMyStudent: async (
+    page: number = 0,
+    size: number = 7,
+    search?: string,
+    signal?: AbortSignal
+  ): Promise<PaginatedStudentResponse> => {
+    const searchParam = search && search.trim() ? encodeURIComponent(search.trim()) : ""
+    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/page=${page}/size=${size}/search=${searchParam}`
+    
     try {
-      const res = await mainClient.get(url)
+      const res = await mainClient.get(url, { signal })
       const data = res.data?.data || res.data
-      if (data && Array.isArray(data.content)) return data.content
-      if (Array.isArray(data)) return data
-      return data?.students ?? []
+      
+      return {
+        totalPages: data?.totalPages ?? 1,
+        currentPage: data?.currentPage ?? 0,
+        students: data?.students ?? data?.content ?? []
+      }
     } catch {
-      return []
+      return { totalPages: 1, currentPage: 0, students: [] }
     }
   },
   // New Add
-  getStudentInfo: async (studentId: string): Promise<any> => {
+  getStudentInfo: async (studentId: string, signal?: AbortSignal): Promise<any> => {
     const res = await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId)
+      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId),
+      { signal }
     )
     return res.data?.data || res.data
   },
@@ -95,7 +105,7 @@ const counselorApi = {
     studentId: string
   ): Promise<FeedbackListResponse> => {
     const res = await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.HISTORY_FEEDBACK(studentId)
+      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId)
     )
     return res.data
   },
