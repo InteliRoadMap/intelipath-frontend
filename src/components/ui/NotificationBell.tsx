@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import dashboardApi from "../../api/dashboardApi"
+import { useAuth } from "@/context"
 import { createPortal } from "react-dom"
 import {
   Bell,
@@ -271,6 +272,7 @@ export function NotifFullPage({
 
 // ─── Main exported component ───────────────────────────────────────────────────
 export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFullPage, setIsFullPage] = useState(false)
@@ -280,6 +282,13 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
   const previewNotifs = notifications.slice(0, 4)
 
   useEffect(() => {
+    // The mentor-feedback endpoint is student-only (hasRole('STUDENT')); calling
+    // it as a mentor/counselor/admin returns Access Denied. Only students receive
+    // mentor feedback, so skip the fetch for other roles.
+    if (user?.role?.toUpperCase() !== "STUDENT") {
+      setNotifications([])
+      return
+    }
     // Fetch notifications from backend
     const fetchNotifications = async () => {
       try {
@@ -321,7 +330,7 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
       }
     }
     fetchNotifications()
-  }, [])
+  }, [user?.role])
 
   // Close dropdown on outside click
   useEffect(() => {
