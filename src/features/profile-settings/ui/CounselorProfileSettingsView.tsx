@@ -32,8 +32,6 @@ export default function CounselorProfileSettingsPage() {
     profileData,
     loading,
     saving,
-    error,
-    success,
     handleChange,
     handleSave,
     loadProfile,
@@ -252,17 +250,6 @@ export default function CounselorProfileSettingsPage() {
                   </p>
                 </div>
               </div>
-
-              {error && (
-                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600">
-                  {success}
-                </div>
-              )}
 
               {/* Form - always visible, loading state shown via overlay on avatar */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

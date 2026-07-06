@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
 import { isUuid } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
+import { toast } from "@/utils/toast"
 
 export interface ProfileData {
   full_name: string
@@ -45,12 +46,9 @@ export function useProfileSettings() {
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
-    setError(null)
 
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Request timed out")), 5000)
@@ -114,18 +112,16 @@ export function useProfileSettings() {
 
   const handleSave = async () => {
     setSaving(true)
-    setError(null)
-    setSuccess(null)
 
     if (profileData.yob) {
       const birthDate = new Date(profileData.yob)
       const today = new Date()
       if (birthDate >= today) {
-        setError('Date of birth cannot be in the future.')
+        toast.error('Date of birth cannot be in the future.')
         setSaving(false)
         return
       } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('You must be at least 10 years old.')
+        toast.error('You must be at least 10 years old.')
         setSaving(false)
         return
       }
@@ -138,11 +134,11 @@ export function useProfileSettings() {
       const admissionYear = parseInt(String(profileData.year_of_admission), 10)
       if (Number.isFinite(admissionYear) && Number.isFinite(birthYear)) {
         if (admissionYear <= birthYear) {
-          setError('Year of admission must be after your year of birth.')
+          toast.error('Year of admission must be after your year of birth.')
           setSaving(false)
           return
         } else if (admissionYear - birthYear < 10) {
-          setError('Year of admission seems too early based on your age.')
+          toast.error('Year of admission seems too early based on your age.')
           setSaving(false)
           return
         }
@@ -197,11 +193,10 @@ export function useProfileSettings() {
 
       await Promise.all(tasks)
 
-      setSuccess("Profile saved successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Profile saved successfully!")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
-      setError("Save failed. Please try again.")
+      toast.error("Save failed. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -218,8 +213,6 @@ export function useProfileSettings() {
     profileData,
     loading,
     saving,
-    error,
-    success,
     handleChange,
     handleSave,
     loadProfile,
