@@ -560,7 +560,10 @@ export default function StudentRoadmapPageView() {
                     {selectedNodeData.links && selectedNodeData.links.length > 0 ? (
                       <div className="flex flex-col gap-1.5">
                         {selectedNodeData.links.map((link: any, idx: number) => {
-                          const href = typeof link === 'string' ? link : (link?.url || '');
+                          // Links can arrive as plain URL strings or { url } objects; coerce to a
+                          // real string and skip anything else so we never pass a non-string href.
+                          const rawUrl = typeof link === 'string' ? link : (link && typeof link.url === 'string' ? link.url : '');
+                          const href = rawUrl.trim();
                           if (!href) return null;
                           const meta = getLinkMeta(href);
                           return (
