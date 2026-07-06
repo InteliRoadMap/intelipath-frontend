@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react"
 import { ReactFlowProvider } from '@xyflow/react'
 import {
   ArrowRight,
+  ArrowUpRight,
   ArrowsClockwise,
   Check,
   CheckCircle,
@@ -193,6 +194,35 @@ const CareerSelector = ({
       </div>
     </div>
   )
+}
+
+// Friendly source names for common resource domains; falls back to the hostname.
+const KNOWN_SOURCES: Record<string, string> = {
+  "roadmap.sh": "roadmap.sh",
+  "developer.mozilla.org": "MDN Web Docs",
+  "youtube.com": "YouTube",
+  "youtu.be": "YouTube",
+  "github.com": "GitHub",
+  "freecodecamp.org": "freeCodeCamp",
+  "cloudflare.com": "Cloudflare",
+  "w3schools.com": "W3Schools",
+  "aws.amazon.com": "AWS Docs",
+  "learn.microsoft.com": "Microsoft Learn",
+  "postgresql.org": "PostgreSQL Docs",
+  "redis.io": "Redis Docs",
+  "docs.docker.com": "Docker Docs",
+  "kubernetes.io": "Kubernetes Docs",
+}
+
+// Derive a readable label + short path from a raw resource URL.
+const getLinkMeta = (raw: string): { label: string; path: string } => {
+  try {
+    const u = new URL(raw)
+    const host = u.hostname.replace(/^www\./, "")
+    return { label: KNOWN_SOURCES[host] || host, path: (host + u.pathname).replace(/\/$/, "") }
+  } catch {
+    return { label: raw, path: raw }
+  }
 }
 
 export default function StudentRoadmapPageView() {
@@ -528,22 +558,27 @@ export default function StudentRoadmapPageView() {
                   </h3>
                   <div className="flex-1 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
                     {selectedNodeData.links && selectedNodeData.links.length > 0 ? (
-                      <div className="flex flex-col gap-2.5">
+                      <div className="flex flex-col gap-1.5">
                         {selectedNodeData.links.map((link: any, idx: number) => {
                           const href = typeof link === 'string' ? link : (link?.url || '');
-                          const title = typeof link === 'string' ? `Resource Link ${idx + 1}` : (link?.title || `Resource Link ${idx + 1}`);
+                          if (!href) return null;
+                          const meta = getLinkMeta(href);
                           return (
-                            <a 
-                              key={idx} 
-                              href={href} 
-                              target="_blank" 
+                            <a
+                              key={idx}
+                              href={href}
+                              target="_blank"
                               rel="noreferrer"
-                              className="group flex items-center justify-between p-3 bg-white rounded-xl ring-1 ring-black/[0.04] shadow-sm hover:shadow-md hover:ring-black/[0.08] transition-all duration-300 active:scale-[0.98]"
+                              className="group flex items-center gap-2.5 px-2.5 py-2 bg-white rounded-lg ring-1 ring-black/[0.05] hover:ring-black/[0.12] hover:bg-slate-50 transition-colors cursor-pointer"
                             >
-                              <span className="text-[12px] font-semibold text-slate-700 group-hover:text-black transition-colors truncate mr-3">{title}</span>
-                              <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors duration-300">
-                                <ArrowRight size={12} weight="bold" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                              <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 group-hover:bg-black group-hover:text-white transition-colors">
+                                <LinkSimple size={12} weight="bold" />
                               </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[12px] font-semibold text-slate-800 group-hover:text-black transition-colors truncate leading-tight">{meta.label}</p>
+                                <p className="text-[10px] text-slate-400 truncate leading-tight">{meta.path}</p>
+                              </div>
+                              <ArrowUpRight size={14} weight="bold" className="text-slate-300 group-hover:text-slate-900 shrink-0 transition-colors" />
                             </a>
                           );
                         })}
