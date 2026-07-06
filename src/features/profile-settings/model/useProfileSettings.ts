@@ -132,16 +132,20 @@ export function useProfileSettings() {
     }
 
     if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission && profileData.yob) {
-      const birthDate = new Date(profileData.yob)
-      const admissionDate = new Date(profileData.year_of_admission)
-      if (admissionDate <= birthDate) {
-        setError('Admission date must be after your date of birth.')
-        setSaving(false)
-        return
-      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('Admission date seems too early based on your age.')
-        setSaving(false)
-        return
+      // year_of_admission is a plain year (e.g. 2023), so compare years directly.
+      // (new Date(2023) would be interpreted as epoch milliseconds -> 1970.)
+      const birthYear = new Date(profileData.yob).getFullYear()
+      const admissionYear = parseInt(String(profileData.year_of_admission), 10)
+      if (Number.isFinite(admissionYear) && Number.isFinite(birthYear)) {
+        if (admissionYear <= birthYear) {
+          setError('Year of admission must be after your year of birth.')
+          setSaving(false)
+          return
+        } else if (admissionYear - birthYear < 10) {
+          setError('Year of admission seems too early based on your age.')
+          setSaving(false)
+          return
+        }
       }
     }
 
