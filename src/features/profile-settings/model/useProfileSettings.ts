@@ -77,6 +77,7 @@ export function useProfileSettings() {
         email: data?.email || data?.userInfo?.email || user?.email || "",
         role: data?.role || user?.role || "Student",
         major: data?.major || EMPTY_PROFILE.major,
+        github_profile: data?.githubProfile || data?.github_profile || "",
         year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
         // Show the university NAME; guard against a UUID slipping into the display.
         university: (() => {
@@ -171,6 +172,7 @@ export function useProfileSettings() {
             universityName: typedUniversity && !isUuid(typedUniversity) ? typedUniversity : null,
             yearOfAdmission: yearNum,
             major: profileData.major,
+            githubProfile: profileData.github_profile || null,
           } as any)
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
