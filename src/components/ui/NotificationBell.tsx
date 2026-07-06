@@ -298,12 +298,14 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
         let mappedNotifs: Notification[] = []
         
         if (data && Array.isArray(data)) {
+          // Backend MentorFeedbackItemResponse fields: id, name, time, text.
+          // (`time` is already a formatted relative string, e.g. "2 days ago".)
           mappedNotifs = data.map((fb: any) => ({
-            id: fb.feedbackId || fb.id || Math.random().toString(),
+            id: fb.id || fb.feedbackId || Math.random().toString(),
             type: "info",
-            title: `New Feedback from ${fb.senderName || 'Mentor/Counselor'}`,
-            message: fb.content || "No content provided",
-            time: new Date(fb.createAt || Date.now()).toLocaleDateString(),
+            title: fb.name ? `New feedback from ${fb.name}` : "New feedback",
+            message: fb.text?.trim() || "Tap to read the full feedback.",
+            time: fb.time || "",
             read: false,
           }))
         }
