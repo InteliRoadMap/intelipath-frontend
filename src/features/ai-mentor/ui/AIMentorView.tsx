@@ -390,8 +390,8 @@ export default function AIMentorPage() {
       console.error(isUploadError ? "Failed to upload file:" : "Failed to start chat:", error)
       setUploadError(
         isUploadError
-          ? "Không thể tải file lên. Vui lòng thử lại."
-          : "Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại."
+          ? "Couldn't upload the file. Please try again."
+          : "Couldn't start the conversation. Please try again."
       )
     } finally {
       setIsUploading(false)
@@ -731,7 +731,7 @@ export default function AIMentorPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={isSending || isUploading}
-                    placeholder={isUploading ? "Đang tải file…" : isSending ? "AI đang trả lời…" : "Send a message..."}
+                    placeholder={isUploading ? "Uploading file…" : isSending ? "AI is replying…" : "Send a message..."}
                     className="flex-1 w-full bg-transparent border-0 outline-none resize-none py-2.5 px-1 text-zinc-900 placeholder:text-zinc-500 text-[15px] disabled:opacity-50 min-h-[44px] overflow-y-auto"
                     rows={1}
                     style={{ maxHeight: '200px' }}
@@ -741,7 +741,7 @@ export default function AIMentorPage() {
                       onClick={handleSendMessage}
                     disabled={(!inputValue.trim() && !selectedFile) || isSending || isUploading}
                     className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-900 text-white hover:bg-zinc-800 transition-colors outline-none disabled:opacity-50 disabled:hover:bg-zinc-900 shadow-sm"
-                    aria-label={isUploading ? "Đang tải file" : isSending ? "AI đang trả lời" : "Gửi tin nhắn"}
+                    aria-label={isUploading ? "Uploading file" : isSending ? "AI is replying" : "Send message"}
                   >
                       {isUploading || isSending ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
