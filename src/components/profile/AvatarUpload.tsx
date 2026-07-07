@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react"
+import React, { useState } from "react"
 
 import profileApi from "@/api/profileApi"
 import { useAuth } from "@/context"
 import { Edit3, Loader2 } from "lucide-react"
 import gsap from "gsap"
+import AvatarUploadModal from "@/components/modals/AvatarUploadModal"
 
 interface AvatarUploadProps {
   initial: string
@@ -17,12 +18,11 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const { user, updateUser } = useAuth()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadAvatar = async (file: File) => {
     try {
-      const file = e.target.files?.[0]
-      if (!file || !user?.id) return
+      if (!user?.id) return
 
       setUploading(true)
       setError("")
@@ -32,7 +32,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       // Thêm timeout để tránh trường hợp request bị treo quá lâu
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error()), 10000)
+        setTimeout(() => reject(new Error("Timeout")), 10000)
       )
       const res = (await Promise.race([uploadPromise, timeoutPromise])) as any
 
@@ -57,9 +57,6 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       setError(err.message || "Upload failed. Please try again.")
     } finally {
       setUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
     }
   }
 
@@ -88,15 +85,6 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         )}
       </div>
 
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        ref={fileInputRef}
-        onChange={handleUploadAvatar}
-        disabled={uploading}
-      />
-
       <button
         type="button"
         onMouseEnter={(e) =>
@@ -121,7 +109,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             { scale: 0.8 },
             { scale: 1.15, duration: 0.5, ease: "elastic.out(1, 0.3)" }
           )
-          fileInputRef.current?.click()
+          setIsModalOpen(true)
         }}
         disabled={uploading}
         className={`absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-md border border-slate-100 disabled:opacity-50 cursor-pointer ${
@@ -137,6 +125,13 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           {error}
         </div>
       )}
+
+      <AvatarUploadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpload={handleUploadAvatar}
+        loading={uploading}
+      />
     </div>
   )
 }

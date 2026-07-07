@@ -1,5 +1,4 @@
-import { publicClient, mainClient } from "./apiClients"
-import { ENDPOINTS } from "./endpoints"
+import { ENDPOINTS, mainClient, publicClient } from "@/shared/api"
 
 const authApi = {
   login: async (email: string, password: string) => {
@@ -18,15 +17,22 @@ const authApi = {
     return await publicClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, data)
   },
 
-  refreshToken: async (refreshToken: string) => {
+  refreshToken: async (refreshToken?: string) => {
     if (import.meta.env.DEV) {
       console.group("[AUTH REFRESH] Sending refresh token to backend")
       console.log("endpoint:", ENDPOINTS.AUTH.REFRESH_TOKEN)
-      console.log("refreshToken:", refreshToken)
+      console.log("refreshToken:", refreshToken || "Using HttpOnly Cookie")
       console.groupEnd()
     }
 
-    const response = await publicClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken })
+    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
+    // const response = await publicClient.post(ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken })
+
+    // NEW LOGIC: Send body only if token exists in localStorage, otherwise empty body so cookie is used
+    const response = await publicClient.post(
+      ENDPOINTS.AUTH.REFRESH_TOKEN,
+      refreshToken ? { refreshToken } : {}
+    )
 
     if (!response.data?.accessToken) {
       const contentType = response.headers["content-type"]

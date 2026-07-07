@@ -3,7 +3,7 @@ import {
   Users, ChatTeardropText, Briefcase
 } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { ROUTES } from '@/shared';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';

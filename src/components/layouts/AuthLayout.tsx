@@ -39,9 +39,12 @@ export default function AuthLayout({ children, view }: AuthLayoutProps) {
         <div className="relative w-full max-w-[1000px]">
           <div className="absolute inset-0 -z-10 rounded-[24px] bg-cyan-300/10 blur-3xl" />
           <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing slide-up animation and shortening duration):
+            // initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            // transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 0, scale: 1 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             className="
     grid min-h-[550px] md:h-[70vh] md:max-h-[700px] w-full grid-cols-1
     overflow-hidden

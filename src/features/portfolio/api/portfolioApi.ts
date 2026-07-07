@@ -1,5 +1,4 @@
-import { mainClient, publicClient } from './apiClients';
-import { ENDPOINTS } from './endpoints';
+import { ENDPOINTS, mainClient, publicClient } from '@/shared/api';
 
 export interface PortfolioData {
   id: string;

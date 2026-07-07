@@ -21,7 +21,7 @@ import {
 } from "@phosphor-icons/react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
-import { isUuid } from "@/lib/utils"
+import { isUuid, formatPrerequisite } from "@/lib/utils"
 import { ROUTES } from "@/shared"
 import { useStudentSetup } from "../hooks"
 import { studentDashboardService } from "../services"
@@ -30,6 +30,9 @@ import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
+import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
+import StageLegend from "./StageLegend"
+import { getStageStyle } from "../lib/stageColors"
 
 gsap.registerPlugin(useGSAP)
 
@@ -156,7 +159,7 @@ const CareerSelector = ({
                       <p className={`text-[12px] leading-relaxed line-clamp-2 mt-auto transition-colors
                         ${isSelected ? 'text-white/60' : 'text-slate-500'}
                       `}>
-                        {career.description || career.prerequisite || 'Select to view roadmap.'}
+                        {career.description || formatPrerequisite(career.prerequisite) || 'Select to view roadmap.'}
                       </p>
                    </div>
                  </button>
@@ -213,7 +216,7 @@ export default function StudentRoadmapPageView() {
   const [isUpdatingNode, setIsUpdatingNode] = useState(false);
   const [optimisticStatusMap, setOptimisticStatusMap] = useState<Record<string, string>>({});
 
-  const { activeSetupStep, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+  const { activeSetupStep, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
 
   const loadRoadmap = async () => {
     setIsRoadmapLoading(true)
@@ -432,14 +435,23 @@ export default function StudentRoadmapPageView() {
             <div className="absolute inset-0 z-10 bg-transparent">
               {/* React Flow Provider must wrap the Canvas */}
               <ReactFlowProvider>
-                <RoadmapVectorGraph 
-                  onNodeClick={handleNodeClick} 
-                  themeColor={themeColor} 
-                  roadmapData={roadmapData} 
+                <RoadmapVectorGraph
+                  onNodeClick={handleNodeClick}
+                  themeColor={themeColor}
+                  roadmapData={roadmapData}
                   optimisticStatusMap={optimisticStatusMap}
                 />
               </ReactFlowProvider>
             </div>
+
+            {/* Stage colour legend (top-left) */}
+            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && <StageLegend />}
+
+            {/* AI Roadmap Personalization suggestions (floating panel) */}
+            <RoadmapRecommendationsPanel
+              hasCareer={Boolean(currentCareerId)}
+              onApplied={loadRoadmap}
+            />
         </div>
 
         {/* Right Column (Details) - High-End Redesign */}
@@ -472,14 +484,26 @@ export default function StudentRoadmapPageView() {
             {selectedNodeData ? (
               <>
                 <div className="flex flex-col shrink-0 gap-2.5 mb-6">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ${
-                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' : 
-                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' : 
+                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' :
+                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' :
                       'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
                     }`}>
                       {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' ? 'Current Focus' : 'Locked'}
                     </span>
+                    {getStageStyle(selectedNodeData.stage) && (
+                      <span
+                        className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ring-1 ring-black/10 text-slate-700"
+                        style={{ backgroundColor: `${getStageStyle(selectedNodeData.stage)!.color}40` }}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-[3px] border border-black/40"
+                          style={{ backgroundColor: getStageStyle(selectedNodeData.stage)!.color }}
+                        />
+                        {getStageStyle(selectedNodeData.stage)!.label}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-[20px] font-bold tracking-tight leading-snug text-slate-950">{selectedNodeData.label}</h2>
                 </div>
@@ -534,7 +558,12 @@ export default function StudentRoadmapPageView() {
                 
                 <div className="shrink-0 pt-4 mt-auto space-y-3">
                   {/* Premium Compact Action Buttons */}
-                  {selectedNodeData.status === 'completed' ? (
+                  {selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
+                    <div className="w-full flex items-center justify-center gap-2 bg-slate-50 text-slate-500 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-medium text-[12px]">
+                      <TreeStructure size={14} weight="bold" />
+                      Group topic — completes automatically via its child nodes
+                    </div>
+                  ) : selectedNodeData.status === 'completed' ? (
                     <div className="space-y-3">
                       <button disabled className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-5 py-3 rounded-xl ring-1 ring-emerald-500/20 font-semibold text-[13px] shadow-sm">
                         <Check size={16} weight="bold" /> Completed
@@ -607,7 +636,7 @@ export default function StudentRoadmapPageView() {
 
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
       )}
     </div>
   )

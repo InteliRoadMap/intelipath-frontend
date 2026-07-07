@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { SignOut, CaretDown, GearSix } from '@phosphor-icons/react'
+import { SignOut, CaretDown, GearSix, ChatCenteredText } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
 import type { User } from '@/features/auth'
@@ -47,6 +47,11 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
     }
   }
 
+  const handleFeedbackClick = () => {
+    setShowDropdown(false)
+    navigate(ROUTES.DASHBOARD_STUDENT_FEEDBACK || '/dashboard/student/feedback')
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -82,6 +87,17 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         <div className="p-2 flex flex-col gap-1">
           {/* Notifications */}
           <NotificationBell asMenuItem onCloseMenu={() => setShowDropdown(false)} />
+
+          {/* Feedback — chỉ hiển thị cho STUDENT */}
+          {role === 'STUDENT' && (
+            <button
+              onClick={handleFeedbackClick}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-slate-700 group"
+            >
+              <ChatCenteredText size={18} weight="duotone" className="text-slate-500 group-hover:text-slate-700" />
+              <span className="text-[14px] font-medium">Feedback</span>
+            </button>
+          )}
 
           {/* Settings */}
           <button

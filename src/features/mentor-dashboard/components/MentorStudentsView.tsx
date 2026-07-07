@@ -10,7 +10,7 @@ import {
   Funnel
 } from '@phosphor-icons/react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import mentorApi from '@/api/mentorApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { ROUTES } from '@/shared';
 import { useAuth } from '@/context';
 import gsap from 'gsap';

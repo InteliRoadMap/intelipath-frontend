@@ -4,14 +4,14 @@ import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { useStudentSetup } from "../hooks"
+import { useStudentSetup, RoadmapProgressProvider } from "../hooks"
 import {
   StudentWelcomeHeader,
   CurrentProgressBanner,
   ActionableListWidget,
   QuickStatsWidget,
   MarketDemandChartWidget,
-  SkillRadarChartWidget
+  SkillMatchWidget
 } from "./StudentDashboardWidgets"
 import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
@@ -24,7 +24,7 @@ export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const dashboardRef = useRef<HTMLDivElement>(null)
-  const { activeSetupStep, isInitializing, openSkillSelection, completeSetup } = useStudentSetup(user?.id)
+  const { activeSetupStep, isInitializing, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
 
   useGSAP(() => {
     if (!isInitializing && activeSetupStep === null) {
@@ -62,6 +62,7 @@ export default function StudentDashboardView() {
             <p className="text-sm font-bold">Preparing your learning space...</p>
           </div>
         ) : activeSetupStep === null ? (
+          <RoadmapProgressProvider>
           <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
             {/* Left Column (Main Content) */}
             <div className="flex-1 w-full min-w-0">
@@ -89,10 +90,11 @@ export default function StudentDashboardView() {
               </div>
 
               <div className="anim-block">
-                <SkillRadarChartWidget />
+                <SkillMatchWidget />
               </div>
             </div>
           </div>
+          </RoadmapProgressProvider>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
@@ -109,7 +111,7 @@ export default function StudentDashboardView() {
       {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} />
+        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
       )}
     </div>
   )

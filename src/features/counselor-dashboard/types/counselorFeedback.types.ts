@@ -7,6 +7,12 @@ export interface Feedback {
   senderName: string
   content: string
   type: "GENERAL" | "SKILL" | "CAREER"
+  attachments?: {
+    attachmentId: string
+    fileName: string
+    fileType: string
+    fileSize: number
+  }[]
   createAt: string
   updateAt: string
 }
@@ -19,6 +25,7 @@ export interface CreateFeedback {
   receiverId: string
   content: string
   type: "GENERAL" | "SKILL" | "CAREER"
+  attachments?: File[]
 }
 
 export interface PaginatedStudentResponse {

@@ -45,6 +45,19 @@ export const ENDPOINTS = {
     UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
+  ROADMAP_RECOMMENDATIONS: {
+    PENDING: '/roadmaps/recommendations',
+    GENERATE: '/roadmaps/recommendations/generate',
+    ACCEPT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/accept`,
+    REJECT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/reject`
+  },
+  ROADMAP_EDITOR: {
+    CAREER_NODES: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    CREATE_NODE: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    UPDATE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
+    DELETE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
+    SAVE_POSITIONS: '/roadmaps/editor/nodes/positions'
+  },
   STUDENT_DASHBOARD: {
     OVERVIEW: "/student/dashboard",
     ROADMAP_PROGRESS: "/student/dashboard/roadmap-progress",
@@ -99,6 +112,7 @@ export const ENDPOINTS = {
     MODIFY_FEEDBACK: "/counselor/dashboard/modify-feedback",
     DELETE_FEEDBACK: (feedbackId: string) =>
       `/counselor/dashboard/delete-feedback/${feedbackId}`,
+    EXPORT_STUDENTS: "/counselor/export-student"
 
     // GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
 import profileApi from "../api/profileApi"
-import { getErrorMessage } from "../lib/utils"
+import { getErrorMessage, isUuid } from "../lib/utils"
 import { useAuth } from "../context/AuthContext"
 
 export interface OnboardingErrors {
@@ -101,11 +101,20 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
       })
 
       if (user?.role === "STUDENT") {
+        const isUnivUuid = isUuid(universityId)
+        let yearNum: number | null = null
+        if (yearOfAdmission) {
+          const parsed = parseInt(String(yearOfAdmission), 10)
+          if (Number.isFinite(parsed)) {
+            yearNum = parsed
+          }
+        }
         await profileApi.updateStudentProfile({
-          universityId: universityId || university,
-          yearOfAdmission,
+          universityId: isUnivUuid ? universityId : null,
+          universityName: isUnivUuid ? (university || null) : (universityId || university || null),
+          yearOfAdmission: yearNum,
           major,
-          careerId: ""
+          careerId: undefined
         })
       }
 

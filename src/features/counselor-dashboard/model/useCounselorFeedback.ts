@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
+
 import counselorApi, {
   type MyStudent,
   type Feedback
@@ -13,6 +14,8 @@ export interface UseStudentListResult {
   search: string
   setSearch: (search: string) => void
   totalPages: number
+  size: number
+  setSize: (size: number) => void
   refetch: (signal?: AbortSignal) => void
 }
 
@@ -21,24 +24,29 @@ export function useStudentList(): UseStudentListResult {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0) // 0-indexed for backend
   const [search, setSearch] = useState("")
+  const [size, setSize] = useState(7)
   const [totalPages, setTotalPages] = useState(1)
 
-  const refetch = useCallback((signal?: AbortSignal) => {
-    setLoading(true)
-    counselorApi
-      .getMyStudent(page, 7, search, signal)
-      .then((r) => {
-        setStudents(r.students)
-        setTotalPages(r.totalPages)
-      })
-      .catch((error) => {
-        if (error?.name === "CanceledError" || error?.message === "canceled") return // Axios aborted
-        console.error("Failed to fetch students:", error)
-        setStudents([])
-        setTotalPages(1)
-      })
-      .finally(() => setLoading(false))
-  }, [page, search])
+  const refetch = useCallback(
+    (signal?: AbortSignal) => {
+      setLoading(true)
+      counselorApi
+        .getMyStudent(page, size, search, signal)
+        .then((r) => {
+          setStudents(r.students)
+          setTotalPages(r.totalPages)
+        })
+        .catch((error) => {
+          if (error?.name === "CanceledError" || error?.message === "canceled")
+            return // Axios aborted
+          console.error("Failed to fetch students:", error)
+          setStudents([])
+          setTotalPages(1)
+        })
+        .finally(() => setLoading(false))
+    },
+    [page, search, size]
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -48,7 +56,18 @@ export function useStudentList(): UseStudentListResult {
     }
   }, [refetch])
 
-  return { students, loading, page, setPage, search, setSearch, totalPages, refetch }
+  return {
+    students,
+    loading,
+    page,
+    setPage,
+    search,
+    setSearch,
+    totalPages,
+    size,
+    setSize,
+    refetch
+  }
 }
 
 // ─── useFeedbackHistory ───────────────────────────────────────────────────────
@@ -85,6 +104,7 @@ export interface SendFeedbackPayload {
   receiverId: string
   content: string
   type: "GENERAL" | "SKILL" | "CAREER"
+  attachments?: File[]
 }
 
 export interface UseSendFeedbackResult {

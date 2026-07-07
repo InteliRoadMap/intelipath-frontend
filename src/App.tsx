@@ -1,4 +1,4 @@
-import { AppRoutes } from "@/routes"
+import { AppRoutes } from "@/app/router"
 import { GlobalLoadingBar, GlobalToast } from "@/components/ui"
 
 function App() {

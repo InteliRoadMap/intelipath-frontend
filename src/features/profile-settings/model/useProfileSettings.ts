@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import profileApi from "../api/profileApi"
-import { useAuth } from "../context/AuthContext"
+import profileApi from "@/api/profileApi"
+import { isUuid } from "@/lib/utils"
+import { useAuth } from "@/context/AuthContext"
 
 export interface ProfileData {
   full_name: string
@@ -82,63 +83,25 @@ export function useProfileSettings() {
         ...data,
         full_name:
           data?.fullName ||
-          data?.user?.fullName ||
           data?.userInfo?.fullName ||
           user?.fullName ||
           data?.full_name ||
           "",
-        email:
-          data?.email ||
-          data?.user?.email ||
-          data?.userInfo?.email ||
-          user?.email ||
-          "",
-        role: data?.role || data?.user?.role || user?.role || "Student",
-        major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
+        email: data?.email || data?.userInfo?.email || user?.email || "",
+        role: data?.role || user?.role || "Student",
+        major: data?.major || EMPTY_PROFILE.major,
         year_of_admission:
-          data?.yearOfAdmission ||
-          data?.year_of_admission ||
-          data?.student?.yearOfAdmission ||
-          "",
-        universityId:
-          data?.universityId ||
-          data?.userInfo?.universityId ||
-          data?.student?.university ||
-          data?.academicCounselor?.university ||
-          "",
-        university:
-          data?.university ||
-          data?.userInfo?.university ||
-          data?.student?.university ||
-          data?.academicCounselor?.university ||
-          "",
-        department:
-          data?.department || data?.academicCounselor?.department || "",
-        industry_focus:
-          data?.industryFocus ||
-          data?.industry_focus ||
-          data?.industryMentor?.industryFocus ||
-          "",
-        bio:
-          data?.bio ||
-          data?.user?.bio ||
-          data?.userInfo?.bio ||
-          (user as any)?.bio ||
-          "",
-        avatar_url:
-          data?.avatarUrl ||
-          data?.user?.avatarUrl ||
-          data?.userInfo?.avatarUrl ||
-          user?.avatarUrl ||
-          "",
+          data?.yearOfAdmission || data?.year_of_admission || "",
+        // Show the university NAME; guard against a UUID slipping into the display.
+        university: (() => {
+          const raw = data?.university || data?.universityName || ""
+          return raw && !isUuid(raw) ? raw : ""
+        })(),
+        universityId: data?.universityId || data?.userInfo?.universityId || "",
+        industry_focus: data?.industryFocus || data?.industry_focus || "",
+        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
         yob:
-          (
-            data?.yob ||
-            data?.user?.yob ||
-            data?.userInfo?.yob ||
-            (user as any)?.yob ||
-            ""
-          )
+          (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")
             ?.toString()
             .split("T")[0] || ""
       })
@@ -214,14 +177,27 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
+        const isUnivUuid = isUuid(profileData.universityId)
+        let yearNum: number | null = null
+        if (profileData.year_of_admission) {
+          const parsed = parseInt(String(profileData.year_of_admission), 10)
+          if (Number.isFinite(parsed)) {
+            yearNum = parsed
+          }
+        }
+        // The University field is free text holding the display name. Never let a
+        // UUID leak into universityName; the id (if any) goes to universityId only.
+        const typedUniversity = (profileData.university || "").trim()
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: profileData.year_of_admission,
+            universityId: isUnivUuid ? profileData.universityId : null,
+            universityName:
+              typedUniversity && !isUuid(typedUniversity)
+                ? typedUniversity
+                : null,
+            yearOfAdmission: yearNum,
             major: profileData.major
-            // Original: careerId: ""
-            // Removed to prevent wiping out data
-          })
+          } as any)
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
@@ -234,7 +210,7 @@ export function useProfileSettings() {
         tasks.push(
           profileApi.updateCounselorProfile({
             department: profileData.department,
-            universityId: profileData.universityId || profileData.university
+            universityId: profileData.universityId || ""
           })
         )
       }

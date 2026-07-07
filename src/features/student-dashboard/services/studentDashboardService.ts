@@ -77,7 +77,7 @@ const normalizeCareerRole = (career: RawCareerRole): CareerRole | null => {
   const careerId = career.careerId || career.career_id || career.id
   const careerName = career.careerName || career.career_name || career.name
 
-  if (!careerId || !careerName || !isUuid(careerId)) return null
+  if (!careerId || !careerName) return null
 
   return {
     careerId,
@@ -277,15 +277,41 @@ export const studentDashboardService = {
   updateUserProfile: (payload: Parameters<typeof profileApi.updateUserProfile>[0]) =>
     profileApi.updateUserProfile(payload),
 
-  updateStudentProfile: (payload: StudentProfilePayload) => {
-    const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
-    if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
-    if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
+  updateStudentProfile: (payload: any) => {
+    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Aligning with new SetupStudentProfileRequest contract):
+    // const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
+    // if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
+    // if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
+    //
+    // return profileApi.updateStudentProfile({
+    //   ...payload,
+    //   universityId: payload.universityId || payload.university,
+    //   yearOfAdmission
+    // })
+
+    // NEW LOGIC: Support new hybrid contract (yearOfAdmission as number, universityId/universityName separate)
+    if (payload.careerId && typeof payload.careerId !== "string") {
+      throw new Error("Career ID must be a valid string ID.")
+    }
+
+    let yearNum: number | null = null
+    if (payload.yearOfAdmission) {
+      const parsed = parseInt(String(payload.yearOfAdmission), 10)
+      if (Number.isFinite(parsed)) {
+        yearNum = parsed
+      }
+    }
+
+    const isUnivUuid = isUuid(payload.universityId)
 
     return profileApi.updateStudentProfile({
-      ...payload,
-      universityId: payload.universityId || payload.university,
-      yearOfAdmission
+      universityId: isUnivUuid ? payload.universityId : null,
+      universityName: isUnivUuid ? (payload.university || payload.universityName || null) : (payload.universityId || payload.universityName || payload.university || null),
+      yearOfAdmission: yearNum,
+      major: payload.major || null,
+      careerId: payload.careerId || null,
+      bio: payload.bio || null,
+      yob: payload.yob || null
     })
   },
 
@@ -301,7 +327,7 @@ export const studentDashboardService = {
   },
 
   updateTargetCareer: async (careerId: string) => {
-    if (!isUuid(careerId)) throw new Error("Career ID must be a valid UUID.")
+    if (!careerId) throw new Error("Career ID must be a valid string ID.")
 
     const response = await careerApi.updateTargetCareer(careerId)
     return unwrapResponse(response.data)
@@ -343,7 +369,8 @@ export const studentDashboardService = {
     const response = await roadmapApi.getStudentRoadmap()
     return normalizeStudentRoadmap(response.data)
   },
-
+
+
 
   updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
     const response = await roadmapApi.updateNodeProgress(nodeId, status);
@@ -449,15 +476,14 @@ export const studentDashboardService = {
         flattenNode(extractedData);
       }
 
-      // Identify main nodes: strictly those with explicit level > 0 from the database
-      const actualMainNodes = rows.filter(r => {
-        const explicitLevel = parseInt(String(r.Level || r.level || 0));
-        return explicitLevel > 0;
-      }).sort((a, b) => {
-        const levelA = parseInt(String(a.Level || a.level || 0));
-        const levelB = parseInt(String(b.Level || b.level || 0));
-        return levelA - levelB;
-      });
+      // The backend exposes the field as `nodeLevel`; keep the other aliases for safety.
+      const readLevel = (r: any) => parseInt(String(r.nodeLevel ?? r.node_level ?? r.Level ?? r.level ?? 0)) || 0;
+
+      // Main (spine) nodes are strictly those with an explicit level > 0.
+      // Only their children rely on parent/previous; the spine itself is ordered by level.
+      const actualMainNodes = rows
+        .filter(r => readLevel(r) > 0)
+        .sort((a, b) => readLevel(a) - readLevel(b));
 
       const nodes: any[] = [];
       const edges: any[] = [];
@@ -468,7 +494,7 @@ export const studentDashboardService = {
       rows.forEach((row, index) => {
         const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId || `Node_${index}`;
         const isMainNode = actualMainNodes.some(m => m === row);
-        const level = isMainNode ? parseInt(String(row.Level || row.level || 1)) : 0; // Maintain explicit level for UI
+        const level = isMainNode ? (readLevel(row) || 1) : 0; // Maintain explicit level for UI
         
         const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
 
@@ -505,55 +531,74 @@ export const studentDashboardService = {
             description: row.Description || row.description || row.NodeDescription || row.nodeDescription || row.content || row.desc || '',
             links: resources,
             level: level,
-            status: normalizeStatus(row.Status || row.status)
+            status: normalizeStatus(row.Status || row.status),
+            stage: row.stage || row.Stage || null,
+            completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // Hand-placed coordinates from the mentor editor; null = auto-layout.
+            positionX: row.positionX ?? row.position_x ?? null,
+            positionY: row.positionY ?? row.position_y ?? null
           }
         });
       });
+
+      // roadmap.sh model:
+      // - main/spine nodes (explicit level) chain to each other via previousNode,
+      //   falling back to level order only when the data has no previous reference;
+      // - child nodes hang off their parentNode (dashed) and may additionally
+      //   chain between themselves via previousNode.
+      const resolveRef = (raw: any): string | null => {
+        if (!raw) return null;
+        let refId = typeof raw === 'object'
+          ? String(raw.nodeId || raw.id || raw.node_id || raw.title || raw.name || raw.nodeName || raw.node_name || raw.NodeName || '').trim()
+          : String(raw).trim();
+        if (refId && nameToId[refId]) refId = nameToId[refId];
+        return refId || null;
+      };
+
+      const pushEdge = (sourceId: string, targetId: string, row: any, isSpineEdge: boolean) => {
+        if (!sourceId || sourceId === targetId) return;
+        if (edges.some(e => e.source === sourceId && e.target === targetId)) return;
+        const status = normalizeStatus(row.Status || row.status);
+        edges.push({
+          id: `e-${sourceId}-${targetId}`,
+          source: sourceId,
+          target: targetId,
+          type: 'smoothstep',
+          animated: status === 'in_progress' || status === 'current',
+          style: {
+            strokeWidth: isSpineEdge ? 3 : 2,
+            strokeDasharray: isSpineEdge ? 'none' : '5 5'
+          }
+        });
+        adjacencyList[sourceId] = adjacencyList[sourceId] || [];
+        adjacencyList[sourceId].push(targetId);
+        inDegree[targetId] = (inDegree[targetId] || 0) + 1;
+      };
 
       rows.forEach(row => {
         const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId;
         const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
         const isMainNode = actualMainNodes.some(m => m === row);
-        
-        let parentId = null;
-        const rawParent = row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id;
-        
-        if (rawParent) {
-          if (typeof rawParent === 'object') {
-            parentId = rawParent.nodeId || rawParent.id || rawParent.node_id || rawParent.title || rawParent.name || rawParent.nodeName || rawParent.node_name || rawParent.NodeName;
-          } else {
-            parentId = String(rawParent).trim();
-            if (nameToId[parentId]) {
-              parentId = nameToId[parentId];
+
+        const parentId = resolveRef(row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id);
+        let previousId = resolveRef(row.previousNode || row.previous_node || row.PreviousNode);
+
+        if (isMainNode) {
+          // Spine: previousNode is the source of truth; level order is only a fallback.
+          if (!previousId && !parentId) {
+            const mainNodeIndex = actualMainNodes.findIndex(m => m === row);
+            if (mainNodeIndex > 0) {
+              const prevMainNode = actualMainNodes[mainNodeIndex - 1];
+              previousId = resolveRef(prevMainNode.nodeId || prevMainNode.id || prevMainNode.node_id || prevMainNode.title || prevMainNode.name || prevMainNode.NodeName || prevMainNode.nodeName || prevMainNode.node_name);
             }
           }
-        }
-        
-        // Auto-connect main spine nodes sequentially based on actualMainNodes array order
-        if (isMainNode && !parentId) {
-          const mainNodeIndex = actualMainNodes.findIndex(m => m === row);
-          if (mainNodeIndex > 0) {
-            const prevMainNode = actualMainNodes[mainNodeIndex - 1];
-            parentId = String(prevMainNode.nodeId || prevMainNode.id || prevMainNode.node_id || prevMainNode.title || prevMainNode.name || prevMainNode.NodeName || prevMainNode.nodeName || prevMainNode.node_name).trim();
-          }
-        }
-        
-        if (parentId) {
-          const status = normalizeStatus(row.Status || row.status);
-          edges.push({
-            id: `e-${parentId}-${nodeId}`,
-            source: parentId,
-            target: nodeId,
-            type: 'smoothstep',
-            animated: status === 'in_progress' || status === 'current',
-            style: { 
-              strokeWidth: isMainNode ? 3 : 2, 
-              strokeDasharray: isMainNode ? 'none' : '5 5'
-            }
-          });
-          adjacencyList[parentId] = adjacencyList[parentId] || [];
-          adjacencyList[parentId].push(nodeId);
-          inDegree[nodeId] = (inDegree[nodeId] || 0) + 1;
+          if (previousId) pushEdge(previousId, nodeId, row, true);
+          if (parentId) pushEdge(parentId, nodeId, row, true);
+        } else {
+          // Children: dashed hierarchy edge from the parent, plus an optional
+          // dashed sequence edge chaining siblings via previousNode.
+          if (parentId) pushEdge(parentId, nodeId, row, false);
+          if (previousId) pushEdge(previousId, nodeId, row, false);
         }
       });
 

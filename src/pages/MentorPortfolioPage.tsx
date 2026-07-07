@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import mentorApi from '@/api/mentorApi';
-import { PortfolioData } from '@/api/portfolioApi';
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
+import { PortfolioData } from '@/features/portfolio/api/portfolioApi';
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
 import { ROUTES } from '@/shared';
 

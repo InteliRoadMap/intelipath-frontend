@@ -3,6 +3,7 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import StudentHeader from './StudentHeader';
+import { SharedAppBackground } from '@/components';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';
@@ -46,7 +47,8 @@ export function StudentFeedbackPageView() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 font-sans">
+    <div className="flex min-h-screen flex-col font-sans">
+      <SharedAppBackground />
       <StudentHeader 
         user={user} 
         onLogout={handleLogout} 
@@ -55,8 +57,8 @@ export function StudentFeedbackPageView() {
 
       <main className="mx-auto w-full max-w-[1440px] px-4 pb-8 pt-[120px] md:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Mentor Feedback</h1>
-          <p className="mt-2 text-slate-500">Read and reply to professional reviews of your portfolio.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Counselor Feedback</h1>
+          <p className="mt-2 text-slate-500">Read and review professional guidance from your counselor.</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -72,7 +74,7 @@ export function StudentFeedbackPageView() {
                 <ChatTeardropText className="mx-auto text-slate-300" size={48} weight="duotone" />
                 <p className="mt-4 text-lg font-bold text-slate-700">No feedback yet</p>
                 <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
-                  When a mentor reviews your portfolio, their feedback will appear here.
+                  When a counselor sends you feedback, it will appear here.
                 </p>
               </div>
             </div>
