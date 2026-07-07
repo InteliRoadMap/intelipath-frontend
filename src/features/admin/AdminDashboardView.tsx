@@ -650,61 +650,39 @@ export default function AdminDashboardView() {
 
         {tab === "overview" && (
         <>
-        <section className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)] xl:items-start">
-          <div className="py-1">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">
-              <ShieldCheck size={16} weight="duotone" /> Administration
+        {/* Slim header: title on the left, run-job actions inline on the right. */}
+        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-cyan-700">
+              <ShieldCheck size={15} weight="duotone" /> Administration
             </div>
-            <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">
-              System overview
-            </h1>
-            <p className="mt-2 mb-4 max-w-[280px] text-sm leading-5 text-slate-500">
-              Monitor platform health, run background jobs and manage user access.
-            </p>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
-              <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Operations
-              </p>
-              <button
-                type="button"
-                onClick={handleTriggerJob}
-                disabled={isTriggering || isTriggeringScraper}
-                className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-cyan-50/70 disabled:pointer-events-none disabled:opacity-50"
-              >
-                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-100">
-                  <Lightning size={15} weight="duotone" className={isTriggering ? "animate-pulse" : ""} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-slate-800">
-                    {isTriggering ? "Running skill extraction…" : "Run Skill Extraction"}
-                  </p>
-                  <p className="truncate text-[11px] text-slate-400">Extract skills from job posts</p>
-                </div>
-                <ArrowRight size={14} weight="bold" className="shrink-0 text-slate-300 transition-colors group-hover:text-cyan-600" />
-              </button>
-              <button
-                type="button"
-                onClick={handleTriggerScraper}
-                disabled={isTriggeringScraper || isTriggering}
-                className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-indigo-50/70 disabled:pointer-events-none disabled:opacity-50"
-              >
-                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100">
-                  <Lightning size={15} weight="duotone" className={isTriggeringScraper ? "animate-pulse" : ""} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-slate-800">
-                    {isTriggeringScraper ? "Running job scraper…" : "Run Job Scraper"}
-                  </p>
-                  <p className="truncate text-[11px] text-slate-400">Scrape the latest job listings</p>
-                </div>
-                <ArrowRight size={14} weight="bold" className="shrink-0 text-slate-300 transition-colors group-hover:text-indigo-600" />
-              </button>
-            </div>
+            <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">System overview</h1>
           </div>
-          <AdminMetrics className="min-w-0" />
-        </section>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleTriggerJob}
+              disabled={isTriggering || isTriggeringScraper}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-cyan-600 ${isTriggering ? "animate-pulse" : ""}`} />
+              {isTriggering ? "Extracting…" : "Skill Extraction"}
+            </button>
+            <button
+              type="button"
+              onClick={handleTriggerScraper}
+              disabled={isTriggeringScraper || isTriggering}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggeringScraper ? "animate-pulse" : ""}`} />
+              {isTriggeringScraper ? "Scraping…" : "Job Scraper"}
+            </button>
+          </div>
+        </div>
+
+        <AdminMetrics />
+
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <RoleDistribution users={users} isLoading={usersLoading} />
           <RecentSignups users={users} isLoading={usersLoading} />
         </div>
