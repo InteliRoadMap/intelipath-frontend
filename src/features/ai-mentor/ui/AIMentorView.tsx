@@ -209,6 +209,9 @@ export default function AIMentorPage() {
   // Fetch messages when active session changes
   useEffect(() => {
     if (activeSessionId) {
+      // A send may have just created this session; don't let an async
+      // loadMessages([]) clobber the optimistic user + streaming AI messages.
+      if (sendInFlightRef.current) return
       loadMessages(activeSessionId)
     } else {
       setMessages([])
