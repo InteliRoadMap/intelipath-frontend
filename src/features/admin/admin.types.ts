@@ -11,9 +11,16 @@ export interface AdminCourseMetric {
   progress: number
 }
 
+export interface AdminServiceStatus {
+  name: string
+  up: boolean
+}
+
 export interface AdminSystemHealth {
-  uptime: number
   status: string
+  servicesUp: number
+  servicesTotal: number
+  services: AdminServiceStatus[]
 }
 
 export interface AdminUserListItem {

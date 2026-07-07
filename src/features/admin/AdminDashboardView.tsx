@@ -123,6 +123,50 @@ function MetricCard({
   )
 }
 
+function SystemHealthCard({ health, isLoading }: { health?: AdminSystemHealth | null; isLoading: boolean }) {
+  const isUnavailable = health === null
+  const services = health?.services ?? []
+  const operational = health?.status === "Operational"
+  return (
+    <Card className="group min-h-[118px] overflow-hidden transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
+      <CardContent className="grid gap-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105">
+              <Gauge size={20} weight="duotone" />
+            </div>
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">System health</p>
+          </div>
+          {isLoading ? (
+            <div className="h-5 w-20 shrink-0 animate-pulse rounded-full bg-slate-100" />
+          ) : isUnavailable ? (
+            <Badge className="shrink-0">Unavailable</Badge>
+          ) : (
+            <Badge variant={operational ? "success" : "warning"} className="shrink-0 gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${operational ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />
+              {health?.status}
+            </Badge>
+          )}
+        </div>
+        {isLoading ? (
+          <div className="h-6 w-44 animate-pulse rounded bg-slate-100" />
+        ) : isUnavailable ? (
+          <p className="font-display text-[28px] font-semibold leading-none text-slate-950">--</p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-0.5">
+            {services.map((service) => (
+              <span key={service.name} className="flex items-center gap-1.5 text-[12.5px] font-medium text-slate-600">
+                <span className={`h-2 w-2 rounded-full ${service.up ? "bg-emerald-500" : "bg-rose-500"}`} />
+                {service.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function AdminMetrics({ className = "" }: { className?: string }) {
   const [users, setUsers] = useState<AdminUserMetric | null>()
   const [courses, setCourses] = useState<AdminCourseMetric | null>()
@@ -139,7 +183,11 @@ function AdminMetrics({ className = "" }: { className?: string }) {
       <MetricCard
         label="Total users"
         value={(users?.total ?? 0).toLocaleString()}
-        status={users && <Badge variant="info">+{users.growth}%</Badge>}
+        status={users && (
+          <Badge variant={users.growth < 0 ? "warning" : "info"}>
+            {users.growth >= 0 ? "+" : ""}{users.growth}% / 30d
+          </Badge>
+        )}
         icon={<UsersThree size={20} weight="duotone" />}
         iconClassName="bg-cyan-50 text-cyan-700"
         isLoading={users === undefined}
@@ -156,20 +204,7 @@ function AdminMetrics({ className = "" }: { className?: string }) {
         progress={courses?.progress}
         progressClassName="bg-emerald-600"
       />
-      <MetricCard
-        label="System health"
-        value={`${health?.uptime ?? 0}%`}
-        status={health && (
-          <Badge variant="success" className="gap-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            {health.status || "Online"}
-          </Badge>
-        )}
-        icon={<Gauge size={20} weight="duotone" />}
-        iconClassName="bg-violet-50 text-violet-700"
-        isLoading={health === undefined}
-        isUnavailable={health === null}
-      />
+      <SystemHealthCard health={health} isLoading={health === undefined} />
     </div>
   )
 }
