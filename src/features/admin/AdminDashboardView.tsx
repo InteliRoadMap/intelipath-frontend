@@ -35,6 +35,7 @@ import {
   Logo
 } from "@/components"
 import { useAuth } from "@/context"
+import { toast } from "@/utils/toast"
 import { ROLES, ROUTES } from "@/shared"
 import type {
   AdminCourseMetric,
@@ -83,27 +84,33 @@ function MetricCard({
   progressClassName = "bg-cyan-700"
 }: MetricCardProps) {
   return (
-    <Card className="min-h-[118px] overflow-hidden transition-colors hover:border-slate-300 hover:shadow-md">
+    <Card className="group min-h-[118px] overflow-hidden transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
       <CardContent className="grid gap-3 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${iconClassName}`}>
+            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105 ${iconClassName}`}>
               {icon}
             </div>
             <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
           </div>
-          {isUnavailable ? (
+          {isLoading ? (
+            <div className="h-5 w-14 shrink-0 animate-pulse rounded-full bg-slate-100" />
+          ) : isUnavailable ? (
             <Badge className="shrink-0">Unavailable</Badge>
           ) : (
             status
           )}
         </div>
 
-        <p className="font-display text-2xl font-semibold leading-none text-slate-950">
-          {isUnavailable ? "--" : value}
-        </p>
+        {isLoading ? (
+          <div className="h-8 w-24 animate-pulse rounded-lg bg-slate-100" />
+        ) : (
+          <p className="font-display text-[28px] font-semibold leading-none text-slate-950">
+            {isUnavailable ? "--" : value}
+          </p>
+        )}
 
-        {progress !== undefined && !isUnavailable && (
+        {progress !== undefined && !isUnavailable && !isLoading && (
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
               className={`h-full rounded-full transition-all ${progressClassName}`}
@@ -295,7 +302,28 @@ function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedUsers.map((user) => (
+              {isLoading && Array.from({ length: USERS_PER_PAGE }).map((_, i) => (
+                <tr key={`sk-${i}`} className="h-[72px]">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                      <div className="space-y-2">
+                        <div className="h-3.5 w-32 animate-pulse rounded bg-slate-100" />
+                        <div className="h-3 w-44 animate-pulse rounded bg-slate-100" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4"><div className="h-5 w-16 animate-pulse rounded-full bg-slate-100" /></td>
+                  <td className="px-5 py-4"><div className="h-3.5 w-20 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-5 py-4">
+                    <div className="flex justify-end gap-2">
+                      <div className="h-8 w-[100px] animate-pulse rounded-md bg-slate-100" />
+                      <div className="h-8 w-[100px] animate-pulse rounded-md bg-slate-100" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!isLoading && paginatedUsers.map((user) => (
                 <tr key={user.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                   <td className="px-5 py-4 align-middle">
                     <div className="flex items-center gap-3">
@@ -390,12 +418,6 @@ export default function AdminDashboardView() {
   const navigate = useNavigate()
   const [isTriggering, setIsTriggering] = useState(false)
   const [isTriggeringScraper, setIsTriggeringScraper] = useState(false)
-  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
-
-  const showToast = (text: string, type: 'error' | 'success') => {
-    setToastMessage({ text, type })
-    setTimeout(() => setToastMessage(null), 4000)
-  }
 
   const handleLogout = async () => {
     await logout()
@@ -406,9 +428,9 @@ export default function AdminDashboardView() {
     setIsTriggering(true)
     try {
       await adminApi.triggerSkillExtraction()
-      showToast("Skill extraction job started successfully.", "success")
+      toast.success("Skill extraction job started successfully.")
     } catch (error) {
-      showToast("Failed to trigger skill extraction job.", "error")
+      toast.error("Failed to trigger skill extraction job.")
     } finally {
       setIsTriggering(false)
     }
@@ -418,9 +440,9 @@ export default function AdminDashboardView() {
     setIsTriggeringScraper(true)
     try {
       await adminApi.triggerJobScraper()
-      showToast("Job scraper started successfully.", "success")
+      toast.success("Job scraper started successfully.")
     } catch (error) {
-      showToast("Failed to trigger job scraper.", "error")
+      toast.error("Failed to trigger job scraper.")
     } finally {
       setIsTriggeringScraper(false)
     }
@@ -470,56 +492,53 @@ export default function AdminDashboardView() {
               System overview
             </h1>
             <p className="mt-2 mb-4 max-w-[280px] text-sm leading-5 text-slate-500">
-              Monitor platform health and manage user access.
+              Monitor platform health, run background jobs and manage user access.
             </p>
-            <div className="flex flex-col gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 justify-start"
+
+            <div className="rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+              <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Operations
+              </p>
+              <button
+                type="button"
                 onClick={handleTriggerJob}
                 disabled={isTriggering || isTriggeringScraper}
+                className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-cyan-50/70 disabled:pointer-events-none disabled:opacity-50"
               >
-                <Lightning size={16} weight="duotone" className={isTriggering ? "animate-pulse" : ""} /> 
-                {isTriggering ? "Triggering..." : "Force Run Skill Extraction"}
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 justify-start"
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-100">
+                  <Lightning size={15} weight="duotone" className={isTriggering ? "animate-pulse" : ""} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-slate-800">
+                    {isTriggering ? "Running skill extraction…" : "Run Skill Extraction"}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-400">Extract skills from job posts</p>
+                </div>
+                <ArrowRight size={14} weight="bold" className="shrink-0 text-slate-300 transition-colors group-hover:text-cyan-600" />
+              </button>
+              <button
+                type="button"
                 onClick={handleTriggerScraper}
                 disabled={isTriggeringScraper || isTriggering}
+                className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-indigo-50/70 disabled:pointer-events-none disabled:opacity-50"
               >
-                <Lightning size={16} weight="duotone" className={isTriggeringScraper ? "animate-pulse" : ""} /> 
-                {isTriggeringScraper ? "Triggering..." : "Force Run Job Scraper"}
-              </Button>
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100">
+                  <Lightning size={15} weight="duotone" className={isTriggeringScraper ? "animate-pulse" : ""} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-slate-800">
+                    {isTriggeringScraper ? "Running job scraper…" : "Run Job Scraper"}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-400">Scrape the latest job listings</p>
+                </div>
+                <ArrowRight size={14} weight="bold" className="shrink-0 text-slate-300 transition-colors group-hover:text-indigo-600" />
+              </button>
             </div>
           </div>
           <AdminMetrics className="min-w-0" />
         </section>
         <UserManagement />
       </main>
-
-      {/* Floating Toast */}
-      <div
-        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
-          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        } ${toastMessage?.type === 'error' ? 'shadow-red-900/20' : 'shadow-emerald-900/20'}`}
-      >
-        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-          {toastMessage?.type === 'error' ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          )}
-        </div>
-        {toastMessage?.text}
-      </div>
     </div>
   )
 }
