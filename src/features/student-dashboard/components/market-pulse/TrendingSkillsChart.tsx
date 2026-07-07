@@ -53,7 +53,9 @@ export default function TrendingSkillsChart({ data }: Props) {
       skills.add(skill.skillName);
       skill.dataPoints.forEach(dp => {
         const existing = dateMap.get(dp.date) || { date: dp.date };
-        existing[skill.skillName] = dp.jobsNeeded;
+        // Coerce to a real number so recharts uses a sorted numeric Y-axis
+        // instead of treating the values as unordered categories.
+        existing[skill.skillName] = Number(dp.jobsNeeded) || 0;
         dateMap.set(dp.date, existing);
       });
     });
@@ -94,10 +96,13 @@ export default function TrendingSkillsChart({ data }: Props) {
               return `${d.getMonth() + 1}/${d.getDate()}`;
             }}
           />
-          <YAxis 
-            axisLine={false} 
-            tickLine={false} 
-            tick={{ fontSize: 12, fill: '#64748b' }} 
+          <YAxis
+            type="number"
+            domain={[0, 'auto']}
+            allowDecimals={false}
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 12, fill: '#64748b' }}
             tickFormatter={(value) => `${value} jobs`}
             width={70}
           />
