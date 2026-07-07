@@ -37,7 +37,7 @@ import {
 import { useAuth } from "@/context"
 import { toast } from "@/utils/toast"
 import { ROLES, ROUTES } from "@/shared"
-import { AdminContentTab, AdminMarketTab } from "./components/AdminExtraTabs"
+import { AdminContentTab, AdminMarketTab, AdminSystemTab } from "./components/AdminExtraTabs"
 import type {
   AdminCourseMetric,
   AdminRole,
@@ -549,7 +549,8 @@ const ADMIN_TABS = [
   { key: "overview", label: "Overview", icon: Layout },
   { key: "users", label: "Users", icon: UsersThree },
   { key: "content", label: "Content", icon: GraduationCap },
-  { key: "market", label: "Market", icon: Pulse }
+  { key: "market", label: "Market", icon: Pulse },
+  { key: "system", label: "System", icon: Gauge }
 ] as const
 type AdminTab = (typeof ADMIN_TABS)[number]["key"]
 
@@ -717,6 +718,8 @@ export default function AdminDashboardView() {
         {tab === "content" && <AdminContentTab />}
 
         {tab === "market" && <AdminMarketTab />}
+
+        {tab === "system" && <AdminSystemTab />}
       </main>
     </div>
   )

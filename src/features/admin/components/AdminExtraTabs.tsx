@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react"
-import { Briefcase, GraduationCap, Buildings, MapPin, Money, ArrowSquareOut } from "@phosphor-icons/react"
+import { useEffect, useState, type ReactNode } from "react"
+import { Briefcase, GraduationCap, Buildings, MapPin, Money, ArrowSquareOut, Clock, Database, Cpu, Tag, Coffee } from "@phosphor-icons/react"
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components"
 import { mainClient } from "@/shared/api"
+import adminApi from "@/features/admin/api/adminApi"
+import type { AdminSystemHealth } from "@/features/admin/admin.types"
 
 function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>()
@@ -117,6 +119,148 @@ export function AdminContentTab() {
           )}
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+// ─── System tab: live runtime health & diagnostics ─────────────────────────────
+function formatUptime(ms?: number): string {
+  if (!ms || ms < 0) return "—"
+  const s = Math.floor(ms / 1000)
+  const d = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  if (d > 0) return `${d}d ${h}h ${m}m`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m ${s % 60}s`
+}
+
+function StatTile({ icon, label, value, sub }: { icon: ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center gap-2 text-slate-500">
+        {icon}
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em]">{label}</span>
+      </div>
+      <p className="mt-2 font-display text-[22px] font-semibold leading-none text-slate-950">{value}</p>
+      {sub && <p className="mt-1 text-[12px] text-slate-400">{sub}</p>}
+    </div>
+  )
+}
+
+function UsageBar({ used, total, color }: { used: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0
+  return (
+    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
+
+export function AdminSystemTab() {
+  const [health, setHealth] = useState<AdminSystemHealth | null>()
+  useEffect(() => {
+    let alive = true
+    void adminApi.getSystemHealth().then((h) => { if (alive) setHealth(h) }).catch(() => { if (alive) setHealth(null) })
+    return () => { alive = false }
+  }, [])
+
+  if (health === undefined) return <SectionSkeleton />
+  if (health === null) return <EmptyState text="Could not load system status." />
+
+  const operational = health.status === "Operational"
+  const db = health.db
+  const mem = health.memory
+
+  return (
+    <div className="space-y-4">
+      {/* Overall + component checks */}
+      <Card className="overflow-hidden">
+        <CardHeader className="flex-row items-center justify-between border-b border-slate-100 p-4">
+          <div>
+            <CardTitle className="text-base">System status</CardTitle>
+            <CardDescription>{health.servicesUp}/{health.servicesTotal} services online</CardDescription>
+          </div>
+          <Badge variant={operational ? "success" : "warning"} className="gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${operational ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />
+            {health.status}
+          </Badge>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
+          {health.services.map((s) => (
+            <div key={s.name} className={`flex items-center gap-3 rounded-xl border p-3.5 ${s.up ? "border-emerald-100 bg-emerald-50/40" : "border-rose-100 bg-rose-50/40"}`}>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${s.up ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                <span className={`h-2.5 w-2.5 rounded-full ${s.up ? "bg-emerald-500" : "bg-rose-500"}`} />
+              </span>
+              <div>
+                <p className="text-[14px] font-semibold text-slate-800">{s.name}</p>
+                <p className={`text-[12px] font-medium ${s.up ? "text-emerald-600" : "text-rose-600"}`}>{s.up ? "Operational" : "Unreachable"}</p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Runtime detail */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile icon={<Clock size={15} weight="duotone" />} label="Uptime" value={formatUptime(health.uptimeMillis)} sub="since last restart" />
+        <StatTile icon={<Tag size={15} weight="duotone" />} label="Version" value={health.version || "—"} sub="backend build" />
+        <StatTile icon={<Coffee size={15} weight="duotone" />} label="Java" value={health.javaVersion || "—"} sub="runtime" />
+        <StatTile
+          icon={<Cpu size={15} weight="duotone" />}
+          label="Memory"
+          value={mem ? `${mem.usedMb} MB` : "—"}
+          sub={mem ? `of ${mem.maxMb} MB max` : undefined}
+        />
+      </div>
+
+      {/* DB pool + memory usage bars */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
+            <Database size={18} weight="duotone" className="text-cyan-700" />
+            <CardTitle className="text-base">Database pool</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-2">
+            {db ? (
+              <>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {[["Active", db.active], ["Idle", db.idle], ["Total", db.total], ["Max", db.max]].map(([l, v]) => (
+                    <div key={String(l)} className="rounded-lg bg-slate-50 py-2">
+                      <p className="font-display text-lg font-semibold text-slate-900">{String(v)}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{l}</p>
+                    </div>
+                  ))}
+                </div>
+                <UsageBar used={db.active} total={db.max} color="bg-cyan-600" />
+                <p className="mt-1.5 text-[12px] text-slate-400">{db.active} of {db.max} connections in use</p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">Pool stats unavailable.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
+            <Cpu size={18} weight="duotone" className="text-violet-700" />
+            <CardTitle className="text-base">Heap memory</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-2">
+            {mem ? (
+              <>
+                <p className="font-display text-2xl font-semibold text-slate-900">
+                  {mem.usedMb} <span className="text-base font-medium text-slate-400">/ {mem.maxMb} MB</span>
+                </p>
+                <UsageBar used={mem.usedMb} total={mem.maxMb} color="bg-violet-600" />
+                <p className="mt-1.5 text-[12px] text-slate-400">{mem.maxMb > 0 ? Math.round((mem.usedMb / mem.maxMb) * 100) : 0}% of max heap used</p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">Memory stats unavailable.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

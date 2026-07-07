@@ -21,6 +21,11 @@ export interface AdminSystemHealth {
   servicesUp: number
   servicesTotal: number
   services: AdminServiceStatus[]
+  uptimeMillis?: number
+  version?: string
+  javaVersion?: string
+  db?: { active: number; idle: number; total: number; max: number } | null
+  memory?: { usedMb: number; maxMb: number } | null
 }
 
 export interface AdminUserListItem {
