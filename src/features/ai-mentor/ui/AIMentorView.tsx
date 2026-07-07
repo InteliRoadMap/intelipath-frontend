@@ -645,7 +645,7 @@ export default function AIMentorPage() {
                                 <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce delay-300"></div>
                               </div>
                             ) : (
-                              <div className="prose prose-zinc max-w-none prose-p:leading-[1.7] prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13.5px] prose-a:text-blue-600 prose-a:font-medium">
+                              <div className="prose prose-zinc max-w-none text-[15px] prose-headings:font-semibold prose-headings:text-zinc-900 prose-headings:mt-5 prose-headings:mb-2 prose-headings:first:mt-0 prose-h1:text-[19px] prose-h2:text-[17px] prose-h3:text-[15px] prose-p:leading-[1.7] prose-p:my-2.5 prose-strong:text-zinc-900 prose-strong:font-semibold prose-ul:my-2.5 prose-ol:my-2.5 prose-li:my-1 prose-li:marker:text-zinc-400 prose-hr:my-5 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13px] prose-a:text-blue-600 prose-a:font-medium">
                                   <ReactMarkdown 
                                     remarkPlugins={[remarkGfm, remarkBreaks]}
                                     rehypePlugins={[rehypeRaw]}
