@@ -4,26 +4,7 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from
 import { mainClient } from "@/shared/api"
 import adminApi from "@/features/admin/api/adminApi"
 import type { AdminSystemHealth } from "@/features/admin/admin.types"
-
-// The scraper stores each tag field as JSON (a string, an array, or an object
-// of arrays). Flatten whatever shape arrives into a clean, de-duplicated list of
-// short chip labels. Legacy rows that hold non-JSON text fall through untouched.
-function normalizeTags(raw: unknown): string[] {
-  const out: string[] = []
-  const push = (v: unknown) => {
-    if (v == null) return
-    if (Array.isArray(v)) return void v.forEach(push)
-    if (typeof v === "object") return void Object.values(v as Record<string, unknown>).forEach(push)
-    const s = String(v).trim()
-    if (!s) return
-    if ((s[0] === "[" && s.endsWith("]")) || (s[0] === "{" && s.endsWith("}"))) {
-      try { return void push(JSON.parse(s)) } catch { /* not JSON, keep as text */ }
-    }
-    out.push(s)
-  }
-  push(raw)
-  return Array.from(new Set(out))
-}
+import { normalizeTags } from "@/utils/tags"
 
 function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>()

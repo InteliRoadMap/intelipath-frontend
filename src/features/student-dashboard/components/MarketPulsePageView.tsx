@@ -7,6 +7,7 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
+import { normalizeTags } from '@/utils/tags';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
 import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';
@@ -136,7 +137,15 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
         
         // Handle RecruitmentPostResponse (which might have a nested list of posts depending on backend)
         const postsData = postsRes.data?.data || postsRes.data || [];
-        setRecruitmentPosts(Array.isArray(postsData) ? postsData : []);
+        // Normalize each post's tags so chips, category grouping and search all
+        // work on clean strings instead of raw scraped JSON.
+        const normalizedPosts = (Array.isArray(postsData) ? postsData : []).map((post: RecruitmentPost) => ({
+          ...post,
+          recruitment: post.recruitment
+            ? { ...post.recruitment, tags: normalizeTags(post.recruitment.tags) }
+            : post.recruitment,
+        }));
+        setRecruitmentPosts(normalizedPosts);
       } catch (error) {
         console.error("Failed to fetch market pulse data", error);
       } finally {
