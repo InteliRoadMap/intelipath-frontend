@@ -510,8 +510,13 @@ export const studentDashboardService = {
                 if (typeof res === 'string') {
                     try { parsed = JSON.parse(res); } catch (e) { parsed = []; }
                 }
-                if (Array.isArray(parsed)) return parsed.map((r: any, i: number) => ({ title: r.title || `Resource ${i+1}`, url: r.url || r.link || "" }));
-                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }];
+                if (Array.isArray(parsed)) return parsed
+                    .map((r: any, i: number) => ({
+                        title: (r && typeof r === 'object' && r.title) ? r.title : `Resource ${i + 1}`,
+                        url: typeof r === 'string' ? r : (r?.url || r?.link || "")
+                    }))
+                    .filter((x: { url: string }) => x.url);
+                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }].filter(x => x.url);
                 return [];
             };
             resources = parseResourceField(rawResourceData);
