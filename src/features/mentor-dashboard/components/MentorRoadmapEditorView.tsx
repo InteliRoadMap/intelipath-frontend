@@ -91,7 +91,6 @@ const MentorRoadmapEditorView = () => {
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<any>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
-  const [dirtyPositions, setDirtyPositions] = useState<Record<string, { x: number; y: number }>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -141,7 +140,6 @@ const MentorRoadmapEditorView = () => {
     if (!id) return
     setIsLoading(true)
     setSelectedId(null)
-    setDirtyPositions({})
     try {
       const response = await roadmapEditorApi.getCareerNodes(id)
       setEditorNodes(response.data)
@@ -184,10 +182,6 @@ const MentorRoadmapEditorView = () => {
     })
   }
 
-  const handleNodeDragStop = (_: unknown, node: Node) => {
-    setDirtyPositions(prev => ({ ...prev, [node.id]: { x: node.position.x, y: node.position.y } }))
-  }
-
   const startCreate = () => {
     setSelectedId(null)
     setForm(emptyForm)
@@ -203,12 +197,9 @@ const MentorRoadmapEditorView = () => {
     parentNodeId: form.parentNodeId || null,
     previousNodeId: form.previousNodeId || null,
     resources: form.resourcesText.split("\n").map(s => s.trim()).filter(Boolean),
-    positionX: selectedId
-      ? (dirtyPositions[selectedId]?.x ?? selectedNode?.positionX ?? null)
-      : null,
-    positionY: selectedId
-      ? (dirtyPositions[selectedId]?.y ?? selectedNode?.positionY ?? null)
-      : null
+    // Positions are auto-arranged; preserve the existing one on edit, none on create.
+    positionX: selectedId ? (selectedNode?.positionX ?? null) : null,
+    positionY: selectedId ? (selectedNode?.positionY ?? null) : null
   })
 
   const handleSaveNode = async () => {
@@ -249,24 +240,6 @@ const MentorRoadmapEditorView = () => {
     }
   }
 
-  const handleSaveLayout = async () => {
-    const entries = Object.entries(dirtyPositions)
-    if (entries.length === 0) return
-    setIsSaving(true)
-    try {
-      await roadmapEditorApi.savePositions(
-        entries.map(([nodeId, pos]) => ({ nodeId, positionX: pos.x, positionY: pos.y }))
-      )
-      toast.success(`Layout saved (${entries.length} node${entries.length > 1 ? "s" : ""}).`)
-      setDirtyPositions({})
-      await loadNodes(careerId)
-    } catch (error) {
-      console.error("[Roadmap Editor] Failed to save layout:", error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   const handleTabChange = (tab: string) => {
     if (tab === "dashboard") navigate(ROUTES.DASHBOARD_MENTOR)
     if (tab === "market") navigate(ROUTES.DASHBOARD_MENTOR)
@@ -277,7 +250,6 @@ const MentorRoadmapEditorView = () => {
     navigate(ROUTES.LOGIN)
   }
 
-  const dirtyCount = Object.keys(dirtyPositions).length
   const nodeOptions = editorNodes.filter(n => n.nodeId !== selectedId)
 
   const fieldClass = "w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
@@ -309,15 +281,6 @@ const MentorRoadmapEditorView = () => {
           </button>
 
           <button
-            onClick={handleSaveLayout}
-            disabled={dirtyCount === 0 || isSaving}
-            className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-cyan-700 text-white text-[12px] font-semibold hover:bg-cyan-600 transition-colors active:scale-[0.98] disabled:opacity-40"
-          >
-            <FloppyDisk size={13} weight="bold" />
-            Save layout{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
-          </button>
-
-          <button
             onClick={() => loadNodes(careerId)}
             disabled={isLoading}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white text-slate-600 ring-1 ring-slate-200 text-[12px] font-medium hover:bg-slate-50 transition-colors disabled:opacity-40"
@@ -326,7 +289,7 @@ const MentorRoadmapEditorView = () => {
           </button>
 
           <span className="ml-auto text-[11px] text-slate-400 font-medium">
-            {isLoading ? "Loading..." : `${editorNodes.length} nodes — drag to arrange, click to edit`}
+            {isLoading ? "Loading..." : `${editorNodes.length} nodes — click a node to edit`}
           </span>
         </div>
 
@@ -340,8 +303,7 @@ const MentorRoadmapEditorView = () => {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={handleNodeClick}
-                onNodeDragStop={handleNodeDragStop}
-                nodesDraggable
+                nodesDraggable={false}
                 nodesConnectable={false}
                 fitView
                 minZoom={0.2}
