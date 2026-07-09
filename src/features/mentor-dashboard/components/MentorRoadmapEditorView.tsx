@@ -318,7 +318,8 @@ const MentorRoadmapEditorView = () => {
                 nodesDraggable={false}
                 nodesConnectable={false}
                 fitView
-                minZoom={0.2}
+                fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+                minZoom={0.35}
                 proOptions={{ hideAttribution: true }}
               >
                 <Background gap={24} color="#e2e8f0" />
@@ -338,7 +339,7 @@ const MentorRoadmapEditorView = () => {
               </h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
               <div>
                 <label className={labelClass}>Node name *</label>
                 <input className={fieldClass} value={form.nodeName}
