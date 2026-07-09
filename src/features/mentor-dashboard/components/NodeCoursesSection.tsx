@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { BookOpen, Plus, Trash, Users, X } from "@phosphor-icons/react"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
 import { emitToast } from "@/utils/toast"
+import { Select } from "@/components"
 
 interface Props {
   careerId: string
@@ -132,9 +133,9 @@ export function NodeCoursesSection({ careerId, nodeId }: Props) {
           <div className="grid gap-1.5">
             <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Course title" className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500" />
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description" rows={2} className="w-full resize-none rounded-md border border-slate-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500" />
-            <select value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value as CourseLevel }))} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500">
+            <Select className="h-8 text-[12px]" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value as CourseLevel }))}>
               {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
+            </Select>
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Lessons</span>

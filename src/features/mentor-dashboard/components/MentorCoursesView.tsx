@@ -4,6 +4,7 @@ import { ENDPOINTS, mainClient } from "@/shared/api"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
 import roadmapEditorApi, { type EditorNode } from "../api/roadmapEditorApi"
 import { emitToast } from "@/utils/toast"
+import { Select } from "@/components"
 
 interface CareerOption { careerId: string; careerName: string }
 
@@ -184,24 +185,24 @@ export function MentorCoursesView() {
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Course title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400" />
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What will students learn?" rows={3} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400" />
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.careerId} onChange={e => setForm(f => ({ ...f, careerId: e.target.value, nodeId: "" }))} className="rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400">
+                <Select className="rounded-lg" value={form.careerId} onChange={e => setForm(f => ({ ...f, careerId: e.target.value, nodeId: "" }))}>
                   <option value="">Select career path…</option>
                   {careers.map(c => <option key={c.careerId} value={c.careerId}>{c.careerName}</option>)}
-                </select>
-                <select value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value as CourseLevel }))} className="rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400">
+                </Select>
+                <Select className="rounded-lg" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value as CourseLevel }))}>
                   {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
+                </Select>
               </div>
 
-              <select
+              <Select
+                className="rounded-lg"
                 value={form.nodeId}
                 onChange={e => setForm(f => ({ ...f, nodeId: e.target.value }))}
                 disabled={!form.careerId}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="">Whole career (no specific node)</option>
                 {nodes.map(n => <option key={n.nodeId} value={n.nodeId}>Node: {n.nodeName}</option>)}
-              </select>
+              </Select>
 
               <div className="mt-1">
                 <div className="mb-2 flex items-center justify-between">

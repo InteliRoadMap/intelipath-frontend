@@ -17,6 +17,7 @@ import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
 import NodeCoursesSection from "./NodeCoursesSection"
 import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
+import { Select } from "@/components"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -273,15 +274,16 @@ const MentorRoadmapEditorView = () => {
         {/* Toolbar */}
         <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 px-4 py-2.5 shadow-sm shrink-0">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Career</span>
-          <select
+          <Select
             value={careerId}
             onChange={e => setCareerId(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-800 outline-none focus:border-cyan-600"
+            wrapperClassName="w-auto min-w-[160px]"
+            className="h-9 rounded-lg text-[12px] font-semibold"
           >
             {careers.map(c => (
               <option key={c.careerId} value={c.careerId}>{c.careerName}</option>
             ))}
-          </select>
+          </Select>
 
           <button
             onClick={startCreate}
@@ -355,17 +357,17 @@ const MentorRoadmapEditorView = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className={labelClass}>Stage</label>
-                  <select className={fieldClass} value={form.stage}
+                  <Select className="h-9 text-[12px]" value={form.stage}
                     onChange={e => setForm({ ...form, stage: e.target.value })}>
                     {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label className={labelClass}>Policy</label>
-                  <select className={fieldClass} value={form.completionPolicy}
+                  <Select className="h-9 text-[12px]" value={form.completionPolicy}
                     onChange={e => setForm({ ...form, completionPolicy: e.target.value })}>
                     {POLICIES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -384,20 +386,20 @@ const MentorRoadmapEditorView = () => {
 
               <div>
                 <label className={labelClass}>Parent node</label>
-                <select className={fieldClass} value={form.parentNodeId}
+                <Select className="h-9 text-[12px]" value={form.parentNodeId}
                   onChange={e => setForm({ ...form, parentNodeId: e.target.value })}>
                   <option value="">— none —</option>
                   {nodeOptions.map(n => <option key={n.nodeId} value={n.nodeId}>{n.nodeName}</option>)}
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label className={labelClass}>Previous node</label>
-                <select className={fieldClass} value={form.previousNodeId}
+                <Select className="h-9 text-[12px]" value={form.previousNodeId}
                   onChange={e => setForm({ ...form, previousNodeId: e.target.value })}>
                   <option value="">— none —</option>
                   {nodeOptions.map(n => <option key={n.nodeId} value={n.nodeId}>{n.nodeName}</option>)}
-                </select>
+                </Select>
               </div>
 
               <div>

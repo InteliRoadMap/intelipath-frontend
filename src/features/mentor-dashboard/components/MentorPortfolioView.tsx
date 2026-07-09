@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Select } from "@/components";
 import { LayoutDashboard, MessageSquare, ArrowLeft, Mail, MapPin, GraduationCap, Briefcase, ExternalLink, Send, Users } from 'lucide-react';
 import { UserHeaderActions, Logo, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui';
 import { useAuth } from '@/context';
@@ -164,16 +165,15 @@ export function MentorPortfolioView() {
                       <div className="grid gap-4 py-4">
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-semibold text-slate-700">Feedback Type</label>
-                          <select 
+                          <Select
                             value={feedbackType}
                             onChange={(e) => setFeedbackType(e.target.value)}
-                            className="h-10 rounded-md border border-slate-200 px-3 text-sm focus:border-[#00838f] focus:ring-1 focus:ring-[#00838f] outline-none"
                           >
                             <option value="GENERAL">General Feedback</option>
                             <option value="TECHNICAL">Technical Skills Review</option>
                             <option value="SOFT_SKILL">Soft Skills & Communication</option>
                             <option value="CAREER_ADVICE">Career Advice</option>
-                          </select>
+                          </Select>
                         </div>
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-semibold text-slate-700">Review Comments</label>

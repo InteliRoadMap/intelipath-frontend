@@ -32,7 +32,8 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Logo
+  Logo,
+  Select
 } from "@/components"
 import { useAuth } from "@/context"
 import { toast } from "@/utils/toast"
@@ -428,13 +429,13 @@ function UserManagement({ users, setUsers, isLoading }: {
             <DialogDescription>Change access permissions for {editingUser?.name}.</DialogDescription>
           </DialogHeader>
           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Role</label>
-          <select
+          <Select
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
-            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
+            className="font-semibold"
           >
             {ADMIN_ROLE_OPTIONS.map((role) => <option key={role}>{role}</option>)}
-          </select>
+          </Select>
           {roleError && <p className="mt-3 text-sm font-medium text-rose-600">{roleError}</p>}
           <DialogFooter>
             <Button variant="outline" disabled={isSavingRole} onClick={() => setEditingUser(null)}>Cancel</Button>
