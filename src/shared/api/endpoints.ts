@@ -131,5 +131,19 @@ export const ENDPOINTS = {
     MESSAGES: (sessionId: string) => `/chat/sessions/${sessionId}/messages`,
     STREAM: (sessionId: string) => `/chat/sessions/${sessionId}/stream`,
     UPLOAD_FILE: "/chat/files/upload"
+  },
+  MENTOR_COURSES: {
+    LIST: "/mentor/courses",
+    CREATE: "/mentor/courses",
+    UPDATE: (id: string) => `/mentor/courses/${id}`,
+    DELETE: (id: string) => `/mentor/courses/${id}`,
+    PUBLISH: (id: string) => `/mentor/courses/${id}/publish`,
+  },
+  COURSES: {
+    BROWSE: "/courses",
+    DETAIL: (id: string) => `/courses/${id}`,
+    ENROLL: (id: string) => `/courses/${id}/enroll`,
+    PROGRESS: (id: string) => `/courses/${id}/progress`,
+    MY_ENROLLMENTS: "/courses/me/enrollments",
   }
 } as const

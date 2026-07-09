@@ -31,6 +31,7 @@ import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
+import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import StageLegend from "./StageLegend"
 import { getStageStyle } from "../lib/stageColors"
@@ -509,6 +510,12 @@ export default function StudentRoadmapPageView() {
                </button>
              </div>
           </div>
+
+          {currentCareerId && (
+            <div className="shrink-0 max-h-[46%] overflow-y-auto px-4 pt-4">
+              <StudentCoursesPanel careerId={currentCareerId} careerName={currentCareerName} />
+            </div>
+          )}
 
           <div className="flex-1 flex flex-col overflow-hidden p-5 relative">
             {selectedNodeData ? (

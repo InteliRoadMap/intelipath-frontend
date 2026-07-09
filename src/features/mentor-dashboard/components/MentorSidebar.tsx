@@ -3,9 +3,10 @@ import {
   FolderOpen, 
   ChartLineUp, 
   ChatTeardropText, 
-  TrendUp, 
-  Robot, 
-  User 
+  TrendUp,
+  Robot,
+  User,
+  BookOpen
 } from "@phosphor-icons/react";
 
 type MentorSidebarProps = {
@@ -16,6 +17,7 @@ type MentorSidebarProps = {
 export function MentorSidebar({ activeTab, onTabChange }: MentorSidebarProps) {
   const mainNav = [
     { id: "dashboard", label: "Dashboard", icon: SquaresFour },
+    { id: "courses", label: "Courses", icon: BookOpen },
     { id: "portfolios", label: "E-Portfolios", icon: FolderOpen },
     { id: "progress", label: "Progress reports", icon: ChartLineUp },
     { id: "feedback", label: "My feedback", icon: ChatTeardropText },

@@ -21,6 +21,7 @@ import { Users, Layers, Gauge } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
 import { MentorProgressReportsView } from './MentorProgressReportsView';
+import { MentorCoursesView } from './MentorCoursesView';
 import MarketPulsePageView from '../../student-dashboard/components/MarketPulsePageView';
 
 export function MentorDashboardView() {
@@ -95,6 +96,12 @@ export function MentorDashboardView() {
             <section className="gsap-fade-section">
               <PendingReviewsWidget />
             </section>
+          </div>
+        )}
+
+        {activeTab === 'courses' && (
+          <div className="gsap-fade-section">
+            <MentorCoursesView />
           </div>
         )}
 
