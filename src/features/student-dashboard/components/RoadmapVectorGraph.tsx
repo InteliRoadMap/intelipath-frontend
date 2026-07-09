@@ -285,7 +285,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
           setTimeout(() => {
             const flowEl = document.querySelector('.roadmap-flow');
             const width = flowEl ? flowEl.clientWidth : 800;
-            // Thu nhỏ zoom mặc định xuống 0.6 để nhìn được bao quát hơn
+            // Default zoom 0.6 gives a readable overview of the roadmap.
             const initialZoom = 0.6;
             const centerX = (width / 2) - (140 * initialZoom);
             instance.setViewport({ x: centerX, y: 40, zoom: initialZoom });
@@ -293,6 +293,8 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
         }}
         minZoom={0.1}
         maxZoom={1.5}
+        panOnScroll
+        zoomOnScroll={false}
         className="roadmap-flow"
       >
         <Controls showInteractive={false} className="bg-white/50 backdrop-blur-md border-white/60 shadow-sm" />

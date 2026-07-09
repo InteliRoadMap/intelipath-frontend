@@ -320,6 +320,8 @@ const MentorRoadmapEditorView = () => {
                 fitView
                 fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
                 minZoom={0.35}
+                panOnScroll
+                zoomOnScroll={false}
                 proOptions={{ hideAttribution: true }}
               >
                 <Background gap={24} color="#e2e8f0" />
