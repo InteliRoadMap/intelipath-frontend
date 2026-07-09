@@ -614,7 +614,7 @@ export default function AIMentorPage() {
                                 <div className="flex w-fit items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2">
                                   <FileText size={16} className="text-zinc-500" />
                                   <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Đã đính kèm</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Attached</p>
                                     <p className="max-w-[190px] truncate text-[14px] font-medium text-zinc-800">{attachmentName}</p>
                                   </div>
                                 </div>
@@ -760,9 +760,9 @@ export default function AIMentorPage() {
                 {uploadError ? (
                   <p className="text-[12px] font-medium text-red-500">{uploadError}</p>
                 ) : isUploading ? (
-                  <p className="text-[12px] font-medium text-zinc-500">Đang tải file…</p>
+                  <p className="text-[12px] font-medium text-zinc-500">Uploading file…</p>
                 ) : isSending ? (
-                  <p className="text-[12px] font-medium text-zinc-500">AI đang trả lời…</p>
+                  <p className="text-[12px] font-medium text-zinc-500">AI is replying…</p>
                 ) : (
                   <p className="text-[12px] text-zinc-400">AI can make mistakes. Consider verifying important information.</p>
                 )}
@@ -788,9 +788,9 @@ export default function AIMentorPage() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-zinc-200"
             >
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Rời khỏi ứng dụng?</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Leave the app?</h3>
               <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-                Bạn đang chuẩn bị rời khỏi hệ thống InteliPath để truy cập một trang web bên ngoài. Bạn có chắc chắn muốn tiếp tục không?
+                You're about to leave InteliPath to open an external website. Are you sure you want to continue?
               </p>
               <div className="bg-zinc-50 p-3 rounded-lg mb-6 border border-zinc-100">
                 <p className="text-xs text-zinc-500 font-mono break-all line-clamp-2">{externalLink}</p>
@@ -800,7 +800,7 @@ export default function AIMentorPage() {
                   onClick={() => setExternalLink(null)}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button 
                   onClick={() => {
@@ -809,7 +809,7 @@ export default function AIMentorPage() {
                   }}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm"
                 >
-                  Tiếp tục
+                  Continue
                 </button>
               </div>
             </motion.div>

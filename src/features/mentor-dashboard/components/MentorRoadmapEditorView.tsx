@@ -373,7 +373,7 @@ const MentorRoadmapEditorView = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Parent node (con của)</label>
+                <label className={labelClass}>Parent node</label>
                 <select className={fieldClass} value={form.parentNodeId}
                   onChange={e => setForm({ ...form, parentNodeId: e.target.value })}>
                   <option value="">— none —</option>
@@ -382,7 +382,7 @@ const MentorRoadmapEditorView = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Previous node (node trước)</label>
+                <label className={labelClass}>Previous node</label>
                 <select className={fieldClass} value={form.previousNodeId}
                   onChange={e => setForm({ ...form, previousNodeId: e.target.value })}>
                   <option value="">— none —</option>
@@ -391,7 +391,7 @@ const MentorRoadmapEditorView = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Resource links (mỗi dòng 1 URL)</label>
+                <label className={labelClass}>Resource links (one URL per line)</label>
                 <textarea
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15 min-h-[80px]"
                   placeholder="https://..."

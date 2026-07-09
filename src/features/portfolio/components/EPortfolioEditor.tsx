@@ -109,9 +109,9 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
       
       const newProject = {
         id: aiData.projectId || 'proj-' + Date.now(),
-        title: aiData.projectName || 'Tên Project',
+        title: aiData.projectName || 'Project Name',
         tech: aiData.techStack ? Object.values(aiData.techStack).flat().join(', ') : 'Tech Stack',
-        description: aiData.description || 'Mô tả dự án',
+        description: aiData.description || 'Project description',
         icon: 'fab fa-github',
         codeLink: aiData.repoUrl || '#',
         demoLink: aiData.demoUrl || '#'
