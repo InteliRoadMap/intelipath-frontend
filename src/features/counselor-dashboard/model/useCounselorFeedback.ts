@@ -70,25 +70,37 @@ export function useStudentList(): UseStudentListResult {
   }
 }
 
-// ─── useFeedbackHistory ───────────────────────────────────────────────────────
-export interface UseFeedbackHistoryResult {
+// ─── useStudentDetailInfo ───────────────────────────────────────────────────────
+export interface UseStudentDetailInfoResult {
+  roadmapProgress: number
+  missingSkills: string[]
   feedbacks: Feedback[]
   loading: boolean
   refetch: () => void
 }
 
-export function useFeedbackHistory(
+export function useStudentDetailInfo(
   studentId: string
-): UseFeedbackHistoryResult {
+): UseStudentDetailInfoResult {
+  const [roadmapProgress, setRoadmapProgress] = useState(0)
+  const [missingSkills, setMissingSkills] = useState<string[]>([])
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     setLoading(true)
     counselorApi
-      .getHistoryFeedback(studentId)
-      .then((r) => setFeedbacks(r?.feedbacks ?? []))
-      .catch(() => setFeedbacks([]))
+      .getStudentInfo(studentId)
+      .then((r) => {
+        setRoadmapProgress(r?.roadmapProgress ?? 0)
+        setMissingSkills(r?.missingSkills ?? [])
+        setFeedbacks(r?.feedbacks ?? [])
+      })
+      .catch(() => {
+        setRoadmapProgress(0)
+        setMissingSkills([])
+        setFeedbacks([])
+      })
       .finally(() => setLoading(false))
   }, [studentId])
 
@@ -96,7 +108,7 @@ export function useFeedbackHistory(
     refetch()
   }, [refetch])
 
-  return { feedbacks, loading, refetch }
+  return { roadmapProgress, missingSkills, feedbacks, loading, refetch }
 }
 
 // ─── useSendFeedback ──────────────────────────────────────────────────────────

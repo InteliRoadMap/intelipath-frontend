@@ -52,7 +52,7 @@ import counselorApi from "@/features/counselor-dashboard/api/counselorApi"
 import { toast } from "@/utils/toast"
 import {
   useStudentList,
-  useFeedbackHistory,
+  useStudentDetailInfo,
   useSendFeedback
 } from "../model/useCounselorFeedback"
 
@@ -148,7 +148,7 @@ function FilterDropdown({
   )
 }
 
-function RoadmapTab({ student }: { student: MyStudent }) {
+function RoadmapTab({ student, roadmapProgress, loading }: { student: MyStudent; roadmapProgress: number; loading: boolean }) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -164,7 +164,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
           bar,
           { width: "0%" },
           {
-            width: `${student.roadmapProgress}%`,
+            width: `${roadmapProgress}%`,
             duration: 1.4,
             ease: "power4.out",
             delay: 0.3
@@ -175,7 +175,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
     { scope: tabRef }
   )
 
-  const pct = student.roadmapProgress ?? 0
+  const pct = roadmapProgress
   const statusLabel =
     pct === 100 ? "Completed" : pct > 0 ? "In Progress" : "Not Started"
   const statusColor =
@@ -284,7 +284,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
 }
 
 // ─── Tab: Skill Gap (from MyAssignedStudent.missingSkills) ───────
-function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
+function SkillGapTab({ skills, loading }: { skills: string[]; loading: boolean }) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -323,8 +323,7 @@ function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
         </p>
       </div>
 
-      {skills.map((skill: any, idx) => {
-        const skillName = typeof skill === "string" ? skill : skill.skillName
+      {skills.map((skillName, idx) => {
         return (
           <div
             key={`${skillName}-${idx}`}
@@ -342,8 +341,8 @@ function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
   )
 }
 
-// ─── Tab: Feedback (uses hooks: useFeedbackHistory + useSendFeedback) ─
-function FeedbackTab({ student }: { student: MyStudent }) {
+// ─── Tab: Feedback (uses hooks: useStudentDetailInfo + useSendFeedback) ─
+function FeedbackTab({ student, feedbacks, loading, refetch }: { student: MyStudent; feedbacks: Feedback[]; loading: boolean; refetch: () => void }) {
   const [content, setContent] = useState("")
   const [type, setType] = useState("GENERAL")
   const tabRef = useRef<HTMLDivElement>(null)
@@ -354,7 +353,6 @@ function FeedbackTab({ student }: { student: MyStudent }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [attachments, setAttachments] = useState<File[]>([])
 
-  const { feedbacks, loading, refetch } = useFeedbackHistory(student.studentId)
   const { send, sending, sent } = useSendFeedback(() => {
     refetch()
     setAttachments([])
@@ -778,6 +776,7 @@ function StudentDetailPanel({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(defaultTab)
+  const { roadmapProgress, missingSkills, feedbacks, loading, refetch } = useStudentDetailInfo(student.studentId)
   const fullName = student.fullName || "Unknown Student"
   const initials =
     fullName
@@ -862,11 +861,11 @@ function StudentDetailPanel({
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] text-slate-600 rounded-lg text-[12px] font-medium border border-slate-200/80 shadow-sm">
                 <Map size={13} className="text-slate-400" />
-                {student.roadmapProgress}% progress
+                {loading ? "..." : roadmapProgress}% progress
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[12px] font-medium border border-rose-100 shadow-sm">
                 <TrendingDown size={13} />
-                {student.missingSkills?.length ?? 0} missing skills
+                {loading ? "..." : missingSkills.length} missing skills
               </div>
             </div>
           </div>
@@ -893,11 +892,11 @@ function StudentDetailPanel({
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {tab === "roadmap" && <RoadmapTab student={student} />}
+          {tab === "roadmap" && <RoadmapTab student={student} roadmapProgress={roadmapProgress} loading={loading} />}
           {tab === "skillgap" && (
-            <SkillGapTab skills={student.missingSkills ?? []} />
+            <SkillGapTab skills={missingSkills} loading={loading} />
           )}
-          {tab === "feedback" && <FeedbackTab student={student} />}
+          {tab === "feedback" && <FeedbackTab student={student} feedbacks={feedbacks} loading={loading} refetch={refetch} />}
         </div>
       </aside>
     </div>
@@ -973,11 +972,21 @@ export default function CounselorFeedbackPage() {
     navigate(ROUTES.LOGIN)
   }
 
+  // Chỉ add/remove student của trang hiện tại, giữ nguyên các trang khác
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentPageIds = students.map((s) => s.studentId)
     if (e.target.checked) {
-      setSelectedStudentIds(new Set(students.map((s) => s.studentId)))
+      setSelectedStudentIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.add(id))
+        return next
+      })
     } else {
-      setSelectedStudentIds(new Set())
+      setSelectedStudentIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.delete(id))
+        return next
+      })
     }
   }
 
@@ -990,6 +999,10 @@ export default function CounselorFeedbackPage() {
     }
     setSelectedStudentIds(newSelected)
   }
+
+  // Tất cả student trang hiện tại đã được chọn chưa?
+  const isAllCurrentPageSelected =
+    students.length > 0 && students.every((s) => selectedStudentIds.has(s.studentId))
 
   const handleExportExcel = async () => {
     if (selectedStudentIds.size === 0) return
@@ -1251,7 +1264,6 @@ export default function CounselorFeedbackPage() {
                   setSize(20)
                   setPage(0)
                 } else {
-                  setSelectedStudentIds(new Set())
                   setSize(7)
                   setPage(0)
                 }
@@ -1287,24 +1299,18 @@ export default function CounselorFeedbackPage() {
         {/* Student list */}
         <div className="bg-white border border-slate-200/80 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.06)] overflow-hidden mt-8">
           <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider items-center">
-            <div className="col-span-4 flex items-center gap-3">
+            <div className="col-span-3 flex items-center gap-3">
               {isExportMode && (
                 <div
                   onClick={(e) => {
                     e.stopPropagation()
                     const fakeEvent = {
-                      target: {
-                        checked: !(
-                          students.length > 0 &&
-                          selectedStudentIds.size === students.length
-                        )
-                      }
+                      target: { checked: !isAllCurrentPageSelected }
                     } as any
                     handleSelectAll(fakeEvent)
                   }}
                   className={`w-5 h-5 rounded flex items-center justify-center border transition-all shadow-sm cursor-pointer ${
-                    students.length > 0 &&
-                    selectedStudentIds.size === students.length
+                    isAllCurrentPageSelected
                       ? "bg-[#00838f] border-[#00838f] text-white scale-110"
                       : "border-slate-300 bg-white text-transparent hover:border-[#00838f]"
                   }`}
@@ -1313,11 +1319,16 @@ export default function CounselorFeedbackPage() {
                 </div>
               )}
               <span>Student</span>
+              {isExportMode && selectedStudentIds.size > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center px-2 h-5 rounded-full bg-[#00838f] text-white text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">
+                  Đã chọn {selectedStudentIds.size}
+                </span>
+              )}
             </div>
+            <div className="col-span-3">Email</div>
             <div className="col-span-2">University</div>
-            <div className="col-span-3">Career Path</div>
-            <div className="col-span-2">Progress</div>
-            <div className="col-span-1 text-right">Action</div>
+            <div className="col-span-2">Career Path</div>
+            <div className="col-span-2 text-right">Action</div>
           </div>
 
           {loading ? (
@@ -1327,23 +1338,23 @@ export default function CounselorFeedbackPage() {
                   key={i}
                   className="grid grid-cols-12 gap-4 px-6 py-4 items-center animate-pulse"
                 >
-                  <div className="col-span-4 flex items-center gap-3">
+                  <div className="col-span-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0" />
                     <div className="space-y-2 flex-1">
                       <div className="h-3.5 bg-slate-100 rounded w-3/4" />
                       <div className="h-3 bg-slate-100 rounded w-1/2" />
                     </div>
                   </div>
+                  <div className="col-span-3">
+                    <div className="h-3.5 bg-slate-100 rounded w-4/5" />
+                  </div>
                   <div className="col-span-2">
                     <div className="h-3.5 bg-slate-100 rounded w-4/5" />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className="h-6 bg-slate-100 rounded-full w-3/4" />
                   </div>
-                  <div className="col-span-2">
-                    <div className="h-3 bg-slate-100 rounded w-full" />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
+                  <div className="col-span-2 flex justify-end">
                     <div className="h-8 w-16 bg-slate-100 rounded-lg" />
                   </div>
                 </div>
@@ -1366,13 +1377,6 @@ export default function CounselorFeedbackPage() {
                     .join("")
                     .slice(0, 2)
                     .toUpperCase() || "UN"
-                const pct = student.roadmapProgress ?? 0
-                const barColor =
-                  pct === 100
-                    ? "bg-emerald-500"
-                    : pct >= 50
-                      ? "bg-[#00838f]"
-                      : "bg-amber-400"
                 const missingCount = student.missingSkills?.length ?? 0
 
                 return (
@@ -1387,7 +1391,7 @@ export default function CounselorFeedbackPage() {
                       }
                     }}
                   >
-                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div className="col-span-3 flex items-center gap-3 min-w-0">
                       {isExportMode && (
                         <div
                           className={`w-5 h-5 rounded flex items-center justify-center border transition-all shadow-sm ${
@@ -1412,16 +1416,22 @@ export default function CounselorFeedbackPage() {
                         </p>
                       </div>
                     </div>
+                    {/* Email */}
+                    <div className="col-span-3 min-w-0">
+                      <p className="text-[13px] text-slate-600 truncate flex items-center gap-1.5">
+                        <Mail size={12} className="text-slate-400 shrink-0" />
+                        {student.email || <span className="text-slate-400 italic">No email</span>}
+                      </p>
+                    </div>
+                    {/* University */}
                     <div className="col-span-2 min-w-0">
                       <p className="text-[13px] text-slate-700 truncate flex items-center gap-1.5">
-                        <Building2
-                          size={12}
-                          className="text-slate-400 shrink-0"
-                        />
+                        <Building2 size={12} className="text-slate-400 shrink-0" />
                         {student.university}
                       </p>
                     </div>
-                    <div className="col-span-3 min-w-0 flex items-center">
+                    {/* Career Path */}
+                    <div className="col-span-2 min-w-0 flex items-center">
                       {student.careerPath ? (
                         <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#0284c7] bg-[#e0f2fe] px-3 py-1.5 rounded-full max-w-full truncate border border-[#bae6fd]/50">
                           <Briefcase size={13} className="text-[#0ea5e9]" />
@@ -1433,20 +1443,7 @@ export default function CounselorFeedbackPage() {
                         </span>
                       )}
                     </div>
-                    <div className="col-span-2 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className={`h-full rounded-full ${barColor}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-[12px] font-bold text-slate-700 shrink-0 w-8">
-                          {pct}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-span-1 flex justify-end">
+                    <div className="col-span-2 flex justify-end">
                       <button
                         type="button"
                         onClick={(e) => {
