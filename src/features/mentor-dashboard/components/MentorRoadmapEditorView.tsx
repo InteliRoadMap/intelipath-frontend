@@ -15,6 +15,7 @@ import "@xyflow/react/dist/style.css"
 import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
+import NodeCoursesSection from "./NodeCoursesSection"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -436,6 +437,10 @@ const MentorRoadmapEditorView = () => {
                   onChange={e => setForm({ ...form, resourcesText: e.target.value })}
                 />
               </div>
+
+              {selectedId && careerId && (
+                <NodeCoursesSection careerId={careerId} nodeId={selectedId} />
+              )}
             </div>
 
             <div className="p-4 border-t border-slate-100 flex gap-2">

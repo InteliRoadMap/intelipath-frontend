@@ -21,6 +21,8 @@ export interface Course {
   mentorName?: string
   careerId?: string
   careerName?: string
+  nodeId?: string
+  nodeName?: string
   lessonCount: number
   enrolledCount: number
   createdAt?: string
@@ -34,6 +36,7 @@ export interface CoursePayload {
   description?: string
   level: CourseLevel
   careerId: string
+  nodeId?: string | null
   lessons: CourseLesson[]
 }
 
@@ -47,8 +50,13 @@ const courseApi = {
     mainClient.patch<Course>(`${ENDPOINTS.MENTOR_COURSES.PUBLISH(id)}?published=${published}`),
 
   // ---- Student ----
-  browse: (careerId?: string) =>
-    mainClient.get<Course[]>(careerId ? `${ENDPOINTS.COURSES.BROWSE}?careerId=${careerId}` : ENDPOINTS.COURSES.BROWSE),
+  browse: (careerId?: string, nodeId?: string) => {
+    const qs = new URLSearchParams()
+    if (careerId) qs.set("careerId", careerId)
+    if (nodeId) qs.set("nodeId", nodeId)
+    const q = qs.toString()
+    return mainClient.get<Course[]>(q ? `${ENDPOINTS.COURSES.BROWSE}?${q}` : ENDPOINTS.COURSES.BROWSE)
+  },
   detail: (id: string) => mainClient.get<Course>(ENDPOINTS.COURSES.DETAIL(id)),
   enroll: (id: string) => mainClient.post<Course>(ENDPOINTS.COURSES.ENROLL(id)),
   unenroll: (id: string) => mainClient.delete(ENDPOINTS.COURSES.ENROLL(id)),

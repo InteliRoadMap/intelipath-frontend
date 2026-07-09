@@ -15,6 +15,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
 
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
+    { id: "courses", label: "Courses" },
     // { id: "portfolios", label: "Portfolios" },
     // { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { BookOpen, Plus, Trash, PencilSimple, Users, GraduationCap, X } from "@phosphor-icons/react"
 import { ENDPOINTS, mainClient } from "@/shared/api"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
+import roadmapEditorApi, { type EditorNode } from "../api/roadmapEditorApi"
 import { emitToast } from "@/utils/toast"
 
 interface CareerOption { careerId: string; careerName: string }
@@ -13,6 +14,7 @@ const emptyForm = () => ({
   description: "",
   level: "BEGINNER" as CourseLevel,
   careerId: "",
+  nodeId: "",
   lessons: [{ title: "", content: "", resourceUrl: "" }] as CourseLesson[],
 })
 
@@ -24,6 +26,17 @@ export function MentorCoursesView() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())
   const [saving, setSaving] = useState(false)
+  const [nodes, setNodes] = useState<EditorNode[]>([])
+
+  // Load the roadmap nodes of the selected career so the mentor can pin the course to one.
+  useEffect(() => {
+    if (!showForm || !form.careerId) { setNodes([]); return }
+    let alive = true
+    roadmapEditorApi.getCareerNodes(form.careerId)
+      .then(res => { if (alive) setNodes(res.data || []) })
+      .catch(() => { if (alive) setNodes([]) })
+    return () => { alive = false }
+  }, [form.careerId, showForm])
 
   const load = async () => {
     setLoading(true)
@@ -50,6 +63,7 @@ export function MentorCoursesView() {
       description: c.description || "",
       level: c.level,
       careerId: c.careerId || "",
+      nodeId: c.nodeId || "",
       lessons: c.lessons && c.lessons.length ? c.lessons.map(l => ({ ...l })) : [{ title: "", content: "", resourceUrl: "" }],
     })
     setEditingId(c.courseId)
@@ -72,6 +86,7 @@ export function MentorCoursesView() {
         description: form.description.trim(),
         level: form.level,
         careerId: form.careerId,
+        nodeId: form.nodeId || null,
         lessons: form.lessons.filter(l => l.title.trim()),
       }
       if (editingId) await courseApi.update(editingId, payload)
@@ -138,6 +153,7 @@ export function MentorCoursesView() {
                   <p className="mt-1 line-clamp-2 text-[13px] text-slate-500">{c.description || "No description."}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate-500">
                     <span className="flex items-center gap-1"><GraduationCap size={13} weight="duotone" /> {careerName(c.careerId) || "—"}</span>
+                    {c.nodeName && <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-medium text-indigo-600">→ {c.nodeName}</span>}
                     <span>{c.level}</span>
                     <span>{c.lessonCount} lessons</span>
                     <span className="flex items-center gap-1"><Users size={13} weight="duotone" /> {c.enrolledCount} enrolled</span>
@@ -168,7 +184,7 @@ export function MentorCoursesView() {
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Course title" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400" />
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What will students learn?" rows={3} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400" />
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.careerId} onChange={e => setForm(f => ({ ...f, careerId: e.target.value }))} className="rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400">
+                <select value={form.careerId} onChange={e => setForm(f => ({ ...f, careerId: e.target.value, nodeId: "" }))} className="rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400">
                   <option value="">Select career path…</option>
                   {careers.map(c => <option key={c.careerId} value={c.careerId}>{c.careerName}</option>)}
                 </select>
@@ -176,6 +192,16 @@ export function MentorCoursesView() {
                   {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
+
+              <select
+                value={form.nodeId}
+                onChange={e => setForm(f => ({ ...f, nodeId: e.target.value }))}
+                disabled={!form.careerId}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">Whole career (no specific node)</option>
+                {nodes.map(n => <option key={n.nodeId} value={n.nodeId}>Node: {n.nodeName}</option>)}
+              </select>
 
               <div className="mt-1">
                 <div className="mb-2 flex items-center justify-between">
