@@ -16,6 +16,7 @@ import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
 import NodeCoursesSection from "./NodeCoursesSection"
+import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -100,11 +101,20 @@ const MentorRoadmapEditorView = () => {
   )
 
   const rebuildGraph = useCallback((nodes: EditorNode[]) => {
+    // Auto-arrange with the same spine/branch algorithm the student roadmap uses,
+    // so mentors never place nodes by hand — they just add/edit and it lays out.
+    const rawNodes = nodes.map(n => ({ id: n.nodeId, data: { level: n.nodeLevel ?? 0 } }))
+    const rawEdges: { source: string; target: string }[] = []
+    nodes.forEach(n => {
+      if (n.previousNode) rawEdges.push({ source: n.previousNode, target: n.nodeId })
+      if (n.parentNode) rawEdges.push({ source: n.parentNode, target: n.nodeId })
+    })
+    const laid = getDynamicLayoutedElements(rawNodes, rawEdges).nodes as { id: string; position: { x: number; y: number } }[]
+    const posById = new Map(laid.map(n => [n.id, n.position]))
+
     const flowNodes: Node[] = nodes.map((node, index) => ({
       id: node.nodeId,
-      position: node.positionX != null && node.positionY != null
-        ? { x: node.positionX, y: node.positionY }
-        : fallbackPosition(index),
+      position: posById.get(node.nodeId) ?? fallbackPosition(index),
       data: { label: node.nodeName },
       style: nodeVisual(node)
     }))

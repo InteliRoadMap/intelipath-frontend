@@ -25,7 +25,7 @@ interface RoadmapVectorGraphProps {
 }
 
 // --- Dynamic Anti-Overlap Spine Layout Algorithm ---
-const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor?: string, optimisticStatusMap: Record<string, string> = {}) => {
+export const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor?: string, optimisticStatusMap: Record<string, string> = {}) => {
   if (!rawNodes.length) return { nodes: [], edges: [] };
 
   const NODE_WIDTH = 280;
