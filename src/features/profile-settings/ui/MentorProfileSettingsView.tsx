@@ -15,7 +15,7 @@ import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { SharedAppBackground } from "@/components"
+import { SharedAppBackground, DatePicker } from "@/components"
 import { MentorHeader } from "@/features/mentor-dashboard/components/MentorHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../model/useProfileSettings"
@@ -219,11 +219,10 @@ export default function MentorProfileSettingsPage() {
                         <Calendar size={16} className="text-slate-700" />
                         Year of Birth
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={profileData.yob || ''}
-                        onChange={(e) => handleChange("yob", e.target.value)}
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
+                        onChange={(val) => handleChange("yob", val)}
+                        pastOnly
                       />
                     </div>
                   </div>
