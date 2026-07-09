@@ -4,13 +4,19 @@ import dashboardApi from "../../api/dashboardApi"
 import { createPortal } from "react-dom"
 import {
   Bell,
+  BellOff,
   X,
   CheckCircle,
   Info,
   AlertTriangle,
-  ArrowLeft,
-  CheckCheck
+  CheckCheck,
+  Check,
+  Circle,
+  Trash2
 } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
 
 export interface Notification {
   id: string
@@ -113,17 +119,17 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
 // ─── Single notification row ───────────────────────────────────────────────────
 function NotifItem({
   notif,
-  onRead,
+  onOpen,
   compact = false
 }: {
   notif: Notification
-  onRead: (id: string) => void
+  onOpen: (notif: Notification) => void
   compact?: boolean
 }) {
   return (
     <button
       type="button"
-      onClick={() => onRead(notif.id)}
+      onClick={() => onOpen(notif)}
       className={`w-full text-left flex items-start gap-4 px-6 py-4 transition-colors hover:bg-slate-50 ${
         !notif.read ? "bg-[#f0fafa]" : "bg-white"
       }`}
@@ -149,7 +155,7 @@ function NotifItem({
             compact ? "line-clamp-1" : "line-clamp-2"
           }`}
         >
-          {notif.message}
+          {stripMarkdown(notif.message)}
         </p>
       </div>
       {!notif.read && (
@@ -159,16 +165,88 @@ function NotifItem({
   )
 }
 
-function NotifSkeletonItem() {
+function NotifEmpty({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-4 p-4">
-      <div className="h-10 w-10 shrink-0 rounded-full bg-slate-100 animate-pulse" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
-        <div className="h-3 w-1/2 rounded bg-slate-100 animate-pulse" />
+    <div
+      className={`flex flex-col items-center justify-center text-center ${compact ? "py-10 px-6" : "py-20 px-6"}`}
+    >
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4">
+        <BellOff size={24} className="text-slate-400" />
       </div>
-      <div className="hidden md:block h-4 w-1/4 rounded bg-slate-100 animate-pulse" />
-      <div className="h-8 w-16 shrink-0 rounded-lg bg-slate-100 animate-pulse" />
+      <p className="text-[15px] font-semibold text-slate-800">
+        You're all caught up
+      </p>
+      <p className="text-[13px] text-slate-500 mt-1 max-w-[220px]">
+        New feedback and updates will show up here.
+      </p>
+    </div>
+  )
+}
+
+// ─── Full-page row (with per-item actions) ─────────────────────────────────────
+function NotifRow({
+  notif,
+  onOpen,
+  onToggleRead,
+  onDelete
+}: {
+  notif: Notification
+  onOpen: (notif: Notification) => void
+  onToggleRead: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <div
+      className={`group relative flex items-start gap-3.5 px-4 py-3.5 transition-colors cursor-pointer hover:bg-slate-50 ${
+        !notif.read ? "bg-[#f5fbfb]" : "bg-white"
+      }`}
+      onClick={() => onOpen(notif)}
+    >
+      {/* Unread accent bar */}
+      {!notif.read && (
+        <span className="absolute left-0 top-0 h-full w-[3px] bg-[#00838f]" />
+      )}
+      <NotifIcon type={notif.type} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p
+            className={`text-[14.5px] leading-6 truncate ${!notif.read ? "font-bold text-slate-900" : "font-semibold text-slate-600"}`}
+          >
+            {notif.title}
+          </p>
+          {!notif.read && (
+            <span className="shrink-0 h-2 w-2 rounded-full bg-[#00838f]" />
+          )}
+        </div>
+        <p className="mt-0.5 text-[13px] leading-5 text-slate-500 line-clamp-2">
+          {stripMarkdown(notif.message)}
+        </p>
+        <span className="mt-1 block text-[12px] text-slate-400 font-medium">
+          {notif.time}
+        </span>
+      </div>
+      {/* Actions — visible on hover (always on touch) */}
+      <div
+        className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          title={notif.read ? "Mark as unread" : "Mark as read"}
+          onClick={() => onToggleRead(notif.id)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-[#e0f5f5] hover:text-[#00838f] transition-colors"
+        >
+          {notif.read ? <Circle size={16} /> : <Check size={17} />}
+        </button>
+        <button
+          type="button"
+          title="Delete"
+          onClick={() => onDelete(notif.id)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
     </div>
   )
 }
@@ -176,27 +254,36 @@ function NotifSkeletonItem() {
 // ─── Full-page panel (fixed overlay) ──────────────────────────────────────────
 export function NotifFullPage({
   notifications,
-  onRead,
+  onOpen,
   onReadAll,
+  onToggleRead,
+  onDelete,
+  onClearAll,
   onClose
 }: {
   notifications: Notification[]
-  onRead: (id: string) => void
+  onOpen: (notif: Notification) => void
   onReadAll: () => void
+  onToggleRead: (id: string) => void
+  onDelete: (id: string) => void
+  onClearAll: () => void
   onClose: () => void
 }) {
+  const [filter, setFilter] = useState<"all" | "unread">("all")
   const unread = notifications.filter((n) => !n.read).length
+  const shown =
+    filter === "unread" ? notifications.filter((n) => !n.read) : notifications
 
   return createPortal(
     <div
-      className="fixed inset-0 flex flex-col bg-white"
+      className="fixed inset-0 flex flex-col bg-slate-50"
       style={{
         zIndex: 9999,
         animation: "notif-slide-up 0.22s cubic-bezier(0.22,1,0.36,1)"
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-white sticky top-0">
+      <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-white/90 backdrop-blur-sm sticky top-0">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0f5f5]">
             <Bell size={22} className="text-[#00838f]" />
@@ -215,10 +302,18 @@ export function NotifFullPage({
             <button
               type="button"
               onClick={onReadAll}
-              className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-[14px] font-semibold text-[#00838f] hover:bg-[#e0f5f5] transition-colors"
+              className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-[#00838f] hover:bg-[#e0f5f5] transition-colors"
             >
-              <CheckCheck size={16} />
-              Mark all read
+              <CheckCheck size={16} /> Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+            >
+              <Trash2 size={15} /> Clear all
             </button>
           )}
           <button
@@ -231,32 +326,47 @@ export function NotifFullPage({
         </div>
       </div>
 
-      {/* Notification list */}
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-w-2xl w-full mx-auto">
-        {notifications.length > 0 ? (
-          notifications.map((n) => (
-            <NotifItem key={n.id} notif={n} onRead={onRead} />
-          ))
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <NotifSkeletonItem key={i} />
+      {/* Content — centered card so the space feels intentional */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm overflow-hidden">
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2">
+            {(["all", "unread"] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold capitalize transition-colors ${
+                  filter === f
+                    ? "bg-[#e0f5f5] text-[#00838f]"
+                    : "text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {f}
+                {f === "unread" && unread > 0 && (
+                  <span className="ml-1.5 rounded-full bg-[#00838f] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {unread}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Footer — collapse button */}
-      <div className="border-t border-slate-200 bg-white px-6 py-4 flex justify-center">
-        <button
-          type="button"
-          id="notification-collapse-btn"
-          onClick={onClose}
-          className="flex items-center gap-2 rounded-xl px-8 py-2.5 text-[14px] font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </button>
+          <div className="divide-y divide-slate-100">
+            {shown.length > 0 ? (
+              shown.map((n) => (
+                <NotifRow
+                  key={n.id}
+                  notif={n}
+                  onOpen={onOpen}
+                  onToggleRead={onToggleRead}
+                  onDelete={onDelete}
+                />
+              ))
+            ) : (
+              <NotifEmpty />
+            )}
+          </div>
+        </div>
       </div>
 
       <style>{`
@@ -270,63 +380,198 @@ export function NotifFullPage({
   )
 }
 
+// ─── Markdown helpers ──────────────────────────────────────────────────────────
+// Feedback is written in markdown (e.g. **Strengths:** ...). Strip it to plain
+// text for compact list previews; render it richly in the detail view.
+function stripMarkdown(md: string): string {
+  return (md || "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/^\s{0,3}>\s?/gm, "")
+    .replace(/^\s{0,3}[-*+]\s+/gm, "")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+}
+
+const notifMarkdown = {
+  p: (props: any) => (
+    <p className="text-[14px] leading-6 text-slate-600 mb-2.5" {...props} />
+  ),
+  strong: (props: any) => (
+    <strong className="font-bold text-slate-900" {...props} />
+  ),
+  ul: (props: any) => (
+    <ul
+      className="list-disc pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600"
+      {...props}
+    />
+  ),
+  ol: (props: any) => (
+    <ol
+      className="list-decimal pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600"
+      {...props}
+    />
+  ),
+  li: (props: any) => <li className="leading-6" {...props} />,
+  h1: (props: any) => (
+    <h3
+      className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5"
+      {...props}
+    />
+  ),
+  h2: (props: any) => (
+    <h3
+      className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5"
+      {...props}
+    />
+  ),
+  h3: (props: any) => (
+    <h3
+      className="text-[14px] font-bold text-slate-900 mt-3 mb-1.5"
+      {...props}
+    />
+  ),
+  a: (props: any) => (
+    <a
+      className="text-[#00838f] font-medium underline"
+      target="_blank"
+      rel="noreferrer"
+      {...props}
+    />
+  )
+}
+
+// ─── Notification detail (centered modal) ──────────────────────────────────────
+function NotifDetail({
+  notif,
+  onClose
+}: {
+  notif: Notification
+  onClose: () => void
+}) {
+  return createPortal(
+    <div
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ zIndex: 10000, animation: "notif-fade-in 0.15s ease-out" }}
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+        style={{ animation: "notif-pop-in 0.2s cubic-bezier(0.22,1,0.36,1)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <NotifIcon type={notif.type} />
+            <div className="min-w-0">
+              <h2 className="text-[16px] font-bold text-slate-900 leading-snug">
+                {notif.title}
+              </h2>
+              {notif.time && (
+                <p className="text-[12px] text-slate-400 font-medium mt-0.5">
+                  {notif.time}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        {/* Body — rendered markdown */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkBreaks]}
+            components={notifMarkdown}
+          >
+            {notif.message}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 // ─── Main exported component ───────────────────────────────────────────────────
-export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
+export default function NotificationBell({
+  asMenuItem,
+  onCloseMenu
+}: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFullPage, setIsFullPage] = useState(false)
+  const [detail, setDetail] = useState<Notification | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read).length
   const previewNotifs = notifications.slice(0, 4)
 
   useEffect(() => {
-    // Only fetch for students
-    if (user?.role !== "STUDENT") return
-
+    // The mentor-feedback endpoint is student-only (hasRole('STUDENT')); calling
+    // it as a mentor/counselor/admin returns Access Denied. Only students receive
+    // mentor feedback, so skip the fetch for other roles.
+    if (user?.role?.toUpperCase() !== "STUDENT") {
+      setNotifications([])
+      return
+    }
     // Fetch notifications from backend
     const fetchNotifications = async () => {
       try {
         const res = await dashboardApi.getMentorFeedback()
         const data = res.data?.data || res.data
-        
+
         let mappedNotifs: Notification[] = []
-        
+
         if (data && Array.isArray(data)) {
+          // Backend MentorFeedbackItemResponse fields: id, name, time, text.
+          // (`time` is already a formatted relative string, e.g. "2 days ago".)
           mappedNotifs = data.map((fb: any) => ({
-            id: fb.feedbackId || fb.id || Math.random().toString(),
+            id: fb.id || fb.feedbackId || Math.random().toString(),
             type: "info",
-            title: `New Feedback from ${fb.senderName || 'Mentor/Counselor'}`,
-            message: fb.content || "No content provided",
-            time: new Date(fb.createAt || Date.now()).toLocaleDateString(),
-            read: false,
+            title: fb.name ? `New feedback from ${fb.name}` : "New feedback",
+            message: fb.text?.trim() || "Tap to read the full feedback.",
+            time: fb.time || "",
+            read: false
           }))
         }
 
         // Check local storage mock notification
-        const localNotif = localStorage.getItem('student_notification')
+        const localNotif = localStorage.getItem("student_notification")
         if (localNotif) {
           try {
             const parsed = JSON.parse(localNotif)
             mappedNotifs.unshift({
               id: "local-mock-1",
               type: "success",
-              title: `New Feedback from ${parsed.senderName || 'Mentor'}`,
+              title: `New feedback from ${parsed.senderName || "Mentor"}`,
               message: "Your portfolio has received a new review!",
               time: new Date().toLocaleDateString(),
-              read: false,
+              read: false
             })
-          } catch(e) {}
+          } catch (e) {}
         }
-        
+
         setNotifications(mappedNotifs)
       } catch (err) {
         console.error("Failed to fetch notifications:", err)
       }
     }
     fetchNotifications()
-  }, [])
+  }, [user?.role])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -354,10 +599,35 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
   }
 
+  const toggleRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
+    )
+  }
+
+  // Dismiss is client-side (the feedback endpoint is read-only); also drop the
+  // local mock so it doesn't reappear on the next render.
+  const deleteNotif = (id: string) => {
+    if (id === "local-mock-1") localStorage.removeItem("student_notification")
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  }
+
+  const clearAll = () => {
+    localStorage.removeItem("student_notification")
+    setNotifications([])
+  }
+
   const handleViewAll = () => {
     setIsDropdownOpen(false)
     setIsFullPage(true)
     if (onCloseMenu) onCloseMenu()
+  }
+
+  // Open a notification's full detail (rendered markdown) and mark it read.
+  const openDetail = (notif: Notification) => {
+    markRead(notif.id)
+    setDetail(notif)
+    setIsDropdownOpen(false)
   }
 
   return (
@@ -379,10 +649,14 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-rose-500" />
                 )}
               </div>
-              <span className="text-[14px] font-medium text-slate-700">Notifications</span>
+              <span className="text-[14px] font-medium text-slate-700">
+                Notifications
+              </span>
             </div>
             {unreadCount > 0 && (
-              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">{unreadCount}</span>
+              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
             )}
           </button>
         ) : (
@@ -403,7 +677,7 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
         {/* Dropdown */}
         {isDropdownOpen && (
           <div
-            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? '' : 'right-0'}`}
+            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? "" : "right-0"}`}
             style={{
               top: asMenuItem ? "0" : "100%",
               right: asMenuItem ? "100%" : "0",
@@ -442,14 +716,10 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
             <div className="divide-y divide-slate-100 max-h-[320px] overflow-y-auto">
               {notifications.length > 0 ? (
                 previewNotifs.map((n) => (
-                  <NotifItem key={n.id} notif={n} onRead={markRead} compact />
+                  <NotifItem key={n.id} notif={n} onOpen={openDetail} compact />
                 ))
               ) : (
-                <div className="divide-y divide-slate-100">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <NotifSkeletonItem key={i} />
-                  ))}
-                </div>
+                <NotifEmpty compact />
               )}
             </div>
 
@@ -472,17 +742,31 @@ export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuIt
       {isFullPage && (
         <NotifFullPage
           notifications={notifications}
-          onRead={markRead}
+          onOpen={openDetail}
           onReadAll={markAllRead}
+          onToggleRead={toggleRead}
+          onDelete={deleteNotif}
+          onClearAll={clearAll}
           onClose={() => {
             setIsFullPage(false)
           }}
         />
       )}
 
+      {/* Detail modal (rendered feedback) */}
+      {detail && <NotifDetail notif={detail} onClose={() => setDetail(null)} />}
+
       <style>{`
         @keyframes notif-dropdown-in {
           from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes notif-fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes notif-pop-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>

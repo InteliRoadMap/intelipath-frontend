@@ -30,8 +30,6 @@ export default function MentorProfileSettingsPage() {
     profileData,
     loading,
     saving,
-    error,
-    success,
     handleChange,
     handleSave,
     loadProfile,
@@ -197,12 +195,6 @@ export default function MentorProfileSettingsPage() {
                 </div>
               </div>
 
-              {error && (
-                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                  {error}
-                </div>
-              )}
-
               {loading ? (
                 <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
                   Loading profile data...
@@ -345,20 +337,6 @@ export default function MentorProfileSettingsPage() {
           </div>
         </div>
       </main>
-
-      {/* Floating Success Toast */}
-      <div
-        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl shadow-slate-900/20 backdrop-blur transition-all duration-500 ${
-          success ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-500/20 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-        {success}
-      </div>
     </div>
   )
 }

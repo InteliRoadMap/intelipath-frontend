@@ -22,9 +22,9 @@ import {
   Clock,
   BookOpen,
   Sparkles,
-  ArrowRight,
   AlertCircle,
-  Search
+  Search,
+  Paperclip
 } from "lucide-react"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
@@ -54,6 +54,7 @@ const CAREER_COLORS = [
 const FEEDBACK_TYPE_COLOR: Record<string, string> = {
   CAREER: "bg-[#e0f2fe] text-[#0284c7]",
   SKILL: "bg-[#f0fdf4] text-[#16a34a]",
+  PORTFOLIO: "bg-[#f1f5f9] text-[#475569]",
   GENERAL: "bg-[#fef9c3] text-[#ca8a04]",
   ACADEMIC: "bg-[#f3e8ff] text-[#7c3aed]",
   OTHER: "bg-slate-100 text-slate-600"
@@ -462,10 +463,10 @@ function FeedbackList({
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h2 className="text-[18px] font-bold text-slate-900 widget-title">
-            Student Feedback
+            History Feedback
           </h2>
           <p className="text-[13px] text-slate-500 mt-0.5">
-            Messages sent to you from students
+            Messages you sent to your students
           </p>
         </div>
         {!loading && !error && (
@@ -494,7 +495,7 @@ function FeedbackList({
       ) : (
         <div className="divide-y divide-slate-100 feedback-list flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
           {feedbacks.map((fb) => {
-            const name = fb.senderName || "Unknown Student"
+            const name = fb.receiverName || "Unknown Student"
             const initials =
               name
                 .split(" ")
@@ -505,7 +506,7 @@ function FeedbackList({
                 .toUpperCase() || "UN"
             const typeStyle =
               FEEDBACK_TYPE_COLOR[fb.type] ?? FEEDBACK_TYPE_COLOR.OTHER
-            const dateStr = new Date(fb.createAt).toLocaleDateString("vi-VN", {
+            const dateStr = new Date(fb.createdAt).toLocaleDateString("vi-VN", {
               day: "2-digit",
               month: "2-digit",
               year: "numeric"
@@ -534,24 +535,18 @@ function FeedbackList({
                     {fb.content}
                   </p>
                   <div className="flex items-center justify-between mt-1.5">
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                      <Clock size={11} />
-                      {dateStr}
+                    <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <Clock size={11} />
+                        {dateStr}
+                      </div>
+                      {fb.attachments && fb.attachments.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Paperclip size={11} />
+                          {fb.attachments.length} {fb.attachments.length === 1 ? 'file' : 'files'}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          ROUTES.COUNSELOR_FEEDBACK +
-                            "?studentId=" +
-                            fb.senderId +
-                            "&tab=feedback"
-                        )
-                      }
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006064] hover:text-white bg-[#e0f2fe] hover:bg-[#006064] px-2.5 py-1 rounded-md transition-all shadow-sm group-hover/fb:translate-x-0.5"
-                    >
-                      Reply <ArrowRight size={11} />
-                    </button>
                   </div>
                 </div>
               </div>

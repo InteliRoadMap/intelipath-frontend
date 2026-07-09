@@ -114,6 +114,14 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
     if (backendData.config.heroSection) uiData.hero = { ...uiData.hero, ...backendData.config.heroSection };
   }
 
+  // Avatar: prefer a portfolio-specific one saved in heroSection; otherwise fall
+  // back to the account avatar. This is what makes the avatar show on the public
+  // page, where there is no logged-in user to fall back to on the client.
+  const savedAvatar = uiData.hero.avatarUrl;
+  if ((!savedAvatar || savedAvatar === 'https://via.placeholder.com/150') && backendData.userInfo?.avatarUrl) {
+    uiData.hero.avatarUrl = backendData.userInfo.avatarUrl;
+  }
+
   // Projects
   if (backendData.projects && Array.isArray(backendData.projects)) {
     uiData.projects = backendData.projects.map((p: any) => ({
@@ -255,9 +263,8 @@ export const portfolioApi = {
 
   getPublicPortfolio: async (slug: string): Promise<PortfolioData | null> => {
     try {
-      // Calling the backend to get the public portfolio by slug
-      // If the endpoint differs, it can be updated here.
-      const response = await publicClient.get(`/public/portfolio/${slug}`);
+      // Backend endpoint: GET /api/v1/public-portfolio/slug/{slug}
+      const response = await publicClient.get(`/public-portfolio/slug/${slug}`);
       return mapToFrontendData(response.data);
     } catch (error) {
       console.error('Failed to fetch public portfolio', error);

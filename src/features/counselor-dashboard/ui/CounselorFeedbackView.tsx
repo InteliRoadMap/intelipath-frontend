@@ -36,7 +36,8 @@ import {
   Briefcase as BriefcasePhos,
   BookOpen,
   ChatCenteredText,
-  PaperPlaneTilt
+  PaperPlaneTilt,
+  Folder as FolderPhos
 } from "@phosphor-icons/react"
 import { useNavigate, useSearchParams, NavLink } from "react-router-dom"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
@@ -464,12 +465,21 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                   weight="fill"
                 />
               )}
+              {type === "PORTFOLIO" && (
+                <FolderPhos
+                  size={18}
+                  className="text-slate-500"
+                  weight="fill"
+                />
+              )}
               <span>
                 {type === "CAREER"
                   ? "Career Advice"
                   : type === "SKILL"
                     ? "Skill Guidance"
-                    : "General Note"}
+                    : type === "PORTFOLIO"
+                      ? "Portfolio Feedback"
+                      : "General Note"}
               </span>
             </div>
             <ChevronDown
@@ -503,6 +513,13 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                     icon: ChatCenteredText,
                     color: "text-[#006064]",
                     bgHover: "hover:bg-[#f0fafa]"
+                  },
+                  {
+                    value: "PORTFOLIO",
+                    label: "Portfolio Feedback",
+                    icon: FolderPhos,
+                    color: "text-slate-500",
+                    bgHover: "hover:bg-slate-50"
                   }
                 ] as const
               ).map(({ value, label, icon: Icon, color, bgHover }) => (
@@ -726,7 +743,7 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                   </div>
                   <div className="flex items-center justify-end gap-1.5 mt-3 text-[11px] font-medium text-slate-400">
                     <Clock size={12} />
-                    {new Date(fb.createAt).toLocaleString("en-US", {
+                    {new Date(fb.createdAt).toLocaleString("en-US", {
                       dateStyle: "medium",
                       timeStyle: "short"
                     })}

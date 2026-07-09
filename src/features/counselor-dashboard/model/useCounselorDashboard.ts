@@ -9,6 +9,7 @@ import counselorApi, {
 export interface UseCareerDistributionResult {
   data: CareerStatistics[]
   error: boolean
+  loading: boolean
   total: number
 }
 
@@ -17,8 +18,10 @@ export function useCareerDistribution(
 ): UseCareerDistributionResult {
   const [data, setData] = useState<CareerStatistics[]>([])
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     counselorApi
       .getCareerDistribution()
       .then((payload: any) => {
@@ -58,11 +61,15 @@ export function useCareerDistribution(
         onTotalLoaded?.(total)
       })
       .catch(() => setError(true))
+      .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const total = data.reduce((s, c) => s + c.studentCount, 0)
-
-  return { data, error, total }
+  return {
+    data,
+    error,
+    loading,
+    total: data.reduce((s, c) => s + c.studentCount, 0)
+  }
 }
 
 // ─── useMissingSkills ─────────────────────────────────────────────────────────
@@ -151,6 +158,7 @@ export function useMissingSkills(
 export interface UseFeedbackListResult {
   feedbacks: Feedback[]
   error: boolean
+  loading: boolean
 }
 
 export function useFeedbackList(
@@ -158,8 +166,10 @@ export function useFeedbackList(
 ): UseFeedbackListResult {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     counselorApi
       .getFeedback()
       .then((res) => {
@@ -168,7 +178,8 @@ export function useFeedbackList(
         onTotalLoaded?.(list.length)
       })
       .catch(() => setError(true))
+      .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { feedbacks, error }
+  return { feedbacks, error, loading }
 }

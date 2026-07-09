@@ -5,16 +5,17 @@ export interface Feedback {
   senderId: string
   receiverId: string
   senderName: string
+  receiverName: string
   content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
+  type: "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO"
   attachments?: {
     attachmentId: string
     fileName: string
     fileType: string
     fileSize: number
   }[]
-  createAt: string
-  updateAt: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface FeedbackListResponse {
@@ -24,7 +25,7 @@ export interface FeedbackListResponse {
 export interface CreateFeedback {
   receiverId: string
   content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
+  type: "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO"
   attachments?: File[]
 }
 

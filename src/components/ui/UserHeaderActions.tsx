@@ -88,17 +88,6 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
           {/* Notifications */}
           <NotificationBell asMenuItem onCloseMenu={() => setShowDropdown(false)} />
 
-          {/* Feedback — chỉ hiển thị cho STUDENT */}
-          {role === 'STUDENT' && (
-            <button
-              onClick={handleFeedbackClick}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-slate-700 group"
-            >
-              <ChatCenteredText size={18} weight="duotone" className="text-slate-500 group-hover:text-slate-700" />
-              <span className="text-[14px] font-medium">Feedback</span>
-            </button>
-          )}
-
           {/* Settings */}
           <button
             onClick={handleSettingsClick}

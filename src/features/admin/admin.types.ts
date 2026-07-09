@@ -11,9 +11,21 @@ export interface AdminCourseMetric {
   progress: number
 }
 
+export interface AdminServiceStatus {
+  name: string
+  up: boolean
+}
+
 export interface AdminSystemHealth {
-  uptime: number
   status: string
+  servicesUp: number
+  servicesTotal: number
+  services: AdminServiceStatus[]
+  uptimeMillis?: number
+  version?: string
+  javaVersion?: string
+  db?: { active: number; idle: number; total: number; max: number } | null
+  memory?: { usedMb: number; maxMb: number } | null
 }
 
 export interface AdminUserListItem {

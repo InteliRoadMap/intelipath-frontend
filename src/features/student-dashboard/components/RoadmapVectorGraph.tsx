@@ -139,7 +139,7 @@ const getDynamicLayoutedElements = (rawNodes: any[], rawEdges: any[], themeColor
         id: `e-${nodeId}-${childId}`,
         source: nodeId,
         target: childId,
-        type: 'bezier', // Dùng bezier để đường vuốt cong mềm mại, không bị gập khúc chồng chéo
+        type: 'default', // 'default' is React Flow's built-in bezier edge (soft curves); 'bezier' isn't a registered key in @xyflow/react v12
         sourceHandle: handleSrc,
         targetHandle: handleTgt,
         style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' },
