@@ -397,16 +397,21 @@ export default function StudentRoadmapPageView() {
         const detail = await studentDashboardService.getNodeDetail(nodeData.id)
         if (detail) {
           let resources: {title: string, url: string}[] = [];
-          
-          if (detail.resource && typeof detail.resource === 'string') {
-            try {
-              const parsed = JSON.parse(detail.resource);
-              if (Array.isArray(parsed)) {
-                resources = parsed.map((url: string, idx: number) => ({ title: `Learning Resource ${idx + 1}`, url }));
-              }
-            } catch (e) {
-              console.error("Failed to parse resource string:", e);
-            }
+
+          // resource comes from a JSONB column: usually a JSON array of URL strings
+          // (or objects), but tolerate a JSON string too.
+          let rawResources: any = detail.resource;
+          if (typeof rawResources === 'string') {
+            try { rawResources = JSON.parse(rawResources); } catch { rawResources = []; }
+          }
+          if (Array.isArray(rawResources)) {
+            resources = rawResources
+              .map((item: any, idx: number) => {
+                const url = typeof item === 'string' ? item : (item?.url || item?.link || '');
+                const title = (item && typeof item === 'object' && item.title) ? item.title : `Learning Resource ${idx + 1}`;
+                return url ? { title, url } : null;
+              })
+              .filter(Boolean) as {title: string, url: string}[];
           }
 
           if (resources.length === 0) {
