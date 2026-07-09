@@ -608,7 +608,7 @@ export default function AdminDashboardView() {
       <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
+            <Logo iconOnly className="origin-left scale-90" />
             <nav className="hidden items-center gap-8 lg:flex">
               {ADMIN_TABS.map(({ key, label, icon: NavIcon }) => {
                 const active = tab === key

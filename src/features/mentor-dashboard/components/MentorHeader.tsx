@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { UserHeaderActions, Logo } from "@/components"
+import { UserHeaderActions, Logo, MobileNavMenu } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
 
@@ -28,7 +28,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
       <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
         {/* Left: Logo */}
         <div className="flex items-center">
-          <Logo hideIcon className="scale-[0.85] origin-left" />
+          <Logo iconOnly className="scale-[0.85] origin-left" />
         </div>
 
         {/* Center: Navigation Links in a Glass Pill */}
@@ -48,8 +48,16 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
           ))}
         </div>
 
-        {/* Right: User Actions / Dropdown */}
-        <div className="flex items-center justify-end">
+        {/* Right: User Actions + mobile menu */}
+        <div className="flex items-center justify-end gap-2">
+          <MobileNavMenu
+            items={tabs.map(tab => ({
+              id: tab.id,
+              label: tab.label,
+              active: activeTab === tab.id,
+              onSelect: () => onTabChange(tab.id),
+            }))}
+          />
           <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
             <UserHeaderActions
               user={user}
