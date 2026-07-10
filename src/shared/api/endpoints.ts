@@ -88,6 +88,7 @@ export const ENDPOINTS = {
     USERS: "/admin/dashboard/users",
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
     USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
+    USER_STATUS: (userId: string) => `/admin/dashboard/users/${userId}/status`,
     TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction",
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
