@@ -101,7 +101,7 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommenda
   // Compact chip when there is nothing to review (or while collapsed).
   if (!current || isCollapsed) {
     return (
-      <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <button
           onClick={current ? () => setIsCollapsed(false) : handleGenerate}
           disabled={isGenerating || isLoading}
@@ -124,7 +124,7 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommenda
   const isDeciding = decidingId === current.recommendationId
 
   return (
-    <div className="absolute bottom-4 left-4 z-20 w-[340px] bg-white/60 backdrop-blur-md rounded-2xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.08)] overflow-hidden">
+    <div className="w-[340px] bg-white/60 backdrop-blur-md rounded-2xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.08)] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/60 bg-white/50">
         <p className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">

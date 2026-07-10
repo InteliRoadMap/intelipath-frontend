@@ -6,7 +6,7 @@ import { STAGE_LEGEND } from "../lib/stageColors";
  */
 const StageLegend = () => {
   return (
-    <div className="absolute top-4 left-4 z-20 bg-white/70 backdrop-blur-md rounded-xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)] px-3.5 py-3">
+    <div className="bg-white/70 backdrop-blur-md rounded-xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)] px-3.5 py-3">
       <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
         Stages
       </p>

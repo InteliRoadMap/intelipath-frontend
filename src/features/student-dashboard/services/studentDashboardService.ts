@@ -539,6 +539,10 @@ export const studentDashboardService = {
             status: normalizeStatus(row.Status || row.status),
             stage: row.stage || row.Stage || null,
             completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // Topic (spine) node that auto-completes from its child sub-skills.
+            parentTopic: row.parentTopic ?? row.parent_topic ?? false,
+            childTotal: row.childTotal ?? row.child_total ?? 0,
+            childCompleted: row.childCompleted ?? row.child_completed ?? 0,
             // Hand-placed coordinates from the mentor editor; null = auto-layout.
             positionX: row.positionX ?? row.position_x ?? null,
             positionY: row.positionY ?? row.position_y ?? null
