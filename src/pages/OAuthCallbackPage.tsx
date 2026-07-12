@@ -4,122 +4,83 @@ import { RouteProgressBar } from "@/components"
 import { useAuth } from "@/context"
 import { jwtDecode } from "jwt-decode"
 import { ROLES, ROUTES } from "@/shared"
-import authApi from "@/features/auth/api/authApi"
 
 type OAuthTokenPayload = {
   role?: string
   exp?: number
 }
 
-// Helper to get a cookie value by name
-const getCookie = (name: string): string | null => {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-  return match ? decodeURIComponent(match[2]) : null
-}
-
-// Helper to delete a cookie by name
-const deleteCookie = (name: string, path: string = '/') => {
-  document.cookie = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`
-}
-
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams()
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [isProcessing, setIsProcessing] = useState(true)
-  const [errorDetails, setErrorDetails] = useState<string | null>(null)
+
+  const urlError = searchParams.get("error")
+
+  const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || null
+    return null
+  }
+
+  const deleteCookie = (name: string) => {
+    document.cookie = name + "=; Max-Age=-99999999; path=/"
+  }
+
+  const [token] = useState(() => getCookie("token"))
+  const [refreshToken] = useState(() => getCookie("refreshToken") || null)
 
   useEffect(() => {
-    let active = true
+    if (token) deleteCookie("token")
+    if (refreshToken) deleteCookie("refreshToken")
+  }, [token, refreshToken])
 
-    const handleOAuthCallback = async () => {
-      try {
-        // 1. Try to read token from URL first (backward compatibility)
-        let token = searchParams.get("token")
-        
-        // 2. If not found in URL, read from cookie "token" set temporarily by backend
-        if (!token) {
-          token = getCookie("token")
-        }
+  const callbackError = urlError
+    ? `URL Error: ${urlError}`
+    : !token
+      ? "No token found in cookies"
+      : null
 
-        // 3. If still no token, try fallback: call refresh token endpoint (relying on HttpOnly refreshToken cookie)
-        if (!token) {
-          if (import.meta.env.DEV) {
-            console.log("[OAuth Callback] No token in URL or cookie. Attempting token refresh fallback...")
-          }
-          try {
-            const refreshRes = await authApi.refreshToken()
-            token = refreshRes.data?.accessToken
-          } catch (refreshErr) {
-            if (active) {
-              const urlError = searchParams.get("error")
-              const errMessage = urlError 
-                ? `Login failed: ${urlError}` 
-                : "No session token found. Please log in again."
-              
-              navigate(`${ROUTES.LOGIN}?error=${encodeURIComponent(errMessage)}`, { replace: true })
-            }
-            return
-          }
-        }
+  const tokenResult = useMemo(() => {
+    if (!token) return { decoded: null, error: null }
 
-        if (!token) {
-          throw new Error("Unable to retrieve access token.")
-        }
-
-        // Decode token to get details
-        let decoded: OAuthTokenPayload = {}
-        try {
-          decoded = jwtDecode<OAuthTokenPayload>(token)
-        } catch (e) {
-          throw new Error("Invalid access token format.")
-        }
-
-        const role = decoded.role
-        const expiresIn = decoded.exp
-          ? new Date(decoded.exp * 1000).toISOString()
-          : undefined
-
-        // Login using retrieved token
-        await login({ accessToken: token, refreshToken: null, expiresIn })
-
-        // Clean up temporary "token" cookie
-        if (getCookie("token")) {
-          deleteCookie("token")
-        }
-
-        if (!active) return
-
-        // Redirect based on role
-        const userRole = role?.toUpperCase() || ROLES.STUDENT
-        if (userRole === ROLES.ADMIN) navigate(ROUTES.DASHBOARD_ADMIN)
-        else if (userRole === ROLES.COUNSELOR) navigate(ROUTES.DASHBOARD_COUNSELOR)
-        else if (userRole === ROLES.MENTOR) navigate(ROUTES.DASHBOARD_MENTOR)
-        else navigate(ROUTES.DASHBOARD_STUDENT)
-
-      } catch (err: any) {
-        if (active) {
-          console.error("OAuth process error:", err)
-          setErrorDetails(err.message || "An unexpected error occurred during login.")
-          setIsProcessing(false)
-        }
+    try {
+      return { decoded: jwtDecode<OAuthTokenPayload>(token), error: null }
+    } catch (err: unknown) {
+      return {
+        decoded: null,
+        error:
+          "Decode failed: " + (err instanceof Error ? err.message : String(err))
       }
     }
+  }, [token])
 
-    void handleOAuthCallback()
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const errorDetails = callbackError || tokenResult.error || loginError
 
-    return () => {
-      active = false
-    }
-  }, [searchParams, login, navigate])
+  useEffect(() => {
+    if (callbackError || !token || !tokenResult.decoded) return
 
-  if (isProcessing) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <RouteProgressBar />
-      </div>
-    )
-  }
+    const role = tokenResult.decoded.role
+    const expiresIn = tokenResult.decoded.exp
+      ? new Date(tokenResult.decoded.exp * 1000).toISOString()
+      : undefined
+
+    login({ accessToken: token, refreshToken, expiresIn })
+      .then(() => {
+        const userRole = role?.toUpperCase() || ROLES.STUDENT
+        if (userRole === ROLES.ADMIN) navigate(ROUTES.DASHBOARD_ADMIN)
+        else if (userRole === ROLES.COUNSELOR)
+          navigate(ROUTES.DASHBOARD_COUNSELOR)
+        else if (userRole === ROLES.MENTOR) navigate(ROUTES.DASHBOARD_MENTOR)
+        else navigate(ROUTES.DASHBOARD_STUDENT)
+      })
+      .catch((err) => {
+        console.error("Login Error:", err)
+        setLoginError("Login failed: " + (err.message || JSON.stringify(err)))
+      })
+  }, [callbackError, login, navigate, refreshToken, token, tokenResult.decoded])
 
   if (errorDetails) {
     return (
@@ -139,5 +100,9 @@ export default function OAuthCallbackPage() {
     )
   }
 
-  return null
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <RouteProgressBar />
+    </div>
+  )
 }
