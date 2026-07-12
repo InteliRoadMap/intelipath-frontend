@@ -13,6 +13,7 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
+import ConfirmModal from "@/components/modals/ConfirmModal"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
 import NodeCoursesSection from "./NodeCoursesSection"
@@ -95,6 +96,7 @@ const MentorRoadmapEditorView = () => {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const selectedNode = useMemo(
     () => editorNodes.find(n => n.nodeId === selectedId) || null,
@@ -238,11 +240,11 @@ const MentorRoadmapEditorView = () => {
 
   const handleDeleteNode = async () => {
     if (!selectedId) return
-    if (!window.confirm("Delete this node? This cannot be undone.")) return
     setIsSaving(true)
     try {
       await roadmapEditorApi.deleteNode(selectedId)
       toast.success("Node deleted.")
+      setConfirmDeleteOpen(false)
       await loadNodes(careerId)
     } catch (error) {
       console.error("[Roadmap Editor] Failed to delete node:", error)
@@ -431,7 +433,7 @@ const MentorRoadmapEditorView = () => {
               </button>
               {selectedId && (
                 <button
-                  onClick={handleDeleteNode}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   disabled={isSaving}
                   className="flex items-center justify-center gap-1.5 px-3.5 h-10 rounded-xl bg-white text-red-600 ring-1 ring-red-200 text-[12px] font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
@@ -442,6 +444,17 @@ const MentorRoadmapEditorView = () => {
           </div>
         </div>
       </main>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        title="Delete node?"
+        message="This node will be removed from the roadmap. This cannot be undone."
+        confirmLabel="Delete node"
+        variant="danger"
+        loading={isSaving}
+        onConfirm={handleDeleteNode}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   )
 }

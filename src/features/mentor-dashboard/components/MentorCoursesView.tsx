@@ -5,6 +5,7 @@ import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../
 import roadmapEditorApi, { type EditorNode } from "../api/roadmapEditorApi"
 import { emitToast } from "@/utils/toast"
 import { Select } from "@/components"
+import ConfirmModal from "@/components/modals/ConfirmModal"
 
 interface CareerOption { careerId: string; careerName: string }
 
@@ -28,6 +29,8 @@ export function MentorCoursesView() {
   const [form, setForm] = useState(emptyForm())
   const [saving, setSaving] = useState(false)
   const [nodes, setNodes] = useState<EditorNode[]>([])
+  const [pendingDelete, setPendingDelete] = useState<Course | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Load the roadmap nodes of the selected career so the mentor can pin the course to one.
   useEffect(() => {
@@ -110,10 +113,19 @@ export function MentorCoursesView() {
     } catch { emitToast("Couldn't change publish state.", "error") }
   }
 
-  const remove = async (c: Course) => {
-    if (!window.confirm(`Delete "${c.title}"? Enrolled students will lose access.`)) return
-    try { await courseApi.remove(c.courseId); emitToast("Course deleted.", "success"); await load() }
-    catch { emitToast("Couldn't delete the course.", "error") }
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      await courseApi.remove(pendingDelete.courseId)
+      emitToast("Course deleted.", "success")
+      setPendingDelete(null)
+      await load()
+    } catch {
+      emitToast("Couldn't delete the course.", "error")
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const careerName = useMemo(() => {
@@ -165,7 +177,7 @@ export function MentorCoursesView() {
                     {c.status === "PUBLISHED" ? "Unpublish" : "Publish"}
                   </button>
                   <button onClick={() => openEdit(c)} className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-indigo-600"><PencilSimple size={16} /></button>
-                  <button onClick={() => remove(c)} className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash size={16} /></button>
+                  <button onClick={() => setPendingDelete(c)} className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash size={16} /></button>
                 </div>
               </div>
             </div>
@@ -233,6 +245,19 @@ export function MentorCoursesView() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingDelete}
+        title="Delete course?"
+        message={pendingDelete
+          ? `"${pendingDelete.title}" will be removed and enrolled students will lose access. This cannot be undone.`
+          : ""}
+        confirmLabel="Delete course"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }

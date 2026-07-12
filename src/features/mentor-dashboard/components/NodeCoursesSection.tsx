@@ -3,6 +3,7 @@ import { BookOpen, Plus, Trash, Users, X } from "@phosphor-icons/react"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
 import { emitToast } from "@/utils/toast"
 import { Select } from "@/components"
+import ConfirmModal from "@/components/modals/ConfirmModal"
 
 interface Props {
   careerId: string
@@ -25,6 +26,8 @@ export function NodeCoursesSection({ careerId, nodeId }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(blankForm())
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Course | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -77,10 +80,18 @@ export function NodeCoursesSection({ careerId, nodeId }: Props) {
     try { await courseApi.setPublished(c.courseId, c.status !== "PUBLISHED"); await load() }
     catch { emitToast("Couldn't change publish state.", "error") }
   }
-  const remove = async (c: Course) => {
-    if (!window.confirm(`Delete "${c.title}"?`)) return
-    try { await courseApi.remove(c.courseId); await load() }
-    catch { emitToast("Couldn't delete.", "error") }
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      await courseApi.remove(pendingDelete.courseId)
+      setPendingDelete(null)
+      await load()
+    } catch {
+      emitToast("Couldn't delete.", "error")
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -113,7 +124,7 @@ export function NodeCoursesSection({ careerId, nodeId }: Props) {
                 <div className="flex items-center gap-1">
                   <button onClick={() => togglePublish(c)} className="rounded px-1.5 py-0.5 text-[10.5px] font-medium text-slate-500 hover:bg-slate-100">{c.status === "PUBLISHED" ? "Unpublish" : "Publish"}</button>
                   <button onClick={() => openEdit(c)} className="rounded px-1.5 py-0.5 text-[10.5px] font-medium text-cyan-700 hover:bg-cyan-50">Edit</button>
-                  <button onClick={() => remove(c)} className="grid h-5 w-5 place-items-center rounded text-slate-300 hover:bg-red-50 hover:text-red-600"><Trash size={11} /></button>
+                  <button onClick={() => setPendingDelete(c)} className="grid h-5 w-5 place-items-center rounded text-slate-300 hover:bg-red-50 hover:text-red-600"><Trash size={11} /></button>
                 </div>
               </div>
             </div>
@@ -154,6 +165,17 @@ export function NodeCoursesSection({ careerId, nodeId }: Props) {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingDelete}
+        title="Delete course?"
+        message={pendingDelete ? `"${pendingDelete.title}" will be removed. This cannot be undone.` : ""}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }
