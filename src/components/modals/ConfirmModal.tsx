@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Warning } from '@phosphor-icons/react'
 import BaseModal from './BaseModal'
 
 interface ConfirmModalProps {
@@ -17,8 +16,9 @@ interface ConfirmModalProps {
 }
 
 /**
- * In-app confirmation dialog. Replaces the native window.confirm() so
- * destructive actions match the app's look instead of the browser's.
+ * In-app confirmation dialog. Styled to match the app's own language — soft
+ * rounded card, pill buttons, quiet typography — rather than a generic
+ * icon-in-a-circle alert box.
  */
 export default function ConfirmModal({
   isOpen,
@@ -33,37 +33,30 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmClasses =
     variant === 'danger'
-      ? 'bg-red-600 hover:bg-red-700 focus-visible:outline-red-600'
-      : 'bg-slate-900 hover:bg-slate-800 focus-visible:outline-slate-900'
+      ? 'bg-red-500 hover:bg-red-600 shadow-[0_6px_16px_-6px_rgba(239,68,68,0.55)]'
+      : 'bg-slate-900 hover:bg-slate-800 shadow-[0_6px_16px_-6px_rgba(15,15,15,0.45)]'
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={loading ? undefined : onCancel}
       hideCloseButton
-      className="max-w-md"
+      className="!max-w-[400px] !rounded-[26px] !border-black/[0.05] !shadow-[0_24px_60px_-16px_rgba(15,15,15,0.28)]"
     >
-      <div className="p-6">
-        <div className="flex gap-4">
-          <div
-            className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-full ${
-              variant === 'danger' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'
-            }`}
-          >
-            <Warning size={22} weight="fill" />
-          </div>
-          <div className="min-w-0 pt-0.5">
-            <h2 className="text-[16px] font-semibold text-slate-900">{title}</h2>
-            {message && <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{message}</p>}
-          </div>
-        </div>
+      <div className="p-7">
+        <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-slate-900">
+          {title}
+        </h2>
+        {message && (
+          <p className="mt-2 text-[13.5px] leading-relaxed text-slate-500">{message}</p>
+        )}
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-7 flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full px-4 py-2.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelLabel}
           </button>
@@ -71,7 +64,7 @@ export default function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`rounded-lg px-4 py-2 text-[13px] font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${confirmClasses}`}
+            className={`rounded-full px-5 py-2.5 text-[13px] font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${confirmClasses}`}
           >
             {loading ? 'Working…' : confirmLabel}
           </button>
