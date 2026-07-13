@@ -1,15 +1,15 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import counselorApi, {
   type CareerStatistics,
   type MissingSkillItem,
   type Feedback
-} from "../api/counselorApi"
+} from "@/features/counselor-dashboard/api/counselorApi"
 
 // ─── useCareerDistribution ────────────────────────────────────────────────────
 export interface UseCareerDistributionResult {
   data: CareerStatistics[]
-  loading: boolean
   error: boolean
+  loading: boolean
   total: number
 }
 
@@ -17,10 +17,11 @@ export function useCareerDistribution(
   onTotalLoaded?: (total: number) => void
 ): UseCareerDistributionResult {
   const [data, setData] = useState<CareerStatistics[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     counselorApi
       .getCareerDistribution()
       .then((payload: any) => {
@@ -63,9 +64,12 @@ export function useCareerDistribution(
       .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const total = data.reduce((s, c) => s + c.studentCount, 0)
-
-  return { data, loading, error, total }
+  return {
+    data,
+    error,
+    loading,
+    total: data.reduce((s, c) => s + c.studentCount, 0)
+  }
 }
 
 // ─── useMissingSkills ─────────────────────────────────────────────────────────
@@ -153,18 +157,19 @@ export function useMissingSkills(
 // ─── useFeedbackList ──────────────────────────────────────────────────────────
 export interface UseFeedbackListResult {
   feedbacks: Feedback[]
-  loading: boolean
   error: boolean
+  loading: boolean
 }
 
 export function useFeedbackList(
   onTotalLoaded?: (total: number) => void
 ): UseFeedbackListResult {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     counselorApi
       .getFeedback()
       .then((res) => {
@@ -176,5 +181,5 @@ export function useFeedbackList(
       .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { feedbacks, loading, error }
+  return { feedbacks, error, loading }
 }

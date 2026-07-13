@@ -17,6 +17,7 @@ import { useLocation, useNavigate, NavLink } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, DatePicker, SharedAppBackground, MobileNavMenu } from "@/components"
+import { UniversitySelect } from "@/components/ui/UniversitySelect"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../model/useProfileSettings"
 import { useRef } from "react"
@@ -290,13 +291,14 @@ export default function CounselorProfileSettingsPage() {
                     <Building2 size={16} className="text-[#00838f]" />
                     University
                   </label>
-                  <input
-                    type="text"
-                    value={profileData.university}
-                    placeholder="e.g. FPT University"
-                    onChange={(e) => handleChange("university", e.target.value)}
-                    disabled={loading}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
+                  <UniversitySelect
+                    value={profileData.universityId || profileData.university}
+                    placeholder="Select your university"
+                    onChange={(id, name) => {
+                      handleChange("universityId", id)
+                      handleChange("university", name)
+                    }}
+                    className="w-full"
                   />
                 </div>
                 <div>

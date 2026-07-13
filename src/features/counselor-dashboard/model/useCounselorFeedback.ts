@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
+
 import counselorApi, {
   type MyStudent,
   type Feedback
@@ -8,53 +9,98 @@ import counselorApi, {
 export interface UseStudentListResult {
   students: MyStudent[]
   loading: boolean
-  refetch: () => void
+  page: number
+  setPage: (page: number) => void
+  search: string
+  setSearch: (search: string) => void
+  totalPages: number
+  size: number
+  setSize: (size: number) => void
+  refetch: (signal?: AbortSignal) => void
 }
 
 export function useStudentList(): UseStudentListResult {
   const [students, setStudents] = useState<MyStudent[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0) // 0-indexed for backend
+  const [search, setSearch] = useState("")
+  const [size, setSize] = useState(7)
+  const [totalPages, setTotalPages] = useState(1)
 
-  const refetch = useCallback(() => {
-    setLoading(true)
-    counselorApi
-      .getMyStudent()
-      .then((r) => {
-        setStudents(Array.isArray(r) ? r : [])
-      })
-      .catch((error) => {
-        console.error("Failed to fetch students:", error)
-        setStudents([])
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  const refetch = useCallback(
+    (signal?: AbortSignal) => {
+      setLoading(true)
+      counselorApi
+        .getMyStudent(page, size, search, signal)
+        .then((r) => {
+          setStudents(r.students)
+          setTotalPages(r.totalPages)
+        })
+        .catch((error) => {
+          if (error?.name === "CanceledError" || error?.message === "canceled")
+            return // Axios aborted
+          console.error("Failed to fetch students:", error)
+          setStudents([])
+          setTotalPages(1)
+        })
+        .finally(() => setLoading(false))
+    },
+    [page, search, size]
+  )
 
   useEffect(() => {
-    refetch()
+    const controller = new AbortController()
+    refetch(controller.signal)
+    return () => {
+      controller.abort()
+    }
   }, [refetch])
 
-  return { students, loading, refetch }
+  return {
+    students,
+    loading,
+    page,
+    setPage,
+    search,
+    setSearch,
+    totalPages,
+    size,
+    setSize,
+    refetch
+  }
 }
 
-// ─── useFeedbackHistory ───────────────────────────────────────────────────────
-export interface UseFeedbackHistoryResult {
+// ─── useStudentDetailInfo ───────────────────────────────────────────────────────
+export interface UseStudentDetailInfoResult {
+  roadmapProgress: number
+  missingSkills: string[]
   feedbacks: Feedback[]
   loading: boolean
   refetch: () => void
 }
 
-export function useFeedbackHistory(
+export function useStudentDetailInfo(
   studentId: string
-): UseFeedbackHistoryResult {
+): UseStudentDetailInfoResult {
+  const [roadmapProgress, setRoadmapProgress] = useState(0)
+  const [missingSkills, setMissingSkills] = useState<string[]>([])
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     setLoading(true)
     counselorApi
-      .getHistoryFeedback(studentId)
-      .then((r) => setFeedbacks(r?.feedbacks ?? []))
-      .catch(() => setFeedbacks([]))
+      .getStudentInfo(studentId)
+      .then((r) => {
+        setRoadmapProgress(r?.roadmapProgress ?? 0)
+        setMissingSkills(r?.missingSkills ?? [])
+        setFeedbacks(r?.feedbacks ?? [])
+      })
+      .catch(() => {
+        setRoadmapProgress(0)
+        setMissingSkills([])
+        setFeedbacks([])
+      })
       .finally(() => setLoading(false))
   }, [studentId])
 
@@ -62,7 +108,7 @@ export function useFeedbackHistory(
     refetch()
   }, [refetch])
 
-  return { feedbacks, loading, refetch }
+  return { roadmapProgress, missingSkills, feedbacks, loading, refetch }
 }
 
 // ─── useSendFeedback ──────────────────────────────────────────────────────────
@@ -70,6 +116,7 @@ export interface SendFeedbackPayload {
   receiverId: string
   content: string
   type: "GENERAL" | "SKILL" | "CAREER"
+  attachments?: File[]
 }
 
 export interface UseSendFeedbackResult {

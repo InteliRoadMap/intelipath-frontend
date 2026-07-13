@@ -94,7 +94,7 @@ export const ENDPOINTS = {
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
   COUNSELOR: {
-    PROFILE: "/counselor/profile"
+    PROFILE: "/counselor/me/profile"
   },
   COUNSELOR_DASHBOARD: {
     METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
@@ -110,9 +110,10 @@ export const ENDPOINTS = {
       `/counselor/feedback/student/info/${studentId}`,
     HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/student/info/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
-    MODIFY_FEEDBACK: "/counselor/dashboard/modify-feedback",
+    MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
-      `/counselor/dashboard/delete-feedback/${feedbackId}`,
+      `/counselor/feedback/delete/${feedbackId}`,
+    EXPORT_STUDENTS: "/counselor/export-student",
 
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
