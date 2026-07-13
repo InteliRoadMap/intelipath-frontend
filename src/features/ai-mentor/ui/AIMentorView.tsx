@@ -355,6 +355,15 @@ export default function AIMentorPage() {
 
       setMessages(prev => [...prev, tempUserMsg, tempAiMsg])
       setIsSending(true)
+
+      // Clear the composer right away — the message is now in the thread and the
+      // request already snapshotted message + fileToUpload, so the input is free.
+      setInputValue("")
+      setSelectedFile(current => (current === fileToUpload ? null : current))
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto"
+      }
+
       abortControllerRef.current = new AbortController()
 
       try {
@@ -365,16 +374,7 @@ export default function AIMentorPage() {
             }
             return msg
           }))
-        }, abortControllerRef.current.signal, () => {
-          // Clear UI state only once the backend has accepted the stream request.
-          setInputValue("")
-          if (fileToUpload) {
-            setSelectedFile(currentFile => currentFile === fileToUpload ? null : currentFile)
-          }
-          if (textareaRef.current) {
-            textareaRef.current.style.height = "auto"
-          }
-        })
+        }, abortControllerRef.current.signal)
       } catch (error: unknown) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           console.log('Stream aborted by user')
