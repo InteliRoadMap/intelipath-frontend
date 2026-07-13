@@ -1,7 +1,7 @@
 import React from "react"
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts"
 import { BookOpen } from "lucide-react"
-import { useCareerDistribution } from "@/features/counselor-dashboard/hooks/useCounselorDashboard"
+import { useCareerDistribution } from "@/features/counselor-dashboard/model/useCounselorDashboard"
 import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
 import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
 import { ChartTooltip } from "@/components/counselor-dashboard/atoms/ChartTooltip"

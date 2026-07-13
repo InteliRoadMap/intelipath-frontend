@@ -209,6 +209,9 @@ export default function AIMentorPage() {
   // Fetch messages when active session changes
   useEffect(() => {
     if (activeSessionId) {
+      // A send may have just created this session; don't let an async
+      // loadMessages([]) clobber the optimistic user + streaming AI messages.
+      if (sendInFlightRef.current) return
       loadMessages(activeSessionId)
     } else {
       setMessages([])
@@ -352,6 +355,15 @@ export default function AIMentorPage() {
 
       setMessages(prev => [...prev, tempUserMsg, tempAiMsg])
       setIsSending(true)
+
+      // Clear the composer right away — the message is now in the thread and the
+      // request already snapshotted message + fileToUpload, so the input is free.
+      setInputValue("")
+      setSelectedFile(current => (current === fileToUpload ? null : current))
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto"
+      }
+
       abortControllerRef.current = new AbortController()
 
       try {
@@ -362,16 +374,7 @@ export default function AIMentorPage() {
             }
             return msg
           }))
-        }, abortControllerRef.current.signal, () => {
-          // Clear UI state only once the backend has accepted the stream request.
-          setInputValue("")
-          if (fileToUpload) {
-            setSelectedFile(currentFile => currentFile === fileToUpload ? null : currentFile)
-          }
-          if (textareaRef.current) {
-            textareaRef.current.style.height = "auto"
-          }
-        })
+        }, abortControllerRef.current.signal)
       } catch (error: unknown) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           console.log('Stream aborted by user')
@@ -390,8 +393,8 @@ export default function AIMentorPage() {
       console.error(isUploadError ? "Failed to upload file:" : "Failed to start chat:", error)
       setUploadError(
         isUploadError
-          ? "Không thể tải file lên. Vui lòng thử lại."
-          : "Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại."
+          ? "Couldn't upload the file. Please try again."
+          : "Couldn't start the conversation. Please try again."
       )
     } finally {
       setIsUploading(false)
@@ -611,7 +614,7 @@ export default function AIMentorPage() {
                                 <div className="flex w-fit items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2">
                                   <FileText size={16} className="text-zinc-500" />
                                   <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Đã đính kèm</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Attached</p>
                                     <p className="max-w-[190px] truncate text-[14px] font-medium text-zinc-800">{attachmentName}</p>
                                   </div>
                                 </div>
@@ -629,12 +632,9 @@ export default function AIMentorPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="flex w-full text-left justify-start mb-6 gap-4"
+                          className="flex w-full text-left justify-start mb-6"
                         >
-                          <div className="w-8 h-8 rounded-full border border-zinc-200 bg-white shadow-sm flex items-center justify-center shrink-0">
-                            <span className="text-[14px] font-bold text-slate-800">AI</span>
-                          </div>
-                          <div className="w-full text-[15px] leading-[1.7] text-zinc-900 mt-1">
+                          <div className="w-full text-[15px] leading-[1.7] text-zinc-900">
                             {msg.content === '' && isSending ? (
                               <div className="flex items-center gap-1.5 h-5">
                                 <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce"></div>
@@ -642,7 +642,7 @@ export default function AIMentorPage() {
                                 <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce delay-300"></div>
                               </div>
                             ) : (
-                              <div className="prose prose-zinc max-w-none prose-p:leading-[1.7] prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13.5px] prose-a:text-blue-600 prose-a:font-medium">
+                              <div className="prose prose-zinc max-w-none text-[15px] prose-headings:font-semibold prose-headings:text-zinc-900 prose-headings:mt-5 prose-headings:mb-2 prose-headings:first:mt-0 prose-h1:text-[19px] prose-h2:text-[17px] prose-h3:text-[15px] prose-p:leading-[1.7] prose-p:my-2.5 prose-strong:text-zinc-900 prose-strong:font-semibold prose-ul:my-2.5 prose-ol:my-2.5 prose-li:my-1 prose-li:marker:text-zinc-400 prose-hr:my-5 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13px] prose-a:text-blue-600 prose-a:font-medium">
                                   <ReactMarkdown 
                                     remarkPlugins={[remarkGfm, remarkBreaks]}
                                     rehypePlugins={[rehypeRaw]}
@@ -731,7 +731,7 @@ export default function AIMentorPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={isSending || isUploading}
-                    placeholder={isUploading ? "Đang tải file…" : isSending ? "AI đang trả lời…" : "Send a message..."}
+                    placeholder={isUploading ? "Uploading file…" : isSending ? "AI is replying…" : "Send a message..."}
                     className="flex-1 w-full bg-transparent border-0 outline-none resize-none py-2.5 px-1 text-zinc-900 placeholder:text-zinc-500 text-[15px] disabled:opacity-50 min-h-[44px] overflow-y-auto"
                     rows={1}
                     style={{ maxHeight: '200px' }}
@@ -741,7 +741,7 @@ export default function AIMentorPage() {
                       onClick={handleSendMessage}
                     disabled={(!inputValue.trim() && !selectedFile) || isSending || isUploading}
                     className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-900 text-white hover:bg-zinc-800 transition-colors outline-none disabled:opacity-50 disabled:hover:bg-zinc-900 shadow-sm"
-                    aria-label={isUploading ? "Đang tải file" : isSending ? "AI đang trả lời" : "Gửi tin nhắn"}
+                    aria-label={isUploading ? "Uploading file" : isSending ? "AI is replying" : "Send message"}
                   >
                       {isUploading || isSending ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -757,9 +757,9 @@ export default function AIMentorPage() {
                 {uploadError ? (
                   <p className="text-[12px] font-medium text-red-500">{uploadError}</p>
                 ) : isUploading ? (
-                  <p className="text-[12px] font-medium text-zinc-500">Đang tải file…</p>
+                  <p className="text-[12px] font-medium text-zinc-500">Uploading file…</p>
                 ) : isSending ? (
-                  <p className="text-[12px] font-medium text-zinc-500">AI đang trả lời…</p>
+                  <p className="text-[12px] font-medium text-zinc-500">AI is replying…</p>
                 ) : (
                   <p className="text-[12px] text-zinc-400">AI can make mistakes. Consider verifying important information.</p>
                 )}
@@ -785,9 +785,9 @@ export default function AIMentorPage() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-zinc-200"
             >
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Rời khỏi ứng dụng?</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Leave the app?</h3>
               <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-                Bạn đang chuẩn bị rời khỏi hệ thống InteliPath để truy cập một trang web bên ngoài. Bạn có chắc chắn muốn tiếp tục không?
+                You're about to leave InteliPath to open an external website. Are you sure you want to continue?
               </p>
               <div className="bg-zinc-50 p-3 rounded-lg mb-6 border border-zinc-100">
                 <p className="text-xs text-zinc-500 font-mono break-all line-clamp-2">{externalLink}</p>
@@ -797,7 +797,7 @@ export default function AIMentorPage() {
                   onClick={() => setExternalLink(null)}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button 
                   onClick={() => {
@@ -806,7 +806,7 @@ export default function AIMentorPage() {
                   }}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm"
                 >
-                  Tiếp tục
+                  Continue
                 </button>
               </div>
             </motion.div>

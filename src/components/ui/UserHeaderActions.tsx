@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { SignOut, CaretDown, GearSix, ChatCenteredText } from '@phosphor-icons/react'
+import { SignOut, CaretDown, GearSix } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
 import type { User } from '@/features/auth'
@@ -45,11 +45,6 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         navigate(ROUTES.PROFILE_SETTINGS || '/profile/settings')
       }
     }
-  }
-
-  const handleFeedbackClick = () => {
-    setShowDropdown(false)
-    navigate(ROUTES.DASHBOARD_STUDENT_FEEDBACK || '/dashboard/student/feedback')
   }
 
   return (

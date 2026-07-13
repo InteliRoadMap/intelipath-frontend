@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
-import { UserHeaderActions, Logo } from "@/components"
+import { UserHeaderActions, Logo, MobileNavMenu } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
 
@@ -16,12 +16,21 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
   const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
 
   const navigate = useNavigate()
+
+  const mobileNavItems = [
+    { id: "dashboard", label: "Dashboard", active: location.pathname === ROUTES.DASHBOARD_STUDENT, onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT) },
+    { id: "roadmap", label: "Roadmap", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_ROADMAP), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP) },
+    { id: "market", label: "Market Pulse", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_MARKET_PULSE), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_MARKET_PULSE) },
+    { id: "portfolio", label: "Portfolio", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_PORTFOLIO), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO) },
+    { id: "aichat", label: "AI Mentor", active: isAiMentorActive, onSelect: onOpenAiMentor },
+  ]
+
   return (
     <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
       <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
         {/* Left: Logo */}
         <div className="flex items-center">
-          <Logo hideIcon className="scale-[0.85] origin-left" />
+          <Logo iconOnly className="scale-[0.85] origin-left" />
         </div>
 
         {/* Center: Navigation Links in a Glass Pill */}
@@ -78,8 +87,9 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
           </button>
         </div>
 
-        {/* Right: User Actions / Dropdown */}
-        <div className="flex items-center justify-end">
+        {/* Right: User Actions + mobile menu */}
+        <div className="flex items-center justify-end gap-2">
+          <MobileNavMenu items={mobileNavItems} />
           <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
             <UserHeaderActions
               user={user}

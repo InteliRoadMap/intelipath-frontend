@@ -1,5 +1,7 @@
 export type AdminRole = "STUDENT" | "COUNSELOR" | "MENTOR" | "ADMIN"
 
+export type AdminUserStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED"
+
 export interface AdminUserMetric {
   total: number
   growth: number
@@ -33,5 +35,6 @@ export interface AdminUserListItem {
   name: string
   email?: string
   role: AdminRole
+  status?: AdminUserStatus
   joinedDate: string
 }

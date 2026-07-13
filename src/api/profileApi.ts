@@ -23,14 +23,13 @@ export interface UpdateMentorProfilePayload {
 
 export interface UpdateCounselorProfilePayload {
   department: string
-  universityId: string
 }
 
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
-  getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR.PROFILE),
-
+  getCounselorProfile: () =>
+    mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
   getUniversities: () => mainClient.get(ENDPOINTS.UNIVERSITIES.LIST),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>

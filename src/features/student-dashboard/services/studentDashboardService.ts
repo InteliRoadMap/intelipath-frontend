@@ -510,8 +510,13 @@ export const studentDashboardService = {
                 if (typeof res === 'string') {
                     try { parsed = JSON.parse(res); } catch (e) { parsed = []; }
                 }
-                if (Array.isArray(parsed)) return parsed.map((r: any, i: number) => ({ title: r.title || `Resource ${i+1}`, url: r.url || r.link || "" }));
-                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }];
+                if (Array.isArray(parsed)) return parsed
+                    .map((r: any, i: number) => ({
+                        title: (r && typeof r === 'object' && r.title) ? r.title : `Resource ${i + 1}`,
+                        url: typeof r === 'string' ? r : (r?.url || r?.link || "")
+                    }))
+                    .filter((x: { url: string }) => x.url);
+                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }].filter(x => x.url);
                 return [];
             };
             resources = parseResourceField(rawResourceData);
@@ -534,6 +539,10 @@ export const studentDashboardService = {
             status: normalizeStatus(row.Status || row.status),
             stage: row.stage || row.Stage || null,
             completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // Topic (spine) node that auto-completes from its child sub-skills.
+            parentTopic: row.parentTopic ?? row.parent_topic ?? false,
+            childTotal: row.childTotal ?? row.child_total ?? 0,
+            childCompleted: row.childCompleted ?? row.child_completed ?? 0,
             // Hand-placed coordinates from the mentor editor; null = auto-layout.
             positionX: row.positionX ?? row.position_x ?? null,
             positionY: row.positionY ?? row.position_y ?? null

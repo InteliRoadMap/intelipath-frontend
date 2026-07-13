@@ -31,6 +31,7 @@ import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
+import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import StageLegend from "./StageLegend"
 import { getStageStyle } from "../lib/stageColors"
@@ -396,16 +397,21 @@ export default function StudentRoadmapPageView() {
         const detail = await studentDashboardService.getNodeDetail(nodeData.id)
         if (detail) {
           let resources: {title: string, url: string}[] = [];
-          
-          if (detail.resource && typeof detail.resource === 'string') {
-            try {
-              const parsed = JSON.parse(detail.resource);
-              if (Array.isArray(parsed)) {
-                resources = parsed.map((url: string, idx: number) => ({ title: `Learning Resource ${idx + 1}`, url }));
-              }
-            } catch (e) {
-              console.error("Failed to parse resource string:", e);
-            }
+
+          // resource comes from a JSONB column: usually a JSON array of URL strings
+          // (or objects), but tolerate a JSON string too.
+          let rawResources: any = detail.resource;
+          if (typeof rawResources === 'string') {
+            try { rawResources = JSON.parse(rawResources); } catch { rawResources = []; }
+          }
+          if (Array.isArray(rawResources)) {
+            resources = rawResources
+              .map((item: any, idx: number) => {
+                const url = typeof item === 'string' ? item : (item?.url || item?.link || '');
+                const title = (item && typeof item === 'object' && item.title) ? item.title : `Learning Resource ${idx + 1}`;
+                return url ? { title, url } : null;
+              })
+              .filter(Boolean) as {title: string, url: string}[];
           }
 
           if (resources.length === 0) {
@@ -474,18 +480,21 @@ export default function StudentRoadmapPageView() {
               </ReactFlowProvider>
             </div>
 
-            {/* Stage colour legend (top-left) */}
-            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && <StageLegend />}
-
-            {/* AI Roadmap Personalization suggestions (floating panel) */}
-            <RoadmapRecommendationsPanel
-              hasCareer={Boolean(currentCareerId)}
-              onApplied={loadRoadmap}
-            />
+            {/* Top-left floating stack: AI suggestions, mentor courses, stage legend */}
+            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
+              <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2.5">
+                <RoadmapRecommendationsPanel
+                  hasCareer={Boolean(currentCareerId)}
+                  onApplied={loadRoadmap}
+                />
+                {currentCareerId && <StudentCoursesPanel careerId={currentCareerId} careerName={currentCareerName} />}
+                <StageLegend />
+              </div>
+            )}
         </div>
 
         {/* Right Column (Details) - High-End Redesign */}
-        <div className="hidden lg:flex w-[340px] shrink-0 flex-col bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-white/60 overflow-hidden relative">
+        <div className="hidden lg:flex w-[400px] shrink-0 flex-col bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-white/60 overflow-hidden relative">
           
           {/* Target Career Header */}
           <div className="px-5 py-4 border-b border-white/60 bg-white/50">
@@ -509,6 +518,7 @@ export default function StudentRoadmapPageView() {
                </button>
              </div>
           </div>
+
 
           <div className="flex-1 flex flex-col overflow-hidden p-5 relative">
             {selectedNodeData ? (
@@ -596,7 +606,39 @@ export default function StudentRoadmapPageView() {
                 
                 <div className="shrink-0 pt-4 mt-auto space-y-3">
                   {/* Premium Compact Action Buttons */}
-                  {selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
+                  {selectedNodeData.parentTopic ? (
+                    selectedNodeData.status === 'locked' ? (
+                      <button
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
+                      >
+                        <LockKey size={16} weight="bold" /> Locked (Finish the previous topic first)
+                      </button>
+                    ) : (() => {
+                      const total = selectedNodeData.childTotal || 0;
+                      const done = selectedNodeData.childCompleted || 0;
+                      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                      const complete = selectedNodeData.status === 'completed';
+                      return (
+                        <div className={`w-full rounded-xl ring-1 px-4 py-3.5 ${complete ? 'bg-emerald-50 ring-emerald-500/20' : 'bg-slate-50 ring-slate-200'}`}>
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${complete ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
+                              {complete ? <Check size={13} weight="bold" /> : <TreeStructure size={13} weight="bold" />}
+                            </div>
+                            <p className={`text-[12px] font-bold ${complete ? 'text-emerald-700' : 'text-slate-700'}`}>
+                              {complete ? 'Topic complete' : 'Learn the sub-skills to finish this topic'}
+                            </p>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden mb-1.5">
+                            <div className={`h-full rounded-full transition-all duration-500 ${complete ? 'bg-emerald-500' : 'bg-slate-900'}`} style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="text-[11px] font-semibold text-slate-500">
+                            {done}/{total} sub-skills completed — this topic completes automatically
+                          </p>
+                        </div>
+                      );
+                    })()
+                  ) : selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
                     <div className="w-full flex items-center justify-center gap-2 bg-slate-50 text-slate-500 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-medium text-[12px]">
                       <TreeStructure size={14} weight="bold" />
                       Group topic — completes automatically via its child nodes

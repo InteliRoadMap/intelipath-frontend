@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
-import { useAuth } from "@/context"
 import dashboardApi from "../../api/dashboardApi"
+import { useAuth } from "@/context"
 import { createPortal } from "react-dom"
 import {
   Bell,
@@ -167,15 +167,11 @@ function NotifItem({
 
 function NotifEmpty({ compact = false }: { compact?: boolean }) {
   return (
-    <div
-      className={`flex flex-col items-center justify-center text-center ${compact ? "py-10 px-6" : "py-20 px-6"}`}
-    >
+    <div className={`flex flex-col items-center justify-center text-center ${compact ? "py-10 px-6" : "py-20 px-6"}`}>
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4">
         <BellOff size={24} className="text-slate-400" />
       </div>
-      <p className="text-[15px] font-semibold text-slate-800">
-        You're all caught up
-      </p>
+      <p className="text-[15px] font-semibold text-slate-800">You're all caught up</p>
       <p className="text-[13px] text-slate-500 mt-1 max-w-[220px]">
         New feedback and updates will show up here.
       </p>
@@ -203,27 +199,19 @@ function NotifRow({
       onClick={() => onOpen(notif)}
     >
       {/* Unread accent bar */}
-      {!notif.read && (
-        <span className="absolute left-0 top-0 h-full w-[3px] bg-[#00838f]" />
-      )}
+      {!notif.read && <span className="absolute left-0 top-0 h-full w-[3px] bg-[#00838f]" />}
       <NotifIcon type={notif.type} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p
-            className={`text-[14.5px] leading-6 truncate ${!notif.read ? "font-bold text-slate-900" : "font-semibold text-slate-600"}`}
-          >
+          <p className={`text-[14.5px] leading-6 truncate ${!notif.read ? "font-bold text-slate-900" : "font-semibold text-slate-600"}`}>
             {notif.title}
           </p>
-          {!notif.read && (
-            <span className="shrink-0 h-2 w-2 rounded-full bg-[#00838f]" />
-          )}
+          {!notif.read && <span className="shrink-0 h-2 w-2 rounded-full bg-[#00838f]" />}
         </div>
         <p className="mt-0.5 text-[13px] leading-5 text-slate-500 line-clamp-2">
           {stripMarkdown(notif.message)}
         </p>
-        <span className="mt-1 block text-[12px] text-slate-400 font-medium">
-          {notif.time}
-        </span>
+        <span className="mt-1 block text-[12px] text-slate-400 font-medium">{notif.time}</span>
       </div>
       {/* Actions — visible on hover (always on touch) */}
       <div
@@ -271,8 +259,7 @@ export function NotifFullPage({
 }) {
   const [filter, setFilter] = useState<"all" | "unread">("all")
   const unread = notifications.filter((n) => !n.read).length
-  const shown =
-    filter === "unread" ? notifications.filter((n) => !n.read) : notifications
+  const shown = filter === "unread" ? notifications.filter((n) => !n.read) : notifications
 
   return createPortal(
     <div
@@ -289,9 +276,7 @@ export function NotifFullPage({
             <Bell size={22} className="text-[#00838f]" />
           </div>
           <div>
-            <h2 className="text-[18px] font-bold text-slate-900">
-              Notifications
-            </h2>
+            <h2 className="text-[18px] font-bold text-slate-900">Notifications</h2>
             <p className="text-[13px] text-slate-500">
               {unread > 0 ? `${unread} unread` : "All caught up"}
             </p>
@@ -337,16 +322,12 @@ export function NotifFullPage({
                 type="button"
                 onClick={() => setFilter(f)}
                 className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold capitalize transition-colors ${
-                  filter === f
-                    ? "bg-[#e0f5f5] text-[#00838f]"
-                    : "text-slate-500 hover:bg-slate-50"
+                  filter === f ? "bg-[#e0f5f5] text-[#00838f]" : "text-slate-500 hover:bg-slate-50"
                 }`}
               >
                 {f}
                 {f === "unread" && unread > 0 && (
-                  <span className="ml-1.5 rounded-full bg-[#00838f] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {unread}
-                  </span>
+                  <span className="ml-1.5 rounded-full bg-[#00838f] px-1.5 py-0.5 text-[10px] font-bold text-white">{unread}</span>
                 )}
               </button>
             ))}
@@ -354,13 +335,7 @@ export function NotifFullPage({
           <div className="divide-y divide-slate-100">
             {shown.length > 0 ? (
               shown.map((n) => (
-                <NotifRow
-                  key={n.id}
-                  notif={n}
-                  onOpen={onOpen}
-                  onToggleRead={onToggleRead}
-                  onDelete={onDelete}
-                />
+                <NotifRow key={n.id} notif={n} onOpen={onOpen} onToggleRead={onToggleRead} onDelete={onDelete} />
               ))
             ) : (
               <NotifEmpty />
@@ -400,61 +375,19 @@ function stripMarkdown(md: string): string {
 }
 
 const notifMarkdown = {
-  p: (props: any) => (
-    <p className="text-[14px] leading-6 text-slate-600 mb-2.5" {...props} />
-  ),
-  strong: (props: any) => (
-    <strong className="font-bold text-slate-900" {...props} />
-  ),
-  ul: (props: any) => (
-    <ul
-      className="list-disc pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600"
-      {...props}
-    />
-  ),
-  ol: (props: any) => (
-    <ol
-      className="list-decimal pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600"
-      {...props}
-    />
-  ),
+  p: (props: any) => <p className="text-[14px] leading-6 text-slate-600 mb-2.5" {...props} />,
+  strong: (props: any) => <strong className="font-bold text-slate-900" {...props} />,
+  ul: (props: any) => <ul className="list-disc pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600" {...props} />,
+  ol: (props: any) => <ol className="list-decimal pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600" {...props} />,
   li: (props: any) => <li className="leading-6" {...props} />,
-  h1: (props: any) => (
-    <h3
-      className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5"
-      {...props}
-    />
-  ),
-  h2: (props: any) => (
-    <h3
-      className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5"
-      {...props}
-    />
-  ),
-  h3: (props: any) => (
-    <h3
-      className="text-[14px] font-bold text-slate-900 mt-3 mb-1.5"
-      {...props}
-    />
-  ),
-  a: (props: any) => (
-    <a
-      className="text-[#00838f] font-medium underline"
-      target="_blank"
-      rel="noreferrer"
-      {...props}
-    />
-  )
+  h1: (props: any) => <h3 className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
+  h2: (props: any) => <h3 className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
+  h3: (props: any) => <h3 className="text-[14px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
+  a: (props: any) => <a className="text-[#00838f] font-medium underline" target="_blank" rel="noreferrer" {...props} />,
 }
 
 // ─── Notification detail (centered modal) ──────────────────────────────────────
-function NotifDetail({
-  notif,
-  onClose
-}: {
-  notif: Notification
-  onClose: () => void
-}) {
+function NotifDetail({ notif, onClose }: { notif: Notification; onClose: () => void }) {
   return createPortal(
     <div
       className="fixed inset-0 flex items-center justify-center p-4"
@@ -472,14 +405,8 @@ function NotifDetail({
           <div className="flex items-start gap-3 min-w-0">
             <NotifIcon type={notif.type} />
             <div className="min-w-0">
-              <h2 className="text-[16px] font-bold text-slate-900 leading-snug">
-                {notif.title}
-              </h2>
-              {notif.time && (
-                <p className="text-[12px] text-slate-400 font-medium mt-0.5">
-                  {notif.time}
-                </p>
-              )}
+              <h2 className="text-[16px] font-bold text-slate-900 leading-snug">{notif.title}</h2>
+              {notif.time && <p className="text-[12px] text-slate-400 font-medium mt-0.5">{notif.time}</p>}
             </div>
           </div>
           <button
@@ -492,10 +419,7 @@ function NotifDetail({
         </div>
         {/* Body — rendered markdown */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkBreaks]}
-            components={notifMarkdown}
-          >
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={notifMarkdown}>
             {notif.message}
           </ReactMarkdown>
         </div>
@@ -506,10 +430,7 @@ function NotifDetail({
 }
 
 // ─── Main exported component ───────────────────────────────────────────────────
-export default function NotificationBell({
-  asMenuItem,
-  onCloseMenu
-}: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
+export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -533,9 +454,9 @@ export default function NotificationBell({
       try {
         const res = await dashboardApi.getMentorFeedback()
         const data = res.data?.data || res.data
-
+        
         let mappedNotifs: Notification[] = []
-
+        
         if (data && Array.isArray(data)) {
           // Backend MentorFeedbackItemResponse fields: id, name, time, text.
           // (`time` is already a formatted relative string, e.g. "2 days ago".)
@@ -545,26 +466,26 @@ export default function NotificationBell({
             title: fb.name ? `New feedback from ${fb.name}` : "New feedback",
             message: fb.text?.trim() || "Tap to read the full feedback.",
             time: fb.time || "",
-            read: false
+            read: false,
           }))
         }
 
         // Check local storage mock notification
-        const localNotif = localStorage.getItem("student_notification")
+        const localNotif = localStorage.getItem('student_notification')
         if (localNotif) {
           try {
             const parsed = JSON.parse(localNotif)
             mappedNotifs.unshift({
               id: "local-mock-1",
               type: "success",
-              title: `New feedback from ${parsed.senderName || "Mentor"}`,
+              title: `New feedback from ${parsed.senderName || 'Mentor'}`,
               message: "Your portfolio has received a new review!",
               time: new Date().toLocaleDateString(),
-              read: false
+              read: false,
             })
-          } catch (e) {}
+          } catch(e) {}
         }
-
+        
         setNotifications(mappedNotifs)
       } catch (err) {
         console.error("Failed to fetch notifications:", err)
@@ -600,9 +521,7 @@ export default function NotificationBell({
   }
 
   const toggleRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
-    )
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)))
   }
 
   // Dismiss is client-side (the feedback endpoint is read-only); also drop the
@@ -649,14 +568,10 @@ export default function NotificationBell({
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-rose-500" />
                 )}
               </div>
-              <span className="text-[14px] font-medium text-slate-700">
-                Notifications
-              </span>
+              <span className="text-[14px] font-medium text-slate-700">Notifications</span>
             </div>
             {unreadCount > 0 && (
-              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
+              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">{unreadCount}</span>
             )}
           </button>
         ) : (
@@ -677,7 +592,7 @@ export default function NotificationBell({
         {/* Dropdown */}
         {isDropdownOpen && (
           <div
-            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? "" : "right-0"}`}
+            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? '' : 'right-0'}`}
             style={{
               top: asMenuItem ? "0" : "100%",
               right: asMenuItem ? "100%" : "0",

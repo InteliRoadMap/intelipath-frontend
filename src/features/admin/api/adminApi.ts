@@ -4,7 +4,8 @@ import type {
   AdminRole,
   AdminSystemHealth,
   AdminUserListItem,
-  AdminUserMetric
+  AdminUserMetric,
+  AdminUserStatus
 } from "@/features/admin/admin.types"
 
 /**
@@ -34,6 +35,11 @@ const adminApi = {
 
   updateUserRole: async (userId: string, role: AdminRole) => {
     const response = await mainClient.patch<AdminUserListItem>(ENDPOINTS.ADMIN_DASHBOARD.USER_ROLE(userId), { role })
+    return response.data
+  },
+
+  updateUserStatus: async (userId: string, status: AdminUserStatus) => {
+    const response = await mainClient.patch<AdminUserListItem>(ENDPOINTS.ADMIN_DASHBOARD.USER_STATUS(userId), { status })
     return response.data
   },
 

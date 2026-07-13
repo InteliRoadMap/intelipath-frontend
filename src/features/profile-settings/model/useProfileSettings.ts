@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
-import { isUuid } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
-import { toast } from "@/utils/toast"
 
 export interface ProfileData {
   full_name: string
@@ -48,9 +46,12 @@ export function useProfileSettings() {
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
+    setError(null)
 
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Request timed out")), 5000)
@@ -81,26 +82,63 @@ export function useProfileSettings() {
         ...data,
         full_name:
           data?.fullName ||
+          data?.user?.fullName ||
           data?.userInfo?.fullName ||
           user?.fullName ||
           data?.full_name ||
           "",
-        email: data?.email || data?.userInfo?.email || user?.email || "",
-        role: data?.role || user?.role || "Student",
-        major: data?.major || EMPTY_PROFILE.major,
-        github_profile: data?.githubProfile || data?.github_profile || "",
+        email:
+          data?.email ||
+          data?.user?.email ||
+          data?.userInfo?.email ||
+          user?.email ||
+          "",
+        role: data?.role || data?.user?.role || user?.role || "Student",
+        major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
         year_of_admission:
-          data?.yearOfAdmission || data?.year_of_admission || "",
-        // Show the university NAME; guard against a UUID slipping into the display.
-        university: (() => {
-          const raw = data?.university || data?.universityName || ""
-          return raw && !isUuid(raw) ? raw : ""
-        })(),
-        universityId: data?.universityId || data?.userInfo?.universityId || "",
-        industry_focus: data?.industryFocus || data?.industry_focus || "",
-        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
+          data?.yearOfAdmission ||
+          data?.year_of_admission ||
+          data?.student?.yearOfAdmission ||
+          "",
+        universityId:
+          data?.universityId ||
+          data?.userInfo?.universityId ||
+          data?.student?.university?.universityId ||
+          data?.academicCounselor?.university?.universityId ||
+          "",
+        university:
+          data?.university ||
+          data?.userInfo?.university ||
+          data?.student?.university?.name ||
+          data?.academicCounselor?.university?.name ||
+          "",
+        department:
+          data?.department || data?.academicCounselor?.department || "",
+        industry_focus:
+          data?.industryFocus ||
+          data?.industry_focus ||
+          data?.industryMentor?.industryFocus ||
+          "",
+        bio:
+          data?.bio ||
+          data?.user?.bio ||
+          data?.userInfo?.bio ||
+          (user as any)?.bio ||
+          "",
+        avatar_url:
+          data?.avatarUrl ||
+          data?.user?.avatarUrl ||
+          data?.userInfo?.avatarUrl ||
+          user?.avatarUrl ||
+          "",
         yob:
-          (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")
+          (
+            data?.yob ||
+            data?.user?.yob ||
+            data?.userInfo?.yob ||
+            (user as any)?.yob ||
+            ""
+          )
             ?.toString()
             .split("T")[0] || ""
       })
@@ -131,16 +169,18 @@ export function useProfileSettings() {
 
   const handleSave = async () => {
     setSaving(true)
+    setError(null)
+    setSuccess(null)
 
     if (profileData.yob) {
       const birthDate = new Date(profileData.yob)
       const today = new Date()
       if (birthDate >= today) {
-        toast.error("Date of birth cannot be in the future.")
+        setError("Date of birth cannot be in the future.")
         setSaving(false)
         return
       } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
-        toast.error("You must be at least 10 years old.")
+        setError("You must be at least 10 years old.")
         setSaving(false)
         return
       }
@@ -151,20 +191,16 @@ export function useProfileSettings() {
       profileData.year_of_admission &&
       profileData.yob
     ) {
-      // year_of_admission is a plain year (e.g. 2023), so compare years directly.
-      // (new Date(2023) would be interpreted as epoch milliseconds -> 1970.)
-      const birthYear = new Date(profileData.yob).getFullYear()
-      const admissionYear = parseInt(String(profileData.year_of_admission), 10)
-      if (Number.isFinite(admissionYear) && Number.isFinite(birthYear)) {
-        if (admissionYear <= birthYear) {
-          toast.error("Year of admission must be after your year of birth.")
-          setSaving(false)
-          return
-        } else if (admissionYear - birthYear < 10) {
-          toast.error("Year of admission seems too early based on your age.")
-          setSaving(false)
-          return
-        }
+      const birthDate = new Date(profileData.yob)
+      const admissionDate = new Date(profileData.year_of_admission)
+      if (admissionDate <= birthDate) {
+        setError("Admission date must be after your date of birth.")
+        setSaving(false)
+        return
+      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
+        setError("Admission date seems too early based on your age.")
+        setSaving(false)
+        return
       }
     }
 
@@ -178,28 +214,14 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const isUnivUuid = isUuid(profileData.universityId)
-        let yearNum: number | null = null
-        if (profileData.year_of_admission) {
-          const parsed = parseInt(String(profileData.year_of_admission), 10)
-          if (Number.isFinite(parsed)) {
-            yearNum = parsed
-          }
-        }
-        // The University field is free text holding the display name. Never let a
-        // UUID leak into universityName; the id (if any) goes to universityId only.
-        const typedUniversity = (profileData.university || "").trim()
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: isUnivUuid ? profileData.universityId : null,
-            universityName:
-              typedUniversity && !isUuid(typedUniversity)
-                ? typedUniversity
-                : null,
-            yearOfAdmission: yearNum,
-            major: profileData.major,
-            githubProfile: profileData.github_profile || null
-          } as any)
+            universityId: profileData.universityId || profileData.university,
+            yearOfAdmission: parseInt(profileData.year_of_admission?.substring(0, 4) || "0", 10),
+            major: profileData.major
+            // Original: careerId: ""
+            // Removed to prevent wiping out data
+          })
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
@@ -211,18 +233,40 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department,
-            universityId: profileData.universityId || ""
+            department: profileData.department
           })
         )
       }
 
       await Promise.all(tasks)
 
-      toast.success("Profile saved successfully!")
+      setSuccess("Profile saved successfully!")
+      setTimeout(() => setSuccess(null), 4000)
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
-      toast.error("Save failed. Please try again.")
+      setError("Save failed. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await profileApi.updateAvatar(file)
+      // the backend returns the updated UserResponse, which has avatarUrl
+      const updatedUser = res.data?.data || res.data
+      const newUrl = updatedUser?.avatarUrl || ""
+
+      setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
+      updateUser({ avatarUrl: newUrl })
+      setSuccess("Avatar updated successfully!")
+      setTimeout(() => setSuccess(null), 4000)
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error uploading avatar:", err)
+      setError("Failed to upload avatar. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -239,8 +283,11 @@ export function useProfileSettings() {
     profileData,
     loading,
     saving,
+    error,
+    success,
     handleChange,
     handleSave,
+    handleAvatarUpload,
     loadProfile,
     displayInitial,
     role,

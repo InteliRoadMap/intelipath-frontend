@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Select } from "@/components";
 import { SharedAppBackground } from '@/components/ui';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 import { RecruitmentPost } from '../types/marketPulse';
@@ -7,6 +8,7 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
+import { normalizeTags } from '@/utils/tags';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
 import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';
@@ -136,7 +138,15 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
         
         // Handle RecruitmentPostResponse (which might have a nested list of posts depending on backend)
         const postsData = postsRes.data?.data || postsRes.data || [];
-        setRecruitmentPosts(Array.isArray(postsData) ? postsData : []);
+        // Normalize each post's tags so chips, category grouping and search all
+        // work on clean strings instead of raw scraped JSON.
+        const normalizedPosts = (Array.isArray(postsData) ? postsData : []).map((post: RecruitmentPost) => ({
+          ...post,
+          recruitment: post.recruitment
+            ? { ...post.recruitment, tags: normalizeTags(post.recruitment.tags) }
+            : post.recruitment,
+        }));
+        setRecruitmentPosts(normalizedPosts);
       } catch (error) {
         console.error("Failed to fetch market pulse data", error);
       } finally {
@@ -244,14 +254,15 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[16px] font-bold text-slate-800">Trending Skills Demand</h3>
-              <select 
+              <Select
                 value={trendingTimeRange}
                 onChange={(e) => setTrendingTimeRange(e.target.value)}
-                className="text-[12px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none cursor-pointer"
+                wrapperClassName="w-auto"
+                className="h-8 rounded-lg bg-slate-50 text-[12px] font-bold text-slate-500"
               >
                 <option value="30days">Last 30 Days</option>
                 <option value="3months">Last 3 Months</option>
-              </select>
+              </Select>
             </div>
             {loading ? (
               <div className="h-[300px] bg-slate-50 animate-pulse rounded-xl w-full"></div>
@@ -288,8 +299,9 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           </div>
           
           <div className="flex gap-2 w-full md:w-auto">
-            <select 
-              className="px-4 py-2 w-full md:w-[220px] bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm outline-none cursor-pointer truncate"
+            <Select
+              wrapperClassName="w-full md:w-[220px]"
+              className="rounded-full text-[13px] font-semibold text-slate-700 shadow-sm"
               value={selectedTag || ''}
               onChange={(e) => setSelectedTag(e.target.value || null)}
             >
@@ -301,7 +313,7 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </Select>
 
             <button 
               onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}

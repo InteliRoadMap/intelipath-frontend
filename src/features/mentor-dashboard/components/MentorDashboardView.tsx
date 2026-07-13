@@ -21,6 +21,7 @@ import { Users, Layers, Gauge } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
 import { MentorProgressReportsView } from './MentorProgressReportsView';
+import { MentorCoursesView } from './MentorCoursesView';
 import MarketPulsePageView from '../../student-dashboard/components/MarketPulsePageView';
 
 export function MentorDashboardView() {
@@ -81,10 +82,10 @@ export function MentorDashboardView() {
 
       <div className="mx-auto w-full max-w-[1200px] px-6 md:px-8">
         {activeTab === 'dashboard' && (
-          <div className="space-y-8">
+          <div className="space-y-5">
             <section className="gsap-fade-section">
               <WelcomeBanner user={user} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                 <MetricWidget title="TOTAL MENTEES" icon={Users} data={metrics?.mentees} isLoading={metricsLoading} />
                 <MetricWidget title="PENDING REVIEWS" icon={Layers} data={metrics?.pendingReviews} isLoading={metricsLoading} />
                 <MetricWidget title="FEEDBACK SENT" icon={ChatTeardropText} data={metrics?.feedbacks} isLoading={metricsLoading} />
@@ -95,6 +96,12 @@ export function MentorDashboardView() {
             <section className="gsap-fade-section">
               <PendingReviewsWidget />
             </section>
+          </div>
+        )}
+
+        {activeTab === 'courses' && (
+          <div className="gsap-fade-section">
+            <MentorCoursesView />
           </div>
         )}
 

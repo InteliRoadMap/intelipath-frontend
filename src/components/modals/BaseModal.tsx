@@ -1,5 +1,4 @@
 import { useEffect, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 interface BaseModalProps {
@@ -30,8 +29,8 @@ export default function BaseModal({
 
   if (!isOpen) return null
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl ${className}`}>
         {!hideCloseButton && onClose && (
@@ -46,7 +45,6 @@ export default function BaseModal({
         )}
         {children}
       </div>
-    </div>,
-    document.body
+    </div>
   )
 }

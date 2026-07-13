@@ -105,7 +105,7 @@ const counselorApi = {
   ): Promise<PaginatedStudentResponse> => {
     const searchParam =
       search && search.trim() ? encodeURIComponent(search.trim()) : ""
-    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/page=${page}/size=${size}/search=${searchParam}`
+    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}?page=${page}&size=${size}${searchParam ? `&search=${searchParam}` : ""}`
 
     try {
       const res = await mainClient.get(url, { signal })
@@ -143,7 +143,16 @@ const counselorApi = {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.CREATE_FEEDBACK,
       buildFeedbackFormData(payload),
-      { headers: { "Content-Type": "multipart/form-data" } }
+      // Let the browser set multipart/form-data with the boundary (mainClient
+      // otherwise forces application/json).
+      {
+        transformRequest: [
+          (data, headers) => {
+            delete headers["Content-Type"]
+            return data
+          }
+        ]
+      }
     )
     return res.data
   },
@@ -156,12 +165,21 @@ const counselorApi = {
     const res = await mainClient.patch(
       ENDPOINTS.COUNSELOR_DASHBOARD.MODIFY_FEEDBACK,
       buildFeedbackFormData(payload),
-      { headers: { "Content-Type": "multipart/form-data" } }
+      // Let the browser set multipart/form-data with the boundary (mainClient
+      // otherwise forces application/json).
+      {
+        transformRequest: [
+          (data, headers) => {
+            delete headers["Content-Type"]
+            return data
+          }
+        ]
+      }
     )
     return res.data
   },
   deleteFeedback: async (feedbackId: string): Promise<any> => {
-    const res = await mainClient.delete(
+    const res = await mainClient.patch(
       ENDPOINTS.COUNSELOR_DASHBOARD.DELETE_FEEDBACK(feedbackId)
     )
     return res.data

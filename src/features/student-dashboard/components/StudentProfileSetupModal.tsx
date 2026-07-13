@@ -200,8 +200,15 @@ export default function StudentProfileSetupModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
-      <div className="w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
+      {/* Frosted aurora backdrop — bright, blurred, with soft pastel light so the
+          white content widget reads as floating on top (material hierarchy). */}
+      <div className="absolute inset-0 bg-[#eef1fb]/70 backdrop-blur-2xl" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 -top-24 h-[460px] w-[460px] rounded-full blur-[100px]" style={{ background: 'rgba(129,140,248,0.28)' }} />
+        <div className="absolute -right-24 top-1/4 h-[440px] w-[440px] rounded-full blur-[100px]" style={{ background: 'rgba(56,189,248,0.22)' }} />
+        <div className="absolute -bottom-32 left-1/3 h-[420px] w-[420px] rounded-full blur-[110px]" style={{ background: 'rgba(244,114,182,0.16)' }} />
+      </div>
+      <div className="w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/[0.06] shadow-[0_30px_80px_-24px_rgba(15,23,42,0.35)] relative z-50 flex flex-col max-h-[85vh]">
         <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1 min-h-0">
           <div className="px-6 py-5 md:px-8 md:py-6 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
             <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight text-slate-900">
@@ -304,14 +311,14 @@ export default function StudentProfileSetupModal({
 
                 <Field label="Year of admission" required error={errors.yearOfAdmission}>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="numeric"
-                    min={1970}
-                    max={new Date().getFullYear()}
-                    placeholder="e.g. 2023"
+                    maxLength={4}
+                    className={inputClass}
                     value={yearOfAdmission}
                     onChange={(event) => {
-                      setYearOfAdmission(event.target.value)
+                      const digits = event.target.value.replace(/\D/g, '').slice(0, 4)
+                      setYearOfAdmission(digits)
                       setErrors((current) => ({ ...current, yearOfAdmission: undefined }))
                     }}
                   />

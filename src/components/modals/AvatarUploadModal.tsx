@@ -30,9 +30,8 @@ export default function AvatarUploadModal({
 
   const validateAndUpload = async (file: File) => {
     setFileError(null)
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/jpg"]
-    if (!allowedTypes.includes(file.type)) {
-      setFileError("Invalid format. Please use SVG, PNG, JPG, or GIF.")
+    if (!file.type.startsWith("image/")) {
+      setFileError("Please select an image file.")
       return
     }
     if (file.size > 1048576) {

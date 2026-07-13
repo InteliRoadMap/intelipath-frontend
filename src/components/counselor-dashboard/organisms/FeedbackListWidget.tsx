@@ -1,6 +1,6 @@
 import React from "react"
 import { MessageSquare } from "lucide-react"
-import { useFeedbackList } from "@/features/counselor-dashboard/hooks/useCounselorDashboard"
+import { useFeedbackList } from "@/features/counselor-dashboard/model/useCounselorDashboard"
 import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
 import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
 import { FeedbackItem } from "@/components/counselor-dashboard/molecules/FeedbackItem"
@@ -17,10 +17,10 @@ export function FeedbackListWidget({
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h2 className="text-[18px] font-bold text-slate-900 widget-title">
-            Student Feedback
+            History Feedback
           </h2>
           <p className="text-[13px] text-slate-500 mt-0.5">
-            Messages sent to you from students
+            Feedback history sent to your students
           </p>
         </div>
         {!error && (

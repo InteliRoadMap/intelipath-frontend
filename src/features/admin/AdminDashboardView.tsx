@@ -12,7 +12,9 @@ import {
   ShieldCheck,
   Trash,
   UsersThree,
-  Lightning
+  Lightning,
+  Prohibit,
+  ArrowCounterClockwise
 } from "@phosphor-icons/react"
 import { useNavigate } from "react-router-dom"
 import adminApi from "@/features/admin/api/adminApi"
@@ -32,7 +34,8 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Logo
+  Logo,
+  Select
 } from "@/components"
 import { useAuth } from "@/context"
 import { toast } from "@/utils/toast"
@@ -43,7 +46,8 @@ import type {
   AdminRole,
   AdminSystemHealth,
   AdminUserListItem,
-  AdminUserMetric
+  AdminUserMetric,
+  AdminUserStatus
 } from "./admin.types"
 
 const USERS_PER_PAGE = 7
@@ -225,6 +229,7 @@ function UserManagement({ users, setUsers, isLoading }: {
   const [deletingUser, setDeletingUser] = useState<AdminUserListItem | null>(null)
   const [deleteError, setDeleteError] = useState("")
   const [isDeletingUser, setIsDeletingUser] = useState(false)
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
 
   const filteredUsers = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase()
@@ -262,6 +267,20 @@ function UserManagement({ users, setUsers, isLoading }: {
       setRoleError("Could not update user role. Please try again.")
     } finally {
       setIsSavingRole(false)
+    }
+  }
+
+  const toggleSuspend = async (user: AdminUserListItem) => {
+    const nextStatus: AdminUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
+    setStatusBusyId(user.id)
+    try {
+      const updated = await adminApi.updateUserStatus(user.id, nextStatus)
+      setUsers((current) => current.map((u) => u.id === user.id ? { ...u, ...updated } : u))
+      toast.success(nextStatus === "SUSPENDED" ? "Account suspended." : "Account reactivated.")
+    } catch {
+      toast.error("Could not update account status. Please try again.")
+    } finally {
+      setStatusBusyId(null)
     }
   }
 
@@ -389,13 +408,29 @@ function UserManagement({ users, setUsers, isLoading }: {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 align-middle"><Badge variant={roleVariant(user.role)}>{user.role}</Badge></td>
+                  <td className="px-5 py-4 align-middle">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={roleVariant(user.role)}>{user.role}</Badge>
+                      {user.status === "SUSPENDED" && (
+                        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">Suspended</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-5 py-4 align-middle text-sm text-slate-500">{user.joinedDate}</td>
                   <td className="px-5 py-4 align-middle">
-                    <div className="flex min-w-[190px] items-center justify-end gap-2">
+                    <div className="flex min-w-[300px] items-center justify-end gap-2">
                       <Button className="w-[100px]" variant="outline" size="sm" onClick={() => openRoleEditor(user)}>
                         <PencilSimple size={14} weight="bold" /> Edit role
                       </Button>
+                      {user.status === "SUSPENDED" ? (
+                        <Button variant="outline" size="sm" className="w-[110px] border-emerald-100 text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" disabled={statusBusyId === user.id} onClick={() => toggleSuspend(user)}>
+                          <ArrowCounterClockwise size={14} weight="bold" /> Activate
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-[110px] border-amber-100 text-amber-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700" disabled={statusBusyId === user.id} onClick={() => toggleSuspend(user)}>
+                          <Prohibit size={14} weight="bold" /> Suspend
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" className="w-[100px] border-rose-100 text-rose-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700" onClick={() => setDeletingUser(user)}>
                         <Trash size={14} weight="bold" /> Delete
                       </Button>
@@ -428,13 +463,13 @@ function UserManagement({ users, setUsers, isLoading }: {
             <DialogDescription>Change access permissions for {editingUser?.name}.</DialogDescription>
           </DialogHeader>
           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Role</label>
-          <select
+          <Select
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
-            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
+            className="font-semibold"
           >
-            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role}>{role}</option>)}
-          </select>
+            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+          </Select>
           {roleError && <p className="mt-3 text-sm font-medium text-rose-600">{roleError}</p>}
           <DialogFooter>
             <Button variant="outline" disabled={isSavingRole} onClick={() => setEditingUser(null)}>Cancel</Button>
@@ -607,7 +642,7 @@ export default function AdminDashboardView() {
       <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
+            <Logo iconOnly className="origin-left scale-90" />
             <nav className="hidden items-center gap-8 lg:flex">
               {ADMIN_TABS.map(({ key, label, icon: NavIcon }) => {
                 const active = tab === key

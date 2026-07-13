@@ -4,6 +4,7 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from
 import { mainClient } from "@/shared/api"
 import adminApi from "@/features/admin/api/adminApi"
 import type { AdminSystemHealth } from "@/features/admin/admin.types"
+import { normalizeTags } from "@/utils/tags"
 
 function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>()
@@ -311,13 +312,16 @@ export function AdminMarketTab() {
                     {r.location && <span className="flex items-center gap-1"><MapPin size={13} weight="duotone" /> {r.location}</span>}
                     {r.experience && <span className="flex items-center gap-1"><Briefcase size={13} weight="duotone" /> {r.experience}</span>}
                   </div>
-                  {Array.isArray(r.tags) && r.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {r.tags.slice(0, 5).map((t: string, i: number) => (
-                        <span key={i} className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{t}</span>
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    const tags = normalizeTags(r.tags)
+                    return tags.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {tags.slice(0, 6).map((t, i) => (
+                          <span key={i} className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{t}</span>
+                        ))}
+                      </div>
+                    ) : null
+                  })()}
                 </div>
               )
             })}

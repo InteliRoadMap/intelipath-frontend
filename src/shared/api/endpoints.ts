@@ -89,6 +89,7 @@ export const ENDPOINTS = {
     USERS: "/admin/dashboard/users",
     USER: (userId: string) => `/admin/dashboard/users/${userId}`,
     USER_ROLE: (userId: string) => `/admin/dashboard/users/${userId}/role`,
+    USER_STATUS: (userId: string) => `/admin/dashboard/users/${userId}/status`,
     TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction",
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
@@ -107,14 +108,14 @@ export const ENDPOINTS = {
     GET_STUDENT_LIST: "/counselor/feedback/students",
     GET_STUDENT_INFO: (studentId: string) =>
       `/counselor/feedback/student/info/${studentId}`,
-    // HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/${studentId}`,
+    HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/student/info/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
-    MODIFY_FEEDBACK: "/counselor/dashboard/modify-feedback",
+    MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
-      `/counselor/dashboard/delete-feedback/${feedbackId}`,
-    EXPORT_STUDENTS: "/counselor/export-student"
+      `/counselor/feedback/delete/${feedbackId}`,
+    EXPORT_STUDENTS: "/counselor/export-student",
 
-    // GET_COUNSELOR_PROFILE: "/counselor/me/profile"
+    GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {
     WELCOME_ALERT: "/mentor/dashboard/welcome-alert",
@@ -136,5 +137,19 @@ export const ENDPOINTS = {
     MESSAGES: (sessionId: string) => `/chat/sessions/${sessionId}/messages`,
     STREAM: (sessionId: string) => `/chat/sessions/${sessionId}/stream`,
     UPLOAD_FILE: "/chat/files/upload"
+  },
+  MENTOR_COURSES: {
+    LIST: "/mentor/courses",
+    CREATE: "/mentor/courses",
+    UPDATE: (id: string) => `/mentor/courses/${id}`,
+    DELETE: (id: string) => `/mentor/courses/${id}`,
+    PUBLISH: (id: string) => `/mentor/courses/${id}/publish`,
+  },
+  COURSES: {
+    BROWSE: "/courses",
+    DETAIL: (id: string) => `/courses/${id}`,
+    ENROLL: (id: string) => `/courses/${id}/enroll`,
+    PROGRESS: (id: string) => `/courses/${id}/progress`,
+    MY_ENROLLMENTS: "/courses/me/enrollments",
   }
 } as const

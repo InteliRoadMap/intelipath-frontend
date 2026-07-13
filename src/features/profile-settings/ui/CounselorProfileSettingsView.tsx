@@ -16,20 +16,12 @@ import {
 import { useLocation, useNavigate, NavLink } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import {
-  UserHeaderActions,
-  Logo,
-  DatePicker,
-  SharedAppBackground
-} from "@/components"
+import { UserHeaderActions, Logo, DatePicker, SharedAppBackground, MobileNavMenu } from "@/components"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../model/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-import { cn } from "@/lib/utils"
-import counselorApi from "@/features/counselor-dashboard/api/counselorApi"
-import { toast } from "@/utils/toast"
 gsap.registerPlugin(useGSAP)
 
 export default function CounselorProfileSettingsPage() {
@@ -48,6 +40,7 @@ export default function CounselorProfileSettingsPage() {
   const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
+
 
   useGSAP(
     () => {
@@ -146,7 +139,7 @@ export default function CounselorProfileSettingsPage() {
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
         <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
           <div className="flex items-center">
-            <Logo hideIcon className="scale-[0.85] origin-left" />
+            <Logo iconOnly className="scale-[0.85] origin-left" />
           </div>
 
           <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
@@ -179,7 +172,13 @@ export default function CounselorProfileSettingsPage() {
             </NavLink>
           </div>
 
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
+            <MobileNavMenu
+              items={[
+                { id: "dashboard", label: "Dashboard", active: false, icon: <LayoutDashboard size={16} />, onSelect: () => navigate(ROUTES.DASHBOARD_COUNSELOR) },
+                { id: "feedback", label: "Feedback", active: false, icon: <MessageSquare size={16} />, onSelect: () => navigate(ROUTES.COUNSELOR_FEEDBACK) },
+              ]}
+            />
             <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
               <UserHeaderActions user={user} onLogout={handleLogout} />
             </div>
@@ -290,11 +289,10 @@ export default function CounselorProfileSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={profileData.university}
-                    placeholder="e.g. FPT University"
-                    onChange={(e) => handleChange("university", e.target.value)}
-                    disabled={loading}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
+                    value={profileData.university || "Not assigned"}
+                    disabled
+                    aria-readonly="true"
+                    className="w-full cursor-not-allowed bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-500 disabled:opacity-100"
                   />
                 </div>
                 <div>

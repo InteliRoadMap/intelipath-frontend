@@ -1,4 +1,5 @@
 import React from 'react';
+import { Select } from "@/components";
 
 interface ThemeEditorProps {
   primaryColor: string;
@@ -63,15 +64,15 @@ export const ThemeEditor: React.FC<ThemeEditorProps> = ({
   const FontControl = ({ label, value, fontKey }: { label: string, value: string, fontKey: 'heading'|'body' }) => (
     <div className="mb-3">
       <label className="text-[11px] text-slate-500 block mb-1.5 uppercase tracking-wider font-semibold">{label}</label>
-      <select
+      <Select
         value={value}
         onChange={(e) => onChangeFont(fontKey, e.target.value)}
-        className="w-full bg-slate-50 text-slate-700 text-sm rounded-xl p-2.5 border border-slate-200 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/5 cursor-pointer transition"
+        className="rounded-xl bg-slate-50"
       >
         {FONTS.map(f => (
           <option key={f.value} value={f.value}>{f.label}</option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 

@@ -142,9 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // NEW LOGIC: Allow scheduling refresh even without a refresh token on frontend (HttpOnly Cookie mode)
     if (!expireTime) {
       if (import.meta.env.DEV) {
-        console.warn(
-          "[AUTH REFRESH] Cannot schedule refresh: missing expiration time"
-        )
+        console.warn("[AUTH REFRESH] Cannot schedule refresh: missing expiration time")
       }
       return
     }
@@ -240,18 +238,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               refreshToken: storedRefreshToken
             }
           })
-
+          
           // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
           // if (storedRefreshToken) {
           //   setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
           // }
 
           // NEW LOGIC: Schedule refresh timer even if storedRefreshToken is null (relying on HttpOnly Cookie)
-          setupRefreshTimer(
-            storedToken,
-            storedRefreshToken || undefined,
-            storedExpiresIn
-          )
+          setupRefreshTimer(storedToken, storedRefreshToken || undefined, storedExpiresIn)
         }
       } catch {
         // Token expired or invalid - clear and force re-login
