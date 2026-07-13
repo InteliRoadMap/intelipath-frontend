@@ -632,12 +632,9 @@ export default function AIMentorPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="flex w-full text-left justify-start mb-6 gap-4"
+                          className="flex w-full text-left justify-start mb-6"
                         >
-                          <div className="w-8 h-8 rounded-full border border-zinc-200 bg-white shadow-sm flex items-center justify-center shrink-0">
-                            <span className="text-[14px] font-bold text-slate-800">AI</span>
-                          </div>
-                          <div className="w-full text-[15px] leading-[1.7] text-zinc-900 mt-1">
+                          <div className="w-full text-[15px] leading-[1.7] text-zinc-900">
                             {msg.content === '' && isSending ? (
                               <div className="flex items-center gap-1.5 h-5">
                                 <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce"></div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 // We will create this component next
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
@@ -54,17 +55,17 @@ export const StudentPortfolioPage = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#0a0a0a] text-white relative overflow-hidden">
-        {/* Background ambient glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px]" />
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-slate-50">
+        <Loader2 className="animate-spin text-indigo-600" size={40} strokeWidth={2.5} />
+        <p className="text-sm font-medium text-slate-500">Loading your portfolio…</p>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0a0a0a] text-slate-400">
-        Error loading portfolio
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 text-slate-500">
+        Couldn't load your portfolio. Please try again.
       </div>
     );
   }
