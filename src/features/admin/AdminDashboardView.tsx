@@ -468,7 +468,7 @@ function UserManagement({ users, setUsers, isLoading }: {
             onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
             className="font-semibold"
           >
-            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role}>{role}</option>)}
+            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
           </Select>
           {roleError && <p className="mt-3 text-sm font-medium text-rose-600">{roleError}</p>}
           <DialogFooter>
