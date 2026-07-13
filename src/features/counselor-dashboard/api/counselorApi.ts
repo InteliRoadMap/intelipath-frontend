@@ -69,10 +69,11 @@ const counselorApi = {
   },
   // counselor feedbackS
   getMyStudent: async (search?: string): Promise<MyStudent[]> => {
-    const url =
-      search && search.trim()
-        ? `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/${encodeURIComponent(search.trim())}`
-        : ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST
+    // Clean pagination via query params; request a large page so the full list
+    // is returned (the view shows every assigned student, no client paging yet).
+    const params = new URLSearchParams({ page: "0", size: "1000" })
+    if (search && search.trim()) params.set("search", search.trim())
+    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}?${params.toString()}`
     try {
       const res = await mainClient.get(url)
       const data = res.data?.data || res.data
@@ -93,10 +94,13 @@ const counselorApi = {
   getHistoryFeedback: async (
     studentId: string
   ): Promise<FeedbackListResponse> => {
+    // The counselor's per-student endpoint returns stats + the feedback history
+    // together; pull just the feedbacks out of it.
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.HISTORY_FEEDBACK(studentId)
     )
-    return res.data
+    const data = res.data?.data || res.data
+    return { feedbacks: data?.feedbacks ?? [] }
   },
   createFeedback: async (payload: CreateFeedback): Promise<CreateFeedback> => {
     const res = await mainClient.post(
