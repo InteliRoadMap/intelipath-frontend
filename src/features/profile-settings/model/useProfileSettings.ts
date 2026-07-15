@@ -96,9 +96,9 @@ export function useProfileSettings() {
         role: data?.role || data?.user?.role || user?.role || "Student",
         major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
         year_of_admission:
-          data?.yearOfAdmission ||
-          data?.year_of_admission ||
-          data?.student?.yearOfAdmission ||
+          data?.yearOfAdmission?.toString() ||
+          data?.year_of_admission?.toString() ||
+          data?.student?.yearOfAdmission?.toString() ||
           "",
         universityId:
           data?.universityId ||
@@ -217,7 +217,7 @@ export function useProfileSettings() {
         tasks.push(
           profileApi.updateStudentProfile({
             universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: parseInt(profileData.year_of_admission?.substring(0, 4) || "0", 10),
+            yearOfAdmission: parseInt(String(profileData.year_of_admission).substring(0, 4) || "0", 10),
             major: profileData.major
             // Original: careerId: ""
             // Removed to prevent wiping out data

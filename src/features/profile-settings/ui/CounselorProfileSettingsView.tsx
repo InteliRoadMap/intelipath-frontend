@@ -297,6 +297,28 @@ export default function CounselorProfileSettingsPage() {
                 </div>
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <Calendar size={16} className="text-[#00838f]" />
+                    Year of Admission
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1970}
+                    max={new Date().getFullYear()}
+                    placeholder="e.g. 2023"
+                    value={profileData.year_of_admission}
+                    onChange={(e) =>
+                      handleChange("year_of_admission", e.target.value)
+                    }
+                    disabled={loading}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                     <GraduationCap size={16} className="text-[#00838f]" />
                     Department
                   </label>

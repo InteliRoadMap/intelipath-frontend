@@ -1410,10 +1410,6 @@ export default function CounselorFeedbackPage() {
                         <p className="text-[14px] font-bold text-slate-900 truncate">
                           {fullName}
                         </p>
-                        <p className="text-[12px] text-slate-400 truncate">
-                          {missingCount} skill{missingCount !== 1 ? "s" : ""}{" "}
-                          missing
-                        </p>
                       </div>
                     </div>
                     {/* Email */}
