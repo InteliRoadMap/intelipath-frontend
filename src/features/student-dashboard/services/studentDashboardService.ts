@@ -3,6 +3,7 @@ import { careerApi, dashboardApi, profileApi, roadmapApi, skillApi } from "@/api
 import { isUuid, toIsoDateOnly } from "@/lib/utils"
 import type {
   CareerRole,
+  NodeSelection,
   RoadmapNode,
   RoadmapNodeStatus,
   RoadmapResource,
@@ -116,7 +117,7 @@ const normalizeSkillResponse = (data: unknown): SkillResponse => {
 
 const normalizeStatus = (status?: string): RoadmapNodeStatus => {
   const value = String(status || "locked").toLowerCase()
-  if (value === "completed" || value === "current" || value === "locked" || value === "in_progress") return value
+  if (value === "completed" || value === "current" || value === "locked" || value === "in_progress" || value === "alternative") return value
   return "locked"
 }
 
@@ -395,6 +396,22 @@ export const studentDashboardService = {
     return unwrapResponse(response.data)
   },
 
+  // ─── Choose-one selections ─────────────────────────────────────
+  getRoadmapSelections: async (): Promise<NodeSelection[]> => {
+    const response = await roadmapApi.getSelections()
+    const data = unwrapResponse<any>(response.data)
+    return Array.isArray(data) ? data : []
+  },
+
+  selectAlternative: async (groupNodeId: string, chosenNodeId: string): Promise<NodeSelection> => {
+    const response = await roadmapApi.selectAlternative(groupNodeId, chosenNodeId)
+    return unwrapResponse(response.data)
+  },
+
+  clearRoadmapSelection: async (groupNodeId: string): Promise<void> => {
+    await roadmapApi.clearSelection(groupNodeId)
+  },
+
   getMentorFeedback: async (): Promise<MentorFeedback[]> => {
     const response = await dashboardApi.getMentorFeedback()
     return unwrapResponse(response.data)
@@ -538,7 +555,17 @@ export const studentDashboardService = {
             level: level,
             status: normalizeStatus(row.Status || row.status),
             stage: row.stage || row.Stage || null,
+            completedAt: row.completedAt ?? row.completed_at ?? null,
             completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // v2 personalization hints — drive CHOOSE_ONE styling + selection UX.
+            selection: row.selection || row.Selection || 'ALL',
+            chooseCount: row.chooseCount ?? row.choose_count ?? null,
+            nodeKind: row.nodeKind || row.node_kind || 'CORE',
+            axis: row.axis || row.Axis || 'MAIN',
+            isOptional: row.isOptional ?? row.is_optional ?? false,
+            isCheckpoint: row.isCheckpoint ?? row.is_checkpoint ?? false,
+            // Set below once parent refs are resolved (the CHOOSE_ONE group this node belongs to).
+            parentNodeId: null as string | null,
             // Topic (spine) node that auto-completes from its child sub-skills.
             parentTopic: row.parentTopic ?? row.parent_topic ?? false,
             childTotal: row.childTotal ?? row.child_total ?? 0,
@@ -591,6 +618,13 @@ export const studentDashboardService = {
 
         const parentId = resolveRef(row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id);
         let previousId = resolveRef(row.previousNode || row.previous_node || row.PreviousNode);
+
+        // Record the parent id on the node so the UI knows which CHOOSE_ONE
+        // group an alternative belongs to (needed to POST a selection).
+        if (parentId) {
+          const self = nodes.find(n => n.id === nodeId);
+          if (self) self.data.parentNodeId = parentId;
+        }
 
         if (isMainNode) {
           // Spine: previousNode is the source of truth; level order is only a fallback.

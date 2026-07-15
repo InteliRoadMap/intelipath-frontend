@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -10,6 +10,7 @@ import {
   Check,
   CheckCircle,
   Clock,
+  GitFork,
   LinkSimple,
   LockKey,
   MapTrifold,
@@ -18,7 +19,8 @@ import {
   PencilSimple,
   Target,
   TreeStructure,
-  X
+  X,
+  YoutubeLogo
 } from "@phosphor-icons/react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, SharedAppBackground, Input, RouteProgressBar } from "@/components/ui"
 import { useAuth } from "@/context"
@@ -26,7 +28,8 @@ import { isUuid, formatPrerequisite } from "@/lib/utils"
 import { ROUTES } from "@/shared"
 import { useStudentSetup } from "../hooks"
 import { studentDashboardService } from "../services"
-import type { CareerRole, StudentRoadmap } from "../types"
+import type { CareerRole, NodeSelection, StudentRoadmap } from "../types"
+import ConfirmModal from "@/components/modals/ConfirmModal"
 import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
@@ -34,6 +37,7 @@ import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import StageLegend from "./StageLegend"
+import ResourceViewerModal, { getYouTubeId, type ViewerResource } from "./ResourceViewerModal"
 import { getStageStyle } from "../lib/stageColors"
 
 gsap.registerPlugin(useGSAP)
@@ -244,16 +248,42 @@ export default function StudentRoadmapPageView() {
   const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null)
   
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
+  // Resource currently open in the smart viewer modal.
+  const [activeResource, setActiveResource] = useState<ViewerResource | null>(null)
   const [isUpdatingNode, setIsUpdatingNode] = useState(false);
   const [optimisticStatusMap, setOptimisticStatusMap] = useState<Record<string, string>>({});
 
+  // Choose-one selections (which alternative is picked in each CHOOSE_ONE group).
+  const [selections, setSelections] = useState<NodeSelection[]>([]);
+  const [pendingChoice, setPendingChoice] = useState<any | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  // Node awaiting a "mark as completed" confirmation.
+  const [pendingComplete, setPendingComplete] = useState<any | null>(null);
+  const chosenNodeIds = useMemo(
+    () => new Set(selections.map(s => s.chosenNodeId)),
+    [selections]
+  );
+  const roadmapProgress = Math.max(0, Math.min(100, Math.round(roadmapData?.progress ?? 0)));
+
   const { activeSetupStep, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
+
+  const loadSelections = async () => {
+    try {
+      setSelections(await studentDashboardService.getRoadmapSelections())
+    } catch (error) {
+      console.error("[Student Roadmap] Failed to load selections:", error)
+      setSelections([])
+    }
+  }
 
   const loadRoadmap = async () => {
     setIsRoadmapLoading(true)
     setErrorMessage(undefined)
     try {
-      const nextRoadmap = await studentDashboardService.getStudentRoadmap()
+      const [nextRoadmap] = await Promise.all([
+        studentDashboardService.getStudentRoadmap(),
+        loadSelections(),
+      ])
       setRoadmapData(nextRoadmap)
     } catch (error) {
       console.error("[Student Roadmap] Failed to load roadmap:", error)
@@ -263,6 +293,27 @@ export default function StudentRoadmapPageView() {
       setIsRoadmapLoading(false)
     }
   }
+
+  // Commit a choice: pick this alternative within its CHOOSE_ONE group, then
+  // refetch (statuses, progress and greyed alternatives all move server-side).
+  const confirmChoice = async () => {
+    if (!pendingChoice || isSelecting) return;
+    const groupNodeId = pendingChoice.parentNodeId;
+    if (!groupNodeId) { setPendingChoice(null); return; }
+    setIsSelecting(true);
+    try {
+      await studentDashboardService.selectAlternative(groupNodeId, pendingChoice.id);
+      await loadRoadmap();
+      setOptimisticStatusMap({});
+      // Reflect the pick immediately in the open detail panel.
+      setSelectedNodeData((prev: any) => prev ? { ...prev, isChosen: true } : prev);
+      setPendingChoice(null);
+    } catch (error) {
+      console.error("[Student Roadmap] Failed to select alternative:", error);
+    } finally {
+      setIsSelecting(false);
+    }
+  };
 
   const handleUpdateNodeStatus = async (newStatus: string) => {
     if (!selectedNodeData || isUpdatingNode) return;
@@ -390,6 +441,10 @@ export default function StudentRoadmapPageView() {
     }
   }
 
+  const closePopover = () => {
+    setSelectedNodeData(null)
+  }
+
   const handleNodeClick = async (nodeData: any) => {
     setSelectedNodeData(nodeData)
     if (nodeData && (!nodeData.links || nodeData.links.length === 0)) {
@@ -462,11 +517,9 @@ export default function StudentRoadmapPageView() {
       />
 
       {/* Main Canvas Area */}
-      <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4 gap-4">
-        
-        {/* Left Column removed as requested */}
+      <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4">
 
-        {/* Vector Graph Area */}
+        {/* Vector Graph Area — now full width; details live in a slide-in drawer. */}
         <div className="flex-1 w-full h-full relative overflow-hidden bg-transparent rounded-2xl">
             <div className="absolute inset-0 z-10 bg-transparent">
               {/* React Flow Provider must wrap the Canvas */}
@@ -476,13 +529,50 @@ export default function StudentRoadmapPageView() {
                   themeColor={themeColor}
                   roadmapData={roadmapData}
                   optimisticStatusMap={optimisticStatusMap}
+                  chosenNodeIds={chosenNodeIds}
                 />
               </ReactFlowProvider>
             </div>
 
-            {/* Top-left floating stack: AI suggestions, mentor courses, stage legend */}
+            {/* Top-left floating stack: target career, AI suggestions, mentor courses, legend */}
             {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
               <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2.5">
+                {/* Target Career control (moved here from the old right column). */}
+                <div className="bg-white/70 backdrop-blur-md rounded-xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)] px-3.5 py-3 w-[260px]">
+                  <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                    <Target size={12} weight="bold" />
+                    Target Career
+                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <h1 className="text-[15px] font-bold tracking-tight text-slate-900 truncate flex-1">
+                      {roadmapData?.targetCareerRole || currentCareerName || "Target Career"}
+                    </h1>
+                    <button
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100/70 hover:bg-slate-100 text-[10px] font-semibold text-slate-600 transition-all active:scale-[0.98] group shrink-0"
+                      onClick={() => {
+                        setSelectedCareerId(currentCareerId || "")
+                        setCareerSearch("")
+                        setIsChangingCareer(true)
+                      }}
+                    >
+                      <PencilSimple size={10} weight="bold" className="group-hover:text-slate-900 transition-colors" /> Change
+                    </button>
+                  </div>
+
+                  {/* Overall learning progress. */}
+                  <div className="mt-3 pt-3 border-t border-black/[0.06]">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Progress</span>
+                      <span className="text-[12px] font-black tabular-nums text-slate-900">{roadmapProgress}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-[width] duration-500 ease-out"
+                        style={{ width: `${roadmapProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
                 <RoadmapRecommendationsPanel
                   hasCareer={Boolean(currentCareerId)}
                   onApplied={loadRoadmap}
@@ -493,203 +583,149 @@ export default function StudentRoadmapPageView() {
             )}
         </div>
 
-        {/* Right Column (Details) - High-End Redesign */}
-        <div className="hidden lg:flex w-[400px] shrink-0 flex-col bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] ring-1 ring-white/60 overflow-hidden relative">
-          
-          {/* Target Career Header */}
-          <div className="px-5 py-4 border-b border-white/60 bg-white/50">
-             <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-               <Target size={12} weight="bold" />
-               Target Career
-             </p>
-             <div className="flex items-center justify-between gap-3">
-               <h1 className="text-[14px] font-bold tracking-tight text-slate-900 truncate flex-1">
-                 {roadmapData?.targetCareerRole || currentCareerName || "Target Career"}
-               </h1>
-               <button
-                 className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100/50 hover:bg-slate-100 text-[10px] font-semibold text-slate-600 transition-all active:scale-[0.98] group shrink-0"
-                 onClick={() => {
-                   setSelectedCareerId(currentCareerId || "")
-                   setCareerSearch("")
-                   setIsChangingCareer(true)
-                 }}
-               >
-                 <PencilSimple size={10} weight="bold" className="group-hover:text-slate-900 transition-colors" /> Change
-               </button>
-             </div>
+        {/* Node detail — a right-docked panel that fades into the background
+            (no card / shadow / widget chrome), not a floating popup. */}
+        {selectedNodeData && (
+        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-[380px] max-w-[calc(100%-1rem)] flex-col justify-start bg-gradient-to-l from-slate-50 via-slate-50/85 to-transparent pl-10 pr-5 pt-6">
+          <style>{`@keyframes rmPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}.roadmap-node-panel{animation:rmPanelIn .2s ease-out}`}</style>
+          <div className="pointer-events-auto flex max-h-full flex-col">
+          {/* Compact header: stage dot + node name + close. */}
+          <div className="flex items-start gap-2 px-4 pt-3.5 pb-2 shrink-0">
+            {getStageStyle(selectedNodeData.stage) && (
+              <span
+                className="mt-[5px] h-2.5 w-2.5 shrink-0 rounded-[3px] ring-1 ring-black/20"
+                style={{ backgroundColor: getStageStyle(selectedNodeData.stage)!.color }}
+              />
+            )}
+            <h2 className="flex-1 text-[15px] font-bold leading-snug tracking-tight text-slate-950">
+              {selectedNodeData.label}
+            </h2>
+            <button
+              aria-label="Close detail"
+              onClick={closePopover}
+              className="-mr-1 -mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <X size={14} weight="bold" />
+            </button>
           </div>
 
+          <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-4">
+            {/* One tight status line: state + completion date. */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+              <span className={`rounded-full px-2 py-0.5 ${
+                selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
+                selectedNodeData.status === 'current' || selectedNodeData.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
+                selectedNodeData.status === 'alternative' ? 'bg-amber-50 text-amber-600' :
+                'bg-slate-100 text-slate-500'
+              }`}>
+                {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' || selectedNodeData.status === 'in_progress' ? 'In progress' : selectedNodeData.status === 'alternative' ? 'Alternative' : 'Locked'}
+              </span>
+              {selectedNodeData.status === 'completed' && selectedNodeData.completedAt && (
+                <span className="text-slate-400">
+                  · {new Date(selectedNodeData.completedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              )}
+            </div>
 
-          <div className="flex-1 flex flex-col overflow-hidden p-5 relative">
-            {selectedNodeData ? (
-              <>
-                <div className="flex flex-col shrink-0 gap-2.5 mb-6">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ${
-                      selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20' :
-                      selectedNodeData.status === 'current' ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500/20' :
-                      'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
-                    }`}>
-                      {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' ? 'Current Focus' : 'Locked'}
-                    </span>
-                    {getStageStyle(selectedNodeData.stage) && (
-                      <span
-                        className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-md ring-1 ring-black/10 text-slate-700"
-                        style={{ backgroundColor: `${getStageStyle(selectedNodeData.stage)!.color}40` }}
-                      >
-                        <span
-                          className="h-2 w-2 rounded-[3px] border border-black/40"
-                          style={{ backgroundColor: getStageStyle(selectedNodeData.stage)!.color }}
-                        />
-                        {getStageStyle(selectedNodeData.stage)!.label}
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-[20px] font-bold tracking-tight leading-snug text-slate-950">{selectedNodeData.label}</h2>
-                </div>
+            {/* Short description — clamped, no scroll box. */}
+            {selectedNodeData.description && (
+              <p className="text-[12.5px] leading-relaxed text-slate-600 line-clamp-4">
+                {selectedNodeData.description}
+              </p>
+            )}
 
-                <div className="flex flex-col shrink-0 max-h-[240px] mb-6 relative">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 shrink-0">Description</h3>
-                  
-                  {/* Premium Scroll Area */}
-                  <div className="overflow-y-auto pr-3 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 transition-colors">
-                    <p className="text-[13px] leading-relaxed text-slate-600 font-medium">
-                      {selectedNodeData.description || 'No description provided for this skill node yet.'}
-                    </p>
-                  </div>
-                  {/* Fade out mask at bottom of description if it scrolls */}
-                  <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#FAFAFA] to-transparent pointer-events-none" />
-                </div>
-
-                <div className="flex-1 flex flex-col overflow-hidden min-h-[100px]">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5 shrink-0">
-                    <LinkSimple size={12} weight="bold" />
-                    Learning Resources
-                  </h3>
-                  <div className="flex-1 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
-                    {selectedNodeData.links && selectedNodeData.links.length > 0 ? (
-                      <div className="flex flex-col gap-1.5">
-                        {selectedNodeData.links.map((link: any, idx: number) => {
-                          // Links can arrive as plain URL strings or { url } objects; coerce to a
-                          // real string and skip anything else so we never pass a non-string href.
-                          const rawUrl = typeof link === 'string' ? link : (link && typeof link.url === 'string' ? link.url : '');
-                          const href = rawUrl.trim();
-                          if (!href) return null;
-                          const meta = getLinkMeta(href);
-                          return (
-                            <a
-                              key={idx}
-                              href={href}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="group flex items-center gap-2.5 px-2.5 py-2 bg-white rounded-lg ring-1 ring-black/[0.05] hover:ring-black/[0.12] hover:bg-slate-50 transition-colors cursor-pointer"
-                            >
-                              <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 group-hover:bg-black group-hover:text-white transition-colors">
-                                <LinkSimple size={12} weight="bold" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[12px] font-semibold text-slate-800 group-hover:text-black transition-colors truncate leading-tight">{meta.label}</p>
-                                <p className="text-[10px] text-slate-400 truncate leading-tight">{meta.path}</p>
-                              </div>
-                              <ArrowUpRight size={14} weight="bold" className="text-slate-300 group-hover:text-slate-900 shrink-0 transition-colors" />
-                            </a>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="bg-white/50 p-4 rounded-xl ring-1 ring-white/60 text-center">
-                        <p className="text-[12px] text-slate-500 font-medium">No learning resources attached.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="shrink-0 pt-4 mt-auto space-y-3">
-                  {/* Premium Compact Action Buttons */}
-                  {selectedNodeData.parentTopic ? (
-                    selectedNodeData.status === 'locked' ? (
-                      <button
-                        disabled
-                        className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
-                      >
-                        <LockKey size={16} weight="bold" /> Locked (Finish the previous topic first)
-                      </button>
-                    ) : (() => {
-                      const total = selectedNodeData.childTotal || 0;
-                      const done = selectedNodeData.childCompleted || 0;
-                      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                      const complete = selectedNodeData.status === 'completed';
-                      return (
-                        <div className={`w-full rounded-xl ring-1 px-4 py-3.5 ${complete ? 'bg-emerald-50 ring-emerald-500/20' : 'bg-slate-50 ring-slate-200'}`}>
-                          <div className="flex items-center gap-2 mb-2.5">
-                            <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${complete ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
-                              {complete ? <Check size={13} weight="bold" /> : <TreeStructure size={13} weight="bold" />}
-                            </div>
-                            <p className={`text-[12px] font-bold ${complete ? 'text-emerald-700' : 'text-slate-700'}`}>
-                              {complete ? 'Topic complete' : 'Learn the sub-skills to finish this topic'}
-                            </p>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden mb-1.5">
-                            <div className={`h-full rounded-full transition-all duration-500 ${complete ? 'bg-emerald-500' : 'bg-slate-900'}`} style={{ width: `${pct}%` }} />
-                          </div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            {done}/{total} sub-skills completed — this topic completes automatically
-                          </p>
-                        </div>
-                      );
-                    })()
-                  ) : selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
-                    <div className="w-full flex items-center justify-center gap-2 bg-slate-50 text-slate-500 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-medium text-[12px]">
-                      <TreeStructure size={14} weight="bold" />
-                      Group topic — completes automatically via its child nodes
-                    </div>
-                  ) : selectedNodeData.status === 'completed' ? (
-                    <div className="space-y-3">
-                      <button disabled className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-5 py-3 rounded-xl ring-1 ring-emerald-500/20 font-semibold text-[13px] shadow-sm">
-                        <Check size={16} weight="bold" /> Completed
-                      </button>
-                      <button 
-                        onClick={() => handleUpdateNodeStatus('in_progress')}
-                        disabled={isUpdatingNode}
-                        className="w-full flex items-center justify-center bg-white text-slate-600 px-5 py-2.5 rounded-xl ring-1 ring-slate-200 hover:bg-slate-50 transition-colors font-medium text-[12px] disabled:opacity-50"
-                      >
-                        {isUpdatingNode ? 'Updating...' : 'Re-learn (Mark In Progress)'}
-                      </button>
-                    </div>
-                  ) : selectedNodeData.status === 'locked' ? (
-                    <button 
-                      disabled
-                      className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-5 py-3 rounded-xl ring-1 ring-slate-200 font-semibold text-[13px] cursor-not-allowed"
+            {/* Resources as compact one-line chips. */}
+            {selectedNodeData.links && selectedNodeData.links.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Resources</p>
+                {selectedNodeData.links.map((link: any, idx: number) => {
+                  const rawUrl = typeof link === 'string' ? link : (link && typeof link.url === 'string' ? link.url : '');
+                  const href = rawUrl.trim();
+                  if (!href) return null;
+                  const meta = getLinkMeta(href);
+                  const title = typeof link === 'object' && link?.title ? link.title : meta.label;
+                  const isYt = !!getYouTubeId(href);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (isYt) setActiveResource({ title, url: href })
+                        else window.open(href, '_blank', 'noopener,noreferrer')
+                      }}
+                      className="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all duration-200 hover:-translate-y-px hover:bg-slate-50"
                     >
-                      <LockKey size={16} weight="bold" /> Locked (Complete Prerequisites First)
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleUpdateNodeStatus('completed')}
-                      disabled={isUpdatingNode}
-                      className="group relative w-full flex items-center justify-between bg-black text-white px-5 py-3 rounded-xl overflow-hidden transition-transform active:scale-[0.98] duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgb(0,0,0,0.15)] disabled:opacity-50 disabled:active:scale-100"
-                    >
-                      <span className="text-[13px] font-semibold tracking-wide relative z-10">
-                        {isUpdatingNode ? 'Marking...' : 'Mark as Completed'}
+                      <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md ${isYt ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'} group-hover:scale-105 transition-transform`}>
+                        {isYt ? <YoutubeLogo size={11} weight="fill" /> : <LinkSimple size={11} weight="bold" />}
                       </span>
-                      <div className="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center relative z-10 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105">
-                        <Check size={12} weight="bold" />
-                      </div>
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-slate-700 group-hover:text-black">{meta.label}</span>
+                      <ArrowUpRight size={13} weight="bold" className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate-900" />
                     </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center text-center text-slate-400">
-                <div className="w-12 h-12 rounded-full bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center mb-4">
-                  <MapTrifold size={20} weight="light" className="text-slate-400" />
-                </div>
-                <p className="text-[14px] font-semibold text-slate-900 tracking-tight">Select a topic</p>
-                <p className="text-[12px] mt-1.5 max-w-[180px] text-slate-500 leading-relaxed">Click any node to view its detailed learning resources.</p>
+                  );
+                })}
               </div>
             )}
+
+            {/* Action — compact. */}
+            {selectedNodeData.nodeKind === 'ALTERNATIVE' && !chosenNodeIds.has(selectedNodeData.id) ? (
+              <button
+                onClick={() => setPendingChoice(selectedNodeData)}
+                disabled={isSelecting}
+                className="mt-0.5 flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-[12.5px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+              >
+                <GitFork size={13} weight="bold" /> Choose this option
+              </button>
+            ) : selectedNodeData.parentTopic ? (
+              selectedNodeData.status === 'locked' ? (
+                <div className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-[11.5px] font-semibold text-slate-400">
+                  <LockKey size={13} weight="bold" /> Finish the previous topic first
+                </div>
+              ) : (() => {
+                const total = selectedNodeData.childTotal || 0;
+                const done = selectedNodeData.childCompleted || 0;
+                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                const complete = selectedNodeData.status === 'completed';
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                      <span>{complete ? 'Topic complete' : 'Auto-completes from sub-skills'}</span>
+                      <span className="tabular-nums">{done}/{total}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div className={`h-full rounded-full ${complete ? 'bg-emerald-500' : 'bg-slate-900'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })()
+            ) : selectedNodeData.completionPolicy === 'NEVER_COMPLETE' ? (
+              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-3 py-2 text-[11.5px] font-medium text-slate-500">
+                <TreeStructure size={13} weight="bold" /> Completes via its sub-skills
+              </div>
+            ) : selectedNodeData.status === 'completed' ? (
+              <button
+                onClick={() => handleUpdateNodeStatus('in_progress')}
+                disabled={isUpdatingNode}
+                className="mt-0.5 w-full rounded-lg bg-white px-4 py-2 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                {isUpdatingNode ? 'Updating...' : 'Re-learn (mark in progress)'}
+              </button>
+            ) : selectedNodeData.status === 'locked' ? (
+              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-[11.5px] font-semibold text-slate-400">
+                <LockKey size={13} weight="bold" /> Complete prerequisites first
+              </div>
+            ) : (
+              <button
+                onClick={() => setPendingComplete(selectedNodeData)}
+                disabled={isUpdatingNode}
+                className="mt-0.5 flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-[12.5px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+              >
+                <Check size={14} weight="bold" /> {isUpdatingNode ? 'Marking...' : 'Mark as completed'}
+              </button>
+            )}
+          </div>
           </div>
         </div>
+        )}
 
         {/* Career Selector Overlay */}
         {!isInitialLoading && showCareerSelector && (
@@ -718,6 +754,35 @@ export default function StudentRoadmapPageView() {
       {activeSetupStep === "skills" && (
         <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingChoice}
+        variant="primary"
+        title={pendingChoice ? `Choose ${pendingChoice.label}?` : 'Choose this option?'}
+        message="This becomes the active option in its pick-one group and counts toward your progress. The other options stay available as alternatives — you can switch anytime."
+        confirmLabel="Choose it"
+        cancelLabel="Cancel"
+        loading={isSelecting}
+        onConfirm={confirmChoice}
+        onCancel={() => setPendingChoice(null)}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingComplete}
+        variant="primary"
+        title={pendingComplete ? `Mark "${pendingComplete.label}" as completed?` : 'Mark as completed?'}
+        message="This marks the skill as done, records today's date, and updates your roadmap progress. You can switch it back to in-progress later if needed."
+        confirmLabel="Mark completed"
+        cancelLabel="Cancel"
+        loading={isUpdatingNode}
+        onConfirm={async () => {
+          await handleUpdateNodeStatus('completed');
+          setPendingComplete(null);
+        }}
+        onCancel={() => setPendingComplete(null)}
+      />
+
+      <ResourceViewerModal resource={activeResource} onClose={() => setActiveResource(null)} />
     </div>
   )
 }

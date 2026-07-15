@@ -1,12 +1,22 @@
 export type RoadmapStep = {
   id: string
   // Original: status: "completed" | "current" | "locked"
-  status: "completed" | "current" | "locked" | "in_progress"
+  status: RoadmapNodeStatus
   title: string
 }
 
 // Original: export type RoadmapNodeStatus = "completed" | "current" | "locked"
-export type RoadmapNodeStatus = "completed" | "current" | "locked" | "in_progress"
+// "alternative" = an unchosen option inside a decided CHOOSE_ONE group (greyed, not on the path).
+export type RoadmapNodeStatus = "completed" | "current" | "locked" | "in_progress" | "alternative"
+
+/** One stored choose-one decision, e.g. "Java" picked within "Pick a Language". */
+export type NodeSelection = {
+  groupNodeId: string
+  groupNodeName?: string
+  chosenNodeId: string
+  chosenNodeName?: string
+  createdAt?: string
+}
 
 export type RoadmapResource = {
   title: string

@@ -6,6 +6,13 @@ const roadmapApi = {
     mainClient.put(ENDPOINTS.ROADMAP.UPDATE_NODE_PROGRESS, { nodeId, status }),
   getNodeDetail: (nodeId: string) => mainClient.get(ENDPOINTS.ROADMAP.NODE_DETAIL(nodeId)),
 
+  // ─── Choose-one selections ─────────────────────────────────────
+  getSelections: () => mainClient.get(ENDPOINTS.ROADMAP.SELECTIONS),
+  selectAlternative: (groupNodeId: string, chosenNodeId: string) =>
+    mainClient.put(ENDPOINTS.ROADMAP.SELECTIONS, { groupNodeId, chosenNodeId }),
+  clearSelection: (groupNodeId: string) =>
+    mainClient.delete(ENDPOINTS.ROADMAP.CLEAR_SELECTION(groupNodeId)),
+
   // ─── Roadmap Personalization (AI recommendations) ──────────────
   getPendingRecommendations: () =>
     mainClient.get(ENDPOINTS.ROADMAP_RECOMMENDATIONS.PENDING),

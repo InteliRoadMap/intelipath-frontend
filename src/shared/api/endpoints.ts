@@ -43,7 +43,10 @@ export const ENDPOINTS = {
     STUDENT_ROADMAP: "/roadmaps/student",
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
-    COMPARE_SKILLS: "/roadmap/skills/compare"
+    COMPARE_SKILLS: "/roadmap/skills/compare",
+    // Choose-one selections (pick which alternative in a CHOOSE_ONE group)
+    SELECTIONS: "/roadmaps/selections",
+    CLEAR_SELECTION: (groupNodeId: string) => `/roadmaps/selections/${groupNodeId}`
   },
   ROADMAP_RECOMMENDATIONS: {
     PENDING: '/roadmaps/recommendations',
