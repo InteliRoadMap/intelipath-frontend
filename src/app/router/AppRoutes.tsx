@@ -4,7 +4,7 @@ import {
   DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
   CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
-  CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
+  CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
   PublicPortfolioPage, StudentMarketPulsePage, MentorRoadmapEditorPage
 } from "@/pages"
@@ -66,6 +66,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
             <StudentMarketPulsePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_COURSES}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentCoursesPage />
           </ProtectedRoute>
         }
       />

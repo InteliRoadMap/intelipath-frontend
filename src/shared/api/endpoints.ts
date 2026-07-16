@@ -40,6 +40,8 @@ export const ENDPOINTS = {
   CURRICULUM: {
     // FPT subject declaration -> transcript evidence -> dynamic roadmap.
     FPT_SUBJECTS: "/students/me/fpt-subjects",
+    FPT_SUBJECT_DETAIL: (code: string) => `/students/me/fpt-subjects/${encodeURIComponent(code)}`,
+    FPT_MATERIAL_DOWNLOAD: (id: string) => `/students/me/fpt-materials/${id}/download`,
     CURRICULUM_TERM: "/students/me/curriculum-term",
     SET_CURRICULUM: "/students/me/curriculum"
   },

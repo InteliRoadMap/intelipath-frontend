@@ -13,6 +13,7 @@ export const ROUTES = {
   DASHBOARD_STUDENT_MARKET_PULSE: '/dashboard/student/market-pulse',
   AI_MENTOR: '/dashboard/student/ai-mentor',
   DASHBOARD_STUDENT_PORTFOLIO: '/dashboard/student/portfolio',
+  DASHBOARD_STUDENT_COURSES: '/dashboard/student/courses',
   DASHBOARD_STUDENT_FEEDBACK: '/dashboard/student/feedback',
   DASHBOARD_STUDENT_SETTINGS: '/dashboard/student/settings',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
