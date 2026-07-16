@@ -8,9 +8,10 @@ export interface ProfileData {
   bio: string
   email: string
   role: string
-  // Student & Counselor
+  // Student (free text, display only)
   university: string
-  universityId?: string
+  /** Read-only, set by the backend: FPT accounts get the FPT curriculum and its material. */
+  accountType?: "FPT" | "OTHER"
   // Student
   major: string
   year_of_admission: string
@@ -31,7 +32,7 @@ const EMPTY_PROFILE: ProfileData = {
   email: "",
   role: "Student",
   university: "",
-  universityId: "",
+  accountType: "OTHER",
   major: "",
   year_of_admission: "",
   company: "",
@@ -100,18 +101,12 @@ export function useProfileSettings() {
           data?.year_of_admission ||
           data?.student?.yearOfAdmission ||
           "",
-        universityId:
-          data?.universityId ||
-          data?.userInfo?.universityId ||
-          data?.student?.university ||
-          data?.academicCounselor?.university ||
-          "",
         university:
           data?.university ||
           data?.userInfo?.university ||
           data?.student?.university ||
-          data?.academicCounselor?.university ||
           "",
+        accountType: data?.accountType || data?.student?.accountType || "OTHER",
         department:
           data?.department || data?.academicCounselor?.department || "",
         industry_focus:
@@ -214,10 +209,12 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
+        // The form holds the year as text; the API takes a number.
+        const admissionYear = parseInt(String(profileData.year_of_admission), 10)
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: profileData.year_of_admission,
+            universityName: profileData.university,
+            yearOfAdmission: Number.isFinite(admissionYear) ? admissionYear : null,
             major: profileData.major
             // Original: careerId: ""
             // Removed to prevent wiping out data
@@ -233,8 +230,7 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department,
-            universityId: profileData.universityId || profileData.university
+            department: profileData.department
           })
         )
       }

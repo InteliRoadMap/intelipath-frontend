@@ -1,6 +1,5 @@
 import {
   Book,
-  Building2,
   Calendar,
   Edit3,
   Mail,
@@ -17,7 +16,6 @@ import { useLocation, useNavigate, NavLink } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, DatePicker, SharedAppBackground, MobileNavMenu } from "@/components"
-import { UniversitySelect } from "@/components/ui/UniversitySelect"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "../model/useProfileSettings"
 import { useRef } from "react"
@@ -286,21 +284,6 @@ export default function CounselorProfileSettingsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <Building2 size={16} className="text-[#00838f]" />
-                    University
-                  </label>
-                  <UniversitySelect
-                    value={profileData.universityId || profileData.university}
-                    placeholder="Select your university"
-                    onChange={(id, name) => {
-                      handleChange("universityId", id)
-                      handleChange("university", name)
-                    }}
-                    className="w-full"
-                  />
-                </div>
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                     <GraduationCap size={16} className="text-[#00838f]" />

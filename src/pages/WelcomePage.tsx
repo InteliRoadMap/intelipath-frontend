@@ -1,5 +1,4 @@
 import { useRef, useEffect } from "react"
-import { Link } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import {
@@ -8,7 +7,7 @@ import {
   Code,
   Terminal
 } from "@phosphor-icons/react"
-import { ROUTES } from "@/shared"
+import { LoginDialog } from "@/features/auth"
 import { SharedAppBackground, Logo } from "@/components"
 
 export default function WelcomePage() {
@@ -114,9 +113,11 @@ export default function WelcomePage() {
 
           {/* Right: Actions */}
           <div className="flex items-center justify-end">
-            <Link to={ROUTES.LOGIN} className="flex items-center gap-2 bg-[#0a0a0a] !text-white px-5 py-2 rounded-full text-[13px] font-bold hover:bg-slate-800 transition-colors shadow-sm">
-              <span className="text-white">Log in</span> <ArrowRight size={12} weight="bold" className="text-white" />
-            </Link>
+            <LoginDialog>
+              <button type="button" className="flex items-center gap-2 bg-[#0a0a0a] !text-white px-5 py-2 rounded-full text-[13px] font-bold hover:bg-slate-800 transition-colors shadow-sm cursor-pointer">
+                <span className="text-white">Log in</span> <ArrowRight size={12} weight="bold" className="text-white" />
+              </button>
+            </LoginDialog>
           </div>
         </nav>
       </div>
@@ -146,12 +147,14 @@ export default function WelcomePage() {
             </p>
 
             <div className="hero-elem flex flex-wrap items-center gap-4 opacity-0">
-              <Link
-                to={ROUTES.LOGIN}
-                className="group flex h-[48px] items-center justify-center gap-2 rounded-full bg-[#0a0a0a] px-8 text-[15px] font-semibold !text-white transition-all duration-200 hover:bg-slate-800 shadow-[var(--shadow-taste-2)]"
-              >
-                <span className="text-white">Start your roadmap</span> <ArrowRight size={14} weight="bold" className="text-white transition-transform group-hover:translate-x-1" />
-              </Link>
+              <LoginDialog>
+                <button
+                  type="button"
+                  className="group flex h-[48px] cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0a0a0a] px-8 text-[15px] font-semibold !text-white transition-all duration-200 hover:bg-slate-800 shadow-[var(--shadow-taste-2)]"
+                >
+                  <span className="text-white">Start your roadmap</span> <ArrowRight size={14} weight="bold" className="text-white transition-transform group-hover:translate-x-1" />
+                </button>
+              </LoginDialog>
               <a
                 href="#features"
                 className="group flex h-[48px] items-center justify-center gap-2 rounded-full bg-white px-8 text-[15px] font-semibold text-[#0a0a0a] transition-all duration-200 hover:bg-slate-50 shadow-[var(--shadow-taste-1)] border border-slate-200/60"

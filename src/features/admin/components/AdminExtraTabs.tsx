@@ -39,13 +39,12 @@ function EmptyState({ text }: { text: string }) {
   return <p className="p-8 text-center text-sm text-slate-400">{text}</p>
 }
 
-// ─── Content tab: Careers & Roadmaps + Universities ────────────────────────────
+// ─── Content tab: Careers & Roadmaps ───────────────────────────────────────────
 export function AdminContentTab() {
   const careers = useFetch<any[]>("/careers")
-  const universities = useFetch<any[]>("/universities")
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4">
       <Card className="overflow-hidden">
         <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5">
@@ -87,39 +86,6 @@ export function AdminContentTab() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5">
-            <Buildings size={19} weight="duotone" />
-          </div>
-          <div>
-            <CardTitle className="text-base">Universities</CardTitle>
-            <CardDescription>{Array.isArray(universities) ? `${universities.length} registered` : "Loading…"}</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="p-2">
-          {universities === undefined ? (
-            <SectionSkeleton />
-          ) : !universities || universities.length === 0 ? (
-            <EmptyState text="No universities found." />
-          ) : (
-            <ul className="max-h-[440px] overflow-auto">
-              {universities.map((u) => (
-                <li key={u.universityId || u.name} className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 hover:bg-slate-50">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500">
-                    {u.logoUrl ? <img src={u.logoUrl} alt="" className="h-full w-full object-cover" /> : (u.code || u.name?.slice(0, 2) || "U").toUpperCase().slice(0, 3)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-slate-800">{u.name}</p>
-                    {u.domainEmail && <p className="truncate text-[12px] text-slate-400">{u.domainEmail}</p>}
-                  </div>
-                  {u.code && <Badge className="shrink-0">{u.code}</Badge>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }

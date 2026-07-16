@@ -253,6 +253,10 @@ export default function StudentRoadmapPageView() {
   const [recsRefresh, setRecsRefresh] = useState(0)
   // Right-docked FPT curriculum panel (blends into background like node detail).
   const [showFptPanel, setShowFptPanel] = useState(false)
+  // Only FPT accounts are offered the FPT curriculum and its material. The backend
+  // enforces this too (null fptCoverage, 403 on the curriculum endpoints); this flag
+  // just keeps the UI from advertising what it would refuse.
+  const [isFptAccount, setIsFptAccount] = useState(false)
   
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
   // Resource currently open in the smart viewer modal.
@@ -391,6 +395,7 @@ export default function StudentRoadmapPageView() {
           : null
         const profileCareerId = getProfileCareerId(profile)
         const profileCareerName = getProfileCareerName(profile)
+        setIsFptAccount((profile as any)?.accountType === "FPT")
 
         if (profileCareerId) {
           setCurrentCareerId(profileCareerId)
@@ -586,7 +591,7 @@ export default function StudentRoadmapPageView() {
                   onApplied={loadRoadmap}
                   refreshSignal={recsRefresh}
                 />
-                {currentCareerId && (
+                {currentCareerId && isFptAccount && (
                   <button
                     type="button"
                     onClick={() => { setSelectedNodeData(null); setShowFptPanel(true) }}
@@ -609,7 +614,7 @@ export default function StudentRoadmapPageView() {
 
         {/* FPT curriculum — right-docked panel that fades into the background. */}
         <FptCurriculumPanel
-          open={showFptPanel}
+          open={showFptPanel && isFptAccount}
           onClose={() => setShowFptPanel(false)}
           onApplied={() => { loadRoadmap(); setRecsRefresh(n => n + 1) }}
         />
@@ -666,8 +671,9 @@ export default function StudentRoadmapPageView() {
               </p>
             )}
 
-            {/* FLM overlay — which FPT subjects teach this skill, and their lesson resources. */}
-            {selectedNodeData.fptCoverage?.covered && (
+            {/* FLM overlay — which FPT subjects teach this skill, and their lesson resources.
+                The backend already omits this for non-FPT accounts; the flag is a belt-and-braces guard. */}
+            {isFptAccount && selectedNodeData.fptCoverage?.covered && (
               <div className="flex flex-col gap-1.5 rounded-xl border border-orange-200/70 bg-orange-50/60 p-2.5">
                 <div className="flex items-center gap-1.5">
                   <GraduationCap size={13} weight="fill" className="text-orange-600" />
@@ -719,7 +725,7 @@ export default function StudentRoadmapPageView() {
               </div>
             )}
 
-            {selectedNodeData.fptCoverage?.selfStudy && !selectedNodeData.fptCoverage?.covered && (
+            {isFptAccount && selectedNodeData.fptCoverage?.selfStudy && !selectedNodeData.fptCoverage?.covered && (
               <div className="flex items-center gap-1.5 rounded-lg bg-slate-100/80 px-2.5 py-1.5">
                 <BookOpen size={12} weight="bold" className="text-slate-500" />
                 <span className="text-[11px] font-semibold text-slate-500">Self-study — not taught in the FPT curriculum</span>

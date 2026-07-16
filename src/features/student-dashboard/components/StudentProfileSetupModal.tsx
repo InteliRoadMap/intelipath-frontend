@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Info, Search } from 'lucide-react'
-import { UniversitySelect } from '@/components/ui/UniversitySelect'
 import DatePicker from '@/components/ui/DatePicker'
 import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, formatPrerequisite } from '@/lib/utils'
@@ -35,7 +34,6 @@ export default function StudentProfileSetupModal({
   const [yob, setYob] = useState('')
   const [bio, setBio] = useState('')
   const [university, setUniversity] = useState('')
-  const [universityId, setUniversityId] = useState('')
   const [yearOfAdmission, setYearOfAdmission] = useState('')
   const [major, setMajor] = useState('Software Engineering')
   const [careers, setCareers] = useState<CareerRole[]>([])
@@ -152,8 +150,8 @@ export default function StudentProfileSetupModal({
     const nextErrors: FormErrors = {}
     const admissionYear = parseInt(String(yearOfAdmission), 10)
     const currentYear = new Date().getFullYear()
-    if (!universityId && !university) {
-      nextErrors.university = 'Select your university.'
+    if (!university.trim()) {
+      nextErrors.university = 'Enter your university.'
     }
     if (!Number.isFinite(admissionYear) || admissionYear < 1970 || admissionYear > currentYear) {
       nextErrors.yearOfAdmission = 'Enter a valid admission year.'
@@ -184,7 +182,7 @@ export default function StudentProfileSetupModal({
           bio: bio.trim(),
         }),
         studentDashboardService.updateStudentProfile({
-          university: universityId || university,
+          university: university.trim(),
           yearOfAdmission: admissionYear,
           major: major.trim(),
           careerId,
@@ -271,14 +269,15 @@ export default function StudentProfileSetupModal({
         <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="University" required error={errors.university}>
-              <UniversitySelect
-                value={universityId || university}
-                onChange={(id, name) => {
-                  setUniversityId(id)
-                  setUniversity(name)
+              <input
+                type="text"
+                value={university}
+                placeholder="e.g. FPT University"
+                onChange={(event) => {
+                  setUniversity(event.target.value)
                   setErrors((current) => ({ ...current, university: undefined }))
                 }}
-                className="w-full text-[15px]"
+                className={inputClass}
               />
             </Field>
           </div>

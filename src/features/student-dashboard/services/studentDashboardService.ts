@@ -60,7 +60,6 @@ type RawStudentRoadmap = {
 
 type StudentProfilePayload = {
   university: string
-  universityId?: string
   yearOfAdmission: string
   major: string
   careerId: string
@@ -279,18 +278,6 @@ export const studentDashboardService = {
     profileApi.updateUserProfile(payload),
 
   updateStudentProfile: (payload: any) => {
-    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Aligning with new SetupStudentProfileRequest contract):
-    // const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
-    // if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
-    // if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
-    //
-    // return profileApi.updateStudentProfile({
-    //   ...payload,
-    //   universityId: payload.universityId || payload.university,
-    //   yearOfAdmission
-    // })
-
-    // NEW LOGIC: Support new hybrid contract (yearOfAdmission as number, universityId/universityName separate)
     if (payload.careerId && typeof payload.careerId !== "string") {
       throw new Error("Career ID must be a valid string ID.")
     }
@@ -303,11 +290,8 @@ export const studentDashboardService = {
       }
     }
 
-    const isUnivUuid = isUuid(payload.universityId)
-
     return profileApi.updateStudentProfile({
-      universityId: isUnivUuid ? payload.universityId : null,
-      universityName: isUnivUuid ? (payload.university || payload.universityName || null) : (payload.universityId || payload.universityName || payload.university || null),
+      universityName: payload.universityName || payload.university || null,
       yearOfAdmission: yearNum,
       major: payload.major || null,
       careerId: payload.careerId || null,

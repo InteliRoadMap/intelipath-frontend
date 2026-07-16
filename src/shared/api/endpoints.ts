@@ -82,9 +82,6 @@ export const ENDPOINTS = {
     TRENDING_SKILLS: "/market-trends/skills/trending",
     SALARY_OVERVIEW: "/market-trends/salary-overview"
   },
-  UNIVERSITIES: {
-    LIST: "/universities"
-  },
   RECRUITMENT_POSTS: {
     ALL: "/recruitment-posts/",
     COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,

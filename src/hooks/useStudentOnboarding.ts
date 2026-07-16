@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
 import profileApi from "../api/profileApi"
-import { getErrorMessage, isUuid } from "../lib/utils"
+import { getErrorMessage } from "../lib/utils"
 import { useAuth } from "../context/AuthContext"
 
 export interface OnboardingErrors {
@@ -20,7 +20,6 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
   const [yob, setyob] = useState("")
   const [bio, setBio] = useState("")
   const [university, setUniversity] = useState("")
-  const [universityId, setUniversityId] = useState("")
   const [yearOfAdmission, setYearOfAdmission] = useState("")
   const [major, setMajor] = useState("Software Engineering")
   const [isSaving, setIsSaving] = useState(false)
@@ -60,7 +59,6 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setyob("")
     setBio("")
     setUniversity("")
-    setUniversityId("")
     setYearOfAdmission("")
     setMajor("Software Engineering")
     setErrors({})
@@ -101,7 +99,6 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
       })
 
       if (user?.role === "STUDENT") {
-        const isUnivUuid = isUuid(universityId)
         let yearNum: number | null = null
         if (yearOfAdmission) {
           const parsed = parseInt(String(yearOfAdmission), 10)
@@ -110,8 +107,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
           }
         }
         await profileApi.updateStudentProfile({
-          universityId: isUnivUuid ? universityId : null,
-          universityName: isUnivUuid ? (university || null) : (universityId || university || null),
+          universityName: university || null,
           yearOfAdmission: yearNum,
           major,
           careerId: undefined
@@ -149,8 +145,6 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setBio,
     university,
     setUniversity,
-    universityId,
-    setUniversityId,
     yearOfAdmission,
     setYearOfAdmission,
     major,
