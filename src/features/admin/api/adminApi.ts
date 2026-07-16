@@ -70,6 +70,19 @@ const adminApi = {
   getFlmSyncStatus: async (jobId: string) => {
     const response = await mainClient.get<FlmSyncStatus>(ENDPOINTS.ADMIN_FLM.SYNC_STATUS(jobId))
     return response.data
+  },
+
+  /** Copies the synced syllabi's files into our own storage. Background job — poll it. */
+  startMaterialMirror: async (subjectCode?: string, force = false) => {
+    const response = await mainClient.post<{ jobId: string }>(ENDPOINTS.ADMIN_FLM.MIRROR, null, {
+      params: { ...(subjectCode ? { subjectCode } : {}), force }
+    })
+    return response.data
+  },
+
+  getMaterialMirrorStatus: async (jobId: string) => {
+    const response = await mainClient.get<MirrorStatus>(ENDPOINTS.ADMIN_FLM.MIRROR_STATUS(jobId))
+    return response.data
   }
 }
 
@@ -103,3 +116,23 @@ export interface FlmSyncStatus {
 }
 
 export default adminApi;
+
+export interface MirrorSummary {
+  /** Files that had a source to fetch. */
+  attempted: number
+  mirrored: number
+  skipped: number
+  /** Expected to be non-zero: FLM's scheduleId download handler currently 500s. */
+  failed: number
+  bytes: number
+}
+
+export interface MirrorStatus {
+  state: "pending" | "running" | "done" | "error"
+  phase: string
+  done: number
+  total: number
+  message?: string | null
+  summary?: MirrorSummary | null
+  error?: string | null
+}

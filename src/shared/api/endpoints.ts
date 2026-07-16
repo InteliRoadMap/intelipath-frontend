@@ -101,7 +101,9 @@ export const ENDPOINTS = {
   },
   ADMIN_FLM: {
     SYNC: "/admin/flm/sync",
-    SYNC_STATUS: (jobId: string) => `/admin/flm/sync/${jobId}`
+    SYNC_STATUS: (jobId: string) => `/admin/flm/sync/${jobId}`,
+    MIRROR: "/admin/flm/mirror-materials",
+    MIRROR_STATUS: (jobId: string) => `/admin/flm/mirror-materials/${jobId}`
   },
   COUNSELOR: {
     PROFILE: "/counselor/me/profile"

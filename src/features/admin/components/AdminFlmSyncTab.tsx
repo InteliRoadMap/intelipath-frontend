@@ -3,6 +3,7 @@ import {
   ArrowClockwise,
   BookOpen,
   CheckCircle,
+  CloudArrowUp,
   DownloadSimple,
   GraduationCap,
   Info,
@@ -10,7 +11,7 @@ import {
   Warning,
 } from "@phosphor-icons/react"
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/components"
-import adminApi, { type FlmSyncStatus } from "@/features/admin/api/adminApi"
+import adminApi, { type FlmSyncStatus, type MirrorStatus } from "@/features/admin/api/adminApi"
 import { toast } from "@/utils/toast"
 
 // Legacy autocomplete prefixes — only a hint now; the curriculum id drives discovery
@@ -19,12 +20,168 @@ const LEGACY_PREFIXES = "PRO,PRF,PRN,CSD,DBI,SWE,SWD,SWT,SWR,SWP,PRJ,MAD,WED,IOT
 const POLL_MS = 4000
 const RUNNING = new Set(["pending", "running"])
 
+const MIRROR_RUNNING = new Set(["pending", "running"])
+
+/** "419 MB" — admins care about the quota, not the exact byte count. */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`
+  return `${Math.round(bytes / 1024 ** 2)} MB`
+}
+
+/**
+ * Copies the synced syllabi's files into our own storage, so students download from us
+ * and the FPT-only rule can actually withhold them.
+ *
+ * Split from the sync above because it is a different job with different failure modes:
+ * it needs no cookie (the sources are public) and it moves hundreds of MB, so it runs in
+ * the background and is polled.
+ */
+function MirrorMaterialsCard() {
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [status, setStatus] = useState<MirrorStatus | null>(null)
+  const [starting, setStarting] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const running = starting || (!!status && MIRROR_RUNNING.has(status.state))
+  const done = status?.state === "done"
+  const errored = status?.state === "error"
+
+  useEffect(() => {
+    if (!jobId) return
+    let alive = true
+
+    const tick = async () => {
+      try {
+        const next = await adminApi.getMaterialMirrorStatus(jobId)
+        if (!alive) return
+        setStatus(next)
+        if (next.state === "done") {
+          toast.success(`Stored ${next.summary?.mirrored ?? 0} files. Students download from us now.`)
+          return
+        }
+        if (next.state === "error") {
+          toast.error(next.error || "The mirror failed.")
+          return
+        }
+        timer.current = setTimeout(tick, POLL_MS)
+      } catch {
+        if (alive) toast.error("Lost contact with the mirror job.")
+      }
+    }
+    timer.current = setTimeout(tick, POLL_MS)
+
+    return () => {
+      alive = false
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [jobId])
+
+  const start = async () => {
+    setStarting(true)
+    setStatus(null)
+    setJobId(null)
+    try {
+      const { jobId: newJob } = await adminApi.startMaterialMirror()
+      setJobId(newJob)
+    } catch {
+      toast.error("Could not start the mirror.")
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  const pct = status && status.total > 0 ? Math.round((status.done / status.total) * 100) : running ? 6 : 0
+
+  return (
+    <Card className="overflow-hidden lg:col-span-5">
+      <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-black/5">
+          <CloudArrowUp size={19} weight="duotone" />
+        </div>
+        <div>
+          <CardTitle className="text-base">Store course materials</CardTitle>
+          <CardDescription>
+            Keeps our own copy of each file, so students download from us and only FPT accounts can.
+          </CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+          <Info size={14} weight="duotone" className="mt-0.5 shrink-0" />
+          <span>
+            Run this after a sync. Many files fail because FLM's own download handler returns an
+            error for them — that is expected and not something this run can fix.
+          </span>
+        </p>
+
+        <Button variant="brand" className="w-full gap-2" disabled={running} onClick={start}>
+          {running ? (
+            <>
+              <ArrowClockwise size={16} weight="bold" className="animate-spin" /> Storing files…
+            </>
+          ) : (
+            <>
+              <CloudArrowUp size={16} weight="bold" /> Store files
+            </>
+          )}
+        </Button>
+
+        {(running || status) && (
+          <>
+            <div>
+              <div className="mb-1.5 flex items-center justify-between text-[12px]">
+                <span className="font-semibold text-slate-600">
+                  {errored ? "Failed" : status && status.total > 0 ? `${status.done} / ${status.total} files` : "Working…"}
+                </span>
+                <Badge variant={errored ? "destructive" : done ? "success" : "info"}>
+                  {status?.state ?? "starting"}
+                </Badge>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    errored ? "bg-rose-500" : done ? "bg-emerald-500" : "bg-indigo-500"
+                  }`}
+                  style={{ width: `${errored ? 100 : pct}%` }}
+                />
+              </div>
+            </div>
+
+            {status?.message && !errored && <p className="text-[12.5px] text-slate-500">{status.message}</p>}
+            {errored && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-[12.5px] text-rose-700">{status?.error}</p>
+            )}
+
+            {done && status?.summary && (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  ["Stored", String(status.summary.mirrored)],
+                  ["Unavailable", String(status.summary.failed)],
+                  ["Skipped", String(status.summary.skipped)],
+                  ["Size", formatBytes(status.summary.bytes)],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg bg-slate-50 py-2.5 text-center">
+                    <p className="font-display text-xl font-semibold text-slate-900">{value}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 /**
  * Admin-only FLM sync. The admin pastes a live FLM session cookie plus the SE
  * curriculum id (for per-term semesters) and/or subject-code prefixes (for syllabi),
  * then pulls fresh course data. The scrape runs async on the backend; we poll for
  * progress and show the import summary. The cookie is sent once and cleared from the
  * form on submit — it is never stored client-side beyond the request.
+ *
+ * Storing the files themselves is the separate step below.
  */
 export function AdminFlmSyncTab() {
   const [cookie, setCookie] = useState("")
@@ -257,6 +414,8 @@ export function AdminFlmSyncTab() {
           )}
         </CardContent>
       </Card>
+
+      <MirrorMaterialsCard />
     </div>
   )
 }
