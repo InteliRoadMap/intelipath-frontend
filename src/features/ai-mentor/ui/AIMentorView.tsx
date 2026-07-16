@@ -20,7 +20,10 @@ import {
   Edit2,
   Trash2,
   Check,
-  ArrowUp
+  ArrowUp,
+  Compass,
+  BookOpen,
+  TrendingUp
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
 import GradeReportUI from "@/features/student-dashboard/components/GradeReportUI"
@@ -301,8 +304,9 @@ export default function AIMentorPage() {
     }
   }
 
-  const handleSendMessage = async () => {
-    const message = inputValue.trim()
+  const handleSendMessage = async (overrideText?: string) => {
+    // onClick passes a MouseEvent as the first arg — only honour real strings.
+    const message = (typeof overrideText === 'string' ? overrideText : inputValue).trim()
     const fileToUpload = selectedFile
 
     if ((!message && !fileToUpload) || isSending || isUploading || sendInFlightRef.current) return
@@ -587,6 +591,54 @@ export default function AIMentorPage() {
                   <p className="empty-subtitle text-zinc-500 max-w-md text-[15px]">
                     I can assist you with coding, learning, or planning your technical roadmap.
                   </p>
+
+                  {/* Suggested prompts — one click sends the question (or opens the transcript picker) */}
+                  <div className="empty-subtitle mt-8 grid w-full max-w-2xl grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {[
+                      {
+                        icon: FileText,
+                        label: "Analyze my transcript",
+                        hint: "Upload a grade sheet — I'll map it to your roadmap",
+                        onClick: () => {
+                          setInputValue("Analyze my transcript: assess my strengths, suggest careers, and tell me which roadmap nodes my courses already cover and what to study next.")
+                          fileInputRef.current?.click()
+                        },
+                      },
+                      {
+                        icon: Compass,
+                        label: "What should I learn next?",
+                        hint: "Based on your roadmap progress and gaps",
+                        onClick: () => handleSendMessage("Based on my current roadmap progress and skill gaps, what should I learn next? Point to the exact roadmap nodes."),
+                      },
+                      {
+                        icon: BookOpen,
+                        label: "What does an FPT course teach?",
+                        hint: "e.g. PRO192 → skills → roadmap nodes",
+                        onClick: () => setInputValue("What skills does PRO192 teach, and which nodes on my roadmap does it cover?"),
+                      },
+                      {
+                        icon: TrendingUp,
+                        label: "Salary & demand for my career",
+                        hint: "Live job-market data",
+                        onClick: () => handleSendMessage("What is the current salary range and hiring demand for my target career in Vietnam right now?"),
+                      },
+                    ].map((s) => (
+                      <button
+                        key={s.label}
+                        onClick={s.onClick}
+                        disabled={isSending || isUploading}
+                        className="group flex items-start gap-3 rounded-xl border border-zinc-200 bg-white/70 px-4 py-3 text-left backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white hover:shadow-sm active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors group-hover:text-zinc-800">
+                          <s.icon size={14} strokeWidth={2} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-[13.5px] font-semibold text-zinc-800">{s.label}</span>
+                          <span className="block text-[11.5px] text-zinc-400">{s.hint}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-8 flex-1">
@@ -737,8 +789,8 @@ export default function AIMentorPage() {
                     style={{ maxHeight: '200px' }}
                   />
                   <div className="shrink-0 mb-1">
-                    <button 
-                      onClick={handleSendMessage}
+                    <button
+                      onClick={() => handleSendMessage()}
                     disabled={(!inputValue.trim() && !selectedFile) || isSending || isUploading}
                     className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-900 text-white hover:bg-zinc-800 transition-colors outline-none disabled:opacity-50 disabled:hover:bg-zinc-900 shadow-sm"
                     aria-label={isUploading ? "Uploading file" : isSending ? "AI is replying" : "Send message"}

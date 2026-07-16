@@ -138,11 +138,16 @@ const FptCurriculumPanel = ({ open, onClose, onApplied }: FptCurriculumPanelProp
     return next
   })
 
-  const applyTerm = (term: number) => setPassed(prev => {
-    const next = new Set(prev)
-    subjects.forEach(s => { if (typeof s.semester === "number" && s.semester <= term) next.add(s.code) })
-    return next
-  })
+  const [selectedTerm, setSelectedTerm] = useState<number | null>(null)
+
+  const applyTerm = (term: number) => {
+    setSelectedTerm(term)
+    setPassed(prev => {
+      const next = new Set(prev)
+      subjects.forEach(s => { if (typeof s.semester === "number" && s.semester <= term) next.add(s.code) })
+      return next
+    })
+  }
 
   const save = async () => {
     if (saving || dirtyCount === 0) return
@@ -242,15 +247,25 @@ const FptCurriculumPanel = ({ open, onClose, onApplied }: FptCurriculumPanelProp
           <div className="pb-3">
             <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">Completed through term</p>
             <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: maxTerm }, (_, i) => i + 1).map(term => (
-                <button
-                  key={term}
-                  onClick={() => applyTerm(term)}
-                  className="rounded-lg border border-slate-200 bg-white/70 px-2.5 py-1 text-[12px] font-bold text-slate-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-                >
-                  Term {term}
-                </button>
-              ))}
+              {Array.from({ length: maxTerm }, (_, i) => i + 1).map(term => {
+                const isSelected = selectedTerm === term
+                const isIncluded = selectedTerm !== null && term < selectedTerm
+                return (
+                  <button
+                    key={term}
+                    onClick={() => applyTerm(term)}
+                    className={`rounded-lg border px-2.5 py-1 text-[12px] font-bold transition-colors ${
+                      isSelected
+                        ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+                        : isIncluded
+                          ? "border-orange-200 bg-orange-50 text-orange-700"
+                          : "border-slate-200 bg-white/70 text-slate-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                    }`}
+                  >
+                    Term {term}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
