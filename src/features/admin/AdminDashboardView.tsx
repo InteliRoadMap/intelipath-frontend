@@ -41,6 +41,7 @@ import { useAuth } from "@/context"
 import { toast } from "@/utils/toast"
 import { ROLES, ROUTES } from "@/shared"
 import { AdminContentTab, AdminMarketTab, AdminSystemTab } from "./components/AdminExtraTabs"
+import { AdminFlmSyncTab } from "./components/AdminFlmSyncTab"
 import type {
   AdminCourseMetric,
   AdminRole,
@@ -86,7 +87,7 @@ function MetricCard({
   isLoading,
   isUnavailable = false,
   progress,
-  progressClassName = "bg-cyan-700"
+  progressClassName = "bg-indigo-600"
 }: MetricCardProps) {
   return (
     <Card className="group min-h-[118px] overflow-hidden transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
@@ -137,7 +138,7 @@ function SystemHealthCard({ health, isLoading }: { health?: AdminSystemHealth | 
       <CardContent className="grid gap-3 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105">
               <Gauge size={20} weight="duotone" />
             </div>
             <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">System health</p>
@@ -194,7 +195,7 @@ function AdminMetrics({ className = "" }: { className?: string }) {
           </Badge>
         )}
         icon={<UsersThree size={20} weight="duotone" />}
-        iconClassName="bg-cyan-50 text-cyan-700"
+        iconClassName="bg-indigo-50 text-indigo-700"
         isLoading={users === undefined}
         isUnavailable={users === null}
       />
@@ -203,11 +204,10 @@ function AdminMetrics({ className = "" }: { className?: string }) {
         value={String(courses?.total ?? 0)}
         status={courses && <Badge variant="success">{courses.status}</Badge>}
         icon={<BookOpen size={20} weight="duotone" />}
-        iconClassName="bg-emerald-50 text-emerald-700"
+        iconClassName="bg-indigo-50 text-indigo-700"
         isLoading={courses === undefined}
         isUnavailable={courses === null}
         progress={courses?.progress}
-        progressClassName="bg-emerald-600"
       />
       <SystemHealthCard health={health} isLoading={health === undefined} />
     </div>
@@ -321,7 +321,7 @@ function UserManagement({ users, setUsers, isLoading }: {
                 <ArrowRight size={15} weight="bold" />
               </Button>
             </div>
-            <div className="flex h-10 w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 transition focus-within:border-cyan-600 focus-within:ring-2 focus-within:ring-cyan-600/15 sm:w-72">
+            <div className="flex h-10 w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 transition focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 sm:w-72">
               <MagnifyingGlass className="shrink-0 text-slate-400" size={17} />
               <Input
                 value={searchQuery}
@@ -584,6 +584,7 @@ const ADMIN_TABS = [
   { key: "overview", label: "Overview", icon: Layout },
   { key: "users", label: "Users", icon: UsersThree },
   { key: "content", label: "Content", icon: GraduationCap },
+  { key: "curriculum", label: "Curriculum", icon: BookOpen },
   { key: "market", label: "Market", icon: Pulse },
   { key: "system", label: "System", icon: Gauge }
 ] as const
@@ -625,13 +626,13 @@ export default function AdminDashboardView() {
     }
   }
 
-  const handleTriggerScraper = async () => {
+  const handleTriggerScraper = async (source: "topcv" | "itviec" = "topcv") => {
     setIsTriggeringScraper(true)
     try {
-      await adminApi.triggerJobScraper()
-      toast.success("Job scraper started successfully.")
+      await adminApi.triggerJobScraper(source)
+      toast.success(`${source === "itviec" ? "ITviec" : "TopCV"} job scraper started successfully.`)
     } catch (error) {
-      toast.error("Failed to trigger job scraper.")
+      toast.error(`Failed to trigger ${source === "itviec" ? "ITviec" : "TopCV"} job scraper.`)
     } finally {
       setIsTriggeringScraper(false)
     }
@@ -652,7 +653,7 @@ export default function AdminDashboardView() {
                     onClick={() => setTab(key)}
                     className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
                       active
-                        ? "border-cyan-700 text-cyan-800"
+                        ? "border-indigo-600 text-indigo-700"
                         : "border-transparent text-slate-500 hover:text-slate-950"
                     }`}
                   >
@@ -688,7 +689,7 @@ export default function AdminDashboardView() {
         {/* Slim header: title on the left, run-job actions inline on the right. */}
         <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-cyan-700">
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
               <ShieldCheck size={15} weight="duotone" /> Administration
             </div>
             <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">System overview</h1>
@@ -698,19 +699,28 @@ export default function AdminDashboardView() {
               type="button"
               onClick={handleTriggerJob}
               disabled={isTriggering || isTriggeringScraper}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:pointer-events-none disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
             >
-              <Lightning size={15} weight="duotone" className={`text-cyan-600 ${isTriggering ? "animate-pulse" : ""}`} />
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggering ? "animate-pulse" : ""}`} />
               {isTriggering ? "Extracting…" : "Skill Extraction"}
             </button>
             <button
               type="button"
-              onClick={handleTriggerScraper}
+              onClick={() => handleTriggerScraper("itviec")}
               disabled={isTriggeringScraper || isTriggering}
               className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
             >
               <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggeringScraper ? "animate-pulse" : ""}`} />
-              {isTriggeringScraper ? "Scraping…" : "Job Scraper"}
+              {isTriggeringScraper ? "Scraping…" : "ITviec Jobs"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTriggerScraper("topcv")}
+              disabled={isTriggeringScraper || isTriggering}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggeringScraper ? "animate-pulse" : ""}`} />
+              {isTriggeringScraper ? "Scraping…" : "TopCV Jobs"}
             </button>
           </div>
         </div>
@@ -729,6 +739,8 @@ export default function AdminDashboardView() {
         )}
 
         {tab === "content" && <AdminContentTab />}
+
+        {tab === "curriculum" && <AdminFlmSyncTab />}
 
         {tab === "market" && <AdminMarketTab />}
 

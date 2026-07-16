@@ -37,6 +37,12 @@ export const ENDPOINTS = {
   CAREER_ROLES: {
     LIST: "/careers"
   },
+  CURRICULUM: {
+    // FPT subject declaration -> transcript evidence -> dynamic roadmap.
+    FPT_SUBJECTS: "/students/me/fpt-subjects",
+    CURRICULUM_TERM: "/students/me/curriculum-term",
+    SET_CURRICULUM: "/students/me/curriculum"
+  },
   ROADMAP: {
     CAREER_ROADMAP: (careerId: string) => `/roadmaps/${careerId}`,
     CAREER_PROGRESS: (careerId: string) => `/roadmaps/${careerId}/progress`,
@@ -95,6 +101,10 @@ export const ENDPOINTS = {
     USER_STATUS: (userId: string) => `/admin/dashboard/users/${userId}/status`,
     TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction",
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
+  },
+  ADMIN_FLM: {
+    SYNC: "/admin/flm/sync",
+    SYNC_STATUS: (jobId: string) => `/admin/flm/sync/${jobId}`
   },
   COUNSELOR: {
     PROFILE: "/counselor/me/profile"

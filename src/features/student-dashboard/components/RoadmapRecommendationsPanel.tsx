@@ -9,6 +9,8 @@ interface RoadmapRecommendationsPanelProps {
   hasCareer: boolean
   /** Called after an accepted recommendation so the parent can reload the roadmap graph. */
   onApplied?: () => void
+  /** Bump to force a reload of pending recommendations (e.g. after declaring FPT subjects). */
+  refreshSignal?: number
 }
 
 const formatConfidence = (confidence: number | null) =>
@@ -19,7 +21,7 @@ const formatConfidence = (confidence: number | null) =>
  * Lists PENDING roadmap recommendations; accepting applies them on the
  * backend (progress + skill sync) and refreshes the graph via onApplied.
  */
-const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommendationsPanelProps) => {
+const RoadmapRecommendationsPanel = ({ hasCareer, onApplied, refreshSignal }: RoadmapRecommendationsPanelProps) => {
   const [recommendations, setRecommendations] = useState<RoadmapRecommendation[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -44,7 +46,7 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied }: RoadmapRecommenda
     } else {
       setRecommendations([])
     }
-  }, [hasCareer, loadPending])
+  }, [hasCareer, loadPending, refreshSignal])
 
   const handleGenerate = async () => {
     if (isGenerating) return

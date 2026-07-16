@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Check, LockKeyhole, GitFork, Flag, CalendarCheck } from 'lucide-react';
+import { Check, LockKeyhole, GitFork, Flag, GraduationCap } from 'lucide-react';
 import { getStageColor } from '../lib/stageColors';
 
 /** Short "dd MMM yyyy" label for a completion timestamp (e.g. 15 Jul 2026). */
@@ -26,6 +26,8 @@ interface CustomRoadmapNodeProps {
     isCheckpoint?: boolean;
     isChosen?: boolean;
     completedAt?: string | null;
+    // FLM overlay: set when ≥1 FPT subject teaches this node's skill.
+    fptCoverage?: { covered?: boolean } | null;
   };
   selected?: boolean;
 }
@@ -33,8 +35,13 @@ interface CustomRoadmapNodeProps {
 const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   const isAlternativeStatus = data.status === 'alternative';
   const isCompleted = data.status === 'completed';
-  const isCurrent = data.status === 'current' || data.status === 'in_progress';
-  const isLocked = !isAlternativeStatus && (data.status === 'locked' || (!isCompleted && !isCurrent));
+  // "in_progress" = the student is actively learning this node (blue pulse + glow).
+  // "current" = merely unlocked / up-next; reachable but not started, so it gets a
+  // calm "available" treatment instead of looking like work already underway.
+  const isInProgress = data.status === 'in_progress';
+  const isAvailable = data.status === 'current';
+  const isCurrent = isInProgress; // drives the active-focus visuals (glow, pulse, pressed)
+  const isLocked = !isAlternativeStatus && !isCompleted && !isInProgress && !isAvailable;
   const isMain = data.level !== undefined && data.level > 0;
   const isIsolated = !!data.isIsolated;
 
@@ -59,12 +66,25 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
       : '';
   const showGlow = (isCurrent || isChosen) && !isAlternativeStatus;
 
-  // Completion date caption, shown just beneath a finished node.
+  // "FPT" corner badge — same neo-brutalist pill as the OPTION / Pick-one badges, in
+  // orange, flagging that an FPT subject teaches this skill. Sits top-left (OPTION owns
+  // top-right). When the node also shows a status dot in that corner, the badge slides
+  // right so the two sit side by side instead of overlapping.
+  const hasFpt = !!data.fptCoverage?.covered;
+  const hasCornerDot = !isMain && (isInProgress || (isAvailable && !isChosen && !isCompleted));
+  const FptBadge = hasFpt ? (
+    <div className={`absolute -top-2 z-20 flex items-center gap-1 rounded-full border-2 border-black bg-orange-300 px-1.5 py-0.5 shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] ${hasCornerDot ? 'left-5' : '-left-1'}`}>
+      <GraduationCap size={9} strokeWidth={2.5} className="text-black" />
+      <span className="text-[8px] font-black uppercase tracking-wider text-black">FPT</span>
+    </div>
+  ) : null;
+
+  // Completion date — kept quiet (muted, no colour) so it doesn't fight the node.
   const doneDate = isCompleted ? formatDoneDate(data.completedAt) : null;
-  const DoneDateCaption = doneDate ? (
-    <div className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-50 px-2 py-0.5 ring-1 ring-emerald-500/20">
-      <CalendarCheck size={10} className="text-emerald-600" />
-      <span className="text-[9px] font-bold text-emerald-700">Done {doneDate}</span>
+  const DoneCaption = doneDate ? (
+    <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-white/70 px-1.5 py-0.5 ring-1 ring-slate-200/70">
+      <Check size={8} strokeWidth={3} className="text-slate-400" />
+      <span className="text-[8.5px] font-semibold tracking-wide text-slate-400">{doneDate}</span>
     </div>
   ) : null;
 
@@ -107,7 +127,8 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
           </div>
         )}
 
-        {DoneDateCaption}
+        {FptBadge}
+        {DoneCaption}
 
         {/* Handles */}
         <Handle type="target" position={Position.Top} id="t-top" className="w-1 h-1 opacity-0" />
@@ -195,7 +216,8 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
         </div>
       )}
 
-      {DoneDateCaption}
+      {FptBadge}
+      {DoneCaption}
 
       {/* Handles */}
       <Handle type="target" position={Position.Top} id="t-top" className="w-1 h-1 opacity-0" />
@@ -205,9 +227,17 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
       <Handle type="source" position={Position.Left} id="s-left" className="w-1 h-1 opacity-0" />
       <Handle type="target" position={Position.Right} id="t-right" className="w-1 h-1 opacity-0" />
 
-      {isCurrent && (
+      {isInProgress && (
         <div className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white shadow-[0_4px_10px_rgba(59,130,246,0.3)] ring-2 ring-white animate-pulse z-10 transition-transform group-hover:scale-110 duration-500">
           <div className="h-2 w-2 rounded-full bg-white"></div>
+        </div>
+      )}
+
+      {/* "Available / up next": reachable but not started — a quiet static marker,
+          no pulse, so it doesn't read as work already in progress. */}
+      {isAvailable && !isChosen && !isCompleted && (
+        <div className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white ring-2 ring-indigo-400 z-10">
+          <div className="h-1.5 w-1.5 rounded-full bg-indigo-400"></div>
         </div>
       )}
     </div>

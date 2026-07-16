@@ -572,7 +572,10 @@ export const studentDashboardService = {
             childCompleted: row.childCompleted ?? row.child_completed ?? 0,
             // Hand-placed coordinates from the mentor editor; null = auto-layout.
             positionX: row.positionX ?? row.position_x ?? null,
-            positionY: row.positionY ?? row.position_y ?? null
+            positionY: row.positionY ?? row.position_y ?? null,
+            // FLM overlay: which FPT subjects teach this node + its lesson resources.
+            fptCoverage: row.fptCoverage ?? row.fpt_coverage ?? null,
+            fptResources: row.fptResources ?? row.fpt_resources ?? []
           }
         });
       });

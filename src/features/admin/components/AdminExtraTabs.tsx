@@ -48,7 +48,7 @@ export function AdminContentTab() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card className="overflow-hidden">
         <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-black/5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5">
             <GraduationCap size={19} weight="duotone" />
           </div>
           <div>
@@ -89,7 +89,7 @@ export function AdminContentTab() {
 
       <Card className="overflow-hidden">
         <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-black/5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5">
             <Buildings size={19} weight="duotone" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export function AdminSystemTab() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
-            <Database size={18} weight="duotone" className="text-cyan-700" />
+            <Database size={18} weight="duotone" className="text-indigo-700" />
             <CardTitle className="text-base">Database pool</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -233,7 +233,7 @@ export function AdminSystemTab() {
                     </div>
                   ))}
                 </div>
-                <UsageBar used={db.active} total={db.max} color="bg-cyan-600" />
+                <UsageBar used={db.active} total={db.max} color="bg-indigo-600" />
                 <p className="mt-1.5 text-[12px] text-slate-400">{db.active} of {db.max} connections in use</p>
               </>
             ) : (
@@ -244,7 +244,7 @@ export function AdminSystemTab() {
 
         <Card>
           <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
-            <Cpu size={18} weight="duotone" className="text-violet-700" />
+            <Cpu size={18} weight="duotone" className="text-indigo-700" />
             <CardTitle className="text-base">Heap memory</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -253,7 +253,7 @@ export function AdminSystemTab() {
                 <p className="font-display text-2xl font-semibold text-slate-900">
                   {mem.usedMb} <span className="text-base font-medium text-slate-400">/ {mem.maxMb} MB</span>
                 </p>
-                <UsageBar used={mem.usedMb} total={mem.maxMb} color="bg-violet-600" />
+                <UsageBar used={mem.usedMb} total={mem.maxMb} color="bg-indigo-600" />
                 <p className="mt-1.5 text-[12px] text-slate-400">{mem.maxMb > 0 ? Math.round((mem.usedMb / mem.maxMb) * 100) : 0}% of max heap used</p>
               </>
             ) : (

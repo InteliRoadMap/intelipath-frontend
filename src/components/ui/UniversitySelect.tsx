@@ -52,19 +52,24 @@ export const UniversitySelect: React.FC<UniversitySelectProps> = ({ value, onCha
       }}
       isClearable
       styles={{
-        control: (base) => ({
+        control: (base, state) => ({
           ...base,
+          minHeight: '48px',
           border: '1px solid #e2e8f0',
           borderRadius: '0.75rem',
-          padding: '2px',
-          boxShadow: 'none',
+          paddingLeft: '6px',
+          fontWeight: 500,
+          boxShadow: state.isFocused ? '0 0 0 4px rgba(99,102,241,0.10)' : 'none',
+          borderColor: state.isFocused ? '#818cf8' : '#e2e8f0',
           '&:hover': {
-            borderColor: '#10b981',
+            borderColor: state.isFocused ? '#818cf8' : '#cbd5e1',
           }
         }),
+        placeholder: (base) => ({ ...base, color: '#94a3b8' }),
+        menu: (base) => ({ ...base, borderRadius: '0.75rem', overflow: 'hidden' }),
         option: (base, state) => ({
           ...base,
-          backgroundColor: state.isSelected ? '#10b981' : state.isFocused ? '#ecfdf5' : 'white',
+          backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : 'white',
           color: state.isSelected ? 'white' : '#1e293b',
           cursor: 'pointer'
         })

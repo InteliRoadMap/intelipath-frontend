@@ -7,10 +7,12 @@ import {
   ArrowRight,
   ArrowUpRight,
   ArrowsClockwise,
+  BookOpen,
   Check,
   CheckCircle,
   Clock,
   GitFork,
+  GraduationCap,
   LinkSimple,
   LockKey,
   MapTrifold,
@@ -36,6 +38,7 @@ import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
+import FptCurriculumPanel from "./FptCurriculumPanel"
 import StageLegend from "./StageLegend"
 import ResourceViewerModal, { getYouTubeId, type ViewerResource } from "./ResourceViewerModal"
 import { getStageStyle } from "../lib/stageColors"
@@ -246,6 +249,10 @@ export default function StudentRoadmapPageView() {
   const [themeColor, setThemeColor] = useState('cyan')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null)
+  // Bumped after an FPT-subject save so the recommendations panel reloads.
+  const [recsRefresh, setRecsRefresh] = useState(0)
+  // Right-docked FPT curriculum panel (blends into background like node detail).
+  const [showFptPanel, setShowFptPanel] = useState(false)
   
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
   // Resource currently open in the smart viewer modal.
@@ -446,6 +453,7 @@ export default function StudentRoadmapPageView() {
   }
 
   const handleNodeClick = async (nodeData: any) => {
+    setShowFptPanel(false)
     setSelectedNodeData(nodeData)
     if (nodeData && (!nodeData.links || nodeData.links.length === 0)) {
       try {
@@ -576,16 +584,39 @@ export default function StudentRoadmapPageView() {
                 <RoadmapRecommendationsPanel
                   hasCareer={Boolean(currentCareerId)}
                   onApplied={loadRoadmap}
+                  refreshSignal={recsRefresh}
                 />
+                {currentCareerId && (
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedNodeData(null); setShowFptPanel(true) }}
+                    className="group flex w-[260px] items-center gap-2.5 rounded-xl bg-white/70 px-3.5 py-2.5 text-left shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-all hover:-translate-y-px hover:bg-white active:scale-[0.99]"
+                  >
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm">
+                      <GraduationCap size={17} weight="fill" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] font-bold text-slate-800">FPT courses taken</span>
+                      <span className="block text-[10px] text-slate-500">Personalize your roadmap</span>
+                    </span>
+                  </button>
+                )}
                 {currentCareerId && <StudentCoursesPanel careerId={currentCareerId} careerName={currentCareerName} />}
                 <StageLegend />
               </div>
             )}
         </div>
 
+        {/* FPT curriculum — right-docked panel that fades into the background. */}
+        <FptCurriculumPanel
+          open={showFptPanel}
+          onClose={() => setShowFptPanel(false)}
+          onApplied={() => { loadRoadmap(); setRecsRefresh(n => n + 1) }}
+        />
+
         {/* Node detail — a right-docked panel that fades into the background
             (no card / shadow / widget chrome), not a floating popup. */}
-        {selectedNodeData && (
+        {selectedNodeData && !showFptPanel && (
         <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-[380px] max-w-[calc(100%-1rem)] flex-col justify-start bg-gradient-to-l from-slate-50 via-slate-50/85 to-transparent pl-10 pr-5 pt-6">
           <style>{`@keyframes rmPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}.roadmap-node-panel{animation:rmPanelIn .2s ease-out}`}</style>
           <div className="pointer-events-auto flex max-h-full flex-col">
@@ -614,11 +645,12 @@ export default function StudentRoadmapPageView() {
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
               <span className={`rounded-full px-2 py-0.5 ${
                 selectedNodeData.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                selectedNodeData.status === 'current' || selectedNodeData.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
+                selectedNodeData.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
+                selectedNodeData.status === 'current' ? 'bg-indigo-50 text-indigo-600' :
                 selectedNodeData.status === 'alternative' ? 'bg-amber-50 text-amber-600' :
                 'bg-slate-100 text-slate-500'
               }`}>
-                {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'current' || selectedNodeData.status === 'in_progress' ? 'In progress' : selectedNodeData.status === 'alternative' ? 'Alternative' : 'Locked'}
+                {selectedNodeData.status === 'completed' ? 'Completed' : selectedNodeData.status === 'in_progress' ? 'In progress' : selectedNodeData.status === 'current' ? 'Available' : selectedNodeData.status === 'alternative' ? 'Alternative' : 'Locked'}
               </span>
               {selectedNodeData.status === 'completed' && selectedNodeData.completedAt && (
                 <span className="text-slate-400">
@@ -632,6 +664,66 @@ export default function StudentRoadmapPageView() {
               <p className="text-[12.5px] leading-relaxed text-slate-600 line-clamp-4">
                 {selectedNodeData.description}
               </p>
+            )}
+
+            {/* FLM overlay — which FPT subjects teach this skill, and their lesson resources. */}
+            {selectedNodeData.fptCoverage?.covered && (
+              <div className="flex flex-col gap-1.5 rounded-xl border border-orange-200/70 bg-orange-50/60 p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <GraduationCap size={13} weight="fill" className="text-orange-600" />
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-orange-700">Learn at FPT</p>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {(selectedNodeData.fptCoverage.subjects || []).map((s: any) => (
+                    <span
+                      key={s.code}
+                      title={(s.name || '').split('_')[0].trim() || s.name}
+                      className="inline-flex items-center gap-1 rounded-md border border-orange-300/70 bg-white px-1.5 py-0.5 text-[10.5px] font-bold text-orange-800"
+                    >
+                      {s.code}
+                      {typeof s.semester === 'number' && (
+                        <span className="text-[9px] font-semibold text-orange-500">· term {s.semester}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+                {(selectedNodeData.fptResources || []).length > 0 && (
+                  <div className="flex flex-col gap-0.5 pt-0.5">
+                    {(selectedNodeData.fptResources || []).map((r: any, idx: number) => {
+                      const href = (r?.url || '').trim();
+                      const label = r?.title || r?.topic || `${r?.subjectCode} resource`;
+                      const isYt = !!href && !!getYouTubeId(href);
+                      const clickable = !!href;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={!clickable}
+                          onClick={() => {
+                            if (!clickable) return;
+                            if (isYt) setActiveResource({ title: label, url: href })
+                            else window.open(href, '_blank', 'noopener,noreferrer')
+                          }}
+                          className={`group flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-all ${clickable ? 'hover:bg-white' : 'cursor-default opacity-80'}`}
+                        >
+                          <span className={`grid h-4 w-4 shrink-0 place-items-center rounded ${r?.kind === 'SESSION' ? 'bg-orange-100 text-orange-600' : 'bg-amber-100 text-amber-700'}`}>
+                            {r?.kind === 'SESSION' ? <BookOpen size={9} weight="fill" /> : <LinkSimple size={9} weight="bold" />}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-700">{label}</span>
+                          {clickable && <ArrowUpRight size={11} weight="bold" className="shrink-0 text-orange-300 group-hover:text-orange-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedNodeData.fptCoverage?.selfStudy && !selectedNodeData.fptCoverage?.covered && (
+              <div className="flex items-center gap-1.5 rounded-lg bg-slate-100/80 px-2.5 py-1.5">
+                <BookOpen size={12} weight="bold" className="text-slate-500" />
+                <span className="text-[11px] font-semibold text-slate-500">Self-study — not taught in the FPT curriculum</span>
+              </div>
             )}
 
             {/* Resources as compact one-line chips. */}

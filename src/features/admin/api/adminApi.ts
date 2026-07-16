@@ -52,10 +52,54 @@ const adminApi = {
     return response.data
   },
 
-  triggerJobScraper: async () => {
-    const response = await mainClient.post(ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_JOB_SCRAPER)
+  triggerJobScraper: async (source: "topcv" | "itviec" = "topcv") => {
+    const response = await mainClient.post(
+      ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_JOB_SCRAPER,
+      null,
+      { params: { source } },
+    )
+    return response.data
+  },
+
+  // ─── FLM curriculum sync (paste cookie → scrape → import) ──────────────────
+  startFlmSync: async (payload: FlmSyncPayload) => {
+    const response = await mainClient.post<FlmSyncStart>(ENDPOINTS.ADMIN_FLM.SYNC, payload)
+    return response.data
+  },
+
+  getFlmSyncStatus: async (jobId: string) => {
+    const response = await mainClient.get<FlmSyncStatus>(ENDPOINTS.ADMIN_FLM.SYNC_STATUS(jobId))
     return response.data
   }
+}
+
+export interface FlmSyncPayload {
+  cookie: string
+  curriculumCode: string
+  curid?: string
+  prefixes?: string
+  career?: string
+}
+
+export interface FlmSyncStart {
+  jobId: string
+}
+
+export interface FlmSyncSummary {
+  subjects: number
+  skillLinks: number
+  unmatchedSkills: number
+  resources: number
+}
+
+export interface FlmSyncStatus {
+  state: "pending" | "running" | "error" | "imported"
+  phase: string
+  done: number
+  total: number
+  message?: string | null
+  error?: string | null
+  summary?: FlmSyncSummary | null
 }
 
 export default adminApi;

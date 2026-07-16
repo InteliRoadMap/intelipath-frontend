@@ -13,6 +13,15 @@ const roadmapApi = {
   clearSelection: (groupNodeId: string) =>
     mainClient.delete(ENDPOINTS.ROADMAP.CLEAR_SELECTION(groupNodeId)),
 
+  // ─── FPT curriculum declaration (drives the dynamic roadmap) ───
+  getFptSubjects: () => mainClient.get(ENDPOINTS.CURRICULUM.FPT_SUBJECTS),
+  declareCurriculumTerm: (completedTerm: number) =>
+    mainClient.put(ENDPOINTS.CURRICULUM.CURRICULUM_TERM, { completedTerm }),
+  updateFptSubjects: (subjects: { subjectCode: string; passed: boolean }[]) =>
+    mainClient.put(ENDPOINTS.CURRICULUM.FPT_SUBJECTS, { subjects }),
+  setCurriculum: (curriculumId: string) =>
+    mainClient.put(ENDPOINTS.CURRICULUM.SET_CURRICULUM, { curriculumId }),
+
   // ─── Roadmap Personalization (AI recommendations) ──────────────
   getPendingRecommendations: () =>
     mainClient.get(ENDPOINTS.ROADMAP_RECOMMENDATIONS.PENDING),

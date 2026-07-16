@@ -6,7 +6,6 @@ import {
   useEdgesState,
   useReactFlow,
   useViewport,
-  MarkerType,
   BackgroundVariant
 } from '@xyflow/react';
 import { MagnifyingGlassMinus, MagnifyingGlassPlus } from '@phosphor-icons/react';
@@ -140,7 +139,7 @@ const BOX_PAD = 14;
 const BAND_PAD_X = 56;
 const BAND_PAD_Y = 30;
 
-const SPINE_STROKE = '#6366f1'; // indigo-500
+const SPINE_STROKE = '#0f172a'; // slate-900 (black spine)
 const BRANCH_STROKE = '#94a3b8'; // slate-400
 
 /**
@@ -215,19 +214,19 @@ export const getDynamicLayoutedElements = (
 
   // Lay a list of child subtrees into one vertical column: y stacks downward,
   // nested sub-skills indent away from the spine (depth).
-  const layoutColumn = (rootIds: string[]) => {
-    const placed: { id: string; depth: number; y: number }[] = [];
+  const layoutColumn = (rootIds: string[], rootParent: string) => {
+    const placed: { id: string; depth: number; y: number; parent: string }[] = [];
     let y = 0;
     let maxDepth = 0;
-    const rec = (id: string, depth: number) => {
+    const rec = (id: string, depth: number, parent: string) => {
       if (placedSet.has(id)) return;
-      placed.push({ id, depth, y });
+      placed.push({ id, depth, y, parent });
       placedSet.add(id);
       maxDepth = Math.max(maxDepth, depth);
       y += CHILD_H + CHILD_GAP_Y;
-      childrenOf(id).forEach((c) => rec(c, depth + 1));
+      childrenOf(id).forEach((c) => rec(c, depth + 1, id));
     };
-    rootIds.forEach((r) => rec(r, 0));
+    rootIds.forEach((r) => rec(r, 0, rootParent));
     const height = placed.length ? y - CHILD_GAP_Y : 0;
     const width = placed.length ? CHILD_W + maxDepth * INDENT : 0;
     return { placed, height, width };
@@ -266,14 +265,15 @@ export const getDynamicLayoutedElements = (
     const kids = childrenOf(topicId);
     // Balance sub-skills across both sides of the spine (even → right, odd → left)
     // so neither side sits empty and the block stays short.
-    const R = layoutColumn(kids.filter((_, i) => i % 2 === 0));
-    const L = layoutColumn(kids.filter((_, i) => i % 2 === 1));
+    const R = layoutColumn(kids.filter((_, i) => i % 2 === 0), topicId);
+    const L = layoutColumn(kids.filter((_, i) => i % 2 === 1), topicId);
 
     const blockHeight = Math.max(TOPIC_H, R.height, L.height);
     const topicY = cursorY + (blockHeight - TOPIC_H) / 2;
 
     // Topic (spine) node, centred on x = 0.
     placedNodes.push({ ...topicNode, position: { x: -TOPIC_W / 2, y: topicY } });
+    placedSet.add(topicId); // so hierarchy edges from this topic to its children survive the placed-check
 
     // Right column hugs the spine's right edge.
     if (R.placed.length) {
@@ -282,7 +282,7 @@ export const getDynamicLayoutedElements = (
       clusterBoxes.push(mkBox(`cluster-${topicId}-r`, childX0 - BOX_PAD, colTop - BOX_PAD, R.width + 2 * BOX_PAD, R.height + 2 * BOX_PAD, stage, 'right'));
       R.placed.forEach((p) => {
         placedNodes.push({ ...byId.get(p.id), position: { x: childX0 + p.depth * INDENT, y: colTop + p.y } });
-        hierarchyEdges.push({ parentId: byId.get(p.id)?.data?.parentNodeId, childId: p.id, side: 'right', nested: p.depth > 0 });
+        hierarchyEdges.push({ parentId: p.parent, childId: p.id, side: 'right', nested: p.depth > 0 });
       });
     }
 
@@ -293,7 +293,7 @@ export const getDynamicLayoutedElements = (
       clusterBoxes.push(mkBox(`cluster-${topicId}-l`, rightEdge - L.width - BOX_PAD, colTop - BOX_PAD, L.width + 2 * BOX_PAD, L.height + 2 * BOX_PAD, stage, 'left'));
       L.placed.forEach((p) => {
         placedNodes.push({ ...byId.get(p.id), position: { x: rightEdge - CHILD_W - p.depth * INDENT, y: colTop + p.y } });
-        hierarchyEdges.push({ parentId: byId.get(p.id)?.data?.parentNodeId, childId: p.id, side: 'left', nested: p.depth > 0 });
+        hierarchyEdges.push({ parentId: p.parent, childId: p.id, side: 'left', nested: p.depth > 0 });
       });
     }
 
@@ -375,9 +375,8 @@ export const getDynamicLayoutedElements = (
       type: 'smoothstep',
       sourceHandle: 's-bottom',
       targetHandle: 't-top',
-      animated: isActive(a, b),
+      animated: false,
       style: { stroke: SPINE_STROKE, strokeWidth: 3 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: SPINE_STROKE },
     });
   }
 
@@ -394,7 +393,7 @@ export const getDynamicLayoutedElements = (
       type: nested ? 'smoothstep' : 'default',
       sourceHandle: src,
       targetHandle: tgt,
-      style: { stroke: BRANCH_STROKE, strokeWidth: 2, strokeDasharray: '5 5' },
+      style: { stroke: BRANCH_STROKE, strokeWidth: 1.25, strokeDasharray: '4 3' },
     });
   });
 
@@ -463,7 +462,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     if (!real.length) return;
     const flowEl = document.querySelector('.roadmap-flow') as HTMLElement | null;
     const width = flowEl ? flowEl.clientWidth : 800;
-    const zoom = 0.9;
+    const zoom = 0.7;
     const minX = Math.min(...real.map((n) => n.position.x));
     const maxX = Math.max(...real.map((n) => n.position.x + ((n.data?.level ?? 0) > 0 ? TOPIC_W : CHILD_W)));
     const contentCenter = (minX + maxX) / 2;

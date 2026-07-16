@@ -67,7 +67,7 @@ export const Select = ({ value, onChange, className, wrapperClassName, disabled,
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-white pl-3 pr-2.5 py-2 text-left text-sm text-slate-950 outline-none transition disabled:cursor-not-allowed disabled:opacity-50",
-          open ? "border-cyan-600 ring-2 ring-cyan-600/15" : "border-slate-200 hover:border-slate-300",
+          open ? "border-indigo-500 ring-2 ring-indigo-500/15" : "border-slate-200 hover:border-slate-300",
           className,
         )}
       >
@@ -92,11 +92,11 @@ export const Select = ({ value, onChange, className, wrapperClassName, disabled,
                   onClick={() => pick(opt.value)}
                   className={cn(
                     "flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
-                    isSelected ? "bg-cyan-50 font-medium text-cyan-900" : "text-slate-700 hover:bg-slate-100",
+                    isSelected ? "bg-indigo-50 font-medium text-indigo-900" : "text-slate-700 hover:bg-slate-100",
                   )}
                 >
                   <span className="truncate">{opt.label}</span>
-                  {isSelected && <Check size={13} weight="bold" className="shrink-0 text-cyan-600" />}
+                  {isSelected && <Check size={13} weight="bold" className="shrink-0 text-indigo-600" />}
                 </button>
               </div>
             )
