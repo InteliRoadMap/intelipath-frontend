@@ -73,15 +73,21 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
 
     const currentErrors: typeof errors = {}
 
-    if (!yearOfAdmission) {
-      currentErrors.yearOfAdmission = 'Select a valid admission date.'
+    // A year, not a date: new Date(2023) reads 2023 as milliseconds since the epoch,
+    // so comparing it against a real birth date rejected every valid year.
+    const admissionYear = /^\d{4}$/.test(String(yearOfAdmission).trim())
+      ? Number(String(yearOfAdmission).trim())
+      : null
+    const currentYear = new Date().getFullYear()
+
+    if (admissionYear === null || admissionYear < 1970 || admissionYear > currentYear) {
+      currentErrors.yearOfAdmission = `Enter an admission year between 1970 and ${currentYear}.`
     } else if (yob) {
-      const birthDate = new Date(yob)
-      const admissionDate = new Date(yearOfAdmission)
-      if (admissionDate <= birthDate) {
-        currentErrors.yearOfAdmission = 'Admission date must be after your date of birth.'
-      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        currentErrors.yearOfAdmission = 'Admission date seems too early based on your age.'
+      const birthYear = new Date(yob).getFullYear()
+      if (admissionYear <= birthYear) {
+        currentErrors.yearOfAdmission = 'Year of admission must be after your year of birth.'
+      } else if (admissionYear - birthYear < 10) {
+        currentErrors.yearOfAdmission = 'Year of admission seems too early based on your age.'
       }
     }
 
@@ -99,16 +105,9 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
       })
 
       if (user?.role === "STUDENT") {
-        let yearNum: number | null = null
-        if (yearOfAdmission) {
-          const parsed = parseInt(String(yearOfAdmission), 10)
-          if (Number.isFinite(parsed)) {
-            yearNum = parsed
-          }
-        }
         await profileApi.updateStudentProfile({
           universityName: university || null,
-          yearOfAdmission: yearNum,
+          yearOfAdmission: admissionYear,
           major,
           careerId: undefined
         })

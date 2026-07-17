@@ -42,6 +42,16 @@ const EMPTY_PROFILE: ProfileData = {
   avatar_url: ""
 }
 
+/**
+ * The form holds the admission year as text; the API stores it as an int. Returns null
+ * for anything that isn't a plain year, so a half-typed field never reaches the wire.
+ */
+function parseAdmissionYear(raw: string): number | null {
+  const trimmed = String(raw).trim()
+  if (!/^\d{4}$/.test(trimmed)) return null
+  return Number(trimmed)
+}
+
 export function useProfileSettings() {
   const { user, updateUser } = useAuth()
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
@@ -96,11 +106,13 @@ export function useProfileSettings() {
           "",
         role: data?.role || data?.user?.role || user?.role || "Student",
         major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
-        year_of_admission:
-          data?.yearOfAdmission ||
-          data?.year_of_admission ||
-          data?.student?.yearOfAdmission ||
-          "",
+        // The API sends the admission year as a number; the form is text.
+        year_of_admission: String(
+          data?.yearOfAdmission ??
+            data?.year_of_admission ??
+            data?.student?.yearOfAdmission ??
+            ""
+        ),
         university:
           data?.university ||
           data?.userInfo?.university ||
@@ -181,21 +193,32 @@ export function useProfileSettings() {
       }
     }
 
-    if (
-      user?.role?.toUpperCase() === "STUDENT" &&
-      profileData.year_of_admission &&
-      profileData.yob
-    ) {
-      const birthDate = new Date(profileData.yob)
-      const admissionDate = new Date(profileData.year_of_admission)
-      if (admissionDate <= birthDate) {
-        setError("Admission date must be after your date of birth.")
+    // A year, not a date: new Date(2023) reads 2023 as milliseconds since the epoch,
+    // so comparing it against a real birth date rejected every valid year.
+    const admissionYear = parseAdmissionYear(profileData.year_of_admission)
+
+    if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission) {
+      const currentYear = new Date().getFullYear()
+      if (
+        admissionYear === null ||
+        admissionYear < 1970 ||
+        admissionYear > currentYear
+      ) {
+        setError(`Enter an admission year between 1970 and ${currentYear}.`)
         setSaving(false)
         return
-      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        setError("Admission date seems too early based on your age.")
-        setSaving(false)
-        return
+      }
+      if (profileData.yob) {
+        const birthYear = new Date(profileData.yob).getFullYear()
+        if (admissionYear <= birthYear) {
+          setError("Year of admission must be after your year of birth.")
+          setSaving(false)
+          return
+        } else if (admissionYear - birthYear < 10) {
+          setError("Year of admission seems too early based on your age.")
+          setSaving(false)
+          return
+        }
       }
     }
 
@@ -209,12 +232,10 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
-        // The form holds the year as text; the API takes a number.
-        const admissionYear = parseInt(String(profileData.year_of_admission), 10)
         tasks.push(
           profileApi.updateStudentProfile({
             universityName: profileData.university,
-            yearOfAdmission: Number.isFinite(admissionYear) ? admissionYear : null,
+            yearOfAdmission: admissionYear,
             major: profileData.major
             // Original: careerId: ""
             // Removed to prevent wiping out data

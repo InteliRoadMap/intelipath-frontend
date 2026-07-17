@@ -298,8 +298,15 @@ export default function StudentProfileSettingsPage() {
                     <Calendar size={16} className="text-emerald-600" />
                     Year of Admission
                   </label>
+                  {/* A year, not a date: type="date" made the browser demand a day and
+                      month that don't exist in the data, and sent "2023-05-01" where the
+                      backend stores a plain year. */}
                   <input
-                    type="date"
+                    type="number"
+                    inputMode="numeric"
+                    min={1970}
+                    max={new Date().getFullYear()}
+                    placeholder="e.g. 2023"
                     value={profileData.year_of_admission}
                     onChange={(e) =>
                       handleChange("year_of_admission", e.target.value)
