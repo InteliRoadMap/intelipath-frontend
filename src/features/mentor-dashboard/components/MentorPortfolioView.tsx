@@ -84,13 +84,17 @@ export function MentorPortfolioView() {
       {/* MAIN CONTENT */}
       <main className="max-w-[1000px] mx-auto px-4 md:px-8 py-8">
         
-        {/* Back Button */}
-        <button 
-          onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_FEEDBACK)}
+        {/* Back to the list this was opened from. The E-Portfolios list is a tab on
+            /dashboard/mentor, not a route of its own, so returning means restoring the
+            tab through location state — MentorDashboardView reads activeTab from it.
+            This used to jump to /dashboard/mentor/feedback: a real page, but not the
+            one you came from. */}
+        <button
+          onClick={() => navigate(ROUTES.DASHBOARD_MENTOR, { state: { activeTab: 'portfolios' } })}
           className="flex items-center gap-2 text-[13px] font-bold text-slate-500 hover:text-[#00838f] transition-colors mb-6 cursor-pointer w-fit"
         >
           <ArrowLeft size={16} />
-          Back to Directory
+          Back to E-Portfolios
         </button>
 
         {isLoading ? (
