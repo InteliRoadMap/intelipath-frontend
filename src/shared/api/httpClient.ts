@@ -65,16 +65,18 @@ const processQueue = (
 export let globalActiveRequests = 0;
 export const onLoadingChange = new Set<(isLoading: boolean) => void>();
 
+// Counted rather than a boolean: concurrent requests are the normal case here, and the
+// bar must not finish when the first of them returns.
 export const incrementLoading = () => {
-  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
-  // globalActiveRequests++;
-  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  globalActiveRequests++;
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const decrementLoading = () => {
-  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
-  // globalActiveRequests = Math.max(0, globalActiveRequests - 1);
-  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  // Clamped at zero: an interceptor that decrements a request it never counted would
+  // otherwise drive this negative and leave the bar stuck on forever.
+  globalActiveRequests = Math.max(0, globalActiveRequests - 1);
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const getStoredToken = () => localStorage.getItem("accessToken")

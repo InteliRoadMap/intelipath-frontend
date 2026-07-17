@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui';
 import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
 // We will create this component next
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
@@ -59,7 +59,7 @@ export const StudentPortfolioPage = () => {
   if (loading) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-slate-50">
-        <Loader2 className="animate-spin text-indigo-600" size={40} strokeWidth={2.5} />
+        <Spinner size={36} className="text-[#00838f]" label="Loading your portfolio" />
         <p className="text-sm font-medium text-slate-500">Loading your portfolio…</p>
       </div>
     );

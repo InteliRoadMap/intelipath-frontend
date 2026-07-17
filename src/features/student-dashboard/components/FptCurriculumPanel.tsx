@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Check, GraduationCap, MagnifyingGlass, Sparkle, X } from "@phosphor-icons/react"
+import { Skeleton } from "@/components/ui"
 import roadmapApi from "@/api/roadmapApi"
 import { toast } from "@/utils/toast"
 
@@ -307,7 +308,11 @@ const FptCurriculumPanel = ({ open, onClose, onApplied }: FptCurriculumPanelProp
         {/* List */}
         <div className="-mr-1 flex-1 overflow-y-auto pr-1">
           {loading ? (
-            <p className="py-10 text-center text-[12.5px] text-slate-400">Loading…</p>
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 rounded-lg" />
+              ))}
+            </div>
           ) : visible.length === 0 ? (
             <p className="py-10 text-center text-[12.5px] text-slate-400">No subjects match.</p>
           ) : (

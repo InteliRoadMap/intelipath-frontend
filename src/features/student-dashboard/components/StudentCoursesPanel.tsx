@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { BookOpen, Users, GraduationCap, CaretRight, CaretDown, CaretUp, LinkSimple, ArrowUpRight, X } from "@phosphor-icons/react"
+import { Skeleton } from "@/components/ui"
 import courseApi, { type Course } from "@/features/mentor-dashboard/api/courseApi"
 import { emitToast } from "@/utils/toast"
 
@@ -123,9 +124,9 @@ export function StudentCoursesPanel({ careerId, careerName }: Props) {
             </div>
 
             {/* Body */}
-            <div className="grid gap-3 overflow-y-auto p-5 [&::-webkit-scrollbar]:w-[5px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+            <div className="grid gap-3 overflow-y-auto p-5">
               {loading ? (
-                [1, 2].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />)
+                [1, 2].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)
               ) : (
                 courses.map(c => (
                   <div key={c.courseId} className="overflow-hidden rounded-2xl ring-1 ring-slate-200">

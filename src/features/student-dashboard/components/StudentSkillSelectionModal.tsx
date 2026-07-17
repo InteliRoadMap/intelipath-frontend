@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, LoaderCircle, Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
+import { Spinner } from '@/components/ui'
 import { isUuid } from '@/lib/utils'
 import { getSkillErrorMessage, studentDashboardService } from '../services'
 import type { SkillItem } from '../types'
@@ -158,10 +159,10 @@ export default function StudentSkillSelectionModal({
         )}
       </div>
 
-      <div className="min-h-52 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="min-h-52 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
         {isLoading || isSearching ? (
           <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
-            <LoaderCircle className="h-6 w-6 animate-spin text-indigo-400" />
+            <Spinner size={24} className="text-[#00838f]" label="Loading skills" />
             <span>Loading skills…</span>
           </div>
         ) : visibleSkills.length === 0 ? (

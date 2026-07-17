@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Select } from "@/components";
-import { SharedAppBackground } from '@/components/ui';
+import { SharedAppBackground, Skeleton } from '@/components/ui';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 import { RecruitmentPost } from '../types/marketPulse';
 import StudentHeader from './StudentHeader';
@@ -164,8 +164,8 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:row-span-2 flex flex-col">
             <h3 className="text-[16px] font-bold text-slate-800 mb-6">Top Hiring Companies</h3>
             {loading ? (
-              <div className="animate-pulse flex flex-col gap-4">
-                {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl w-full"></div>)}
+              <div className="flex flex-col gap-4">
+                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-12 rounded-xl w-full" />)}
               </div>
             ) : topCompanies.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -193,7 +193,7 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
               </Select>
             </div>
             {loading ? (
-              <div className="h-[300px] bg-slate-50 animate-pulse rounded-xl w-full"></div>
+              <Skeleton className="h-[300px] rounded-xl w-full" />
             ) : (
               <TrendingSkillsChart data={trendingSkills} />
             )}
@@ -204,7 +204,7 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
             <h3 className="text-[16px] font-bold text-slate-800 mb-2">Salary Overview</h3>
             <p className="text-[13px] text-slate-500 mb-6">Distribution of open jobs across different salary ranges.</p>
             {loading ? (
-              <div className="h-[300px] bg-slate-50 animate-pulse rounded-xl w-full"></div>
+              <Skeleton className="h-[300px] rounded-xl w-full" />
             ) : (
               <SalaryOverviewChart data={salaryOverview} />
             )}
@@ -260,7 +260,7 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           {loading ? (
             <div className="flex flex-col gap-2">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-[88px] animate-pulse rounded-xl bg-white/40" />
+                <Skeleton key={i} className="h-[88px] rounded-xl bg-white/40" />
               ))}
             </div>
           ) : filteredData.length === 0 ? (

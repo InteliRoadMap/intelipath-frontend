@@ -9,6 +9,7 @@ import {
   BackgroundVariant
 } from '@xyflow/react';
 import { MagnifyingGlassMinus, MagnifyingGlassPlus } from '@phosphor-icons/react';
+import { Spinner } from '@/components/ui';
 import '@xyflow/react/dist/style.css';
 import CustomRoadmapNode from './CustomRoadmapNode';
 import { ClusterBoxNode, StageBandNode } from './RoadmapContainers';
@@ -518,7 +519,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     return (
       <div className="flex h-full w-full items-center justify-center bg-transparent">
         <div className="flex flex-col items-center gap-3 text-slate-400">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          <Spinner size={32} className="text-[#00838f]" label="Drafting your roadmap" />
           <p className="text-[14px] font-bold">Drafting your Roadmap...</p>
         </div>
       </div>
