@@ -19,7 +19,7 @@ export const WelcomeBanner = ({ user }: { user: any }) => {
           Good morning, {user?.name || user?.fullName || 'Mentor'}!
         </h1>
         <p className="text-[16px] text-white/70 font-medium">
-          Here is a snapshot of your mentees' activity and your recent feedback.
+          Here is what is waiting on you, and the feedback you have sent recently.
         </p>
       </div>
     </div>
@@ -85,7 +85,9 @@ export const PendingReviewsWidget = () => {
 
   return (
     <div ref={containerRef} className="mt-10">
-      <h3 className="font-bold text-slate-900 text-[18px] mb-4">Your Mentees</h3>
+      {/* "Mentee" implies a roster. There isn't one: the only mentor-student tie in the
+          schema is a portfolio review request, so this list is a queue. */}
+      <h3 className="font-bold text-slate-900 text-[18px] mb-4">Waiting on your review</h3>
       
       <div className="flex flex-col gap-4">
         {isLoading ? (
@@ -105,9 +107,9 @@ export const PendingReviewsWidget = () => {
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
               <Users size={28} className="text-slate-400" />
             </div>
-            <h4 className="text-lg font-bold text-slate-900 mb-2">No mentees yet</h4>
+            <h4 className="text-lg font-bold text-slate-900 mb-2">Nothing waiting on you</h4>
             <p className="text-sm text-slate-500 max-w-sm">
-              You don't have any students assigned to you at the moment. When students request a review, they will appear here.
+              Students find you in the mentor directory and send a review request from their portfolio. Their requests land here.
             </p>
           </div>
         ) : (

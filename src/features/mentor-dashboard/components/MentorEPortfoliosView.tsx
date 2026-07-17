@@ -1,131 +1,155 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Code, Star, ArrowSquareOut, PencilSimple, FolderOpen
-} from '@phosphor-icons/react';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '@/shared';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+/* Hallmark · macrostructure: Workbench · tone: utilitarian · anchor hue: teal #00838f
+ * pre-emit critique: P4 H5 E4 S5 R5 V4
+ * App page: no enrichment, function carries it. Surface vocabulary is the roadmap's
+ * (bg-white/70 · ring-white/60 · backdrop-blur-md over SharedAppBackground), not a new one.
+ */
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, ArrowsClockwise, Briefcase, FolderOpen, Warning } from '@phosphor-icons/react'
+import { Skeleton } from '@/components/ui'
+import { ROUTES } from '@/shared'
+import mentorApi from '@/features/mentor-dashboard/api/mentorApi'
 
-import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
+/** The roadmap's panel chrome, so a mentor page reads as the same surface as a student one. */
+const PANEL =
+  'rounded-2xl bg-white/70 backdrop-blur-md ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)]'
+
+/** Exactly the fields /mentor/feedback/students sends. Nothing here is aspirational. */
+type MentorStudent = {
+  id: string
+  fullName: string
+  email: string
+  career: string
+  university: string
+}
+
+type Load = 'loading' | 'ready' | 'failed'
+
+const initialsOf = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .toUpperCase() || '?'
 
 export function MentorEPortfoliosView() {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [students, setStudents] = useState<MentorStudent[]>([])
+  const [load, setLoad] = useState<Load>('loading')
+  const navigate = useNavigate()
 
-  useEffect(() => { 
-    setIsLoading(true);
-    mentorApi.getStudentsList().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => {
-      setData([]);
-      setIsLoading(false);
-    });
-  }, []);
-
-  useGSAP(() => {
-    if (!isLoading && data && data.length > 0) {
-      gsap.from(".gsap-portfolio-card", {
-        y: 20,
-        autoAlpha: 0,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: "power2.out",
-        clearProps: "all"
-      });
+  useEffect(() => {
+    let alive = true
+    setLoad('loading')
+    mentorApi
+      .getStudentsList()
+      .then((rows) => {
+        if (!alive) return
+        setStudents(rows as MentorStudent[])
+        setLoad('ready')
+      })
+      .catch(() => alive && setLoad('failed'))
+    return () => {
+      alive = false
     }
-  }, { scope: containerRef, dependencies: [isLoading, data] });
+  }, [])
 
   return (
-    <div ref={containerRef} className="pb-10">
-      <div className="mb-8">
-        <h2 className="text-[24px] font-bold text-slate-900 tracking-tight mb-2">Student E-Portfolios</h2>
-        <p className="text-[14px] text-slate-500 font-medium">Review repositories synced from GitHub</p>
-      </div>
-      
-      <div className="flex flex-col gap-6">
-        {isLoading || !data || data.length === 0 ? (
-          Array.from({length: 2}).map((_, i) => (
-            <div key={i} className="bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6 animate-pulse">
-               <div className="h-16 bg-slate-100 rounded-2xl w-full"></div>
-               <div className="h-32 bg-slate-100 rounded-2xl w-full"></div>
-            </div>
-          ))
-        ) : (
-          data.map((item: any) => (
-            <div key={item.id} className="gsap-portfolio-card bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-8">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[16px] font-bold ${
-                    item.status === 'Pending review' ? 'bg-[#ccfbf1] text-[#0f766e]' : 'bg-[#e0e7ff] text-[#4338ca]'
-                  }`}>
-                    {item.initials}
-                  </div>
-                  <div>
-                    <h3 className="text-[18px] font-bold text-slate-900 mb-1">{item.name}</h3>
-                    <p className="text-[13px] text-slate-500 font-medium flex items-center gap-1.5 mb-2.5">
-                      {item.major} <span className="text-slate-300">|</span> {item.year} <span className="text-slate-300">|</span> {item.role}
-                    </p>
-                    {item.status === 'Reviewed' ? (
-                      <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider rounded-md ring-1 ring-emerald-500/20">
-                        {item.status}
-                      </span>
-                    ) : (
-                      <span className="inline-block px-2.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider rounded-md ring-1 ring-amber-500/20">
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
-                </div>
+    <div className="pb-10">
+      <header className="mb-6">
+        <h2 className="text-[24px] font-bold tracking-tight text-slate-900">Students who asked you for a review</h2>
+        <p className="mt-1 text-[14px] font-medium text-slate-500">
+          A student appears here once they send you a portfolio review request.
+        </p>
+      </header>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-[13px] rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm active:scale-[0.98]">
-                    <ArrowSquareOut size={16} weight="bold" /> Portfolio URL
-                  </button>
-                  <button 
-                    onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':studentId', item.id))}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#00838f] text-white font-semibold text-[13px] rounded-xl hover:bg-[#006064] transition-colors shadow-sm active:scale-[0.98]"
-                  >
-                    <PencilSimple size={16} weight="bold" /> Review & feedback
-                  </button>
-                </div>
+      {load === 'loading' && (
+        // Three rows in the list's own shape, so the real names land in place
+        // instead of shoving a centred spinner out of the way.
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={`${PANEL} flex items-center gap-4 p-5`}>
+              <Skeleton className="h-11 w-11 shrink-0 rounded-full" />
+              <div className="flex flex-1 flex-col gap-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
               </div>
-
-              {/* Repositories */}
-              <div>
-                <p className="text-[13px] font-bold text-slate-500 mb-4">{item.repos.length} repos synced</p>
-                <div className="flex flex-col gap-3">
-                  {item.repos.map((repo: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-[#f8fafc] rounded-2xl ring-1 ring-slate-900/5 group">
-                      <div className="flex items-center gap-3">
-                        <Code size={18} className="text-slate-400 group-hover:text-slate-700 transition-colors" />
-                        <span className="text-[14px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">{repo.name}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center gap-2">
-                          {repo.tags.map((tag: string, i: number) => (
-                            <span key={i} className="px-2 py-1 bg-white text-slate-500 text-[11px] font-bold tracking-wide rounded-md ring-1 ring-slate-200 shadow-sm">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-1 text-slate-400 text-[13px] font-bold w-12 justify-end">
-                          <Star size={14} weight="fill" /> {repo.stars}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+              <Skeleton className="h-9 w-28 rounded-xl" />
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {load === 'failed' && (
+        // A failed request used to return [] and render as loading forever, so a 500
+        // was indistinguishable from a slow network. It gets to say so now.
+        <div className={`${PANEL} flex flex-col items-center gap-3 px-6 py-14 text-center`}>
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-500/20">
+            <Warning size={20} weight="bold" />
+          </span>
+          <p className="text-[15px] font-bold text-slate-800">That list didn&apos;t load</p>
+          <p className="max-w-sm text-[13px] font-medium text-slate-500">
+            The request to the server failed. Your students are still there.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-1 inline-flex items-center gap-2 rounded-xl bg-[#00838f] px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-[#006064] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00838f]/40 active:scale-[0.98]"
+          >
+            <ArrowsClockwise size={15} weight="bold" /> Try again
+          </button>
+        </div>
+      )}
+
+      {load === 'ready' && students.length === 0 && (
+        // The empty case used to fall into the skeleton branch and spin forever.
+        // Nothing is wrong here — there is simply no request yet.
+        <div className={`${PANEL} flex flex-col items-center gap-3 px-6 py-14 text-center`}>
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-400">
+            <FolderOpen size={20} weight="regular" />
+          </span>
+          <p className="text-[15px] font-bold text-slate-800">No review requests yet</p>
+          <p className="max-w-sm text-[13px] font-medium text-slate-500">
+            Students find you in the mentor directory and send a request from their portfolio.
+          </p>
+        </div>
+      )}
+
+      {load === 'ready' && students.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {students.map((student) => (
+            <li key={student.id}>
+              <button
+                type="button"
+                onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':studentId', student.id))}
+                className={`${PANEL} group flex w-full items-center gap-4 p-5 text-left transition-all hover:-translate-y-px hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00838f]/40 active:scale-[0.998]`}
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#ccfbf1] text-[13px] font-bold text-[#0f766e]">
+                  {initialsOf(student.fullName)}
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-bold text-slate-900">{student.fullName}</span>
+                  <span className="mt-0.5 block truncate text-[12.5px] font-medium text-slate-500">{student.email}</span>
+                </span>
+
+                <span className="hidden shrink-0 items-center gap-2 sm:flex">
+                  <Briefcase size={13} className="text-slate-400" />
+                  <span className="text-[12px] font-semibold text-slate-600">{student.career}</span>
+                </span>
+
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#00838f] px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-colors group-hover:bg-[#006064]">
+                  Review
+                  <ArrowRight size={14} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  );
+  )
 }
+
+export default MentorEPortfoliosView
