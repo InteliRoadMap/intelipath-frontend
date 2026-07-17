@@ -16,7 +16,7 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
   const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
   // FPT coursework only. Hiding it for everyone else is the honest default: the endpoints
   // behind it answer 403, so an always-on link would just be a dead end.
-  const isFptAccount = (user as { accountType?: string } | null)?.accountType === "FPT"
+  const isFptAccount = user?.accountType === "FPT"
 
   const navigate = useNavigate()
 
