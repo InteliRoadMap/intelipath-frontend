@@ -163,7 +163,7 @@ const RoadmapRecommendationsPanel = ({ hasCareer, onApplied, refreshSignal }: Ro
         )}
 
         {/* Proposed nodes */}
-        <div className="max-h-[160px] overflow-y-auto pr-1 mb-3 flex flex-col gap-1.5 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="max-h-[160px] overflow-y-auto pr-1 mb-3 flex flex-col gap-1.5">
           {current.items.map((item) => (
             <div
               key={item.recItemId}

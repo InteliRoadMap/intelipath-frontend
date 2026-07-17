@@ -137,18 +137,39 @@ a {
 /* ===================== */
 /* SCROLLBAR             */
 /* ===================== */
+/* One scrollbar for the whole app. The rail stays transparent because the surfaces it
+   sits on are translucent — an opaque track would cut a visible stripe through them.
+   Firefox only: `scrollbar-width`/`scrollbar-color` are the standard properties, but in
+   Chrome setting either one makes it discard every ::-webkit-scrollbar rule below and
+   fall back to the OS bar — square ends and all. Firefox doesn't parse the webkit
+   selector, so @supports splits the two engines cleanly and neither cancels the other. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+}
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(3, 4, 11, 0.5);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
-  border-radius: 4px;
+  background-color: rgb(203 213 225); /* slate-300 */
+  border-radius: 999px;
+  /* The transparent border is inset by the content-box clip, which is what keeps the
+     thumb a floating pill: 4px of visible bar, round at both ends, never touching the
+     panel edge. Padding does not apply to a scrollbar thumb, so this is the way. */
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.5);
+  background-color: rgb(148 163 184); /* slate-400 */
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Hide scrollbar utility */

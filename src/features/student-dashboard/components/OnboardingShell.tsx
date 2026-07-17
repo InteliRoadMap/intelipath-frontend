@@ -75,7 +75,7 @@ export default function OnboardingShell({
         </header>
 
         {/* ── Body ─────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-7 pb-6 sm:px-9 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+        <div className="flex-1 overflow-y-auto px-7 pb-6 sm:px-9">
           {error && (
             <div className="mb-5 rounded-xl border border-rose-200/70 bg-rose-50 px-4 py-3 text-[13.5px] font-medium text-rose-600">
               {error}

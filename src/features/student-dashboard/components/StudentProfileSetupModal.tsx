@@ -335,7 +335,7 @@ export default function StudentProfileSetupModal({
                 ))}
               </div>
 
-              <div className="max-h-72 space-y-4 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-track]:bg-transparent">
+              <div className="max-h-72 space-y-4 overflow-y-auto pr-1">
                 {filteredCareerGroups.length > 0 ? (
                   filteredCareerGroups.map((group) => (
                     <div key={group.category}>

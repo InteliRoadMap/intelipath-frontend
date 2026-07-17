@@ -139,7 +139,7 @@ const CareerSelector = ({
           )}
 
           {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 pb-2">
             {filteredCareers.map(career => {
                const isSelected = selectedCareerId === career.careerId;
                const isCurrent = currentCareerId === career.careerId;
