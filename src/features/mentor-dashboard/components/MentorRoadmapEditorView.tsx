@@ -16,7 +16,6 @@ import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
 import ConfirmModal from "@/components/modals/ConfirmModal"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
-import NodeCoursesSection from "./NodeCoursesSection"
 import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
 import { Select } from "@/components"
 import { MentorHeader } from "./MentorHeader"
@@ -416,10 +415,6 @@ const MentorRoadmapEditorView = () => {
                   onChange={e => setForm({ ...form, resourcesText: e.target.value })}
                 />
               </div>
-
-              {selectedId && careerId && (
-                <NodeCoursesSection careerId={careerId} nodeId={selectedId} />
-              )}
             </div>
 
             <div className="p-4 border-t border-slate-100 flex gap-2">

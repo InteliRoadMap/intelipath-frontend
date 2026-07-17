@@ -36,7 +36,6 @@ import StudentProfileSetupModal from "./StudentProfileSetupModal"
 import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
 import StudentHeader from "./StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
-import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import FptCurriculumPanel from "./FptCurriculumPanel"
 import StageLegend from "./StageLegend"
@@ -606,7 +605,6 @@ export default function StudentRoadmapPageView() {
                     </span>
                   </button>
                 )}
-                {currentCareerId && <StudentCoursesPanel careerId={currentCareerId} careerName={currentCareerName} />}
                 <StageLegend />
               </div>
             )}
