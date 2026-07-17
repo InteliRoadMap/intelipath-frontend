@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import {
+  ArrowLeft,
+  ArrowUpRight,
   BookOpen,
   CheckCircle,
   DownloadSimple,
@@ -7,12 +9,21 @@ import {
   MagnifyingGlass,
   Target,
 } from "@phosphor-icons/react"
-import { Badge, Card, CardContent } from "@/components"
+import { useNavigate } from "react-router-dom"
+import { Badge } from "@/components"
+import { SharedAppBackground, Skeleton, Spinner } from "@/components/ui"
+import { useAuth } from "@/context"
+import { ROUTES } from "@/shared"
 import fptCoursesApi, {
   type FptCourseDetail,
   type FptCourseListItem,
 } from "@/features/student-dashboard/api/fptCoursesApi"
 import { toast } from "@/utils/toast"
+import StudentHeader from "./StudentHeader"
+
+/** The roadmap's panel chrome, so a section here reads as the same surface as one there. */
+const PANEL =
+  "rounded-2xl bg-white/70 backdrop-blur-md ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)]"
 
 /** "13.0 MB" — students decide whether to download by size, not by byte count. */
 function formatSize(bytes: number | null): string {
@@ -24,13 +35,21 @@ function formatSize(bytes: number | null): string {
  * Course lookup: search the subjects on your curriculum, read what each one teaches
  * (its CLOs) and download the material we hold for it.
  *
+ * Search leads and the subjects sit in a grid, rather than a list beside a detail pane:
+ * looking a subject up is the whole point of the page, and a grid gives the syllabus
+ * text — which runs long — the full width once you pick one.
+ *
  * The download button only appears for sessions we actually have a file for. Most
  * sessions have none — FLM publishes files for a minority of them — so the page treats
  * "no file" as ordinary rather than as an error.
  */
 export function FptCoursesView() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [courses, setCourses] = useState<FptCourseListItem[]>([])
   const [query, setQuery] = useState("")
+  /** null = every term. Terms are the curriculum's own ordering, so they filter well. */
+  const [term, setTerm] = useState<number | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [detail, setDetail] = useState<FptCourseDetail | null>(null)
   const [loadingList, setLoadingList] = useState(true)
@@ -47,11 +66,7 @@ export function FptCoursesView() {
     let alive = true
     fptCoursesApi
       .list()
-      .then((rows) => {
-        if (!alive) return
-        setCourses(rows)
-        setSelected((current) => current ?? rows[0]?.code ?? null)
-      })
+      .then((rows) => alive && setCourses(rows))
       .catch(() => alive && toast.error("Could not load your subjects."))
       .finally(() => alive && setLoadingList(false))
     return () => {
@@ -78,17 +93,28 @@ export function FptCoursesView() {
     }
   }, [selected])
 
+  const terms = useMemo(
+    () =>
+      [...new Set(courses.map((c) => c.semester).filter((s): s is number => s !== null))].sort(
+        (a, b) => a - b
+      ),
+    [courses]
+  )
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return courses
-    return courses.filter(
-      (c) =>
+    return courses.filter((c) => {
+      if (term !== null && c.semester !== term) return false
+      if (!q) return true
+      return (
         c.code.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
         c.skills.some((s) => s.toLowerCase().includes(q))
-    )
-  }, [courses, query])
+      )
+    })
+  }, [courses, query, term])
 
+  const passed = useMemo(() => courses.filter((c) => c.status === "PASSED").length, [courses])
   const files = detail?.sessions.filter((s) => s.downloadable) ?? []
 
   const download = async (materialId: string) => {
@@ -104,97 +130,180 @@ export function FptCoursesView() {
     }
   }
 
+  const handleLogout = async () => {
+    await logout()
+    navigate(ROUTES.LOGIN)
+  }
+
+  const back = () => {
+    setSelected(null)
+    setDetail(null)
+    setFailed(null)
+  }
+
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-6 pb-16 pt-28 md:px-8">
-      <header className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-slate-900">Course materials</h1>
-        <p className="mt-1 text-[13.5px] text-slate-500">
-          The subjects on your curriculum, what each one teaches, and the files we hold for them.
-        </p>
-      </header>
+    <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-transparent pb-20 pt-24">
+      <SharedAppBackground />
+      <StudentHeader
+        user={user}
+        onLogout={handleLogout}
+        onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+      />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* ── Subject list ─────────────────────────────────── */}
-        <div className="lg:col-span-4">
-          <div className="relative mb-3">
-            <MagnifyingGlass
-              size={16}
-              weight="bold"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by code, name or skill…"
-              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-[13px] text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15"
-            />
-          </div>
+      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-8 px-6">
+        {!selected ? (
+          <>
+            {/* ── Search lead ──────────────────────────────── */}
+            <div className="flex flex-col items-center gap-3 pt-4 text-center">
+              <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-orange-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                FPT coursework
+              </span>
+              <h1 className="max-w-2xl text-[38px] font-extrabold leading-[1.1] tracking-tight text-slate-900">
+                Every subject on your curriculum, in one search box.
+              </h1>
+              <p className="max-w-xl text-[15px] leading-relaxed text-slate-500">
+                What each one teaches, the outcomes it's marked against, and the files we hold for it.
+              </p>
 
-          <div className="max-h-[70vh] space-y-1.5 overflow-y-auto pr-1">
+              <div className="relative mt-3 w-full max-w-2xl">
+                <MagnifyingGlass
+                  size={20}
+                  weight="bold"
+                  className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-orange-500"
+                />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by code, name or skill…"
+                  className="w-full rounded-2xl border border-white/60 bg-white/80 py-4 pl-14 pr-5 text-[15px] text-slate-800 shadow-[0_4px_20px_rgb(0,0,0,0.06)] outline-none backdrop-blur-md transition-colors placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-2 focus:ring-orange-100"
+                />
+              </div>
+
+              {/* Terms are the curriculum's real sequence, so they earn being a filter. */}
+              {terms.length > 0 && (
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
+                  <button
+                    onClick={() => setTerm(null)}
+                    className={`rounded-lg border px-2.5 py-1 text-[12px] font-bold transition-colors ${
+                      term === null
+                        ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+                        : "border-slate-200 bg-white/70 text-slate-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {terms.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTerm(t)}
+                      className={`rounded-lg border px-2.5 py-1 text-[12px] font-bold transition-colors ${
+                        term === t
+                          ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+                          : "border-slate-200 bg-white/70 text-slate-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                      }`}
+                    >
+                      Term {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!loadingList && courses.length > 0 && (
+                <p className="mt-1 text-[12.5px] font-semibold text-slate-400">
+                  <span className="tabular-nums text-slate-600">{courses.length}</span> subjects ·{" "}
+                  <span className="tabular-nums text-slate-600">{passed}</span> passed
+                </p>
+              )}
+            </div>
+
+            {/* ── Subject grid ─────────────────────────────── */}
             {loadingList ? (
-              <p className="py-10 text-center text-[13px] text-slate-400">Loading subjects…</p>
+              // Six cards in the grid's own shape, so the real subjects land in place
+              // instead of shoving a centred spinner out of the way.
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className={`${PANEL} flex flex-col gap-2 p-4`}>
+                    <Skeleton className="h-5 w-20 rounded-md" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="mt-2 h-3 w-14" />
+                  </div>
+                ))}
+              </div>
             ) : filtered.length === 0 ? (
-              <p className="py-10 text-center text-[13px] text-slate-400">
+              <p className="py-16 text-center text-[13px] text-slate-400">
                 {courses.length === 0
                   ? "No subjects yet for your curriculum."
                   : `Nothing matches “${query}”.`}
               </p>
             ) : (
-              filtered.map((c) => {
-                const active = c.code === selected
-                return (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((c) => (
                   <button
                     key={c.code}
                     onClick={() => setSelected(c.code)}
-                    className={`w-full rounded-lg border px-3 py-2.5 text-left transition ${
-                      active
-                        ? "border-indigo-200 bg-indigo-50/70"
-                        : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
-                    }`}
+                    className={`${PANEL} group flex flex-col items-start p-4 text-left transition-all hover:-translate-y-px hover:bg-white hover:shadow-[0_8px_28px_rgb(0,0,0,0.09)] active:scale-[0.99]`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[12.5px] font-semibold text-slate-900">{c.code}</span>
-                      {c.semester !== null && (
-                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
-                          Term {c.semester}
-                        </span>
-                      )}
+                    <div className="flex w-full items-center gap-2">
+                      <span className="rounded-md bg-slate-100/80 px-1.5 py-0.5 font-mono text-[12px] font-bold text-slate-700">
+                        {c.code}
+                      </span>
                       {c.status === "PASSED" && (
-                        <CheckCircle size={14} weight="fill" className="ml-auto text-emerald-500" />
+                        <CheckCircle size={15} weight="fill" className="text-emerald-500" />
                       )}
+                      <ArrowUpRight
+                        size={15}
+                        weight="bold"
+                        className="ml-auto text-slate-300 transition-colors group-hover:text-orange-500"
+                      />
                     </div>
-                    <p className="mt-0.5 line-clamp-1 text-[12.5px] text-slate-600">{c.name}</p>
+                    <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-snug text-slate-800">
+                      {c.name}
+                    </p>
+                    {c.semester !== null && (
+                      <p className="mt-auto pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Term {c.semester}
+                      </p>
+                    )}
                   </button>
-                )
-              })
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </>
+        ) : (
+          /* ── Detail ─────────────────────────────────────── */
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={back}
+              className="flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-[12.5px] font-bold text-slate-500 transition-colors hover:bg-white/70 hover:text-slate-900"
+            >
+              <ArrowLeft size={14} weight="bold" />
+              All subjects
+            </button>
 
-        {/* ── Detail ───────────────────────────────────────── */}
-        <div className="lg:col-span-8">
-          {loadingDetail ? (
-            <Card>
-              <CardContent className="py-16 text-center text-[13px] text-slate-400">Loading…</CardContent>
-            </Card>
-          ) : !detail || detail.code !== selected ? (
-            <Card>
-              <CardContent className="py-16 text-center text-[13px] text-slate-400">
+            {loadingDetail ? (
+              <div className={`${PANEL} flex flex-col gap-3 p-5`}>
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-7 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+            ) : !detail || detail.code !== selected ? (
+              <div className={`${PANEL} py-16 text-center text-[13px] text-slate-400`}>
                 {failed === selected ? `Couldn't load ${selected}.` : "Pick a subject to see what it teaches."}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="p-5">
+              </div>
+            ) : (
+              <>
+                <div className={`${PANEL} p-5`}>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[13px] font-bold text-indigo-700">{detail.code}</span>
+                    <span className="font-mono text-[13px] font-bold text-orange-700">{detail.code}</span>
                     {detail.credits !== null && <Badge variant="info">{detail.credits} credits</Badge>}
                     {detail.prerequisite && (
                       <span className="text-[11.5px] text-slate-400">Requires {detail.prerequisite}</span>
                     )}
                   </div>
-                  <h2 className="mt-1 font-display text-lg font-semibold text-slate-900">{detail.name}</h2>
+                  <h1 className="mt-1 text-[22px] font-bold tracking-tight text-slate-900">{detail.name}</h1>
 
                   {detail.skills.length > 0 && (
                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -208,42 +317,38 @@ export function FptCoursesView() {
                   )}
 
                   {detail.description && (
-                    <p className="mt-3 line-clamp-4 text-[12.5px] leading-relaxed text-slate-500">
+                    <p className="mt-3 text-[12.5px] leading-relaxed text-slate-500">
                       {detail.description}
                     </p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* What you'll be able to do — the syllabus's own words. */}
-              {detail.clos.length > 0 && (
-                <Card>
-                  <CardContent className="p-5">
-                    <h3 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-slate-800">
-                      <BookOpen size={16} weight="duotone" className="text-indigo-600" />
+                {/* What you'll be able to do — the syllabus's own words. */}
+                {detail.clos.length > 0 && (
+                  <div className={`${PANEL} p-5`}>
+                    <h2 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-slate-800">
+                      <BookOpen size={16} weight="duotone" className="text-orange-600" />
                       What you'll learn
-                    </h3>
+                    </h2>
                     <ul className="space-y-2">
                       {detail.clos.map((c) => (
                         <li key={c.code} className="flex gap-2.5 text-[12.5px] leading-relaxed text-slate-600">
-                          <span className="mt-px shrink-0 font-mono text-[11px] font-bold text-indigo-600">
+                          <span className="mt-px shrink-0 font-mono text-[11px] font-bold text-orange-600">
                             {c.code}
                           </span>
                           <span>{c.outcome}</span>
                         </li>
                       ))}
                     </ul>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
 
-              <Card>
-                <CardContent className="p-5">
-                  <h3 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-slate-800">
+                <div className={`${PANEL} p-5`}>
+                  <h2 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-slate-800">
                     <FileArrowDown size={16} weight="duotone" className="text-emerald-600" />
                     Files
                     <span className="font-normal text-slate-400">({files.length})</span>
-                  </h3>
+                  </h2>
                   {files.length === 0 ? (
                     <p className="py-6 text-center text-[12.5px] text-slate-400">
                       No files for this subject.
@@ -253,7 +358,7 @@ export function FptCoursesView() {
                       {files.map((f) => (
                         <li
                           key={f.id}
-                          className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5"
+                          className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/60 px-3 py-2.5"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="line-clamp-1 text-[12.5px] font-medium text-slate-700">{f.title}</p>
@@ -264,23 +369,25 @@ export function FptCoursesView() {
                           <button
                             onClick={() => download(f.id)}
                             disabled={downloading === f.id}
-                            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 px-3.5 py-1.5 text-[12px] font-bold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98] disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none"
                           >
-                            <DownloadSimple size={14} weight="bold" />
+                            {downloading === f.id ? (
+                              <Spinner size={14} label="Preparing download" />
+                            ) : (
+                              <DownloadSimple size={14} weight="bold" />
+                            )}
                             {downloading === f.id ? "Preparing…" : "Download"}
                           </button>
                         </li>
                       ))}
                     </ul>
                   )}
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* Books and articles the syllabus points at; we don't host these. */}
-              {detail.materials.length > 0 && (
-                <Card>
-                  <CardContent className="p-5">
-                    <h3 className="mb-3 text-[13px] font-bold text-slate-800">Recommended reading</h3>
+                {/* Books and articles the syllabus points at; we don't host these. */}
+                {detail.materials.length > 0 && (
+                  <div className={`${PANEL} p-5`}>
+                    <h2 className="mb-3 text-[13px] font-bold text-slate-800">Recommended reading</h2>
                     <ul className="space-y-1.5">
                       {detail.materials.map((m) => (
                         <li key={m.id} className="text-[12.5px] leading-relaxed text-slate-600">
@@ -289,7 +396,7 @@ export function FptCoursesView() {
                               href={m.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-indigo-600 underline-offset-2 hover:underline"
+                              className="text-orange-700 underline-offset-2 hover:underline"
                             >
                               {m.title}
                             </a>
@@ -299,12 +406,12 @@ export function FptCoursesView() {
                         </li>
                       ))}
                     </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
