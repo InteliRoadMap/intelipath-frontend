@@ -319,9 +319,9 @@ export default function CounselorProfileSettingsPage() {
                   </label>
                   <input
                     type="date"
-                    value={profileData.admissionDate || ""}
+                    value={profileData.admission_date || ""}
                     onChange={(e) =>
-                      handleChange("admissionDate", e.target.value)
+                      handleChange("admission_date", e.target.value)
                     }
                     disabled={loading}
                     className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"

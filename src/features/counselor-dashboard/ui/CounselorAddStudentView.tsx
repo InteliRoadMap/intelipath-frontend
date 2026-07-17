@@ -1,160 +1,69 @@
+import React from "react"
+import { NavLink } from "react-router-dom"
 import {
-  Book,
-  Building2,
-  Calendar,
-  ChevronDown,
-  Edit3,
-  Mail,
-  User,
+  UserPlus,
+  Users,
   LayoutDashboard,
   MessageSquare,
-  Sparkles,
-  TrendingUp,
-  RefreshCw,
-  Award,
+  Mail,
+  Lock,
+  User,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
   GraduationCap,
-  ChevronLeft,
-  UserPlus
+  FileSpreadsheet,
+  Upload,
+  X,
+  Edit2,
+  Trash2,
+  Building2,
+  Calendar,
+  BookOpen,
+  FileText,
+  Briefcase
 } from "lucide-react"
-import { useLocation, useNavigate, NavLink } from "react-router-dom"
-import { useAuth } from "@/context"
+import { UserHeaderActions, Logo, SharedAppBackground, DatePicker } from "@/components"
 import { ROUTES } from "@/shared"
-import { UserHeaderActions, Logo, DatePicker } from "@/components"
-import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { AvatarUploadModal } from "@/components/modals"
-import { useProfileSettings } from "@/features/profile-settings"
-import { useRef, useState, useEffect } from "react"
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
-gsap.registerPlugin(useGSAP)
+import { useCounselorAddStudent } from "../model/useCounselorAddStudent"
 
-export default function CounselorProfileSettingsPage() {
+// ─── Nav Items ──────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.DASHBOARD_COUNSELOR },
+  { label: "Feedback", icon: MessageSquare, to: ROUTES.COUNSELOR_FEEDBACK },
+  { label: "Add Student", icon: UserPlus, to: ROUTES.COUNSELOR_ADD_STUDENT }
+]
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+export default function CounselorAddStudentView() {
   const {
-    profileData,
-    loading,
-    saving,
-    error,
-    success,
+    user,
+    form,
+    errors,
+    isSubmitting,
+    isImportModalOpen,
+    successMsg,
+    addedStudents,
+    editingDraftId,
+    curriculums,
+    setIsImportModalOpen,
     handleChange,
-    handleSave,
-    handleAvatarUpload,
-    loadProfile,
-    displayInitial
-  } = useProfileSettings()
+    handleSubmit,
+    handleLogout,
+    handleDeleteDraft,
+    handleEditDraft,
+    cancelEdit,
+    handleFileUpload,
+    handleSubmitAllToSystem
+  } = useCounselorAddStudent()
 
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const sparkleRef = useRef<SVGSVGElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const [avatarError, setAvatarError] = useState(false)
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-
-  // Reset avatar error when profile data changes
-  useEffect(() => {
-    setAvatarError(false)
-  }, [profileData.avatar_url])
-
-  useGSAP(
-    () => {
-      // ── Entrance animations ──────────────────────────────────
-      gsap.from(".page-header", {
-        y: -50,
-        opacity: 0,
-        duration: 1.0,
-        ease: "power4.out",
-        delay: 0.05
-      })
-
-      gsap.from(".hero-icon", {
-        scale: 0,
-        rotation: -45,
-        opacity: 0,
-        duration: 0.9,
-        ease: "back.out(2)",
-        delay: 0.35
-      })
-
-      gsap.from(".section-card", {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: "power3.out",
-        delay: 0.4
-      })
-
-      // ── Sparkle twinkle (infinite loop) ─────────────────────
-      if (sparkleRef.current) {
-        const tl = gsap.timeline({ repeat: -1, delay: 1.2 })
-        tl.to(sparkleRef.current, {
-          scale: 1.3,
-          opacity: 0.4,
-          rotate: 20,
-          duration: 0.35,
-          ease: "power2.in"
-        })
-          .to(sparkleRef.current, {
-            scale: 1.15,
-            opacity: 1,
-            rotate: -15,
-            duration: 0.25,
-            ease: "power2.out"
-          })
-          .to(sparkleRef.current, {
-            scale: 1.4,
-            opacity: 0.6,
-            rotate: 10,
-            duration: 0.3,
-            ease: "power2.inOut"
-          })
-          .to(sparkleRef.current, {
-            scale: 1,
-            opacity: 1,
-            rotate: 0,
-            duration: 0.5,
-            ease: "elastic.out(1, 0.5)"
-          })
-          .to(sparkleRef.current, {
-            duration: 2.5
-          })
-      }
-    },
-    { scope: containerRef }
-  )
-
-  const handleLogout = async () => {
-    await logout()
-    navigate(ROUTES.LOGIN)
-  }
-
-  const navItems = [
-    {
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      path: ROUTES.DASHBOARD_COUNSELOR || "/dashboard/counselor"
-    },
-    {
-      label: "Feedback",
-      icon: MessageSquare,
-      path: ROUTES.COUNSELOR_FEEDBACK || "/dashboard/counselor/feedback"
-    },
-    {
-      label: "Add Student",
-      icon: UserPlus,
-      path: ROUTES.COUNSELOR_ADD_STUDENT || "/dashboard/counselor/add-student"
-    },
-    { label: "Settings", icon: Edit3, path: location.pathname }
-  ]
+  const [curriculumOpen, setCurriculumOpen] = React.useState(false)
 
   return (
-    <div
-      className="flex flex-col min-h-screen bg-[#f8fafc] font-sans text-slate-900"
-      ref={containerRef}
-    >
-      {/* ─── HEADER (Glass Pill Style) ─────────────────────────── */}
+    <div className="relative min-h-screen bg-transparent font-sans pb-16">
+      <SharedAppBackground />
+
+      {/* HEADER (Glass Pill Style) */}
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
         <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
           <div className="flex items-center">
@@ -212,293 +121,464 @@ export default function CounselorProfileSettingsPage() {
         </nav>
       </div>
 
-      <main className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-8 py-8 pt-28 space-y-7">
-        <button
-          onClick={() => navigate(ROUTES.DASHBOARD_COUNSELOR)}
-          className="flex items-center gap-1.5 text-[13px] font-bold text-slate-500 hover:text-slate-900 transition-colors mb-2 w-fit -mt-4"
-        >
-          <ChevronLeft size={16} />
-          Back to Dashboard
-        </button>
-        {/* ── Hero Banner ─────────────────────────────────────── */}
-        <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#003d40] via-[#005f63] to-[#00838f] p-7 md:p-9 shadow-[0_30px_60px_rgba(0,131,143,0.25)]">
-          <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-[#4dd0e1]/30 blur-3xl" />
+      {/* ── Page Body ───────────────────────────────────────────── */}
+      <main className="max-w-[1280px] mx-auto px-4 md:px-8 py-8 pt-28 space-y-7">
+        {/* Page header banner */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#004d4d] via-[#006060] to-[#00838f] p-8 text-white shadow-xl">
+          <div className="inline-flex items-center gap-2 bg-white/10 text-white/90 text-[11px] font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
+            <GraduationCap size={13} />
+            Counselor Workspace
+          </div>
+          <h1 className="text-[28px] font-black tracking-tight">
+            Add New Student
+          </h1>
+          <p className="mt-1 text-white/70 text-[15px] max-w-lg">
+            Register a new student account and link them to your counseling
+            workspace.
+          </p>
+        </div>
 
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="hero-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
-                <Sparkles
-                  ref={sparkleRef}
-                  size={28}
-                  className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                />
+        {/* ── Top card: Add form ───────────────────────────────── */}
+        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.07)] overflow-hidden">
+          <div className="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#e0f2fe] flex items-center justify-center shrink-0">
+              <UserPlus size={18} className="text-[#006064]" />
+            </div>
+            <div>
+              <h2 className="text-[15px] font-bold text-slate-900">
+                Student Registration
+              </h2>
+              <p className="text-[12px] text-slate-500">
+                Fill in the credentials to create a new student account.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="px-7 py-7 space-y-5">
+            {/* General error */}
+            {errors.general && (
+              <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-[13px] text-rose-600 font-medium">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                {errors.general}
               </div>
+            )}
+
+            {/* Success message */}
+            {successMsg && (
+              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-[13px] text-emerald-700 font-medium">
+                <CheckCircle size={16} className="mt-0.5 shrink-0" />
+                {successMsg}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Email */}
               <div>
-                <p className="text-white/60 text-[12px] font-semibold uppercase tracking-widest mb-1">
-                  Counselor Portal
-                </p>
-                <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
-                  Profile Settings
-                </h1>
-                <p className="text-white/70 text-[13px] mt-1">
-                  Manage your counselor identity and university details
-                </p>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                  Email <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="add-student-email"
+                    type="email"
+                    autoComplete="off"
+                    placeholder="e.g. john@example.com"
+                    value={form.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[14px] bg-slate-50/60 outline-none transition-all
+                      ${
+                        errors.email
+                          ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                          : "border-slate-200 focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
+                      }`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <User
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="add-student-fullname"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="e.g. John Doe"
+                    value={form.fullName}
+                    onChange={(e) => handleChange("fullName", e.target.value)}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[14px] bg-slate-50/60 outline-none transition-all
+                      ${
+                        errors.fullName
+                          ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                          : "border-slate-200 focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
+                      }`}
+                  />
+                </div>
+                {errors.fullName && (
+                  <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                    {errors.fullName}
+                  </p>
+                )}
+              </div>
+
+              {/* Admission Date */}
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                  Admission Date <span className="text-rose-500">*</span>
+                </label>
+                <DatePicker
+                  value={form.admissionDate}
+                  onChange={(val) => handleChange("admissionDate", val)}
+                  placeholder="Select admission date"
+                />
+                {errors.admissionDate && (
+                  <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                    {errors.admissionDate}
+                  </p>
+                )}
+              </div>
+
+              {/* Major (Disabled) */}
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5 opacity-80">
+                  Major
+                </label>
+                <div className="relative opacity-80">
+                  <BookOpen
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="add-student-major"
+                    type="text"
+                    disabled
+                    value={form.major || "Software Engineer"}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-[14px] bg-slate-100/80 text-slate-500 font-medium cursor-not-allowed outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Curriculum */}
+              <div className="relative">
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                  Curriculum <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <button
+                    id="add-student-curriculum"
+                    type="button"
+                    onClick={() => setCurriculumOpen((o) => !o)}
+                    className={`w-full flex items-center pl-10 pr-10 py-3 rounded-xl border text-[14px] bg-slate-50/60 outline-none transition-all text-left cursor-pointer
+                      ${
+                        errors.curriculum
+                          ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                          : curriculumOpen
+                          ? "border-[#00838f] ring-2 ring-[#00838f]/20"
+                          : "border-slate-200 focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
+                      }`}
+                  >
+                    <FileText
+                      size={15}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <span className={form.curriculum ? "text-slate-800" : "text-slate-400"}>
+                      {form.curriculum || "Select Curriculum"}
+                    </span>
+                    <div className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-transform duration-200 ${curriculumOpen ? "rotate-180" : ""}`}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                  </button>
+
+                  {curriculumOpen && (
+                    <>
+                      {/* Click-away overlay */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setCurriculumOpen(false)}
+                      />
+                      <div className="absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                        <div
+                          className="px-3 py-2 text-[13px] text-slate-400 cursor-pointer hover:bg-slate-50 transition-colors"
+                          onClick={() => { handleChange("curriculum", ""); setCurriculumOpen(false) }}
+                        >
+                          Select Curriculum
+                        </div>
+                        {curriculums.map((c) => (
+                          <div
+                            key={c}
+                            onClick={() => { handleChange("curriculum", c); setCurriculumOpen(false) }}
+                            className={`px-3 py-2.5 text-[13px] font-medium cursor-pointer transition-colors
+                              ${
+                                form.curriculum === c
+                                  ? "bg-[#00838f] text-white"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                          >
+                            {c}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {errors.curriculum && (
+                  <p className="mt-1 text-[11px] text-rose-500 font-medium">
+                    {errors.curriculum}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            {/* Submit */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              {!editingDraftId && (
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[13px] font-bold px-6 py-2.5 rounded-xl shadow-sm transition-all active:scale-95"
+                >
+                  <FileSpreadsheet size={15} className="text-emerald-600" />
+                  Import Excel
+                </button>
+              )}
+              
+              {editingDraftId && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold px-6 py-2.5 rounded-xl transition-all active:scale-95"
+                >
+                  Cancel Edit
+                </button>
+              )}
+
               <button
-                type="button"
-                onClick={() => void loadProfile()}
-                disabled={loading || saving}
-                className="flex items-center gap-2 text-[13px] font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-all hover:-translate-y-0.5 active:translate-y-0"
+                id="add-student-submit"
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 bg-[#006064] hover:bg-[#004d4d] disabled:opacity-60 text-white text-[13px] font-bold px-6 py-2.5 rounded-xl shadow transition-all active:scale-95"
               >
-                <RefreshCw
-                  size={14}
-                  className={loading ? "animate-spin" : ""}
-                />
-                Reload
+                {isSubmitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : editingDraftId ? (
+                  <CheckCircle size={15} />
+                ) : (
+                  <UserPlus size={15} />
+                )}
+                {isSubmitting ? (editingDraftId ? "Updating..." : "Creating...") : (editingDraftId ? "Update Student" : "Add Student")}
               </button>
             </div>
-          </div>
-        </div>
+          </form>
+        </section>
 
-        <div className="flex flex-col lg:flex-row gap-6 pb-10">
-          <AvatarUploadModal
-            isOpen={isUploadModalOpen}
-            onClose={() => setIsUploadModalOpen(false)}
-            onUpload={handleAvatarUpload}
-            loading={saving}
-          />
-          <div className="flex-[2] space-y-6">
-            {/* Identity Card */}
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#00838f]/30 transition-colors">
-              <div className="flex items-start gap-5 mb-8">
-                <div className="relative">
-                  {profileData.avatar_url &&
-                  profileData.avatar_url !== "null" &&
-                  profileData.avatar_url !== "undefined" &&
-                  !avatarError ? (
-                    <img
-                      src={profileData.avatar_url}
-                      alt="Avatar"
-                      className="w-20 h-20 rounded-2xl object-cover shadow-lg shadow-[#00838f]/30"
-                      onError={() => setAvatarError(true)}
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00838f] to-[#005f63] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#00838f]/30">
-                      {displayInitial}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    disabled={saving}
-                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-[#00838f] rounded-xl flex items-center justify-center shadow-md hover:scale-110 transition-transform border border-slate-100 disabled:opacity-50"
-                    aria-label="Edit avatar"
+        {/* ── Bottom card: Added students list ─────────────────── */}
+        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.07)] overflow-hidden">
+          <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#f0fdf4] flex items-center justify-center shrink-0">
+                <Users size={18} className="text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-bold text-slate-900">
+                  Recently Added Students
+                </h2>
+                <p className="text-[12px] text-slate-500">
+                  Students registering in this session.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {addedStudents.length > 0 && (
+                <span className="text-[12px] font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                  {addedStudents.length} draft
+                  {addedStudents.length !== 1 && "s"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {addedStudents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <Building2 size={26} className="text-slate-300" />
+              </div>
+              <p className="text-[13px] font-medium">No students added yet.</p>
+              <p className="text-[12px]">
+                Use the form above to register a new student.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {/* Table header */}
+              <div className="grid grid-cols-12 px-7 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/60">
+                <span className="col-span-1">#</span>
+                <span className="col-span-3">Student</span>
+                <span className="col-span-3">Email</span>
+                <span className="col-span-2">Major / Date</span>
+                <span className="col-span-2">Curriculum</span>
+                <span className="col-span-1 text-right">Action</span>
+              </div>
+
+              {addedStudents.map((st, idx) => {
+                const initials = st.fullName.slice(0, 2).toUpperCase() || "ST"
+                return (
+                  <div
+                    key={st.id}
+                    className="grid grid-cols-12 items-center px-7 py-4 hover:bg-slate-50 transition-colors"
                   >
-                    <Edit3 size={14} />
-                  </button>
-                </div>
-                <div className="mt-2">
-                  <h2 className="text-xl font-bold text-slate-900 mb-1">
-                    Counselor Identity
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    How you appear to students asking for guidance.
-                  </p>
-                </div>
-              </div>
-
-              {error && (
-                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600">
-                  {success}
-                </div>
-              )}
-
-              {loading ? (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
-                  Loading profile data...
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <User size={16} className="text-[#00838f]" />
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.full_name || ""}
-                        onChange={(e) =>
-                          handleChange("full_name", e.target.value)
-                        }
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
-                      />
+                    <span className="col-span-1 text-[12px] text-slate-400 font-semibold">
+                      {idx + 1}
+                    </span>
+                    <div className="col-span-3 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#e0f2fe] text-[#006064] flex items-center justify-center text-[11px] font-bold shrink-0">
+                        {initials}
+                      </div>
+                      <div className="flex flex-col truncate pr-2">
+                        <span className="text-[13px] font-semibold text-slate-900 truncate">
+                          {st.fullName}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-[#00838f]" />
-                        Year of Birth
-                      </label>
-                      <input
-                        type="number"
-                        min="1900"
-                        max={new Date().getFullYear()}
-                        value={profileData.yob}
-                        placeholder="e.g. 1990"
-                        onChange={(e) =>
-                          handleChange("yob", e.target.value)
-                        }
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
-                      />
+                    <div className="col-span-3 flex items-center gap-1.5 text-[13px] text-slate-500 truncate pr-4">
+                      <Mail size={12} className="text-slate-400 shrink-0" />
+                      <span className="truncate">{st.email}</span>
+                    </div>
+                    <div className="col-span-2 flex flex-col truncate pr-4">
+                      <span className="text-[12px] font-medium text-slate-700 truncate">
+                        {st.major}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Enroll {st.admissionDate ? (st.admissionDate.split('-').length === 3 ? `${parseInt(st.admissionDate.split('-')[1])}/${parseInt(st.admissionDate.split('-')[2])}/${st.admissionDate.split('-')[0]}` : st.admissionDate) : (st as any).yearOfAdmission || "N/A"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-[12px] text-slate-600 font-medium truncate pr-2">
+                      {st.curriculum}
+                    </div>
+                    <div className="col-span-1 flex items-center justify-end gap-1.5">
+                      <button 
+                        type="button"
+                        onClick={() => handleEditDraft(st.id)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleDeleteDraft(st.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Building2 size={16} className="text-[#00838f]" />
-                        University
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.university || "Not assigned"}
-                        disabled
-                        aria-readonly="true"
-                        className="w-full cursor-not-allowed bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-500 disabled:opacity-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                        <Calendar size={16} className="text-[#00838f]" />
-                        Admission Date
-                      </label>
-                      <input
-                        type="date"
-                        value={profileData.admissionDate}
-                        onChange={(e) =>
-                          handleChange("admissionDate", e.target.value)
-                        }
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                      <GraduationCap size={16} className="text-[#00838f]" />
-                      Department
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.department}
-                      placeholder="e.g. Software Engineering"
-                      onChange={(e) =>
-                        handleChange("department", e.target.value)
-                      }
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
-                    />
-                  </div>
-
-                  <div className="mb-8">
-                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                      <Book size={16} className="text-[#00838f]" />
-                      Professional Bio
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={profileData.bio}
-                      placeholder="Share your experience and how you can help students..."
-                      onChange={(e) => handleChange("bio", e.target.value)}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white resize-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
-                    <button
-                      type="button"
-                      onClick={() => void loadProfile()}
-                      disabled={saving}
-                      className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50 px-4 py-2.5 rounded-xl hover:bg-slate-100"
-                    >
-                      Discard Changes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="px-6 py-2.5 bg-[#00838f] hover:bg-[#006064] text-white rounded-xl text-[13px] font-bold transition-all shadow-md shadow-[#00838f]/20 disabled:cursor-not-allowed disabled:opacity-70 hover:-translate-y-0.5"
-                    >
-                      {saving ? "Saving..." : "Save Profile"}
-                    </button>
-                  </div>
-                </>
-              )}
+                )
+              })}
             </div>
-          </div>
+          )}
 
-          <div className="flex-1 space-y-6">
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#00838f]/30 transition-colors">
-              <h3 className="text-[15px] font-bold text-slate-900 mb-5">
-                Account Security
-              </h3>
-
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50/80 border border-slate-100">
-                  <div>
-                    <p className="mb-1 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <Mail size={13} />
-                      Email Address
-                    </p>
-                    <p className="text-[14px] font-semibold text-slate-900">
-                      {profileData.email || "Not set"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-[#00838f] hover:text-[#006064] bg-white p-2 rounded-lg shadow-sm border border-slate-200 transition-all hover:scale-105"
-                    aria-label="Edit email"
-                  >
-                    <Edit3 size={15} />
-                  </button>
-                </div>
-              </div>
+          {/* Submit All Action */}
+          {addedStudents.length > 0 && (
+            <div className="px-7 py-5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-[12px] text-slate-500 font-medium">
+                Review the drafts before submitting them to the system.
+              </p>
+              <button
+                type="button"
+                onClick={handleSubmitAllToSystem}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 bg-[#00838f] hover:bg-[#006064] disabled:opacity-60 text-white text-[13px] font-bold px-6 py-2.5 rounded-xl shadow transition-all active:scale-95"
+              >
+                {isSubmitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <CheckCircle size={15} />
+                )}
+                {isSubmitting ? "Creating..." : "Create Student(s)"}
+              </button>
             </div>
-
-            <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#00838f]/30 transition-colors">
-              <h3 className="text-[15px] font-bold text-slate-900 mb-5">
-                Verification Status
-              </h3>
-
-              <div className="border border-slate-200/80 rounded-xl p-4 flex items-start gap-4 bg-slate-50/50 hover:bg-white transition-colors group">
-                <div className="w-10 h-10 bg-[#e6f7f8] rounded-xl flex items-center justify-center text-[#00838f] shrink-0 group-hover:scale-105 transition-transform shadow-sm">
-                  <Award size={18} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-bold text-[14px] text-slate-900">
-                      Academic Role
-                    </h4>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  </div>
-                  <p className="text-[12px] text-slate-500">
-                    Your counselor status is verified by the university
-                    administration.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
+        </section>
       </main>
+
+      {/* ── Import Excel Modal ───────────────────────────────────── */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <FileSpreadsheet size={16} className="text-emerald-700" />
+                </div>
+                <h3 className="font-bold text-[15px] text-slate-900">
+                  Import Students
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <label className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 hover:border-[#00838f]/50 transition-colors cursor-pointer group relative">
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls, .csv" 
+                  onChange={handleFileUpload} 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                />
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-50 transition-all pointer-events-none">
+                  <Upload
+                    size={20}
+                    className="text-slate-400 group-hover:text-emerald-600"
+                  />
+                </div>
+                <p className="text-[14px] font-bold text-slate-700 mb-1 pointer-events-none">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-[12px] text-slate-500 pointer-events-none">
+                  .xlsx, .xls or .csv (Max 5MB)
+                </p>
+              </label>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-5 py-2 rounded-xl text-[13px] font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-5 py-2 rounded-xl text-[13px] font-bold text-white bg-[#006064] hover:bg-[#004d4d] shadow-sm transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

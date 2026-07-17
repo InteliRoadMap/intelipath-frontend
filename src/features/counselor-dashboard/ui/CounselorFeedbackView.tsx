@@ -30,7 +30,8 @@ import {
   List,
   Plus,
   Paperclip,
-  File as FileIcon
+  File as FileIcon,
+  UserPlus
 } from "lucide-react"
 import {
   Briefcase as BriefcasePhos,
@@ -148,7 +149,15 @@ function FilterDropdown({
   )
 }
 
-function RoadmapTab({ student, roadmapProgress, loading }: { student: MyStudent; roadmapProgress: number; loading: boolean }) {
+function RoadmapTab({
+  student,
+  roadmapProgress,
+  loading
+}: {
+  student: MyStudent
+  roadmapProgress: number
+  loading: boolean
+}) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -284,7 +293,13 @@ function RoadmapTab({ student, roadmapProgress, loading }: { student: MyStudent;
 }
 
 // ─── Tab: Skill Gap (from MyAssignedStudent.missingSkills) ───────
-function SkillGapTab({ skills, loading }: { skills: string[]; loading: boolean }) {
+function SkillGapTab({
+  skills,
+  loading
+}: {
+  skills: string[]
+  loading: boolean
+}) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -342,7 +357,17 @@ function SkillGapTab({ skills, loading }: { skills: string[]; loading: boolean }
 }
 
 // ─── Tab: Feedback (uses hooks: useStudentDetailInfo + useSendFeedback) ─
-function FeedbackTab({ student, feedbacks, loading, refetch }: { student: MyStudent; feedbacks: Feedback[]; loading: boolean; refetch: () => void }) {
+function FeedbackTab({
+  student,
+  feedbacks,
+  loading,
+  refetch
+}: {
+  student: MyStudent
+  feedbacks: Feedback[]
+  loading: boolean
+  refetch: () => void
+}) {
   const [content, setContent] = useState("")
   const [type, setType] = useState("GENERAL")
   const tabRef = useRef<HTMLDivElement>(null)
@@ -776,7 +801,8 @@ function StudentDetailPanel({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(defaultTab)
-  const { roadmapProgress, missingSkills, feedbacks, loading, refetch } = useStudentDetailInfo(student.studentId)
+  const { roadmapProgress, missingSkills, feedbacks, loading, refetch } =
+    useStudentDetailInfo(student.studentId)
   const fullName = student.fullName || "Unknown Student"
   const initials =
     fullName
@@ -892,11 +918,24 @@ function StudentDetailPanel({
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {tab === "roadmap" && <RoadmapTab student={student} roadmapProgress={roadmapProgress} loading={loading} />}
+          {tab === "roadmap" && (
+            <RoadmapTab
+              student={student}
+              roadmapProgress={roadmapProgress}
+              loading={loading}
+            />
+          )}
           {tab === "skillgap" && (
             <SkillGapTab skills={missingSkills} loading={loading} />
           )}
-          {tab === "feedback" && <FeedbackTab student={student} feedbacks={feedbacks} loading={loading} refetch={refetch} />}
+          {tab === "feedback" && (
+            <FeedbackTab
+              student={student}
+              feedbacks={feedbacks}
+              loading={loading}
+              refetch={refetch}
+            />
+          )}
         </div>
       </aside>
     </div>
@@ -915,7 +954,6 @@ export default function CounselorFeedbackPage() {
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
   const [localSearch, setLocalSearch] = useState("")
-  const [filterUni, setFilterUni] = useState("")
   const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
@@ -937,9 +975,6 @@ export default function CounselorFeedbackPage() {
     setSize
   } = useStudentList()
 
-  const uniqueUnis = Array.from(
-    new Set(students.map((s) => s.university).filter(Boolean))
-  )
   const uniqueCareers = Array.from(
     new Set(students.map((s) => s.careerPath).filter(Boolean))
   )
@@ -1002,7 +1037,8 @@ export default function CounselorFeedbackPage() {
 
   // Tất cả student trang hiện tại đã được chọn chưa?
   const isAllCurrentPageSelected =
-    students.length > 0 && students.every((s) => selectedStudentIds.has(s.studentId))
+    students.length > 0 &&
+    students.every((s) => selectedStudentIds.has(s.studentId))
 
   const handleExportExcel = async () => {
     if (selectedStudentIds.size === 0) return
@@ -1259,14 +1295,6 @@ export default function CounselorFeedbackPage() {
             onChange={setFilterCareer}
           />
 
-          <FilterDropdown
-            icon={Building2}
-            value={filterUni}
-            placeholder="All Universities"
-            options={uniqueUnis}
-            onChange={setFilterUni}
-          />
-
           <div className="ml-auto flex items-center gap-3 shrink-0">
             <button
               type="button"
@@ -1429,13 +1457,20 @@ export default function CounselorFeedbackPage() {
                     <div className="col-span-3 min-w-0">
                       <p className="text-[13px] text-slate-600 truncate flex items-center gap-1.5">
                         <Mail size={12} className="text-slate-400 shrink-0" />
-                        {student.email || <span className="text-slate-400 italic">No email</span>}
+                        {student.email || (
+                          <span className="text-slate-400 italic">
+                            No email
+                          </span>
+                        )}
                       </p>
                     </div>
                     {/* University */}
                     <div className="col-span-2 min-w-0">
                       <p className="text-[13px] text-slate-700 truncate flex items-center gap-1.5">
-                        <Building2 size={12} className="text-slate-400 shrink-0" />
+                        <Building2
+                          size={12}
+                          className="text-slate-400 shrink-0"
+                        />
                         {student.university}
                       </p>
                     </div>

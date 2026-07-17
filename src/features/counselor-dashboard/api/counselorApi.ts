@@ -81,6 +81,11 @@ const counselorApi = {
     return res.data
   },
 
+  getCurriculums: async (): Promise<{ curriculums: string[] }> => {
+    const res = await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.CURRICULUMS)
+    return res.data
+  },
+
   getSkillMissing: async (careerName: string): Promise<CounselorResponse> => {
     const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.MISSING_SKILLS}/${encodeURIComponent(careerName)}`
     const res = await mainClient.get(url)
@@ -192,14 +197,28 @@ const counselorApi = {
     )
     return res.data
   },
-  importStudents: async (
-    students: { username: string; email: string }[]
-  ): Promise<any> => {
+  importStudents: async (students: any[]): Promise<Blob> => {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
-      students
+      { accounts: students },
+      { responseType: "blob" }
     )
     return res.data
+  },
+  checkStudentEmail: async (email: string): Promise<boolean> => {
+    try {
+      await mainClient.get(
+        ENDPOINTS.COUNSELOR_DASHBOARD.CHECK_STUDENT_EMAIL(email)
+      )
+      // If it succeeds (HTTP 200), the email is valid and does not exist.
+      return false
+    } catch (err: any) {
+      // If it throws HTTP 400, our backend returns BadRequestException indicating it exists.
+      if (err?.response?.status === 400) {
+        return true
+      }
+      throw err
+    }
   }
 }
 

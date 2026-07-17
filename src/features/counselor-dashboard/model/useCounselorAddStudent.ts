@@ -91,7 +91,25 @@ export function useCounselorAddStudent() {
     setSuccessMsg(null)
 
     try {
-      await new Promise((r) => setTimeout(r, 0)) // remove once real API is wired
+      // 1. Check if email already exists in drafts (Recently Added Students)
+      const draftExists = addedStudents.some(
+        (s) => s.email.toLowerCase() === form.email.trim().toLowerCase() && s.id !== editingDraftId
+      )
+
+      if (draftExists) {
+        setErrors({ general: "Email này đã tồn tại trong danh sách chờ bên dưới." })
+        setIsSubmitting(false)
+        return
+      }
+
+      // 2. Check if email already exists in the backend
+      const emailExists = await counselorApi.checkStudentEmail(form.email.trim())
+      if (emailExists) {
+        setErrors({ general: "Email này đã tồn tại trong hệ thống." })
+        setIsSubmitting(false)
+        return
+      }
+
       if (editingDraftId) {
         setAddedStudents((prev) =>
           prev.map((s) =>

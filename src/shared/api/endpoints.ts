@@ -43,7 +43,14 @@ export const ENDPOINTS = {
     STUDENT_ROADMAP: "/roadmaps/student",
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
-    COMPARE_SKILLS: "/roadmap/skills/compare"
+    COMPARE_SKILLS: "/roadmap/skills/compare",
+    SELECTIONS: "/roadmaps/selections",
+    CLEAR_SELECTION: (groupNodeId: string) => `/roadmaps/selections/${groupNodeId}`
+  },
+  CURRICULUM: {
+    FPT_SUBJECTS: "/curriculum/fpt-subjects",
+    CURRICULUM_TERM: "/curriculum/term",
+    SET_CURRICULUM: "/curriculum/set"
   },
   ROADMAP_RECOMMENDATIONS: {
     PENDING: "/roadmaps/recommendations",
@@ -97,6 +104,12 @@ export const ENDPOINTS = {
     TRIGGER_SKILL_EXTRACTION: "/admin/dashboard/trigger-skill-extraction",
     TRIGGER_JOB_SCRAPER: "/admin/dashboard/trigger-job-scraper"
   },
+  ADMIN_FLM: {
+    SYNC: "/admin/flm/sync",
+    STATUS: "/admin/flm/status",
+    JOBS: "/admin/flm/jobs",
+    JOB: (jobId: string) => `/admin/flm/jobs/${jobId}`
+  },
   COUNSELOR: {
     PROFILE: "/counselor/me/profile"
   },
@@ -121,6 +134,7 @@ export const ENDPOINTS = {
       `/counselor/feedback/delete/${feedbackId}`,
     EXPORT_STUDENTS: "/counselor/export-students",
     IMPORT_STUDENTS: "/counselor/import-students",
+    CHECK_STUDENT_EMAIL: (email: string) => `/counselor/import-student/${email}`,
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {
