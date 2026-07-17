@@ -212,7 +212,12 @@ export function createApiClient({
       //Refresh token when access token expired (401 Unauthorized)
       //401 Unauthorized (Token Expiry & Refresh Logic)
       // Flow : Api call → 401 Unauthorized → Using refresh Token -> Backend returns new access token → Retry original request with new token
-      if (status === 401 && originalRequest && !originalRequest._retry) {
+      // A 401 from signing in is the answer, not an expired session: there is nothing to
+      // refresh, and running the refresh anyway makes its own failure ("Refresh token is
+      // missing") the error the form reports instead of "Invalid username or password".
+      const isAuthRequest = (originalRequest?.url || "").startsWith("/auth/")
+
+      if (status === 401 && originalRequest && !originalRequest._retry && !isAuthRequest) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {
             failedQueue.push({ resolve, reject }) // Queue requests while refreshing token
