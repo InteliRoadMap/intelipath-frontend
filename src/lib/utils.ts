@@ -33,10 +33,13 @@ export function getErrorMessage(error: unknown): string {
     const message = error.response?.data?.message
 
     if (status === 400) return message || "Invalid input"
-    if (status === 401) return "Invalid email or password"
+    // The server's own wording wins, as it does on every other status. Sign-in is by
+    // username, and this helper also serves onboarding and profile forms, where a 401
+    // means the session lapsed — "invalid email" was wrong on both counts.
+    if (status === 401) return message || "Invalid username or password"
     if (status === 403) return message || "Account is suspended"
-    if (status === 404) return message || "Email not found"
-    if (status === 409) return "Email already exists"
+    if (status === 404) return message || "Not found"
+    if (status === 409) return message || "That already exists"
 
     return message || "Something went wrong"
   }

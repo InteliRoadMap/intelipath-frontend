@@ -13,8 +13,11 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
+import ConfirmModal from "@/components/modals/ConfirmModal"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
+import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
+import { Select } from "@/components"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -90,9 +93,9 @@ const MentorRoadmapEditorView = () => {
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<any>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
-  const [dirtyPositions, setDirtyPositions] = useState<Record<string, { x: number; y: number }>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const selectedNode = useMemo(
     () => editorNodes.find(n => n.nodeId === selectedId) || null,
@@ -100,11 +103,42 @@ const MentorRoadmapEditorView = () => {
   )
 
   const rebuildGraph = useCallback((nodes: EditorNode[]) => {
+    // Auto-arrange with the same spine/branch algorithm the student roadmap uses,
+    // so mentors never place nodes by hand — they just add/edit and it lays out.
+    //
+    // The algorithm reads three things off each node and one off each edge, and
+    // silently degenerates when any is absent: without `stage` every node sorts
+    // into the same bucket, without `parentNodeId` nothing has children, and
+    // without a solid-styled edge no spine chain forms. Starve it of all three
+    // and all 85 nodes stack into a single 12px-wide column — which is exactly
+    // what it did before, since only `level` was ever passed.
+    const rawNodes = nodes.map(n => ({
+      id: n.nodeId,
+      data: {
+        level: n.nodeLevel ?? 0,
+        stage: n.stage ?? '',
+        parentNodeId: n.parentNode ?? null
+      }
+    }))
+    const rawEdges: { source: string; target: string; style?: Record<string, unknown> }[] = []
+    nodes.forEach(n => {
+      // previousNode chains topic → topic: that is the spine. It has to carry the
+      // solid style the layout matches on, or the chain is invisible to it.
+      if (n.previousNode) {
+        rawEdges.push({
+          source: n.previousNode,
+          target: n.nodeId,
+          style: { strokeDasharray: 'none', strokeWidth: 3 }
+        })
+      }
+      if (n.parentNode) rawEdges.push({ source: n.parentNode, target: n.nodeId })
+    })
+    const laid = getDynamicLayoutedElements(rawNodes, rawEdges).nodes as { id: string; position: { x: number; y: number } }[]
+    const posById = new Map(laid.map(n => [n.id, n.position]))
+
     const flowNodes: Node[] = nodes.map((node, index) => ({
       id: node.nodeId,
-      position: node.positionX != null && node.positionY != null
-        ? { x: node.positionX, y: node.positionY }
-        : fallbackPosition(index),
+      position: posById.get(node.nodeId) ?? fallbackPosition(index),
       data: { label: node.nodeName },
       style: nodeVisual(node)
     }))
@@ -140,7 +174,6 @@ const MentorRoadmapEditorView = () => {
     if (!id) return
     setIsLoading(true)
     setSelectedId(null)
-    setDirtyPositions({})
     try {
       const response = await roadmapEditorApi.getCareerNodes(id)
       setEditorNodes(response.data)
@@ -183,10 +216,6 @@ const MentorRoadmapEditorView = () => {
     })
   }
 
-  const handleNodeDragStop = (_: unknown, node: Node) => {
-    setDirtyPositions(prev => ({ ...prev, [node.id]: { x: node.position.x, y: node.position.y } }))
-  }
-
   const startCreate = () => {
     setSelectedId(null)
     setForm(emptyForm)
@@ -202,12 +231,9 @@ const MentorRoadmapEditorView = () => {
     parentNodeId: form.parentNodeId || null,
     previousNodeId: form.previousNodeId || null,
     resources: form.resourcesText.split("\n").map(s => s.trim()).filter(Boolean),
-    positionX: selectedId
-      ? (dirtyPositions[selectedId]?.x ?? selectedNode?.positionX ?? null)
-      : null,
-    positionY: selectedId
-      ? (dirtyPositions[selectedId]?.y ?? selectedNode?.positionY ?? null)
-      : null
+    // Positions are auto-arranged; preserve the existing one on edit, none on create.
+    positionX: selectedId ? (selectedNode?.positionX ?? null) : null,
+    positionY: selectedId ? (selectedNode?.positionY ?? null) : null
   })
 
   const handleSaveNode = async () => {
@@ -235,32 +261,14 @@ const MentorRoadmapEditorView = () => {
 
   const handleDeleteNode = async () => {
     if (!selectedId) return
-    if (!window.confirm("Delete this node? This cannot be undone.")) return
     setIsSaving(true)
     try {
       await roadmapEditorApi.deleteNode(selectedId)
       toast.success("Node deleted.")
+      setConfirmDeleteOpen(false)
       await loadNodes(careerId)
     } catch (error) {
       console.error("[Roadmap Editor] Failed to delete node:", error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleSaveLayout = async () => {
-    const entries = Object.entries(dirtyPositions)
-    if (entries.length === 0) return
-    setIsSaving(true)
-    try {
-      await roadmapEditorApi.savePositions(
-        entries.map(([nodeId, pos]) => ({ nodeId, positionX: pos.x, positionY: pos.y }))
-      )
-      toast.success(`Layout saved (${entries.length} node${entries.length > 1 ? "s" : ""}).`)
-      setDirtyPositions({})
-      await loadNodes(careerId)
-    } catch (error) {
-      console.error("[Roadmap Editor] Failed to save layout:", error)
     } finally {
       setIsSaving(false)
     }
@@ -276,7 +284,6 @@ const MentorRoadmapEditorView = () => {
     navigate(ROUTES.LOGIN)
   }
 
-  const dirtyCount = Object.keys(dirtyPositions).length
   const nodeOptions = editorNodes.filter(n => n.nodeId !== selectedId)
 
   const fieldClass = "w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
@@ -290,30 +297,22 @@ const MentorRoadmapEditorView = () => {
         {/* Toolbar */}
         <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 px-4 py-2.5 shadow-sm shrink-0">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Career</span>
-          <select
+          <Select
             value={careerId}
             onChange={e => setCareerId(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-800 outline-none focus:border-cyan-600"
+            wrapperClassName="w-auto min-w-[160px]"
+            className="h-9 rounded-lg text-[12px] font-semibold"
           >
             {careers.map(c => (
               <option key={c.careerId} value={c.careerId}>{c.careerName}</option>
             ))}
-          </select>
+          </Select>
 
           <button
             onClick={startCreate}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-slate-900 text-white text-[12px] font-semibold hover:bg-slate-800 transition-colors active:scale-[0.98]"
           >
             <Plus size={13} weight="bold" /> New node
-          </button>
-
-          <button
-            onClick={handleSaveLayout}
-            disabled={dirtyCount === 0 || isSaving}
-            className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-cyan-700 text-white text-[12px] font-semibold hover:bg-cyan-600 transition-colors active:scale-[0.98] disabled:opacity-40"
-          >
-            <FloppyDisk size={13} weight="bold" />
-            Save layout{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
           </button>
 
           <button
@@ -325,7 +324,7 @@ const MentorRoadmapEditorView = () => {
           </button>
 
           <span className="ml-auto text-[11px] text-slate-400 font-medium">
-            {isLoading ? "Loading..." : `${editorNodes.length} nodes — drag to arrange, click to edit`}
+            {isLoading ? "Loading..." : `${editorNodes.length} nodes — click a node to edit`}
           </span>
         </div>
 
@@ -339,11 +338,13 @@ const MentorRoadmapEditorView = () => {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={handleNodeClick}
-                onNodeDragStop={handleNodeDragStop}
-                nodesDraggable
+                nodesDraggable={false}
                 nodesConnectable={false}
                 fitView
-                minZoom={0.2}
+                fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+                minZoom={0.35}
+                panOnScroll
+                zoomOnScroll={false}
                 proOptions={{ hideAttribution: true }}
               >
                 <Background gap={24} color="#e2e8f0" />
@@ -363,7 +364,7 @@ const MentorRoadmapEditorView = () => {
               </h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
               <div>
                 <label className={labelClass}>Node name *</label>
                 <input className={fieldClass} value={form.nodeName}
@@ -382,17 +383,17 @@ const MentorRoadmapEditorView = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className={labelClass}>Stage</label>
-                  <select className={fieldClass} value={form.stage}
+                  <Select className="h-9 text-[12px]" value={form.stage}
                     onChange={e => setForm({ ...form, stage: e.target.value })}>
                     {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label className={labelClass}>Policy</label>
-                  <select className={fieldClass} value={form.completionPolicy}
+                  <Select className="h-9 text-[12px]" value={form.completionPolicy}
                     onChange={e => setForm({ ...form, completionPolicy: e.target.value })}>
                     {POLICIES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -410,25 +411,25 @@ const MentorRoadmapEditorView = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Parent node (con của)</label>
-                <select className={fieldClass} value={form.parentNodeId}
+                <label className={labelClass}>Parent node</label>
+                <Select className="h-9 text-[12px]" value={form.parentNodeId}
                   onChange={e => setForm({ ...form, parentNodeId: e.target.value })}>
                   <option value="">— none —</option>
                   {nodeOptions.map(n => <option key={n.nodeId} value={n.nodeId}>{n.nodeName}</option>)}
-                </select>
+                </Select>
               </div>
 
               <div>
-                <label className={labelClass}>Previous node (node trước)</label>
-                <select className={fieldClass} value={form.previousNodeId}
+                <label className={labelClass}>Previous node</label>
+                <Select className="h-9 text-[12px]" value={form.previousNodeId}
                   onChange={e => setForm({ ...form, previousNodeId: e.target.value })}>
                   <option value="">— none —</option>
                   {nodeOptions.map(n => <option key={n.nodeId} value={n.nodeId}>{n.nodeName}</option>)}
-                </select>
+                </Select>
               </div>
 
               <div>
-                <label className={labelClass}>Resource links (mỗi dòng 1 URL)</label>
+                <label className={labelClass}>Resource links (one URL per line)</label>
                 <textarea
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15 min-h-[80px]"
                   placeholder="https://..."
@@ -449,7 +450,7 @@ const MentorRoadmapEditorView = () => {
               </button>
               {selectedId && (
                 <button
-                  onClick={handleDeleteNode}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   disabled={isSaving}
                   className="flex items-center justify-center gap-1.5 px-3.5 h-10 rounded-xl bg-white text-red-600 ring-1 ring-red-200 text-[12px] font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
@@ -460,6 +461,17 @@ const MentorRoadmapEditorView = () => {
           </div>
         </div>
       </main>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        title="Delete node?"
+        message="This node will be removed from the roadmap. This cannot be undone."
+        confirmLabel="Delete node"
+        variant="danger"
+        loading={isSaving}
+        onConfirm={handleDeleteNode}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   )
 }

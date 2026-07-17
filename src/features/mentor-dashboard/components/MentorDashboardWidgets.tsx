@@ -10,7 +10,7 @@ import { useGSAP } from '@gsap/react';
 
 export const WelcomeBanner = ({ user }: { user: any }) => {
   return (
-    <div className="relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-8 md:p-10 shadow-[0_30px_60px_rgba(15,23,42,0.3)] mb-8 gap-6">
+    <div className="relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 md:p-7 shadow-[0_20px_40px_rgba(15,23,42,0.25)] mb-5 gap-4">
       <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-slate-500/20 blur-3xl" />
       
@@ -29,15 +29,15 @@ export const WelcomeBanner = ({ user }: { user: any }) => {
 export const MetricWidget = ({ title, icon: Icon, data, isLoading }: { title: string, icon: any, data: any, isLoading: boolean }) => {
 
   return (
-    <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-      <div className="flex items-center gap-2 mb-3">
-        <Icon size={18} weight="regular" className="text-slate-400 group-hover:text-[#00838f] transition-colors" />
+    <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={16} weight="regular" className="text-slate-400 group-hover:text-[#00838f] transition-colors" />
         <p className="text-[11px] text-slate-500 font-bold tracking-widest uppercase">{title}</p>
       </div>
       {isLoading || data == null ? (
-        <div className="h-10 w-16 bg-slate-100 animate-pulse rounded-md"></div>
+        <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-md"></div>
       ) : (
-        <h2 className="text-[36px] font-bold text-slate-900 leading-none tracking-tight">
+        <h2 className="text-[28px] font-bold text-slate-900 leading-none tracking-tight">
           {typeof data === 'object' ? (data.value ?? data.count ?? data.score ?? data.hours ?? '0') : data}
         </h2>
       )}
@@ -101,7 +101,7 @@ export const PendingReviewsWidget = () => {
             </div>
           ))
         ) : !data || data.length === 0 ? (
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-12 shadow-sm flex flex-col items-center justify-center text-center">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-8 shadow-sm flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
               <Users size={28} className="text-slate-400" />
             </div>

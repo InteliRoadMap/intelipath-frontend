@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
 
       {/* Header with Logo */}
       <header className="relative z-30 flex w-full items-center px-6 py-6 xl:px-8">
-        <Logo hideIcon className="!text-slate-900" />
+        <Logo iconOnly className="!text-slate-900" />
       </header>
 
       {/* Centered form card */}

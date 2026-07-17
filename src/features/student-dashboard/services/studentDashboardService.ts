@@ -3,6 +3,7 @@ import { careerApi, dashboardApi, profileApi, roadmapApi, skillApi } from "@/api
 import { isUuid, toIsoDateOnly } from "@/lib/utils"
 import type {
   CareerRole,
+  NodeSelection,
   RoadmapNode,
   RoadmapNodeStatus,
   RoadmapResource,
@@ -59,8 +60,7 @@ type RawStudentRoadmap = {
 
 type StudentProfilePayload = {
   university: string
-  universityId?: string
-  yearOfAdmission: string
+  admissionDate: string
   major: string
   careerId: string
 }
@@ -116,7 +116,7 @@ const normalizeSkillResponse = (data: unknown): SkillResponse => {
 
 const normalizeStatus = (status?: string): RoadmapNodeStatus => {
   const value = String(status || "locked").toLowerCase()
-  if (value === "completed" || value === "current" || value === "locked" || value === "in_progress") return value
+  if (value === "completed" || value === "current" || value === "locked" || value === "in_progress" || value === "alternative") return value
   return "locked"
 }
 
@@ -278,36 +278,13 @@ export const studentDashboardService = {
     profileApi.updateUserProfile(payload),
 
   updateStudentProfile: (payload: any) => {
-    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Aligning with new SetupStudentProfileRequest contract):
-    // const yearOfAdmission = toIsoDateOnly(payload.yearOfAdmission)
-    // if (!yearOfAdmission) throw new Error("Admission date must use yyyy-MM-dd format.")
-    // if (!isUuid(payload.careerId)) throw new Error("Career ID must be a valid UUID.")
-    //
-    // return profileApi.updateStudentProfile({
-    //   ...payload,
-    //   universityId: payload.universityId || payload.university,
-    //   yearOfAdmission
-    // })
-
-    // NEW LOGIC: Support new hybrid contract (yearOfAdmission as number, universityId/universityName separate)
     if (payload.careerId && typeof payload.careerId !== "string") {
       throw new Error("Career ID must be a valid string ID.")
     }
 
-    let yearNum: number | null = null
-    if (payload.yearOfAdmission) {
-      const parsed = parseInt(String(payload.yearOfAdmission), 10)
-      if (Number.isFinite(parsed)) {
-        yearNum = parsed
-      }
-    }
-
-    const isUnivUuid = isUuid(payload.universityId)
-
     return profileApi.updateStudentProfile({
-      universityId: isUnivUuid ? payload.universityId : null,
-      universityName: isUnivUuid ? (payload.university || payload.universityName || null) : (payload.universityId || payload.universityName || payload.university || null),
-      yearOfAdmission: yearNum,
+      universityName: payload.universityName || payload.university || null,
+      admissionDate: payload.admissionDate || null,
       major: payload.major || null,
       careerId: payload.careerId || null,
       bio: payload.bio || null,
@@ -393,6 +370,22 @@ export const studentDashboardService = {
   getNodeDetail: async (nodeId: string): Promise<any> => {
     const response = await roadmapApi.getNodeDetail(nodeId)
     return unwrapResponse(response.data)
+  },
+
+  // ─── Choose-one selections ─────────────────────────────────────
+  getRoadmapSelections: async (): Promise<NodeSelection[]> => {
+    const response = await roadmapApi.getSelections()
+    const data = unwrapResponse<any>(response.data)
+    return Array.isArray(data) ? data : []
+  },
+
+  selectAlternative: async (groupNodeId: string, chosenNodeId: string): Promise<NodeSelection> => {
+    const response = await roadmapApi.selectAlternative(groupNodeId, chosenNodeId)
+    return unwrapResponse(response.data)
+  },
+
+  clearRoadmapSelection: async (groupNodeId: string): Promise<void> => {
+    await roadmapApi.clearSelection(groupNodeId)
   },
 
   getMentorFeedback: async (): Promise<MentorFeedback[]> => {
@@ -510,8 +503,13 @@ export const studentDashboardService = {
                 if (typeof res === 'string') {
                     try { parsed = JSON.parse(res); } catch (e) { parsed = []; }
                 }
-                if (Array.isArray(parsed)) return parsed.map((r: any, i: number) => ({ title: r.title || `Resource ${i+1}`, url: r.url || r.link || "" }));
-                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }];
+                if (Array.isArray(parsed)) return parsed
+                    .map((r: any, i: number) => ({
+                        title: (r && typeof r === 'object' && r.title) ? r.title : `Resource ${i + 1}`,
+                        url: typeof r === 'string' ? r : (r?.url || r?.link || "")
+                    }))
+                    .filter((x: { url: string }) => x.url);
+                if (typeof parsed === 'object' && parsed !== null) return [{ title: parsed.title || "Resource", url: parsed.url || parsed.link || "" }].filter(x => x.url);
                 return [];
             };
             resources = parseResourceField(rawResourceData);
@@ -533,10 +531,27 @@ export const studentDashboardService = {
             level: level,
             status: normalizeStatus(row.Status || row.status),
             stage: row.stage || row.Stage || null,
+            completedAt: row.completedAt ?? row.completed_at ?? null,
             completionPolicy: row.completionPolicy || row.completion_policy || null,
+            // v2 personalization hints — drive CHOOSE_ONE styling + selection UX.
+            selection: row.selection || row.Selection || 'ALL',
+            chooseCount: row.chooseCount ?? row.choose_count ?? null,
+            nodeKind: row.nodeKind || row.node_kind || 'CORE',
+            axis: row.axis || row.Axis || 'MAIN',
+            isOptional: row.isOptional ?? row.is_optional ?? false,
+            isCheckpoint: row.isCheckpoint ?? row.is_checkpoint ?? false,
+            // Set below once parent refs are resolved (the CHOOSE_ONE group this node belongs to).
+            parentNodeId: null as string | null,
+            // Topic (spine) node that auto-completes from its child sub-skills.
+            parentTopic: row.parentTopic ?? row.parent_topic ?? false,
+            childTotal: row.childTotal ?? row.child_total ?? 0,
+            childCompleted: row.childCompleted ?? row.child_completed ?? 0,
             // Hand-placed coordinates from the mentor editor; null = auto-layout.
             positionX: row.positionX ?? row.position_x ?? null,
-            positionY: row.positionY ?? row.position_y ?? null
+            positionY: row.positionY ?? row.position_y ?? null,
+            // FLM overlay: which FPT subjects teach this node + its lesson resources.
+            fptCoverage: row.fptCoverage ?? row.fpt_coverage ?? null,
+            fptResources: row.fptResources ?? row.fpt_resources ?? []
           }
         });
       });
@@ -582,6 +597,13 @@ export const studentDashboardService = {
 
         const parentId = resolveRef(row.parentNode || row.parent_node || row.childNodeOf || row.ChildNodeOf || row.child_node_of || row.connectTo || row.ConnectTo || row.connect_to || row.parentId || row.parent_id);
         let previousId = resolveRef(row.previousNode || row.previous_node || row.PreviousNode);
+
+        // Record the parent id on the node so the UI knows which CHOOSE_ONE
+        // group an alternative belongs to (needed to POST a selection).
+        if (parentId) {
+          const self = nodes.find(n => n.id === nodeId);
+          if (self) self.data.parentNodeId = parentId;
+        }
 
         if (isMainNode) {
           // Spine: previousNode is the source of truth; level order is only a fallback.

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { MapTrifold } from '@phosphor-icons/react'
+import logoMark from '@/assets/logo-mark.png'
 
 type LogoProps = {
   className?: string
@@ -13,18 +13,19 @@ export default function Logo({
   hideIcon = false
 }: LogoProps) {
   return (
-    <Link to="/" className={`flex items-center gap-2 select-none hover:opacity-90 transition-opacity ${className}`}>
+    <Link to="/" className={`flex items-center gap-2.5 select-none hover:opacity-90 transition-opacity ${className}`}>
       {!hideIcon && (
-        <div className="bg-[#0a0a0a] text-white p-1 rounded-md flex items-center justify-center shrink-0">
-          <MapTrifold size={18} weight="fill" />
-        </div>
+        <img
+          src={logoMark}
+          alt="InteliPath"
+          className="h-7 w-auto shrink-0"
+          draggable={false}
+        />
       )}
       {!iconOnly && (
-        <div className="flex flex-col">
-          <span className="font-bold text-[18px] tracking-tight text-inherit">
-            InteliPath
-          </span>
-        </div>
+        <span className="font-bold text-[18px] tracking-tight text-inherit">
+          InteliPath
+        </span>
       )}
     </Link>
   )

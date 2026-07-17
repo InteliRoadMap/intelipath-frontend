@@ -1,5 +1,4 @@
-import { CounselorFeedbackView } from "@/features/counselor-dashboard"
-
-export default function CounselorFeedbackPage() {
-  return <CounselorFeedbackView />
-}
+// The full counselor feedback page (student list, feedback compose with
+// attachments, and Excel export) lives in the feature slice. This file is just
+// the routed entry point that re-exports it.
+export { default } from "@/features/counselor-dashboard/ui/CounselorFeedbackView"

@@ -9,51 +9,18 @@ interface Props {
 
 const COLORS = ['#00838f', '#ffb300', '#e53935', '#43a047', '#3949ab'];
 
-const MOCK_DATA: SkillTrend[] = [
-  {
-    skillName: 'ReactJS',
-    dataPoints: [
-      { date: '2026-05-20', jobsNeeded: 120 },
-      { date: '2026-05-25', jobsNeeded: 135 },
-      { date: '2026-06-01', jobsNeeded: 125 },
-      { date: '2026-06-10', jobsNeeded: 150 },
-      { date: '2026-06-19', jobsNeeded: 180 },
-    ]
-  },
-  {
-    skillName: 'Spring Boot',
-    dataPoints: [
-      { date: '2026-05-20', jobsNeeded: 90 },
-      { date: '2026-05-25', jobsNeeded: 85 },
-      { date: '2026-06-01', jobsNeeded: 100 },
-      { date: '2026-06-10', jobsNeeded: 110 },
-      { date: '2026-06-19', jobsNeeded: 105 },
-    ]
-  },
-  {
-    skillName: 'TypeScript',
-    dataPoints: [
-      { date: '2026-05-20', jobsNeeded: 60 },
-      { date: '2026-05-25', jobsNeeded: 70 },
-      { date: '2026-06-01', jobsNeeded: 85 },
-      { date: '2026-06-10', jobsNeeded: 95 },
-      { date: '2026-06-19', jobsNeeded: 120 },
-    ]
-  }
-];
-
 export default function TrendingSkillsChart({ data }: Props) {
-  const displayData = (!data || data.length === 0) ? MOCK_DATA : data;
+  const displayData = data || [];
 
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
-    const skills = new Set<string>();
 
     displayData.forEach(skill => {
-      skills.add(skill.skillName);
       skill.dataPoints.forEach(dp => {
         const existing = dateMap.get(dp.date) || { date: dp.date };
-        existing[skill.skillName] = dp.jobsNeeded;
+        // Coerce to a real number so recharts uses a sorted numeric Y-axis
+        // instead of treating the values as unordered categories.
+        existing[skill.skillName] = Number(dp.jobsNeeded) || 0;
         dateMap.set(dp.date, existing);
       });
     });
@@ -61,9 +28,7 @@ export default function TrendingSkillsChart({ data }: Props) {
     return Array.from(dateMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [displayData]);
 
-  if (!chartData || chartData.length === 0) return null;
-
-  const skillNames = displayData.map(d => d.skillName);
+  const skillNames = useMemo(() => displayData.map(d => d.skillName), [displayData]);
 
   const chartConfig = useMemo(() => {
     const config: Record<string, any> = {};
@@ -78,10 +43,19 @@ export default function TrendingSkillsChart({ data }: Props) {
     return config;
   }, [skillNames]);
 
+  // Honest empty state instead of fabricated demo data.
+  if (chartData.length === 0) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-[13px] font-medium text-slate-500">No data available at the moment.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-[300px]">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <LineChart data={chartData} margin={{ top: 10, right: 10, left: 4, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
             dataKey="date" 
@@ -94,10 +68,13 @@ export default function TrendingSkillsChart({ data }: Props) {
               return `${d.getMonth() + 1}/${d.getDate()}`;
             }}
           />
-          <YAxis 
-            axisLine={false} 
-            tickLine={false} 
-            tick={{ fontSize: 12, fill: '#64748b' }} 
+          <YAxis
+            type="number"
+            domain={[0, 'auto']}
+            allowDecimals={false}
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 12, fill: '#64748b' }}
             tickFormatter={(value) => `${value} jobs`}
             width={70}
           />

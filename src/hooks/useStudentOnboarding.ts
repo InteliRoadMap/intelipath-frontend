@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { isAxiosError } from "axios"
 import profileApi from "../api/profileApi"
-import { getErrorMessage, isUuid } from "../lib/utils"
+import { getErrorMessage } from "../lib/utils"
 import { useAuth } from "../context/AuthContext"
 
 export interface OnboardingErrors {
@@ -9,7 +9,7 @@ export interface OnboardingErrors {
   yob?: string
   bio?: string
   university?: string
-  yearOfAdmission?: string
+  admissionDate?: string
   general?: string
 }
 
@@ -20,8 +20,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
   const [yob, setyob] = useState("")
   const [bio, setBio] = useState("")
   const [university, setUniversity] = useState("")
-  const [universityId, setUniversityId] = useState("")
-  const [yearOfAdmission, setYearOfAdmission] = useState("")
+  const [admissionDate, setAdmissionDate] = useState("")
   const [major, setMajor] = useState("Software Engineering")
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<OnboardingErrors>({})
@@ -60,8 +59,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setyob("")
     setBio("")
     setUniversity("")
-    setUniversityId("")
-    setYearOfAdmission("")
+    setAdmissionDate("")
     setMajor("Software Engineering")
     setErrors({})
     setStep(1)
@@ -75,15 +73,17 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
 
     const currentErrors: typeof errors = {}
 
-    if (!yearOfAdmission) {
-      currentErrors.yearOfAdmission = 'Select a valid admission date.'
+    if (!admissionDate) {
+      currentErrors.admissionDate = 'Select your admission date.'
     } else if (yob) {
       const birthDate = new Date(yob)
-      const admissionDate = new Date(yearOfAdmission)
-      if (admissionDate <= birthDate) {
-        currentErrors.yearOfAdmission = 'Admission date must be after your date of birth.'
-      } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        currentErrors.yearOfAdmission = 'Admission date seems too early based on your age.'
+      const parsed = new Date(admissionDate)
+      if (parsed > new Date()) {
+        currentErrors.admissionDate = 'Admission date cannot be in the future.'
+      } else if (parsed <= birthDate) {
+        currentErrors.admissionDate = 'Admission date must be after your date of birth.'
+      } else if (parsed.getFullYear() - birthDate.getFullYear() < 10) {
+        currentErrors.admissionDate = 'Admission date seems too early based on your age.'
       }
     }
 
@@ -101,18 +101,9 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
       })
 
       if (user?.role === "STUDENT") {
-        const isUnivUuid = isUuid(universityId)
-        let yearNum: number | null = null
-        if (yearOfAdmission) {
-          const parsed = parseInt(String(yearOfAdmission), 10)
-          if (Number.isFinite(parsed)) {
-            yearNum = parsed
-          }
-        }
         await profileApi.updateStudentProfile({
-          universityId: isUnivUuid ? universityId : null,
-          universityName: isUnivUuid ? (university || null) : (universityId || university || null),
-          yearOfAdmission: yearNum,
+          universityName: university || null,
+          admissionDate: admissionDate || null,
           major,
           careerId: undefined
         })
@@ -149,10 +140,8 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setBio,
     university,
     setUniversity,
-    universityId,
-    setUniversityId,
-    yearOfAdmission,
-    setYearOfAdmission,
+    admissionDate,
+    setAdmissionDate,
     major,
     setMajor,
     isSaving,

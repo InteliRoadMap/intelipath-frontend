@@ -7,7 +7,6 @@ import {
   Layout, 
   ChatTeardropText,
   Users,
-  Funnel
 } from '@phosphor-icons/react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
@@ -25,7 +24,8 @@ import {
   UserHeaderActions,
   Input,
   Logo,
-  Skeleton
+  Skeleton,
+  Select
 } from "@/components";
 
 const USERS_PER_PAGE = 7;
@@ -96,7 +96,7 @@ export function MentorStudentsView() {
       <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
+            <Logo iconOnly className="origin-left scale-90" />
             <nav className="hidden items-center gap-8 lg:flex">
               <NavLink
                 end
@@ -142,27 +142,23 @@ export function MentorStudentsView() {
               
               {/* Filters */}
               <div className="flex items-center gap-2">
-                <div className="relative w-full sm:w-40">
-                  <select 
-                    value={careerFilter}
-                    onChange={(e) => { setCareerFilter(e.target.value); setCurrentPage(1); }}
-                    className="h-10 w-full appearance-none rounded-md border border-slate-200 bg-white px-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
-                  >
-                    {uniqueCareers.map(c => <option key={c} value={c}>{c === 'All' ? 'All Careers' : c}</option>)}
-                  </select>
-                  <Funnel className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} weight="bold" />
-                </div>
-                
-                <div className="relative w-full sm:w-40">
-                  <select 
-                    value={uniFilter}
-                    onChange={(e) => { setUniFilter(e.target.value); setCurrentPage(1); }}
-                    className="h-10 w-full appearance-none rounded-md border border-slate-200 bg-white px-3 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
-                  >
-                    {uniqueUnis.map(u => <option key={u} value={u}>{u === 'All' ? 'All Universities' : u}</option>)}
-                  </select>
-                  <Funnel className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} weight="bold" />
-                </div>
+                <Select
+                  wrapperClassName="w-full sm:w-40"
+                  className="text-xs font-semibold text-slate-700"
+                  value={careerFilter}
+                  onChange={(e) => { setCareerFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  {uniqueCareers.map(c => <option key={c} value={c}>{c === 'All' ? 'All Careers' : c}</option>)}
+                </Select>
+
+                <Select
+                  wrapperClassName="w-full sm:w-40"
+                  className="text-xs font-semibold text-slate-700"
+                  value={uniFilter}
+                  onChange={(e) => { setUniFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  {uniqueUnis.map(u => <option key={u} value={u}>{u === 'All' ? 'All Universities' : u}</option>)}
+                </Select>
               </div>
 
               {/* Pagination */}

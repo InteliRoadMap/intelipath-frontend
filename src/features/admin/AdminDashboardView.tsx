@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react"
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,7 +12,9 @@ import {
   ShieldCheck,
   Trash,
   UsersThree,
-  Lightning
+  Lightning,
+  Prohibit,
+  ArrowCounterClockwise
 } from "@phosphor-icons/react"
 import { useNavigate } from "react-router-dom"
 import adminApi from "@/features/admin/api/adminApi"
@@ -32,16 +34,21 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Logo
+  Logo,
+  Select
 } from "@/components"
 import { useAuth } from "@/context"
+import { toast } from "@/utils/toast"
 import { ROLES, ROUTES } from "@/shared"
+import { AdminContentTab, AdminMarketTab, AdminSystemTab } from "./components/AdminExtraTabs"
+import { AdminFlmSyncTab } from "./components/AdminFlmSyncTab"
 import type {
   AdminCourseMetric,
   AdminRole,
   AdminSystemHealth,
   AdminUserListItem,
-  AdminUserMetric
+  AdminUserMetric,
+  AdminUserStatus
 } from "./admin.types"
 
 const USERS_PER_PAGE = 7
@@ -80,35 +87,85 @@ function MetricCard({
   isLoading,
   isUnavailable = false,
   progress,
-  progressClassName = "bg-cyan-700"
+  progressClassName = "bg-indigo-600"
 }: MetricCardProps) {
   return (
-    <Card className="min-h-[118px] overflow-hidden transition-colors hover:border-slate-300 hover:shadow-md">
+    <Card className="group min-h-[118px] overflow-hidden transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
       <CardContent className="grid gap-3 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${iconClassName}`}>
+            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105 ${iconClassName}`}>
               {icon}
             </div>
             <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
           </div>
-          {isUnavailable ? (
+          {isLoading ? (
+            <div className="h-5 w-14 shrink-0 animate-pulse rounded-full bg-slate-100" />
+          ) : isUnavailable ? (
             <Badge className="shrink-0">Unavailable</Badge>
           ) : (
             status
           )}
         </div>
 
-        <p className="font-display text-2xl font-semibold leading-none text-slate-950">
-          {isUnavailable ? "--" : value}
-        </p>
+        {isLoading ? (
+          <div className="h-8 w-24 animate-pulse rounded-lg bg-slate-100" />
+        ) : (
+          <p className="font-display text-[28px] font-semibold leading-none text-slate-950">
+            {isUnavailable ? "--" : value}
+          </p>
+        )}
 
-        {progress !== undefined && !isUnavailable && (
+        {progress !== undefined && !isUnavailable && !isLoading && (
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
               className={`h-full rounded-full transition-all ${progressClassName}`}
               style={{ width: `${progress}%` }}
             />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function SystemHealthCard({ health, isLoading }: { health?: AdminSystemHealth | null; isLoading: boolean }) {
+  const isUnavailable = health === null
+  const services = health?.services ?? []
+  const operational = health?.status === "Operational"
+  return (
+    <Card className="group min-h-[118px] overflow-hidden transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
+      <CardContent className="grid gap-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5 transition-transform group-hover:scale-105">
+              <Gauge size={20} weight="duotone" />
+            </div>
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">System health</p>
+          </div>
+          {isLoading ? (
+            <div className="h-5 w-20 shrink-0 animate-pulse rounded-full bg-slate-100" />
+          ) : isUnavailable ? (
+            <Badge className="shrink-0">Unavailable</Badge>
+          ) : (
+            <Badge variant={operational ? "success" : "warning"} className="shrink-0 gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${operational ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />
+              {health?.status}
+            </Badge>
+          )}
+        </div>
+        {isLoading ? (
+          <div className="h-6 w-44 animate-pulse rounded bg-slate-100" />
+        ) : isUnavailable ? (
+          <p className="font-display text-[28px] font-semibold leading-none text-slate-950">--</p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-0.5">
+            {services.map((service) => (
+              <span key={service.name} className="flex items-center gap-1.5 text-[12.5px] font-medium text-slate-600">
+                <span className={`h-2 w-2 rounded-full ${service.up ? "bg-emerald-500" : "bg-rose-500"}`} />
+                {service.name}
+              </span>
+            ))}
           </div>
         )}
       </CardContent>
@@ -132,9 +189,13 @@ function AdminMetrics({ className = "" }: { className?: string }) {
       <MetricCard
         label="Total users"
         value={(users?.total ?? 0).toLocaleString()}
-        status={users && <Badge variant="info">+{users.growth}%</Badge>}
+        status={users && (
+          <Badge variant={users.growth < 0 ? "warning" : "info"}>
+            {users.growth >= 0 ? "+" : ""}{users.growth}% / 30d
+          </Badge>
+        )}
         icon={<UsersThree size={20} weight="duotone" />}
-        iconClassName="bg-cyan-50 text-cyan-700"
+        iconClassName="bg-indigo-50 text-indigo-700"
         isLoading={users === undefined}
         isUnavailable={users === null}
       />
@@ -143,35 +204,24 @@ function AdminMetrics({ className = "" }: { className?: string }) {
         value={String(courses?.total ?? 0)}
         status={courses && <Badge variant="success">{courses.status}</Badge>}
         icon={<BookOpen size={20} weight="duotone" />}
-        iconClassName="bg-emerald-50 text-emerald-700"
+        iconClassName="bg-indigo-50 text-indigo-700"
         isLoading={courses === undefined}
         isUnavailable={courses === null}
         progress={courses?.progress}
-        progressClassName="bg-emerald-600"
       />
-      <MetricCard
-        label="System health"
-        value={`${health?.uptime ?? 0}%`}
-        status={health && (
-          <Badge variant="success" className="gap-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            {health.status || "Online"}
-          </Badge>
-        )}
-        icon={<Gauge size={20} weight="duotone" />}
-        iconClassName="bg-violet-50 text-violet-700"
-        isLoading={health === undefined}
-        isUnavailable={health === null}
-      />
+      <SystemHealthCard health={health} isLoading={health === undefined} />
     </div>
   )
 }
 
-function UserManagement() {
-  const [users, setUsers] = useState<AdminUserListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+function UserManagement({ users, setUsers, isLoading }: {
+  users: AdminUserListItem[]
+  setUsers: Dispatch<SetStateAction<AdminUserListItem[]>>
+  isLoading: boolean
+}) {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [roleFilter, setRoleFilter] = useState<AdminRole | "ALL">("ALL")
   const [editingUser, setEditingUser] = useState<AdminUserListItem | null>(null)
   const [selectedRole, setSelectedRole] = useState<AdminRole>("STUDENT")
   const [roleError, setRoleError] = useState("")
@@ -179,23 +229,18 @@ function UserManagement() {
   const [deletingUser, setDeletingUser] = useState<AdminUserListItem | null>(null)
   const [deleteError, setDeleteError] = useState("")
   const [isDeletingUser, setIsDeletingUser] = useState(false)
-
-  useEffect(() => {
-    void adminApi.getUsersList()
-      .then((response) => setUsers(Array.isArray(response) ? response : []))
-      .catch(() => setUsers([]))
-      .finally(() => setIsLoading(false))
-  }, [])
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
 
   const filteredUsers = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase()
-    return keyword
-      ? users.filter((user) =>
-        user.name.toLowerCase().includes(keyword) ||
-        (user.email || "").toLowerCase().includes(keyword)
-      )
-      : users
-  }, [users, searchQuery])
+    return users.filter((user) => {
+      const matchesRole = roleFilter === "ALL" || user.role === roleFilter
+      const matchesKeyword = !keyword
+        || user.name.toLowerCase().includes(keyword)
+        || (user.email || "").toLowerCase().includes(keyword)
+      return matchesRole && matchesKeyword
+    })
+  }, [users, searchQuery, roleFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE))
   const safeCurrentPage = Math.min(currentPage, totalPages)
@@ -225,6 +270,20 @@ function UserManagement() {
     }
   }
 
+  const toggleSuspend = async (user: AdminUserListItem) => {
+    const nextStatus: AdminUserStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
+    setStatusBusyId(user.id)
+    try {
+      const updated = await adminApi.updateUserStatus(user.id, nextStatus)
+      setUsers((current) => current.map((u) => u.id === user.id ? { ...u, ...updated } : u))
+      toast.success(nextStatus === "SUSPENDED" ? "Account suspended." : "Account reactivated.")
+    } catch {
+      toast.error("Could not update account status. Please try again.")
+    } finally {
+      setStatusBusyId(null)
+    }
+  }
+
   const deleteUser = async () => {
     if (!deletingUser) return
     setIsDeletingUser(true)
@@ -242,7 +301,7 @@ function UserManagement() {
 
   return (
     <>
-      <Card className="mt-4 overflow-hidden xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
+      <Card className="overflow-hidden">
         <CardHeader className="gap-4 border-b border-slate-200 bg-slate-50/70 p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <CardTitle>User management</CardTitle>
@@ -262,7 +321,7 @@ function UserManagement() {
                 <ArrowRight size={15} weight="bold" />
               </Button>
             </div>
-            <div className="flex h-10 w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 transition focus-within:border-cyan-600 focus-within:ring-2 focus-within:ring-cyan-600/15 sm:w-72">
+            <div className="flex h-10 w-full items-center gap-2.5 rounded-md border border-slate-200 bg-white px-3 transition focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 sm:w-72">
               <MagnifyingGlass className="shrink-0 text-slate-400" size={17} />
               <Input
                 value={searchQuery}
@@ -277,8 +336,26 @@ function UserManagement() {
           </div>
         </CardHeader>
 
-        <div className="relative xl:min-h-0 xl:flex-1">
-          <div className="max-h-[calc(100vh-330px)] min-h-[280px] overflow-auto xl:h-full xl:max-h-none xl:min-h-0">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 px-4 py-2.5 sm:px-5">
+          {(["ALL", ...ADMIN_ROLE_OPTIONS] as const).map((r) => {
+            const count = r === "ALL" ? users.length : users.filter((u) => u.role === r).length
+            const active = roleFilter === r
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => { setRoleFilter(r as AdminRole | "ALL"); setCurrentPage(1) }}
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              >
+                {r === "ALL" ? "All" : r.charAt(0) + r.slice(1).toLowerCase()}
+                <span className={`ml-1.5 ${active ? "opacity-70" : "text-slate-400"}`}>{count}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="relative">
+          <div className="max-h-[calc(100vh-300px)] min-h-[280px] overflow-auto">
           <table className="w-full min-w-[860px] table-fixed text-left">
             <colgroup>
               <col className="w-[38%]" />
@@ -295,7 +372,28 @@ function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedUsers.map((user) => (
+              {isLoading && Array.from({ length: USERS_PER_PAGE }).map((_, i) => (
+                <tr key={`sk-${i}`} className="h-[72px]">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                      <div className="space-y-2">
+                        <div className="h-3.5 w-32 animate-pulse rounded bg-slate-100" />
+                        <div className="h-3 w-44 animate-pulse rounded bg-slate-100" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4"><div className="h-5 w-16 animate-pulse rounded-full bg-slate-100" /></td>
+                  <td className="px-5 py-4"><div className="h-3.5 w-20 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-5 py-4">
+                    <div className="flex justify-end gap-2">
+                      <div className="h-8 w-[100px] animate-pulse rounded-md bg-slate-100" />
+                      <div className="h-8 w-[100px] animate-pulse rounded-md bg-slate-100" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!isLoading && paginatedUsers.map((user) => (
                 <tr key={user.id} className="h-[72px] transition-colors hover:bg-slate-50/80">
                   <td className="px-5 py-4 align-middle">
                     <div className="flex items-center gap-3">
@@ -310,13 +408,29 @@ function UserManagement() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 align-middle"><Badge variant={roleVariant(user.role)}>{user.role}</Badge></td>
+                  <td className="px-5 py-4 align-middle">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={roleVariant(user.role)}>{user.role}</Badge>
+                      {user.status === "SUSPENDED" && (
+                        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 ring-1 ring-rose-100">Suspended</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-5 py-4 align-middle text-sm text-slate-500">{user.joinedDate}</td>
                   <td className="px-5 py-4 align-middle">
-                    <div className="flex min-w-[190px] items-center justify-end gap-2">
+                    <div className="flex min-w-[300px] items-center justify-end gap-2">
                       <Button className="w-[100px]" variant="outline" size="sm" onClick={() => openRoleEditor(user)}>
                         <PencilSimple size={14} weight="bold" /> Edit role
                       </Button>
+                      {user.status === "SUSPENDED" ? (
+                        <Button variant="outline" size="sm" className="w-[110px] border-emerald-100 text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" disabled={statusBusyId === user.id} onClick={() => toggleSuspend(user)}>
+                          <ArrowCounterClockwise size={14} weight="bold" /> Activate
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-[110px] border-amber-100 text-amber-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700" disabled={statusBusyId === user.id} onClick={() => toggleSuspend(user)}>
+                          <Prohibit size={14} weight="bold" /> Suspend
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" className="w-[100px] border-rose-100 text-rose-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700" onClick={() => setDeletingUser(user)}>
                         <Trash size={14} weight="bold" /> Delete
                       </Button>
@@ -349,13 +463,13 @@ function UserManagement() {
             <DialogDescription>Change access permissions for {editingUser?.name}.</DialogDescription>
           </DialogHeader>
           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Role</label>
-          <select
+          <Select
             value={selectedRole}
             onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
-            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
+            className="font-semibold"
           >
-            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role}>{role}</option>)}
-          </select>
+            {ADMIN_ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+          </Select>
           {roleError && <p className="mt-3 text-sm font-medium text-rose-600">{roleError}</p>}
           <DialogFooter>
             <Button variant="outline" disabled={isSavingRole} onClick={() => setEditingUser(null)}>Cancel</Button>
@@ -385,17 +499,115 @@ function UserManagement() {
   )
 }
 
+const ROLE_META: Record<AdminRole, { label: string; dot: string }> = {
+  STUDENT: { label: "Students", dot: "bg-cyan-500" },
+  MENTOR: { label: "Mentors", dot: "bg-violet-500" },
+  COUNSELOR: { label: "Counselors", dot: "bg-amber-500" },
+  ADMIN: { label: "Admins", dot: "bg-rose-500" }
+}
+
+function RoleDistribution({ users, isLoading }: { users: AdminUserListItem[]; isLoading: boolean }) {
+  const total = users.length
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="text-base">Users by role</CardTitle>
+        <CardDescription>{isLoading ? "Loading…" : `${total} accounts total`}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4 pt-0">
+        <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+          {!isLoading && ADMIN_ROLE_OPTIONS.map((r) => {
+            const pct = total ? (users.filter((u) => u.role === r).length / total) * 100 : 0
+            return pct > 0 ? <div key={r} className={ROLE_META[r].dot} style={{ width: `${pct}%` }} /> : null
+          })}
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+          {ADMIN_ROLE_OPTIONS.map((r) => (
+            <div key={r} className="flex items-center gap-2">
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${ROLE_META[r].dot}`} />
+              <span className="text-[13px] text-slate-600">{ROLE_META[r].label}</span>
+              <span className="ml-auto text-[13px] font-bold text-slate-900">
+                {isLoading ? "—" : users.filter((u) => u.role === r).length}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function RecentSignups({ users, isLoading }: { users: AdminUserListItem[]; isLoading: boolean }) {
+  const recent = [...users]
+    .sort((a, b) => (b.joinedDate || "").localeCompare(a.joinedDate || ""))
+    .slice(0, 5)
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="text-base">Recent sign-ups</CardTitle>
+        <CardDescription>Newest accounts on the platform</CardDescription>
+      </CardHeader>
+      <CardContent className="p-2">
+        {isLoading ? (
+          <div className="space-y-1 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-slate-100" />
+                <div className="flex-1 space-y-1.5"><div className="h-3 w-28 animate-pulse rounded bg-slate-100" /><div className="h-2.5 w-16 animate-pulse rounded bg-slate-100" /></div>
+              </div>
+            ))}
+          </div>
+        ) : recent.length ? (
+          <ul>
+            {recent.map((u) => (
+              <li key={u.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-950 text-[11px] font-bold text-white">
+                  {u.name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-slate-800">{u.name}</p>
+                  <p className="text-[11px] text-slate-400">{u.joinedDate}</p>
+                </div>
+                <Badge variant={roleVariant(u.role)} className="shrink-0">{u.role}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="p-6 text-center text-sm text-slate-400">No accounts yet.</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+const ADMIN_TABS = [
+  { key: "overview", label: "Overview", icon: Layout },
+  { key: "users", label: "Users", icon: UsersThree },
+  { key: "content", label: "Content", icon: GraduationCap },
+  { key: "curriculum", label: "Curriculum", icon: BookOpen },
+  { key: "market", label: "Market", icon: Pulse },
+  { key: "system", label: "System", icon: Gauge }
+] as const
+type AdminTab = (typeof ADMIN_TABS)[number]["key"]
+
 export default function AdminDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<AdminTab>("overview")
   const [isTriggering, setIsTriggering] = useState(false)
   const [isTriggeringScraper, setIsTriggeringScraper] = useState(false)
-  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
 
-  const showToast = (text: string, type: 'error' | 'success') => {
-    setToastMessage({ text, type })
-    setTimeout(() => setToastMessage(null), 4000)
-  }
+  // Users are fetched once here and shared by the Overview insights and the
+  // Users tab (which also mutates them on role change / delete).
+  const [users, setUsers] = useState<AdminUserListItem[]>([])
+  const [usersLoading, setUsersLoading] = useState(true)
+
+  useEffect(() => {
+    void adminApi.getUsersList()
+      .then((response) => setUsers(Array.isArray(response) ? response : []))
+      .catch(() => setUsers([]))
+      .finally(() => setUsersLoading(false))
+  }, [])
 
   const handleLogout = async () => {
     await logout()
@@ -406,51 +618,47 @@ export default function AdminDashboardView() {
     setIsTriggering(true)
     try {
       await adminApi.triggerSkillExtraction()
-      showToast("Skill extraction job started successfully.", "success")
+      toast.success("Skill extraction job started successfully.")
     } catch (error) {
-      showToast("Failed to trigger skill extraction job.", "error")
+      toast.error("Failed to trigger skill extraction job.")
     } finally {
       setIsTriggering(false)
     }
   }
 
-  const handleTriggerScraper = async () => {
+  const handleTriggerScraper = async (source: "topcv" | "itviec" = "topcv") => {
     setIsTriggeringScraper(true)
     try {
-      await adminApi.triggerJobScraper()
-      showToast("Job scraper started successfully.", "success")
+      await adminApi.triggerJobScraper(source)
+      toast.success(`${source === "itviec" ? "ITviec" : "TopCV"} job scraper started successfully.`)
     } catch (error) {
-      showToast("Failed to trigger job scraper.", "error")
+      toast.error(`Failed to trigger ${source === "itviec" ? "ITviec" : "TopCV"} job scraper.`)
     } finally {
       setIsTriggeringScraper(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-14 font-sans text-slate-950 xl:h-screen xl:overflow-hidden xl:pb-0">
+    <div className="min-h-screen bg-slate-50 pb-14 font-sans text-slate-950">
       <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-8">
-            <Logo hideIcon className="origin-left scale-90" />
+            <Logo iconOnly className="origin-left scale-90" />
             <nav className="hidden items-center gap-8 lg:flex">
-              {[
-                [Layout, "Overview", true],
-                [UsersThree, "Users", false],
-                [GraduationCap, "Courses", false],
-                [Pulse, "System health", false]
-              ].map(([Icon, label, active]) => {
-                const NavIcon = Icon as typeof Layout
+              {ADMIN_TABS.map(({ key, label, icon: NavIcon }) => {
+                const active = tab === key
                 return (
                   <button
-                    key={String(label)}
+                    key={key}
+                    onClick={() => setTab(key)}
                     className={`relative flex h-[72px] items-center gap-2 border-b-[3px] px-0 text-sm font-semibold transition-colors ${
                       active
-                        ? "border-cyan-700 text-cyan-800"
+                        ? "border-indigo-600 text-indigo-700"
                         : "border-transparent text-slate-500 hover:text-slate-950"
                     }`}
                   >
                     <NavIcon size={17} weight="duotone" />
-                    {String(label)}
+                    {label}
                   </button>
                 )
               })}
@@ -460,66 +668,84 @@ export default function AdminDashboardView() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-8 xl:flex xl:h-[calc(100vh-72px)] xl:min-h-0 xl:flex-col xl:overflow-hidden">
-        <section className="mb-4 grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)] xl:items-start">
-          <div className="py-1">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">
-              <ShieldCheck size={16} weight="duotone" /> Administration
-            </div>
-            <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">
-              System overview
-            </h1>
-            <p className="mt-2 mb-4 max-w-[280px] text-sm leading-5 text-slate-500">
-              Monitor platform health and manage user access.
-            </p>
-            <div className="flex flex-col gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 justify-start"
-                onClick={handleTriggerJob}
-                disabled={isTriggering || isTriggeringScraper}
-              >
-                <Lightning size={16} weight="duotone" className={isTriggering ? "animate-pulse" : ""} /> 
-                {isTriggering ? "Triggering..." : "Force Run Skill Extraction"}
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 justify-start"
-                onClick={handleTriggerScraper}
-                disabled={isTriggeringScraper || isTriggering}
-              >
-                <Lightning size={16} weight="duotone" className={isTriggeringScraper ? "animate-pulse" : ""} /> 
-                {isTriggeringScraper ? "Triggering..." : "Force Run Job Scraper"}
-              </Button>
-            </div>
-          </div>
-          <AdminMetrics className="min-w-0" />
-        </section>
-        <UserManagement />
-      </main>
-
-      {/* Floating Toast */}
-      <div
-        className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-slate-900/95 px-5 py-3.5 text-sm font-medium text-white shadow-2xl backdrop-blur transition-all duration-500 ${
-          toastMessage ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        } ${toastMessage?.type === 'error' ? 'shadow-red-900/20' : 'shadow-emerald-900/20'}`}
-      >
-        <div className={`flex h-7 w-7 items-center justify-center rounded-full ${toastMessage?.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-          {toastMessage?.type === 'error' ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          )}
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-8">
+        {/* Mobile tab switcher (nav is desktop-only) */}
+        <div className="mb-4 flex gap-1.5 overflow-x-auto lg:hidden">
+          {ADMIN_TABS.map(({ key, label, icon: NavIcon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                tab === key ? "bg-slate-900 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
+              }`}
+            >
+              <NavIcon size={15} weight="duotone" /> {label}
+            </button>
+          ))}
         </div>
-        {toastMessage?.text}
-      </div>
+
+        {tab === "overview" && (
+        <>
+        {/* Slim header: title on the left, run-job actions inline on the right. */}
+        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="mb-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+              <ShieldCheck size={15} weight="duotone" /> Administration
+            </div>
+            <h1 className="font-display text-2xl font-semibold leading-tight text-slate-950">System overview</h1>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleTriggerJob}
+              disabled={isTriggering || isTriggeringScraper}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggering ? "animate-pulse" : ""}`} />
+              {isTriggering ? "Extracting…" : "Skill Extraction"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTriggerScraper("itviec")}
+              disabled={isTriggeringScraper || isTriggering}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggeringScraper ? "animate-pulse" : ""}`} />
+              {isTriggeringScraper ? "Scraping…" : "ITviec Jobs"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTriggerScraper("topcv")}
+              disabled={isTriggeringScraper || isTriggering}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Lightning size={15} weight="duotone" className={`text-indigo-600 ${isTriggeringScraper ? "animate-pulse" : ""}`} />
+              {isTriggeringScraper ? "Scraping…" : "TopCV Jobs"}
+            </button>
+          </div>
+        </div>
+
+        <AdminMetrics />
+
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <RoleDistribution users={users} isLoading={usersLoading} />
+          <RecentSignups users={users} isLoading={usersLoading} />
+        </div>
+        </>
+        )}
+
+        {tab === "users" && (
+          <UserManagement users={users} setUsers={setUsers} isLoading={usersLoading} />
+        )}
+
+        {tab === "content" && <AdminContentTab />}
+
+        {tab === "curriculum" && <AdminFlmSyncTab />}
+
+        {tab === "market" && <AdminMarketTab />}
+
+        {tab === "system" && <AdminSystemTab />}
+      </main>
     </div>
   )
 }

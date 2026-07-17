@@ -65,16 +65,18 @@ const processQueue = (
 export let globalActiveRequests = 0;
 export const onLoadingChange = new Set<(isLoading: boolean) => void>();
 
+// Counted rather than a boolean: concurrent requests are the normal case here, and the
+// bar must not finish when the first of them returns.
 export const incrementLoading = () => {
-  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
-  // globalActiveRequests++;
-  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  globalActiveRequests++;
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const decrementLoading = () => {
-  // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION (Removing loading animation):
-  // globalActiveRequests = Math.max(0, globalActiveRequests - 1);
-  // onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
+  // Clamped at zero: an interceptor that decrements a request it never counted would
+  // otherwise drive this negative and leave the bar stuck on forever.
+  globalActiveRequests = Math.max(0, globalActiveRequests - 1);
+  onLoadingChange.forEach(cb => cb(globalActiveRequests > 0));
 }
 
 export const getStoredToken = () => localStorage.getItem("accessToken")
@@ -210,7 +212,12 @@ export function createApiClient({
       //Refresh token when access token expired (401 Unauthorized)
       //401 Unauthorized (Token Expiry & Refresh Logic)
       // Flow : Api call → 401 Unauthorized → Using refresh Token -> Backend returns new access token → Retry original request with new token
-      if (status === 401 && originalRequest && !originalRequest._retry) {
+      // A 401 from signing in is the answer, not an expired session: there is nothing to
+      // refresh, and running the refresh anyway makes its own failure ("Refresh token is
+      // missing") the error the form reports instead of "Invalid username or password".
+      const isAuthRequest = (originalRequest?.url || "").startsWith("/auth/")
+
+      if (status === 401 && originalRequest && !originalRequest._retry && !isAuthRequest) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {
             failedQueue.push({ resolve, reject }) // Queue requests while refreshing token
