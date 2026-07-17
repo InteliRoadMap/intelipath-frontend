@@ -1,8 +1,9 @@
 import { ENDPOINTS, mainClient, publicClient } from "@/shared/api"
 
 const authApi = {
-  login: async (email: string, password: string) => {
-    return await publicClient.post(ENDPOINTS.AUTH.LOGIN, { email, password })
+  /** Provisioned accounts (staff, FPT students) sign in by username; email is for recovery only. */
+  login: async (username: string, password: string) => {
+    return await publicClient.post(ENDPOINTS.AUTH.LOGIN, { username, password })
   },
 
   register: async (data: { email: string; password: string; fullName: string }) => {

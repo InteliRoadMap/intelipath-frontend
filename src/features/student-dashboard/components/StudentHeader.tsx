@@ -14,6 +14,9 @@ type StudentHeaderProps = {
 export default function StudentHeader({ user, onLogout, onOpenAiMentor }: StudentHeaderProps) {
   const location = useLocation()
   const isAiMentorActive = location.pathname === ROUTES.AI_MENTOR
+  // FPT coursework only. Hiding it for everyone else is the honest default: the endpoints
+  // behind it answer 403, so an always-on link would just be a dead end.
+  const isFptAccount = user?.accountType === "FPT"
 
   const navigate = useNavigate()
 
@@ -22,6 +25,9 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
     { id: "roadmap", label: "Roadmap", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_ROADMAP), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP) },
     { id: "market", label: "Market Pulse", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_MARKET_PULSE), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_MARKET_PULSE) },
     { id: "portfolio", label: "Portfolio", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_PORTFOLIO), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_PORTFOLIO) },
+    ...(isFptAccount
+      ? [{ id: "courses", label: "Courses", active: location.pathname.startsWith(ROUTES.DASHBOARD_STUDENT_COURSES), onSelect: () => navigate(ROUTES.DASHBOARD_STUDENT_COURSES) }]
+      : []),
     { id: "aichat", label: "AI Mentor", active: isAiMentorActive, onSelect: onOpenAiMentor },
   ]
 
@@ -76,6 +82,18 @@ export default function StudentHeader({ user, onLogout, onOpenAiMentor }: Studen
           >
             Portfolio
           </NavLink>
+          {isFptAccount && (
+            <NavLink
+              to={ROUTES.DASHBOARD_STUDENT_COURSES}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              Courses
+            </NavLink>
+          )}
           <button
             type="button"
             onClick={onOpenAiMentor}

@@ -39,16 +39,15 @@ function EmptyState({ text }: { text: string }) {
   return <p className="p-8 text-center text-sm text-slate-400">{text}</p>
 }
 
-// ─── Content tab: Careers & Roadmaps + Universities ────────────────────────────
+// ─── Content tab: Careers & Roadmaps ───────────────────────────────────────────
 export function AdminContentTab() {
   const careers = useFetch<any[]>("/careers")
-  const universities = useFetch<any[]>("/universities")
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4">
       <Card className="overflow-hidden">
         <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-black/5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-black/5">
             <GraduationCap size={19} weight="duotone" />
           </div>
           <div>
@@ -87,39 +86,6 @@ export function AdminContentTab() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-center gap-3 border-b border-slate-100 p-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-black/5">
-            <Buildings size={19} weight="duotone" />
-          </div>
-          <div>
-            <CardTitle className="text-base">Universities</CardTitle>
-            <CardDescription>{Array.isArray(universities) ? `${universities.length} registered` : "Loading…"}</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="p-2">
-          {universities === undefined ? (
-            <SectionSkeleton />
-          ) : !universities || universities.length === 0 ? (
-            <EmptyState text="No universities found." />
-          ) : (
-            <ul className="max-h-[440px] overflow-auto">
-              {universities.map((u) => (
-                <li key={u.universityId || u.name} className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 hover:bg-slate-50">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500">
-                    {u.logoUrl ? <img src={u.logoUrl} alt="" className="h-full w-full object-cover" /> : (u.code || u.name?.slice(0, 2) || "U").toUpperCase().slice(0, 3)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-slate-800">{u.name}</p>
-                    {u.domainEmail && <p className="truncate text-[12px] text-slate-400">{u.domainEmail}</p>}
-                  </div>
-                  {u.code && <Badge className="shrink-0">{u.code}</Badge>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }
@@ -219,7 +185,7 @@ export function AdminSystemTab() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
-            <Database size={18} weight="duotone" className="text-cyan-700" />
+            <Database size={18} weight="duotone" className="text-indigo-700" />
             <CardTitle className="text-base">Database pool</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -233,7 +199,7 @@ export function AdminSystemTab() {
                     </div>
                   ))}
                 </div>
-                <UsageBar used={db.active} total={db.max} color="bg-cyan-600" />
+                <UsageBar used={db.active} total={db.max} color="bg-indigo-600" />
                 <p className="mt-1.5 text-[12px] text-slate-400">{db.active} of {db.max} connections in use</p>
               </>
             ) : (
@@ -244,7 +210,7 @@ export function AdminSystemTab() {
 
         <Card>
           <CardHeader className="flex-row items-center gap-3 p-4 pb-2">
-            <Cpu size={18} weight="duotone" className="text-violet-700" />
+            <Cpu size={18} weight="duotone" className="text-indigo-700" />
             <CardTitle className="text-base">Heap memory</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2">
@@ -253,7 +219,7 @@ export function AdminSystemTab() {
                 <p className="font-display text-2xl font-semibold text-slate-900">
                   {mem.usedMb} <span className="text-base font-medium text-slate-400">/ {mem.maxMb} MB</span>
                 </p>
-                <UsageBar used={mem.usedMb} total={mem.maxMb} color="bg-violet-600" />
+                <UsageBar used={mem.usedMb} total={mem.maxMb} color="bg-indigo-600" />
                 <p className="mt-1.5 text-[12px] text-slate-400">{mem.maxMb > 0 ? Math.round((mem.usedMb / mem.maxMb) * 100) : 0}% of max heap used</p>
               </>
             ) : (

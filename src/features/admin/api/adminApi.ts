@@ -52,10 +52,87 @@ const adminApi = {
     return response.data
   },
 
-  triggerJobScraper: async () => {
-    const response = await mainClient.post(ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_JOB_SCRAPER)
+  triggerJobScraper: async (source: "topcv" | "itviec" = "topcv") => {
+    const response = await mainClient.post(
+      ENDPOINTS.ADMIN_DASHBOARD.TRIGGER_JOB_SCRAPER,
+      null,
+      { params: { source } },
+    )
+    return response.data
+  },
+
+  // ─── FLM curriculum sync (paste cookie → scrape → import) ──────────────────
+  startFlmSync: async (payload: FlmSyncPayload) => {
+    const response = await mainClient.post<FlmSyncStart>(ENDPOINTS.ADMIN_FLM.SYNC, payload)
+    return response.data
+  },
+
+  getFlmSyncStatus: async (jobId: string) => {
+    const response = await mainClient.get<FlmSyncStatus>(ENDPOINTS.ADMIN_FLM.SYNC_STATUS(jobId))
+    return response.data
+  },
+
+  /** Copies the synced syllabi's files into our own storage. Background job — poll it. */
+  startMaterialMirror: async (subjectCode?: string, force = false) => {
+    const response = await mainClient.post<{ jobId: string }>(ENDPOINTS.ADMIN_FLM.MIRROR, null, {
+      params: { ...(subjectCode ? { subjectCode } : {}), force }
+    })
+    return response.data
+  },
+
+  getMaterialMirrorStatus: async (jobId: string) => {
+    const response = await mainClient.get<MirrorStatus>(ENDPOINTS.ADMIN_FLM.MIRROR_STATUS(jobId))
     return response.data
   }
 }
 
+export interface FlmSyncPayload {
+  cookie: string
+  curriculumCode: string
+  curid?: string
+  prefixes?: string
+  career?: string
+}
+
+export interface FlmSyncStart {
+  jobId: string
+}
+
+export interface FlmSyncSummary {
+  subjects: number
+  skillLinks: number
+  unmatchedSkills: number
+  resources: number
+}
+
+export interface FlmSyncStatus {
+  state: "pending" | "running" | "error" | "imported"
+  phase: string
+  done: number
+  total: number
+  message?: string | null
+  error?: string | null
+  summary?: FlmSyncSummary | null
+}
+
 export default adminApi;
+
+export interface MirrorSummary {
+  /** Files that had a source to fetch. */
+  attempted: number
+  mirrored: number
+  skipped: number
+  /** Expected to be non-zero: FLM's scheduleId download handler currently 500s. */
+  failed: number
+  bytes: number
+}
+
+export interface MirrorStatus {
+  state: "pending" | "running" | "done" | "error"
+  phase: string
+  done: number
+  total: number
+  message?: string | null
+  summary?: MirrorSummary | null
+  error?: string | null
+}

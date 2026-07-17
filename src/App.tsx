@@ -1,10 +1,10 @@
 import { AppRoutes } from "@/app/router"
-import { GlobalLoadingBar, GlobalToast } from "@/components/ui"
+import { GlobalProgressBar, GlobalToast } from "@/components/ui"
 
 function App() {
   return (
     <>
-      <GlobalLoadingBar />
+      <GlobalProgressBar />
       <GlobalToast />
       <AppRoutes />
     </>

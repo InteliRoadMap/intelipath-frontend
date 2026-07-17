@@ -1,5 +1,6 @@
 export { default as WelcomePage } from './WelcomePage'
-export { default as LoginPage } from './LoginPage'
+// Login is a popup on the landing page now (LoginDialog), not a page.
+// export { default as LoginPage } from './LoginPage'
 export { default as RegisterPage } from './RegisterPage'
 export { default as ForgotPasswordPage } from './ForgotPasswordPage'
 export { default as ResetPasswordPage } from './ResetPasswordPage'
@@ -24,5 +25,6 @@ export { default as StudentProfileSettingsPage } from './StudentProfileSettingsP
 export { default as MentorProfileSettingsPage } from './MentorProfileSettingsPage'
 export { default as CounselorProfileSettingsPage } from './CounselorProfileSettingsPage'
 export * from './StudentPortfolioPage'
+export { default as StudentCoursesPage } from './StudentCoursesPage'
 export * from './PublicPortfolioPage'
 export { default as StudentMarketPulsePage } from './StudentMarketPulsePage'

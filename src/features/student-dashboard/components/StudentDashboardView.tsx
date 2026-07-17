@@ -2,6 +2,7 @@ import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { Spinner } from "@/components/ui"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { useStudentSetup, RoadmapProgressProvider } from "../hooks"
@@ -58,7 +59,7 @@ export default function StudentDashboardView() {
       <main className="mx-auto w-full max-w-[1300px] px-5 py-8 md:px-10 lg:py-12">
         {isInitializing ? (
           <div className="flex flex-col items-center justify-center py-32 text-slate-400">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent mb-4"></div>
+            <Spinner size={32} className="mb-4 text-[#00838f]" label="Preparing your learning space" />
             <p className="text-sm font-bold">Preparing your learning space...</p>
           </div>
         ) : activeSetupStep === null ? (

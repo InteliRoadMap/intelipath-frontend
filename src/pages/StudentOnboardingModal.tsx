@@ -30,8 +30,8 @@ export default function StudentOnboardingModal({
     setBio,
     university,
     setUniversity,
-    yearOfAdmission,
-    setYearOfAdmission,
+    admissionDate,
+    setAdmissionDate,
     major,
     isSaving,
     errors,
@@ -158,11 +158,11 @@ export default function StudentOnboardingModal({
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                  Year of Admission
+                  Admission Date
                 </label>
                 <DatePicker
-                  value={yearOfAdmission ?? ''}
-                  onChange={(val) => setYearOfAdmission(val)}
+                  value={admissionDate ?? ''}
+                  onChange={(val) => setAdmissionDate(val)}
                 />
               </div>
 

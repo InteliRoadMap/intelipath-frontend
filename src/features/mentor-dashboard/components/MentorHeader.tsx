@@ -10,17 +10,24 @@ type MentorHeaderProps = {
   onLogout: () => void | Promise<void>
 }
 
-export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorHeaderProps) {
+export function MentorHeader({
+  user,
+  activeTab,
+  onTabChange,
+  onLogout
+}: MentorHeaderProps) {
   const navigate = useNavigate()
 
+  // Every tab here must have a matching branch in MentorDashboardView, or the tab
+  // lights up and renders nothing. Portfolios and Progress were commented out while
+  // their views stayed live, which left two finished features with no way in.
+  // AI Mentor is deliberately absent: there is no branch behind it yet.
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "courses", label: "Courses" },
-    // { id: "portfolios", label: "Portfolios" },
-    // { id: "progress", label: "Progress" },
+    { id: "portfolios", label: "E-Portfolios" },
+    { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
-    { id: "roadmap", label: "Roadmap Editor" },
-    // { id: "aichat", label: "AI Mentor" },
+    { id: "roadmap", label: "Roadmap Editor" }
   ]
 
   return (
@@ -33,7 +40,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
 
         {/* Center: Navigation Links in a Glass Pill */}
         <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
-          {tabs.map(tab => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
@@ -51,11 +58,11 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
         {/* Right: User Actions + mobile menu */}
         <div className="flex items-center justify-end gap-2">
           <MobileNavMenu
-            items={tabs.map(tab => ({
+            items={tabs.map((tab) => ({
               id: tab.id,
               label: tab.label,
               active: activeTab === tab.id,
-              onSelect: () => onTabChange(tab.id),
+              onSelect: () => onTabChange(tab.id)
             }))}
           />
           <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">

@@ -46,17 +46,21 @@ export const ENDPOINTS = {
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
   ROADMAP_RECOMMENDATIONS: {
-    PENDING: '/roadmaps/recommendations',
-    GENERATE: '/roadmaps/recommendations/generate',
-    ACCEPT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/accept`,
-    REJECT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/reject`
+    PENDING: "/roadmaps/recommendations",
+    GENERATE: "/roadmaps/recommendations/generate",
+    ACCEPT: (recommendationId: string) =>
+      `/roadmaps/recommendations/${recommendationId}/accept`,
+    REJECT: (recommendationId: string) =>
+      `/roadmaps/recommendations/${recommendationId}/reject`
   },
   ROADMAP_EDITOR: {
-    CAREER_NODES: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
-    CREATE_NODE: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    CAREER_NODES: (careerId: string) =>
+      `/roadmaps/editor/careers/${careerId}/nodes`,
+    CREATE_NODE: (careerId: string) =>
+      `/roadmaps/editor/careers/${careerId}/nodes`,
     UPDATE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
     DELETE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
-    SAVE_POSITIONS: '/roadmaps/editor/nodes/positions'
+    SAVE_POSITIONS: "/roadmaps/editor/nodes/positions"
   },
   STUDENT_DASHBOARD: {
     OVERVIEW: "/student/dashboard",
@@ -109,7 +113,8 @@ export const ENDPOINTS = {
     GET_STUDENT_LIST: "/counselor/feedback/students",
     GET_STUDENT_INFO: (studentId: string) =>
       `/counselor/feedback/student/info/${studentId}`,
-    HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/student/info/${studentId}`,
+    HISTORY_FEEDBACK: (studentId: string) =>
+      `/counselor/feedback/student/info/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
     MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
@@ -144,13 +149,13 @@ export const ENDPOINTS = {
     CREATE: "/mentor/courses",
     UPDATE: (id: string) => `/mentor/courses/${id}`,
     DELETE: (id: string) => `/mentor/courses/${id}`,
-    PUBLISH: (id: string) => `/mentor/courses/${id}/publish`,
+    PUBLISH: (id: string) => `/mentor/courses/${id}/publish`
   },
   COURSES: {
     BROWSE: "/courses",
     DETAIL: (id: string) => `/courses/${id}`,
     ENROLL: (id: string) => `/courses/${id}/enroll`,
     PROGRESS: (id: string) => `/courses/${id}/progress`,
-    MY_ENROLLMENTS: "/courses/me/enrollments",
+    MY_ENROLLMENTS: "/courses/me/enrollments"
   }
 } as const

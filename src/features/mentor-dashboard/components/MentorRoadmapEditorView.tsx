@@ -16,7 +16,6 @@ import { FloppyDisk, Plus, Trash, ArrowClockwise } from "@phosphor-icons/react"
 import ConfirmModal from "@/components/modals/ConfirmModal"
 import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
-import NodeCoursesSection from "./NodeCoursesSection"
 import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
 import { Select } from "@/components"
 import { MentorHeader } from "./MentorHeader"
@@ -106,10 +105,32 @@ const MentorRoadmapEditorView = () => {
   const rebuildGraph = useCallback((nodes: EditorNode[]) => {
     // Auto-arrange with the same spine/branch algorithm the student roadmap uses,
     // so mentors never place nodes by hand — they just add/edit and it lays out.
-    const rawNodes = nodes.map(n => ({ id: n.nodeId, data: { level: n.nodeLevel ?? 0 } }))
-    const rawEdges: { source: string; target: string }[] = []
+    //
+    // The algorithm reads three things off each node and one off each edge, and
+    // silently degenerates when any is absent: without `stage` every node sorts
+    // into the same bucket, without `parentNodeId` nothing has children, and
+    // without a solid-styled edge no spine chain forms. Starve it of all three
+    // and all 85 nodes stack into a single 12px-wide column — which is exactly
+    // what it did before, since only `level` was ever passed.
+    const rawNodes = nodes.map(n => ({
+      id: n.nodeId,
+      data: {
+        level: n.nodeLevel ?? 0,
+        stage: n.stage ?? '',
+        parentNodeId: n.parentNode ?? null
+      }
+    }))
+    const rawEdges: { source: string; target: string; style?: Record<string, unknown> }[] = []
     nodes.forEach(n => {
-      if (n.previousNode) rawEdges.push({ source: n.previousNode, target: n.nodeId })
+      // previousNode chains topic → topic: that is the spine. It has to carry the
+      // solid style the layout matches on, or the chain is invisible to it.
+      if (n.previousNode) {
+        rawEdges.push({
+          source: n.previousNode,
+          target: n.nodeId,
+          style: { strokeDasharray: 'none', strokeWidth: 3 }
+        })
+      }
       if (n.parentNode) rawEdges.push({ source: n.parentNode, target: n.nodeId })
     })
     const laid = getDynamicLayoutedElements(rawNodes, rawEdges).nodes as { id: string; position: { x: number; y: number } }[]

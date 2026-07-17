@@ -7,9 +7,9 @@ export interface UpdateUserProfilePayload {
 }
 
 export interface UpdateStudentProfilePayload {
-  universityId?: string | null
   universityName?: string | null
-  yearOfAdmission?: number | null
+  /** ISO date, e.g. "2023-09-05" — what an <input type="date"> already produces. */
+  admissionDate?: string | null
   major?: string | null
   careerId?: string | null
   bio?: string | null
@@ -31,7 +31,6 @@ const profileApi = {
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
   getCounselorProfile: () =>
     mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
-  getUniversities: () => mainClient.get(ENDPOINTS.UNIVERSITIES.LIST),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>
     mainClient.patch(ENDPOINTS.USERS.PROFILE, data),

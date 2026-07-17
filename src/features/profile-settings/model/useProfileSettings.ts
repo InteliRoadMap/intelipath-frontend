@@ -8,12 +8,14 @@ export interface ProfileData {
   bio: string
   email: string
   role: string
-  // Student & Counselor
+  // Student (free text, display only)
   university: string
-  universityId?: string
-  // Student & Counselor
+  /** Read-only, set by the backend: FPT accounts get the FPT curriculum and its material. */
+  accountType?: "FPT" | "OTHER"
+  // Student
   major: string
-  admissionDate: string
+  /** ISO date, as an <input type="date"> holds it. */
+  admission_date: string
   // Mentor
   company: string
   industry_focus: string
@@ -31,9 +33,9 @@ const EMPTY_PROFILE: ProfileData = {
   email: "",
   role: "Student",
   university: "",
-  universityId: "",
+  accountType: "OTHER",
   major: "",
-  admissionDate: "",
+  admission_date: "",
   company: "",
   industry_focus: "",
   department: "",
@@ -47,7 +49,6 @@ export function useProfileSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -95,24 +96,16 @@ export function useProfileSettings() {
           "",
         role: data?.role || data?.user?.role || user?.role || "Student",
         major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
-        admissionDate:
-          data?.admissionDate ||
-          data?.student?.admissionDate ||
-          data?.academicCounselor?.admissionDate ||
-          "",
-        universityId:
-          data?.universityId ||
-          data?.userInfo?.universityId ||
-          data?.student?.university?.universityId ||
-          data?.academicCounselor?.university?.universityId ||
-          "",
+        // The API sends an ISO date; <input type="date"> wants yyyy-MM-dd with no time.
+        admission_date: String(
+          data?.admissionDate ?? data?.student?.admissionDate ?? ""
+        ).split("T")[0],
         university:
           data?.university ||
           data?.userInfo?.university ||
-          data?.student?.university?.name ||
-          data?.academicCounselor?.universityName ||
-          data?.academicCounselor?.university?.name ||
+          data?.student?.university ||
           "",
+        accountType: data?.accountType || data?.student?.accountType || "OTHER",
         department:
           data?.department || data?.academicCounselor?.department || "",
         industry_focus:
@@ -171,7 +164,6 @@ export function useProfileSettings() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
-    setSuccess(null)
 
     if (profileData.yob) {
       const birthDate = new Date(profileData.yob)
@@ -189,12 +181,16 @@ export function useProfileSettings() {
 
     if (
       user?.role?.toUpperCase() === "STUDENT" &&
-      profileData.admissionDate &&
+      profileData.admission_date &&
       profileData.yob
     ) {
       const birthDate = new Date(profileData.yob)
-      const admissionDate = new Date(profileData.admissionDate)
-      if (admissionDate <= birthDate) {
+      const admissionDate = new Date(profileData.admission_date)
+      if (admissionDate > new Date()) {
+        setError("Admission date cannot be in the future.")
+        setSaving(false)
+        return
+      } else if (admissionDate <= birthDate) {
         setError("Admission date must be after your date of birth.")
         setSaving(false)
         return
@@ -217,8 +213,8 @@ export function useProfileSettings() {
       if (user?.role?.toUpperCase() === "STUDENT") {
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: profileData.admissionDate,
+            universityName: profileData.university,
+            admissionDate: profileData.admission_date || null,
             major: profileData.major
             // Original: careerId: ""
             // Removed to prevent wiping out data
@@ -234,16 +230,14 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department,
-            admissionDate: profileData.admissionDate ? profileData.admissionDate : null
+            department: profileData.department
           })
         )
       }
 
       await Promise.all(tasks)
 
-      setSuccess("Profile saved successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Profile saved.")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
       setError("Save failed. Please try again.")
@@ -255,7 +249,6 @@ export function useProfileSettings() {
   const handleAvatarUpload = async (file: File) => {
     setSaving(true)
     setError(null)
-    setSuccess(null)
     try {
       const res = await profileApi.updateAvatar(file)
       // the backend returns the updated UserResponse, which has avatarUrl
@@ -264,8 +257,7 @@ export function useProfileSettings() {
 
       setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
       updateUser({ avatarUrl: newUrl })
-      setSuccess("Avatar updated successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Avatar updated.")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error uploading avatar:", err)
       setError("Failed to upload avatar. Please try again.")
@@ -286,7 +278,6 @@ export function useProfileSettings() {
     loading,
     saving,
     error,
-    success,
     handleChange,
     handleSave,
     handleAvatarUpload,

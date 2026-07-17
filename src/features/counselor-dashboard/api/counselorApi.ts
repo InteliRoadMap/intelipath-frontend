@@ -192,7 +192,9 @@ const counselorApi = {
     )
     return res.data
   },
-  importStudents: async (students: { username: string; email: string }[]): Promise<any> => {
+  importStudents: async (
+    students: { username: string; email: string }[]
+  ): Promise<any> => {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
       students

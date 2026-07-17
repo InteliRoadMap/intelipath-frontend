@@ -96,21 +96,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("user")
   }
 
+  // The token's own exp claim comes first: it is epoch seconds, so it carries no timezone
+  // ambiguity and it is the value the backend actually validates against. expiresIn is only a
+  // fallback — it is a formatted string, and a zone-less one parses here as local time, which
+  // silently schedules the refresh in the past and spins the timer.
   const getExpirationTime = (
     accessToken: string,
     expiresIn?: string | null
   ) => {
+    try {
+      const decoded = jwtDecode<{ exp?: number }>(accessToken)
+      if (decoded.exp) return decoded.exp * 1000
+    } catch {
+      // Unreadable token: fall through to expiresIn.
+    }
+
     if (expiresIn) {
       const parsedExpiration = new Date(expiresIn).getTime()
       if (Number.isFinite(parsedExpiration)) return parsedExpiration
     }
 
-    try {
-      const decoded = jwtDecode<{ exp?: number }>(accessToken)
-      return decoded.exp ? decoded.exp * 1000 : null
-    } catch {
-      return null
-    }
+    return null
   }
 
   const clearRefreshTimer = () => {

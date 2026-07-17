@@ -10,7 +10,6 @@ export type MentorMetric = {
 export type PendingReview = {
   id: string;
   name: string;
-  course: string;
   time: string;
 };
 

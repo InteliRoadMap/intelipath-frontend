@@ -30,8 +30,7 @@ import {
   List,
   Plus,
   Paperclip,
-  File as FileIcon,
-  UserPlus
+  File as FileIcon
 } from "lucide-react"
 import {
   Briefcase as BriefcasePhos,
@@ -916,6 +915,7 @@ export default function CounselorFeedbackPage() {
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
   const [localSearch, setLocalSearch] = useState("")
+  const [filterUni, setFilterUni] = useState("")
   const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
@@ -937,6 +937,9 @@ export default function CounselorFeedbackPage() {
     setSize
   } = useStudentList()
 
+  const uniqueUnis = Array.from(
+    new Set(students.map((s) => s.university).filter(Boolean))
+  )
   const uniqueCareers = Array.from(
     new Set(students.map((s) => s.careerPath).filter(Boolean))
   )
@@ -1254,6 +1257,14 @@ export default function CounselorFeedbackPage() {
             placeholder="All Careers"
             options={uniqueCareers}
             onChange={setFilterCareer}
+          />
+
+          <FilterDropdown
+            icon={Building2}
+            value={filterUni}
+            placeholder="All Universities"
+            options={uniqueUnis}
+            onChange={setFilterUni}
           />
 
           <div className="ml-auto flex items-center gap-3 shrink-0">

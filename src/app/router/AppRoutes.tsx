@@ -1,10 +1,10 @@
-import { Routes, Route } from "react-router-dom"
-import { 
-  WelcomePage, LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, 
+import { Routes, Route, Navigate } from "react-router-dom"
+import {
+  WelcomePage, RegisterPage, ForgotPasswordPage, ResetPasswordPage,
   DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
   CounselorDashboardPage, CounselorFeedbackPage, CounselorAddStudentPage, MentorDashboardPage, AdminDashboardPage, 
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
-  CounselorProfileSettingsPage, StudentPortfolioPage, MentorStudentsPage,
+  CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
   PublicPortfolioPage, StudentMarketPulsePage, MentorRoadmapEditorPage
 } from "@/pages"
@@ -18,7 +18,11 @@ export const AppRoutes = () => {
       <Route path={ROUTES.HOME} element={<GuestRoute><WelcomePage /></GuestRoute>} />
       <Route path={ROUTES.PUBLIC_PORTFOLIO} element={<PublicPortfolioPage />} />
 
-      <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} />
+      {/* Login is a popup on the landing page now (LoginDialog), not a page.
+          The path stays as a redirect because logout and other flows still
+          navigate(ROUTES.LOGIN) — without it they would land on 404. */}
+      {/* <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} /> */}
+      <Route path={ROUTES.LOGIN} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
       <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
@@ -62,6 +66,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
             <StudentMarketPulsePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.DASHBOARD_STUDENT_COURSES}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <StudentCoursesPage />
           </ProtectedRoute>
         }
       />
