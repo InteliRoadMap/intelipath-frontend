@@ -142,7 +142,7 @@ export const PendingReviewsWidget = () => {
                 </div>
                 
                 <button 
-                  onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':slug', item.portfolioSlug))}
+                  onClick={() => navigate(ROUTES.PORTFOLIO_INTERNAL.replace(':slug', item.portfolioSlug))}
                   className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-[13px] rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
                 >
                   <Briefcase size={16} weight="bold" /> Portfolio

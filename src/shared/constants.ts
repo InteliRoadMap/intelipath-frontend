@@ -6,7 +6,11 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   OAUTH_CALLBACK: '/auth/callback',
-  PUBLIC_PORTFOLIO: '/portfolio/:slug',
+  // Two addresses for one portfolio, split by who is looking:
+  // /portfolio/<slug> is the internal view, for signed-in staff and students.
+  // /p/<slug> is the link a student shares with the outside world.
+  PUBLIC_PORTFOLIO: '/p/:slug',
+  PORTFOLIO_INTERNAL: '/portfolio/:slug',
   DASHBOARD: '/dashboard',
   DASHBOARD_STUDENT: '/dashboard/student',
   DASHBOARD_STUDENT_ROADMAP: '/dashboard/student/roadmap',
@@ -21,7 +25,6 @@ export const ROUTES = {
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_MENTOR_STUDENTS: '/dashboard/mentor/students',
   DASHBOARD_MENTOR_FEEDBACK: '/dashboard/mentor/feedback',
-  DASHBOARD_MENTOR_PORTFOLIO: '/dashboard/mentor/portfolio/:slug',
   DASHBOARD_MENTOR_ROADMAP_EDITOR: '/dashboard/mentor/roadmap-editor',
   DASHBOARD_MENTOR_SETTINGS: '/dashboard/mentor/settings',
   DASHBOARD_ADMIN: '/dashboard/admin',

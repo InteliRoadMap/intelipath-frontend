@@ -274,7 +274,11 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/portfolio/${slug}`);
+    // The shared link must be the public one. /portfolio/<slug> is the internal
+    // view and would send a recruiter to the sign-in page.
+    navigator.clipboard.writeText(
+      `${window.location.origin}${ROUTES.PUBLIC_PORTFOLIO.replace(':slug', slug)}`
+    );
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };

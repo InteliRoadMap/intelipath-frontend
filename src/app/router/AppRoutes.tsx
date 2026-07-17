@@ -142,7 +142,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path={ROUTES.DASHBOARD_MENTOR_PORTFOLIO}
+        path={ROUTES.PORTFOLIO_INTERNAL}
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorPortfolioPage />
