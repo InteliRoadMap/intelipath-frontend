@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
 import { useAuth } from "@/context/AuthContext"
+import { toast } from "@/utils/toast"
 
 export interface ProfileData {
   full_name: string
@@ -49,7 +50,6 @@ export function useProfileSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -165,7 +165,6 @@ export function useProfileSettings() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
-    setSuccess(null)
 
     if (profileData.yob) {
       const birthDate = new Date(profileData.yob)
@@ -239,8 +238,7 @@ export function useProfileSettings() {
 
       await Promise.all(tasks)
 
-      setSuccess("Profile saved successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Profile saved.")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
       setError("Save failed. Please try again.")
@@ -252,7 +250,6 @@ export function useProfileSettings() {
   const handleAvatarUpload = async (file: File) => {
     setSaving(true)
     setError(null)
-    setSuccess(null)
     try {
       const res = await profileApi.updateAvatar(file)
       // the backend returns the updated UserResponse, which has avatarUrl
@@ -261,8 +258,7 @@ export function useProfileSettings() {
 
       setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
       updateUser({ avatarUrl: newUrl })
-      setSuccess("Avatar updated successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Avatar updated.")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error uploading avatar:", err)
       setError("Failed to upload avatar. Please try again.")
@@ -283,7 +279,6 @@ export function useProfileSettings() {
     loading,
     saving,
     error,
-    success,
     handleChange,
     handleSave,
     handleAvatarUpload,

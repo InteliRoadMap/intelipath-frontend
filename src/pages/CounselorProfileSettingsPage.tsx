@@ -33,7 +33,6 @@ export default function CounselorProfileSettingsPage() {
     loading,
     saving,
     error,
-    success,
     handleChange,
     handleSave,
     handleAvatarUpload,
@@ -295,11 +294,6 @@ export default function CounselorProfileSettingsPage() {
               {error && (
                 <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
                   {error}
-                </div>
-              )}
-              {success && (
-                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600">
-                  {success}
                 </div>
               )}
 
