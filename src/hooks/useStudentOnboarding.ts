@@ -9,7 +9,7 @@ export interface OnboardingErrors {
   yob?: string
   bio?: string
   university?: string
-  yearOfAdmission?: string
+  admissionDate?: string
   general?: string
 }
 
@@ -20,7 +20,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
   const [yob, setyob] = useState("")
   const [bio, setBio] = useState("")
   const [university, setUniversity] = useState("")
-  const [yearOfAdmission, setYearOfAdmission] = useState("")
+  const [admissionDate, setAdmissionDate] = useState("")
   const [major, setMajor] = useState("Software Engineering")
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<OnboardingErrors>({})
@@ -59,7 +59,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setyob("")
     setBio("")
     setUniversity("")
-    setYearOfAdmission("")
+    setAdmissionDate("")
     setMajor("Software Engineering")
     setErrors({})
     setStep(1)
@@ -73,21 +73,17 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
 
     const currentErrors: typeof errors = {}
 
-    // A year, not a date: new Date(2023) reads 2023 as milliseconds since the epoch,
-    // so comparing it against a real birth date rejected every valid year.
-    const admissionYear = /^\d{4}$/.test(String(yearOfAdmission).trim())
-      ? Number(String(yearOfAdmission).trim())
-      : null
-    const currentYear = new Date().getFullYear()
-
-    if (admissionYear === null || admissionYear < 1970 || admissionYear > currentYear) {
-      currentErrors.yearOfAdmission = `Enter an admission year between 1970 and ${currentYear}.`
+    if (!admissionDate) {
+      currentErrors.admissionDate = 'Select your admission date.'
     } else if (yob) {
-      const birthYear = new Date(yob).getFullYear()
-      if (admissionYear <= birthYear) {
-        currentErrors.yearOfAdmission = 'Year of admission must be after your year of birth.'
-      } else if (admissionYear - birthYear < 10) {
-        currentErrors.yearOfAdmission = 'Year of admission seems too early based on your age.'
+      const birthDate = new Date(yob)
+      const parsed = new Date(admissionDate)
+      if (parsed > new Date()) {
+        currentErrors.admissionDate = 'Admission date cannot be in the future.'
+      } else if (parsed <= birthDate) {
+        currentErrors.admissionDate = 'Admission date must be after your date of birth.'
+      } else if (parsed.getFullYear() - birthDate.getFullYear() < 10) {
+        currentErrors.admissionDate = 'Admission date seems too early based on your age.'
       }
     }
 
@@ -107,7 +103,7 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
       if (user?.role === "STUDENT") {
         await profileApi.updateStudentProfile({
           universityName: university || null,
-          yearOfAdmission: admissionYear,
+          admissionDate: admissionDate || null,
           major,
           careerId: undefined
         })
@@ -144,8 +140,8 @@ export function useStudentOnboarding(isOpen: boolean, onClose?: () => void) {
     setBio,
     university,
     setUniversity,
-    yearOfAdmission,
-    setYearOfAdmission,
+    admissionDate,
+    setAdmissionDate,
     major,
     setMajor,
     isSaving,

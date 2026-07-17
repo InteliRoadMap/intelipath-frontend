@@ -253,16 +253,13 @@ export default function StudentProfileSettingsPage() {
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                         <Calendar size={16} className="text-emerald-600" />
-                        Year of Admission
+                        Admission Date
                       </label>
                       <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1970}
-                        max={new Date().getFullYear()}
-                        placeholder="e.g. 2023"
-                        value={profileData.year_of_admission}
-                        onChange={(e) => handleChange("year_of_admission", e.target.value)}
+                        type="date"
+                        max={new Date().toISOString().split("T")[0]}
+                        value={profileData.admission_date}
+                        onChange={(e) => handleChange("admission_date", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                       />
                     </div>

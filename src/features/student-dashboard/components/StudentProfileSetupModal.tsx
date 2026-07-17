@@ -16,7 +16,7 @@ interface FormErrors {
   fullName?: string
   yob?: string
   university?: string
-  yearOfAdmission?: string
+  admissionDate?: string
   major?: string
   careerId?: string
   general?: string
@@ -34,7 +34,7 @@ export default function StudentProfileSetupModal({
   const [yob, setYob] = useState('')
   const [bio, setBio] = useState('')
   const [university, setUniversity] = useState('')
-  const [yearOfAdmission, setYearOfAdmission] = useState('')
+  const [admissionDate, setAdmissionDate] = useState('')
   const [major, setMajor] = useState('Software Engineering')
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerId, setCareerId] = useState('')
@@ -148,19 +148,20 @@ export default function StudentProfileSetupModal({
 
   const handleSave = async () => {
     const nextErrors: FormErrors = {}
-    const admissionYear = parseInt(String(yearOfAdmission), 10)
-    const currentYear = new Date().getFullYear()
     if (!university.trim()) {
       nextErrors.university = 'Enter your university.'
     }
-    if (!Number.isFinite(admissionYear) || admissionYear < 1970 || admissionYear > currentYear) {
-      nextErrors.yearOfAdmission = 'Enter a valid admission year.'
+    if (!admissionDate) {
+      nextErrors.admissionDate = 'Select your admission date.'
     } else if (yob) {
-      const birthYear = new Date(yob).getFullYear()
-      if (admissionYear <= birthYear) {
-        nextErrors.yearOfAdmission = 'Admission year must be after your birth year.'
-      } else if (admissionYear - birthYear < 10) {
-        nextErrors.yearOfAdmission = 'Admission year seems too early based on your age.'
+      const birthDate = new Date(yob)
+      const parsed = new Date(admissionDate)
+      if (parsed > new Date()) {
+        nextErrors.admissionDate = 'Admission date cannot be in the future.'
+      } else if (parsed <= birthDate) {
+        nextErrors.admissionDate = 'Admission date must be after your date of birth.'
+      } else if (parsed.getFullYear() - birthDate.getFullYear() < 10) {
+        nextErrors.admissionDate = 'Admission date seems too early based on your age.'
       }
     }
 
@@ -183,7 +184,7 @@ export default function StudentProfileSetupModal({
         }),
         studentDashboardService.updateStudentProfile({
           university: university.trim(),
-          yearOfAdmission: admissionYear,
+          admissionDate,
           major: major.trim(),
           careerId,
         })
@@ -282,18 +283,12 @@ export default function StudentProfileSetupModal({
             </Field>
           </div>
 
-          <Field label="Year of admission" required error={errors.yearOfAdmission}>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              placeholder="e.g. 2024"
-              className={inputClass}
-              value={yearOfAdmission}
-              onChange={(event) => {
-                const digits = event.target.value.replace(/\D/g, '').slice(0, 4)
-                setYearOfAdmission(digits)
-                setErrors((current) => ({ ...current, yearOfAdmission: undefined }))
+          <Field label="Admission date" required error={errors.admissionDate}>
+            <DatePicker
+              value={admissionDate}
+              onChange={(value) => {
+                setAdmissionDate(value)
+                setErrors((current) => ({ ...current, admissionDate: undefined }))
               }}
             />
           </Field>

@@ -30,8 +30,8 @@ export default function StudentOnboardingModal({
     setBio,
     university,
     setUniversity,
-    yearOfAdmission,
-    setYearOfAdmission,
+    admissionDate,
+    setAdmissionDate,
     major,
     isSaving,
     errors,
@@ -158,16 +158,11 @@ export default function StudentOnboardingModal({
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                  Year of Admission
+                  Admission Date
                 </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={4}
-                  placeholder="e.g. 2023"
-                  value={yearOfAdmission ?? ''}
-                  onChange={(e) => setYearOfAdmission(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-blue/50 focus:ring-1 focus:ring-brand-blue/50 transition-all placeholder-slate-400 shadow-sm"
+                <DatePicker
+                  value={admissionDate ?? ''}
+                  onChange={(val) => setAdmissionDate(val)}
                 />
               </div>
 

@@ -35,7 +35,10 @@ export const StudentPortfolioPage = () => {
                 id: 'edu-mock-1',
                 university: profile.university,
                 degree: profile.major || 'Bachelor Degree',
-                period: profile.yearOfAdmission ? `${profile.yearOfAdmission} - Present` : 'Present',
+                // The portfolio reads as a CV, so the admission date shows as its year alone.
+                period: profile.admissionDate
+                  ? `${new Date(profile.admissionDate).getFullYear()} - Present`
+                  : 'Present',
                 description: 'Currently studying here.'
               }];
             }

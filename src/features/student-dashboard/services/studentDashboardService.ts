@@ -60,7 +60,7 @@ type RawStudentRoadmap = {
 
 type StudentProfilePayload = {
   university: string
-  yearOfAdmission: string
+  admissionDate: string
   major: string
   careerId: string
 }
@@ -282,17 +282,9 @@ export const studentDashboardService = {
       throw new Error("Career ID must be a valid string ID.")
     }
 
-    let yearNum: number | null = null
-    if (payload.yearOfAdmission) {
-      const parsed = parseInt(String(payload.yearOfAdmission), 10)
-      if (Number.isFinite(parsed)) {
-        yearNum = parsed
-      }
-    }
-
     return profileApi.updateStudentProfile({
       universityName: payload.universityName || payload.university || null,
-      yearOfAdmission: yearNum,
+      admissionDate: payload.admissionDate || null,
       major: payload.major || null,
       careerId: payload.careerId || null,
       bio: payload.bio || null,

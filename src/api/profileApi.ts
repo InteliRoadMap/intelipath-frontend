@@ -8,7 +8,8 @@ export interface UpdateUserProfilePayload {
 
 export interface UpdateStudentProfilePayload {
   universityName?: string | null
-  yearOfAdmission?: number | null
+  /** ISO date, e.g. "2023-09-05" — what an <input type="date"> already produces. */
+  admissionDate?: string | null
   major?: string | null
   careerId?: string | null
   bio?: string | null
