@@ -4,6 +4,7 @@ export interface User {
   fullName: string;
   role: string;
   avatarUrl?: string;
+  accountType?: "FPT" | "OTHER";
 }
 
 export interface AuthState {

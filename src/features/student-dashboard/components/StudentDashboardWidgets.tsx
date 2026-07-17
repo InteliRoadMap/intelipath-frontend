@@ -24,6 +24,7 @@ import {
   XAxis,
   YAxis
 } from "recharts"
+import { Skeleton } from "@/components/ui"
 import { useAuth } from "@/context"
 import roadmapApi from "@/api/roadmapApi"
 import { toast } from "@/utils/toast"
@@ -38,11 +39,11 @@ import type {
 } from "../types"
 
 const LoadingState = ({ rows = 3 }: { rows?: number }) => (
-  <div className="animate-pulse space-y-3 py-2 w-full">
+  <div className="space-y-3 py-2 w-full">
     {Array.from({ length: rows }).map((_, index) => (
-      <div
+      <Skeleton
         key={index}
-        className="h-4 rounded bg-slate-200"
+        className="h-4 rounded"
         style={{ width: `${index % 3 === 0 ? 68 : index % 3 === 1 ? 100 : 82}%` }}
       />
     ))}

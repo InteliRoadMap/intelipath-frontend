@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 
@@ -7,6 +7,7 @@ import {
   Search,
   X,
   ChevronRight,
+  ChevronLeft,
   ArrowLeft,
   Building2,
   Briefcase,
@@ -24,22 +25,34 @@ import {
   Star,
   Sparkles,
   Check,
-  MoreHorizontal
+  MoreHorizontal,
+  Download,
+  List,
+  Plus,
+  Paperclip,
+  File as FileIcon
 } from "lucide-react"
 import {
   Briefcase as BriefcasePhos,
   BookOpen,
   ChatCenteredText,
-  PaperPlaneTilt
+  PaperPlaneTilt,
+  Folder as FolderPhos
 } from "@phosphor-icons/react"
 import { useNavigate, useSearchParams, NavLink } from "react-router-dom"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import type { MyStudent, MissingSkillItem, Feedback } from "@/features/counselor-dashboard/api/counselorApi"
+import type {
+  MyStudent,
+  MissingSkillItem,
+  Feedback
+} from "@/features/counselor-dashboard/api/counselorApi"
+import counselorApi from "@/features/counselor-dashboard/api/counselorApi"
+import { toast } from "@/utils/toast"
 import {
   useStudentList,
-  useFeedbackHistory,
+  useStudentDetailInfo,
   useSendFeedback
 } from "../model/useCounselorFeedback"
 
@@ -135,7 +148,7 @@ function FilterDropdown({
   )
 }
 
-function RoadmapTab({ student }: { student: MyStudent }) {
+function RoadmapTab({ student, roadmapProgress, loading }: { student: MyStudent; roadmapProgress: number; loading: boolean }) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -151,7 +164,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
           bar,
           { width: "0%" },
           {
-            width: `${student.roadmapProgress}%`,
+            width: `${roadmapProgress}%`,
             duration: 1.4,
             ease: "power4.out",
             delay: 0.3
@@ -162,7 +175,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
     { scope: tabRef }
   )
 
-  const pct = student.roadmapProgress ?? 0
+  const pct = roadmapProgress
   const statusLabel =
     pct === 100 ? "Completed" : pct > 0 ? "In Progress" : "Not Started"
   const statusColor =
@@ -271,7 +284,7 @@ function RoadmapTab({ student }: { student: MyStudent }) {
 }
 
 // ─── Tab: Skill Gap (from MyAssignedStudent.missingSkills) ───────
-function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
+function SkillGapTab({ skills, loading }: { skills: string[]; loading: boolean }) {
   const tabRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -310,8 +323,7 @@ function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
         </p>
       </div>
 
-      {skills.map((skill: any, idx) => {
-        const skillName = typeof skill === "string" ? skill : skill.skillName
+      {skills.map((skillName, idx) => {
         return (
           <div
             key={`${skillName}-${idx}`}
@@ -329,21 +341,36 @@ function SkillGapTab({ skills }: { skills: MissingSkillItem[] }) {
   )
 }
 
-// ─── Tab: Feedback (uses hooks: useFeedbackHistory + useSendFeedback) ─
-function FeedbackTab({ student }: { student: MyStudent }) {
+// ─── Tab: Feedback (uses hooks: useStudentDetailInfo + useSendFeedback) ─
+function FeedbackTab({ student, feedbacks, loading, refetch }: { student: MyStudent; feedbacks: Feedback[]; loading: boolean; refetch: () => void }) {
   const [content, setContent] = useState("")
   const [type, setType] = useState("GENERAL")
   const tabRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const attachRef = useRef<HTMLDivElement>(null)
+  const [attachOpen, setAttachOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachments, setAttachments] = useState<File[]>([])
 
-  const { feedbacks, loading, refetch } = useFeedbackHistory(student.studentId)
-  const { send, sending, sent } = useSendFeedback(refetch)
+  const { send, sending, sent } = useSendFeedback(() => {
+    refetch()
+    setAttachments([])
+  })
 
   // Close dropdown on outside click
   const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target as Node)
+    ) {
       setDropdownOpen(false)
+    }
+    if (
+      attachRef.current &&
+      !attachRef.current.contains(event.target as Node)
+    ) {
+      setAttachOpen(false)
     }
   }, [])
 
@@ -377,14 +404,15 @@ function FeedbackTab({ student }: { student: MyStudent }) {
         }
       }
     },
-    { scope: tabRef, dependencies: [feedbacks, loading] }
+    { scope: tabRef, dependencies: [feedbacks.length, loading] }
   )
 
   const handleSend = async () => {
     await send({
       receiverId: student.studentId,
       content: content.trim(),
-      type: type as "GENERAL" | "SKILL" | "CAREER"
+      type: type as "GENERAL" | "SKILL" | "CAREER",
+      attachments: attachments
     })
     setContent("")
   }
@@ -435,12 +463,21 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                   weight="fill"
                 />
               )}
+              {type === "PORTFOLIO" && (
+                <FolderPhos
+                  size={18}
+                  className="text-slate-500"
+                  weight="fill"
+                />
+              )}
               <span>
                 {type === "CAREER"
                   ? "Career Advice"
                   : type === "SKILL"
                     ? "Skill Guidance"
-                    : "General Note"}
+                    : type === "PORTFOLIO"
+                      ? "Portfolio Feedback"
+                      : "General Note"}
               </span>
             </div>
             <ChevronDown
@@ -474,6 +511,13 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                     icon: ChatCenteredText,
                     color: "text-[#006064]",
                     bgHover: "hover:bg-[#f0fafa]"
+                  },
+                  {
+                    value: "PORTFOLIO",
+                    label: "Portfolio Feedback",
+                    icon: FolderPhos,
+                    color: "text-slate-500",
+                    bgHover: "hover:bg-slate-50"
                   }
                 ] as const
               ).map(({ value, label, icon: Icon, color, bgHover }) => (
@@ -513,12 +557,96 @@ function FeedbackTab({ student }: { student: MyStudent }) {
           className="w-full px-4 py-3 text-[14px] border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#006064]/20 focus:border-[#00838f] transition-all resize-none placeholder:text-slate-400 leading-relaxed"
         />
 
+        {attachments.length > 0 && (
+          <div className="flex flex-col gap-2 mt-3">
+            {attachments.map((file, idx) => (
+              <div
+                key={`${file.name}-${idx}`}
+                className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+              >
+                <div className="flex items-center gap-2 text-slate-700 font-medium truncate">
+                  <FileIcon size={16} className="text-slate-400 shrink-0" />
+                  <span className="truncate max-w-[200px]" title={file.name}>
+                    {file.name}
+                  </span>
+                  <span className="text-slate-400 text-xs shrink-0">
+                    ({(file.size / 1024).toFixed(1)} KB)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAttachments((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
+                  title="Remove attachment"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-3">
-          <span
-            className={`text-[12px] font-medium ${content.length > 450 ? "text-amber-500" : "text-slate-400"}`}
-          >
-            {content.length} / 500 chars
-          </span>
+          <div className="flex items-center gap-3">
+            <div className="relative" ref={attachRef}>
+              <button
+                type="button"
+                onClick={() => setAttachOpen((o) => !o)}
+                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 ${
+                  attachOpen
+                    ? "bg-[#e0f7fa] text-[#00838f] shadow-inner border border-[#b2ebf2]"
+                    : "bg-white border border-slate-200 text-slate-400 hover:text-[#00838f] hover:border-[#00838f]/30 hover:bg-slate-50 shadow-sm"
+                }`}
+                title="Đính kèm tệp"
+              >
+                <Paperclip
+                  size={18}
+                  className={
+                    attachOpen
+                      ? "rotate-12 transition-transform"
+                      : "transition-transform"
+                  }
+                />
+              </button>
+              {attachOpen && (
+                <div className="absolute bottom-full left-0 mb-2 w-48 bg-white border border-slate-200/80 rounded-2xl shadow-[0_15px_40px_rgba(15,23,42,0.12)] z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachOpen(false)
+                      fileInputRef.current?.click()
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <Paperclip size={18} className="text-slate-500" />
+                    Đính kèm tệp
+                  </button>
+                </div>
+              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const newFiles = Array.from(e.target.files)
+                    setAttachments((prev) => [...prev, ...newFiles])
+                  }
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ""
+                  }
+                }}
+              />
+            </div>
+            <span
+              className={`text-[12px] font-medium ${content.length > 450 ? "text-amber-500" : "text-slate-400"}`}
+            >
+              {content.length} / 500 chars
+            </span>
+          </div>
           <button
             type="button"
             disabled={!content.trim() || sending}
@@ -589,13 +717,31 @@ function FeedbackTab({ student }: { student: MyStudent }) {
                     </span>
                   </div>
                   <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                    <p className="text-[14px] text-slate-700 leading-relaxed">
+                    <p className="text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap">
                       {fb.content}
                     </p>
+                    {fb.attachments && fb.attachments.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {fb.attachments.map((file) => (
+                          <div
+                            key={file.attachmentId}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm text-[12px] text-slate-600 transition-colors hover:bg-slate-50 cursor-pointer"
+                          >
+                            <Paperclip size={14} className="text-slate-400" />
+                            <span className="font-medium truncate max-w-[200px]">
+                              {file.fileName}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              ({(file.fileSize / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-end gap-1.5 mt-3 text-[11px] font-medium text-slate-400">
                     <Clock size={12} />
-                    {new Date(fb.createAt).toLocaleString("en-US", {
+                    {new Date(fb.createdAt).toLocaleString("en-US", {
                       dateStyle: "medium",
                       timeStyle: "short"
                     })}
@@ -630,6 +776,7 @@ function StudentDetailPanel({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(defaultTab)
+  const { roadmapProgress, missingSkills, feedbacks, loading, refetch } = useStudentDetailInfo(student.studentId)
   const fullName = student.fullName || "Unknown Student"
   const initials =
     fullName
@@ -714,11 +861,11 @@ function StudentDetailPanel({
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] text-slate-600 rounded-lg text-[12px] font-medium border border-slate-200/80 shadow-sm">
                 <Map size={13} className="text-slate-400" />
-                {student.roadmapProgress}% progress
+                {loading ? "..." : roadmapProgress}% progress
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[12px] font-medium border border-rose-100 shadow-sm">
                 <TrendingDown size={13} />
-                {student.missingSkills?.length ?? 0} missing skills
+                {loading ? "..." : missingSkills.length} missing skills
               </div>
             </div>
           </div>
@@ -745,11 +892,11 @@ function StudentDetailPanel({
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {tab === "roadmap" && <RoadmapTab student={student} />}
+          {tab === "roadmap" && <RoadmapTab student={student} roadmapProgress={roadmapProgress} loading={loading} />}
           {tab === "skillgap" && (
-            <SkillGapTab skills={student.missingSkills ?? []} />
+            <SkillGapTab skills={missingSkills} loading={loading} />
           )}
-          {tab === "feedback" && <FeedbackTab student={student} />}
+          {tab === "feedback" && <FeedbackTab student={student} feedbacks={feedbacks} loading={loading} refetch={refetch} />}
         </div>
       </aside>
     </div>
@@ -767,13 +914,28 @@ export default function CounselorFeedbackPage() {
     searchParams.get("studentId") || searchParams.get("userId")
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
-  const [search, setSearch] = useState("")
+  const [localSearch, setLocalSearch] = useState("")
   const [filterUni, setFilterUni] = useState("")
   const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(
+    new Set()
+  )
+  const [isExporting, setIsExporting] = useState(false)
+  const [isExportMode, setIsExportMode] = useState(false)
+
   // ── Data from hook ──────────────────────────────────────────────
-  const { students, loading } = useStudentList()
+  const {
+    students,
+    loading,
+    page,
+    setPage,
+    search: hookSearch,
+    setSearch: setHookSearch,
+    totalPages,
+    setSize
+  } = useStudentList()
 
   const uniqueUnis = Array.from(
     new Set(students.map((s) => s.university).filter(Boolean))
@@ -795,21 +957,109 @@ export default function CounselorFeedbackPage() {
     }
   }, [students, autoOpenStudentId, searchParams, setSearchParams, selected])
 
-  const filtered = students.filter((s) => {
-    const matchSearch =
-      !search ||
-      s.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      (s.email && s.email.toLowerCase().includes(search.toLowerCase()))
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setPage(0)
+      setHookSearch(localSearch)
+    }
+  }
 
-    const matchUni = !filterUni || s.university === filterUni
-    const matchCareer = !filterCareer || s.careerPath === filterCareer
-
-    return matchSearch && matchUni && matchCareer
-  })
+  // No local filtering anymore since search is done by backend
+  // and we don't have backend support for university/career filters yet.
 
   const handleLogout = async () => {
     await logout()
     navigate(ROUTES.LOGIN)
+  }
+
+  // Chỉ add/remove student của trang hiện tại, giữ nguyên các trang khác
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentPageIds = students.map((s) => s.studentId)
+    if (e.target.checked) {
+      setSelectedStudentIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.add(id))
+        return next
+      })
+    } else {
+      setSelectedStudentIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.delete(id))
+        return next
+      })
+    }
+  }
+
+  const handleSelectRow = (studentId: string) => {
+    const newSelected = new Set(selectedStudentIds)
+    if (newSelected.has(studentId)) {
+      newSelected.delete(studentId)
+    } else {
+      newSelected.add(studentId)
+    }
+    setSelectedStudentIds(newSelected)
+  }
+
+  // Tất cả student trang hiện tại đã được chọn chưa?
+  const isAllCurrentPageSelected =
+    students.length > 0 && students.every((s) => selectedStudentIds.has(s.studentId))
+
+  const handleExportExcel = async () => {
+    if (selectedStudentIds.size === 0) return
+    setIsExporting(true)
+    try {
+      const blob = await counselorApi.exportStudents(
+        Array.from(selectedStudentIds)
+      )
+      const defaultFilename = `Student_Export_${new Date().toISOString().split("T")[0]}.xlsx`
+
+      if ("showSaveFilePicker" in window) {
+        try {
+          const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: defaultFilename,
+            types: [
+              {
+                description: "Excel Spreadsheet",
+                accept: {
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                    [".xlsx"]
+                }
+              }
+            ]
+          })
+          const writable = await fileHandle.createWritable()
+          await writable.write(blob)
+          await writable.close()
+          toast.success("Export successful!")
+          return
+        } catch (err: any) {
+          if (err.name === "AbortError") {
+            // User cancelled the save dialog
+            return
+          }
+          console.warn(
+            "File System Access API failed, falling back to <a> tag",
+            err
+          )
+        }
+      }
+
+      // Fallback to traditional download mechanism
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", defaultFilename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success("Export successful!")
+    } catch (error) {
+      console.error(error)
+      toast.error("Export failed!")
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const pageRef = useRef<HTMLDivElement>(null)
@@ -846,7 +1096,7 @@ export default function CounselorFeedbackPage() {
 
   useGSAP(
     () => {
-      if (filtered.length > 0) {
+      if (students.length > 0) {
         gsap.fromTo(
           ".student-card",
           { y: 30, opacity: 0, rotationX: 10 },
@@ -862,11 +1112,14 @@ export default function CounselorFeedbackPage() {
         )
       }
     },
-    { scope: pageRef, dependencies: [filtered] }
+    { scope: pageRef, dependencies: [students] }
   )
 
   return (
-    <div className="relative min-h-screen bg-transparent font-sans pb-16" ref={pageRef}>
+    <div
+      className="relative min-h-screen bg-transparent font-sans pb-16"
+      ref={pageRef}
+    >
       <SharedAppBackground />
       {/* HEADER (Glass Pill Style) */}
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
@@ -881,7 +1134,9 @@ export default function CounselorFeedbackPage() {
               end
               className={({ isActive }) =>
                 `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
-                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
                 }`
               }
             >
@@ -892,7 +1147,9 @@ export default function CounselorFeedbackPage() {
               to={ROUTES.COUNSELOR_FEEDBACK}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
-                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
                 }`
               }
             >
@@ -958,26 +1215,28 @@ export default function CounselorFeedbackPage() {
             </div>
             <input
               type="text"
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or email (Press Enter)..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="w-full pl-11 pr-4 py-3 text-[14px] font-medium border-none rounded-xl bg-slate-100/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#006064]/20 transition-all shadow-inner"
             />
-          </div>
 
-          {(search || filterUni || filterCareer) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("")
-                setFilterUni("")
-                setFilterCareer("")
-              }}
-              className="flex items-center gap-1.5 text-[13px] font-bold text-slate-500 hover:text-slate-800 px-4 py-2.5 rounded-xl hover:bg-slate-200/50 transition-colors"
-            >
-              <X size={15} /> Clear
-            </button>
-          )}
+            {localSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalSearch("")
+                  setHookSearch("")
+                  setPage(0)
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                title="Clear Search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
 
           <FilterDropdown
             icon={Briefcase}
@@ -995,22 +1254,81 @@ export default function CounselorFeedbackPage() {
             onChange={setFilterUni}
           />
 
-          <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f0fafa] text-[#006064] rounded-xl text-[13px] font-bold shadow-sm border border-[#e0f2fe]">
-              <Users size={16} />
-              <span>{filtered.length} Students</span>
+          <div className="ml-auto flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                const newMode = !isExportMode
+                setIsExportMode(newMode)
+                if (newMode) {
+                  setSize(20)
+                  setPage(0)
+                } else {
+                  setSize(7)
+                  setPage(0)
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold shadow-sm border transition-colors min-w-[160px] justify-center ${
+                isExportMode
+                  ? "bg-slate-700 text-white border-slate-600 hover:bg-slate-800"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <List size={16} />
+              <span>Export Student List</span>
+            </button>
+            {/* Luôn render để giữ layout — chỉ đổi visibility */}
+            {isExportMode && selectedStudentIds.size > 0 && (
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-[13px] font-bold shadow-sm border border-emerald-500 hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                <Download size={16} />
+                <span>{isExporting ? "Exporting..." : "Export"}</span>
+              </button>
+            )}
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f0fafa] text-[#006064] rounded-xl text-[13px] font-bold shadow-sm border border-[#e0f2fe] w-[148px] justify-center tabular-nums whitespace-nowrap shrink-0">
+              <Users size={16} className="shrink-0" />
+              <span>{students.length} on this page</span>
             </div>
           </div>
         </div>
 
         {/* Student list */}
         <div className="bg-white border border-slate-200/80 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.06)] overflow-hidden mt-8">
-          <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            <div className="col-span-4">Student</div>
+          <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider items-center">
+            <div className="col-span-3 flex items-center gap-3">
+              {isExportMode && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const fakeEvent = {
+                      target: { checked: !isAllCurrentPageSelected }
+                    } as any
+                    handleSelectAll(fakeEvent)
+                  }}
+                  className={`w-5 h-5 rounded flex items-center justify-center border transition-all shadow-sm cursor-pointer ${
+                    isAllCurrentPageSelected
+                      ? "bg-[#00838f] border-[#00838f] text-white scale-110"
+                      : "border-slate-300 bg-white text-transparent hover:border-[#00838f]"
+                  }`}
+                >
+                  <Check size={14} strokeWidth={3.5} />
+                </div>
+              )}
+              <span>Student</span>
+              {isExportMode && selectedStudentIds.size > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center px-2 h-5 rounded-full bg-[#00838f] text-white text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">
+                  Đã chọn {selectedStudentIds.size}
+                </span>
+              )}
+            </div>
+            <div className="col-span-3">Email</div>
             <div className="col-span-2">University</div>
-            <div className="col-span-3">Career Path</div>
-            <div className="col-span-2">Progress</div>
-            <div className="col-span-1 text-right">Action</div>
+            <div className="col-span-2">Career Path</div>
+            <div className="col-span-2 text-right">Action</div>
           </div>
 
           {loading ? (
@@ -1020,36 +1338,36 @@ export default function CounselorFeedbackPage() {
                   key={i}
                   className="grid grid-cols-12 gap-4 px-6 py-4 items-center animate-pulse"
                 >
-                  <div className="col-span-4 flex items-center gap-3">
+                  <div className="col-span-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-100 shrink-0" />
                     <div className="space-y-2 flex-1">
                       <div className="h-3.5 bg-slate-100 rounded w-3/4" />
                       <div className="h-3 bg-slate-100 rounded w-1/2" />
                     </div>
                   </div>
+                  <div className="col-span-3">
+                    <div className="h-3.5 bg-slate-100 rounded w-4/5" />
+                  </div>
                   <div className="col-span-2">
                     <div className="h-3.5 bg-slate-100 rounded w-4/5" />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className="h-6 bg-slate-100 rounded-full w-3/4" />
                   </div>
-                  <div className="col-span-2">
-                    <div className="h-3 bg-slate-100 rounded w-full" />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
+                  <div className="col-span-2 flex justify-end">
                     <div className="h-8 w-16 bg-slate-100 rounded-lg" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : students.length === 0 ? (
             <EmptyState
               icon={Users}
               label="No assigned students found matching your criteria"
             />
           ) : (
             <div className="divide-y divide-slate-100">
-              {filtered.map((student) => {
+              {students.map((student) => {
                 const fullName = student.fullName || "Unknown"
                 const initials =
                   fullName
@@ -1059,22 +1377,32 @@ export default function CounselorFeedbackPage() {
                     .join("")
                     .slice(0, 2)
                     .toUpperCase() || "UN"
-                const pct = student.roadmapProgress ?? 0
-                const barColor =
-                  pct === 100
-                    ? "bg-emerald-500"
-                    : pct >= 50
-                      ? "bg-[#00838f]"
-                      : "bg-amber-400"
                 const missingCount = student.missingSkills?.length ?? 0
 
                 return (
                   <div
                     key={student.studentId}
-                    className="student-card grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#f0fafa] transition-all duration-300 group cursor-pointer border-l-4 border-transparent hover:border-[#00838f]"
-                    onClick={() => setSelected(student)}
+                    className={`student-card grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-[#f0fafa] transition-all duration-300 group cursor-pointer border-l-4 hover:border-[#00838f] ${isExportMode && selectedStudentIds.has(student.studentId) ? "bg-[#f0fafa] border-[#00838f]" : "border-transparent"}`}
+                    onClick={() => {
+                      if (isExportMode) {
+                        handleSelectRow(student.studentId)
+                      } else {
+                        setSelected(student)
+                      }
+                    }}
                   >
-                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div className="col-span-3 flex items-center gap-3 min-w-0">
+                      {isExportMode && (
+                        <div
+                          className={`w-5 h-5 rounded flex items-center justify-center border transition-all shadow-sm ${
+                            selectedStudentIds.has(student.studentId)
+                              ? "bg-[#00838f] border-[#00838f] text-white scale-110"
+                              : "border-slate-300 bg-white text-transparent group-hover:border-[#00838f]"
+                          }`}
+                        >
+                          <Check size={14} strokeWidth={3.5} />
+                        </div>
+                      )}
                       <div className="w-10 h-10 rounded-full bg-[#e0f2fe] text-[#006064] flex items-center justify-center text-[13px] font-bold shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                         {initials}
                       </div>
@@ -1088,16 +1416,22 @@ export default function CounselorFeedbackPage() {
                         </p>
                       </div>
                     </div>
+                    {/* Email */}
+                    <div className="col-span-3 min-w-0">
+                      <p className="text-[13px] text-slate-600 truncate flex items-center gap-1.5">
+                        <Mail size={12} className="text-slate-400 shrink-0" />
+                        {student.email || <span className="text-slate-400 italic">No email</span>}
+                      </p>
+                    </div>
+                    {/* University */}
                     <div className="col-span-2 min-w-0">
                       <p className="text-[13px] text-slate-700 truncate flex items-center gap-1.5">
-                        <Building2
-                          size={12}
-                          className="text-slate-400 shrink-0"
-                        />
+                        <Building2 size={12} className="text-slate-400 shrink-0" />
                         {student.university}
                       </p>
                     </div>
-                    <div className="col-span-3 min-w-0 flex items-center">
+                    {/* Career Path */}
+                    <div className="col-span-2 min-w-0 flex items-center">
                       {student.careerPath ? (
                         <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#0284c7] bg-[#e0f2fe] px-3 py-1.5 rounded-full max-w-full truncate border border-[#bae6fd]/50">
                           <Briefcase size={13} className="text-[#0ea5e9]" />
@@ -1109,20 +1443,7 @@ export default function CounselorFeedbackPage() {
                         </span>
                       )}
                     </div>
-                    <div className="col-span-2 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className={`h-full rounded-full ${barColor}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-[12px] font-bold text-slate-700 shrink-0 w-8">
-                          {pct}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-span-1 flex justify-end">
+                    <div className="col-span-2 flex justify-end">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1141,6 +1462,46 @@ export default function CounselorFeedbackPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-6 border-t border-slate-200 bg-slate-50/50 rounded-b-2xl">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+                className="flex items-center gap-1 px-4 py-2 text-[13px] font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                <ArrowLeft size={14} /> Previous
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-colors ${
+                      page === i
+                        ? "bg-[#00838f] text-white shadow-md shadow-[#00838f]/20"
+                        : "bg-transparent text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(page + 1)}
+                className="flex items-center gap-1 px-4 py-2 text-[13px] font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                Next <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>

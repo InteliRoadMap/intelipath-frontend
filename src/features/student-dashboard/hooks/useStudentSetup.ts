@@ -7,8 +7,7 @@ import type { StudentSetupStep } from "../types"
 // Add missing interface
 interface SetupProfile {
   university?: string;
-  yearOfAdmission?: string | number;
-  year_of_admission?: string | number;
+  admissionDate?: string;
   major?: string;
   careerPath?: { id?: string };
   career?: {
@@ -56,7 +55,7 @@ export function useStudentSetup(userId?: string) {
           profileError ||
           !profile ||
           !profile.university ||
-          !(profile.yearOfAdmission || profile.year_of_admission) ||
+          !profile.admissionDate ||
           !profile.major ||
           !isUuid(profileCareerId)
 

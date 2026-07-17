@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { UserHeaderActions, Logo } from "@/components"
+import { UserHeaderActions, Logo, MobileNavMenu } from "@/components"
 import { ROUTES } from "@/shared"
 import type { User } from "@/features/auth/types"
 
@@ -13,13 +13,16 @@ type MentorHeaderProps = {
 export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorHeaderProps) {
   const navigate = useNavigate()
 
+  // Every tab here must have a matching branch in MentorDashboardView, or the tab
+  // lights up and renders nothing. Portfolios and Progress were commented out while
+  // their views stayed live, which left two finished features with no way in.
+  // AI Mentor is deliberately absent: there is no branch behind it yet.
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
-    // { id: "portfolios", label: "Portfolios" },
-    // { id: "progress", label: "Progress" },
+    { id: "portfolios", label: "E-Portfolios" },
+    { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
     { id: "roadmap", label: "Roadmap Editor" },
-    // { id: "aichat", label: "AI Mentor" },
   ]
 
   return (
@@ -27,7 +30,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
       <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
         {/* Left: Logo */}
         <div className="flex items-center">
-          <Logo hideIcon className="scale-[0.85] origin-left" />
+          <Logo iconOnly className="scale-[0.85] origin-left" />
         </div>
 
         {/* Center: Navigation Links in a Glass Pill */}
@@ -47,8 +50,16 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
           ))}
         </div>
 
-        {/* Right: User Actions / Dropdown */}
-        <div className="flex items-center justify-end">
+        {/* Right: User Actions + mobile menu */}
+        <div className="flex items-center justify-end gap-2">
+          <MobileNavMenu
+            items={tabs.map(tab => ({
+              id: tab.id,
+              label: tab.label,
+              active: activeTab === tab.id,
+              onSelect: () => onTabChange(tab.id),
+            }))}
+          />
           <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
             <UserHeaderActions
               user={user}

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, GraduationCap, Search, UserRound } from 'lucide-react'
-import { BaseModal } from '@/components/modals'
-import { UniversitySelect } from '@/components/ui/UniversitySelect'
+import { Info, Search } from 'lucide-react'
 import DatePicker from '@/components/ui/DatePicker'
 import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, formatPrerequisite } from '@/lib/utils'
 import { studentDashboardService } from '../services'
 import type { CareerRole } from '../types'
+import OnboardingShell from './OnboardingShell'
 
 interface StudentProfileSetupModalProps {
   isOpen: boolean
@@ -15,13 +14,15 @@ interface StudentProfileSetupModalProps {
 
 interface FormErrors {
   fullName?: string
-  yob?: string // Added yob
+  yob?: string
   university?: string
-  yearOfAdmission?: string
+  admissionDate?: string
   major?: string
   careerId?: string
   general?: string
 }
+
+const STEP_LABELS = ['Personal', 'Academic', 'Skills']
 
 export default function StudentProfileSetupModal({
   isOpen,
@@ -33,8 +34,7 @@ export default function StudentProfileSetupModal({
   const [yob, setYob] = useState('')
   const [bio, setBio] = useState('')
   const [university, setUniversity] = useState('')
-  const [universityId, setUniversityId] = useState('')
-  const [yearOfAdmission, setYearOfAdmission] = useState('')
+  const [admissionDate, setAdmissionDate] = useState('')
   const [major, setMajor] = useState('Software Engineering')
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerId, setCareerId] = useState('')
@@ -115,11 +115,11 @@ export default function StudentProfileSetupModal({
 
   const goToAcademicStep = () => {
     const nextErrors: FormErrors = {}
-    
+
     if (!fullName.trim()) {
       nextErrors.fullName = 'Enter your full name to continue.'
     }
-    
+
     if (!yob) {
       nextErrors.yob = 'Select your date of birth.'
     } else {
@@ -148,22 +148,23 @@ export default function StudentProfileSetupModal({
 
   const handleSave = async () => {
     const nextErrors: FormErrors = {}
-    const admissionYear = parseInt(String(yearOfAdmission), 10)
-    const currentYear = new Date().getFullYear()
-      if (!universityId && !university) {
-        nextErrors.university = 'Select your university.'
-      }
-    if (!Number.isFinite(admissionYear) || admissionYear < 1970 || admissionYear > currentYear) {
-      nextErrors.yearOfAdmission = 'Enter a valid admission year.'
+    if (!university.trim()) {
+      nextErrors.university = 'Enter your university.'
+    }
+    if (!admissionDate) {
+      nextErrors.admissionDate = 'Select your admission date.'
     } else if (yob) {
-      const birthYear = new Date(yob).getFullYear()
-      if (admissionYear <= birthYear) {
-        nextErrors.yearOfAdmission = 'Admission year must be after your birth year.'
-      } else if (admissionYear - birthYear < 10) {
-        nextErrors.yearOfAdmission = 'Admission year seems too early based on your age.'
+      const birthDate = new Date(yob)
+      const parsed = new Date(admissionDate)
+      if (parsed > new Date()) {
+        nextErrors.admissionDate = 'Admission date cannot be in the future.'
+      } else if (parsed <= birthDate) {
+        nextErrors.admissionDate = 'Admission date must be after your date of birth.'
+      } else if (parsed.getFullYear() - birthDate.getFullYear() < 10) {
+        nextErrors.admissionDate = 'Admission date seems too early based on your age.'
       }
     }
-    
+
     if (!major.trim()) nextErrors.major = 'Enter your major.'
     if (!isUuid(careerId)) nextErrors.careerId = 'Select a valid target career from the list.'
 
@@ -182,8 +183,8 @@ export default function StudentProfileSetupModal({
           bio: bio.trim(),
         }),
         studentDashboardService.updateStudentProfile({
-          university: universityId || university,
-          yearOfAdmission: admissionYear,
+          university: university.trim(),
+          admissionDate,
           major: major.trim(),
           careerId,
         })
@@ -198,260 +199,207 @@ export default function StudentProfileSetupModal({
 
   if (!isOpen) return null
 
+  const isPersonal = step === 1
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
-      <div className="w-full max-w-3xl mx-auto bg-white rounded-[2rem] p-1.5 ring-1 ring-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.12)] relative z-50 flex flex-col max-h-[85vh]">
-        <div className="bg-[#FCFCFC] rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-black/[0.04] flex-1 min-h-0">
-          <div className="px-6 py-5 md:px-8 md:py-6 border-b border-black/[0.04] text-center w-full shrink-0 bg-white">
-            <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight text-slate-900">
-              {step === 1 ? 'Tell us about yourself' : 'Add your academic details'}
-            </h1>
-            <p className="mt-2 text-[15px] font-medium text-slate-500">
-              We use this information to personalize your roadmap.
-            </p>
-            <div className="mt-6 flex justify-center gap-2" aria-label={`Step ${step} of 2`}>
-              <div className={`h-1.5 w-12 rounded-full transition-colors ${step >= 1 ? 'bg-black' : 'bg-slate-200'}`} />
-              <div className={`h-1.5 w-12 rounded-full transition-colors ${step >= 2 ? 'bg-black' : 'bg-slate-200'}`} />
-            </div>
+    <OnboardingShell
+      step={step}
+      totalSteps={3}
+      stepLabels={STEP_LABELS}
+      title={isPersonal ? 'Tell us about yourself' : 'Add your academic details'}
+      subtitle={
+        isPersonal
+          ? 'We use this information to personalize your roadmap.'
+          : 'This helps us recommend relevant skills and milestones.'
+      }
+      error={errors.general}
+      onBack={isPersonal ? undefined : goToProfileStep}
+      onNext={isPersonal ? goToAcademicStep : handleSave}
+      nextLabel={isSaving ? 'Saving…' : isPersonal ? 'Continue' : 'Save & continue'}
+      nextLoading={isSaving}
+    >
+      {isPersonal ? (
+        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field label="Full name" required error={errors.fullName}>
+              <input
+                value={fullName}
+                onChange={(event) => {
+                  setFullName(event.target.value)
+                  setErrors((current) => ({ ...current, fullName: undefined }))
+                }}
+                placeholder="Enter your full name"
+                className={inputClass}
+              />
+            </Field>
           </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 md:p-8 [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
-          {errors.general && (
-            <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50/50 px-5 py-4 text-[14px] font-medium text-rose-600 text-center">
-              {errors.general}
-            </div>
-          )}
+          <Field label="Email" hint="From your account">
+            <input
+              value={user?.email || ''}
+              disabled
+              className={`${inputClass} cursor-not-allowed bg-slate-50 text-slate-400`}
+            />
+          </Field>
 
-          {step === 1 ? (
-            <section>
-              <SectionTitle
-                icon={<UserRound size={18} />}
-                title="Personal information"
-                description="Your email is connected to your login account and cannot be changed here."
+          <Field label="Date of birth" required error={errors.yob}>
+            <DatePicker
+              value={yob}
+              onChange={(val) => {
+                setYob(val)
+                setErrors((current) => ({ ...current, yob: undefined }))
+              }}
+              pastOnly
+              placeholder="Select date of birth"
+            />
+          </Field>
+
+          <div className="sm:col-span-2">
+            <Field label="Bio" hint={`${bio.length}/300 · Optional`}>
+              <textarea
+                value={bio}
+                onChange={(event) => setBio(event.target.value.slice(0, 300))}
+                rows={3}
+                placeholder="Share your interests, goals, or learning experience."
+                className={`${inputClass} h-auto resize-none py-3 leading-relaxed`}
               />
+            </Field>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field label="University" required error={errors.university}>
+              <input
+                type="text"
+                value={university}
+                placeholder="e.g. FPT University"
+                onChange={(event) => {
+                  setUniversity(event.target.value)
+                  setErrors((current) => ({ ...current, university: undefined }))
+                }}
+                className={inputClass}
+              />
+            </Field>
+          </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Field label="Full name" required error={errors.fullName}>
-                    <input
-                      value={fullName}
-                      onChange={(event) => {
-                        setFullName(event.target.value)
-                        setErrors((current) => ({ ...current, fullName: undefined }))
-                      }}
-                      placeholder="Enter your full name"
-                      className={inputClass}
-                    />
-                  </Field>
-                </div>
+          <Field label="Admission date" required error={errors.admissionDate}>
+            <DatePicker
+              value={admissionDate}
+              onChange={(value) => {
+                setAdmissionDate(value)
+                setErrors((current) => ({ ...current, admissionDate: undefined }))
+              }}
+            />
+          </Field>
 
-                <Field label="Email">
-                  <input
-                    value={user?.email || ''}
-                    disabled
-                    className={`${inputClass} cursor-not-allowed bg-slate-100 text-slate-500`}
-                  />
-                </Field>
+          <Field label="Major" required error={errors.major}>
+            <input
+              value={major}
+              onChange={(event) => {
+                setMajor(event.target.value)
+                setErrors((current) => ({ ...current, major: undefined }))
+              }}
+              placeholder="Enter your major"
+              className={inputClass}
+            />
+          </Field>
 
-                <Field label="Date of birth" required error={errors.yob}>
-                  <DatePicker
-                    value={yob}
-                    onChange={(val) => {
-                      setYob(val)
-                      setErrors((current) => ({ ...current, yob: undefined }))
-                    }}
-                    pastOnly
-                    placeholder="Select date of birth"
-                  />
-                </Field>
-
-                <div className="sm:col-span-2">
-                  <Field label="Bio" hint={`${bio.length}/300 · Optional`}>
-                    <textarea
-                      value={bio}
-                      onChange={(event) => setBio(event.target.value.slice(0, 300))}
-                      rows={4}
-                      placeholder="Share your interests, goals, or learning experience."
-                      className={`${inputClass} h-auto min-h-28 resize-none py-4 leading-6 rounded-[24px]`}
-                    />
-                  </Field>
-                </div>
+          <div className="sm:col-span-2">
+            <Field label="Target career" required error={errors.careerId}>
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                <input
+                  value={careerSearch}
+                  disabled={isLoadingCareers}
+                  onChange={(event) => setCareerSearch(event.target.value)}
+                  placeholder={isLoadingCareers ? 'Loading careers…' : 'Search by role or keyword'}
+                  className={`${inputClass} pl-11`}
+                />
               </div>
-            </section>
-          ) : (
-            <section>
-              <SectionTitle
-                icon={<GraduationCap size={19} />}
-                title="Academic information"
-                description="This helps us recommend relevant skills and learning milestones."
-              />
 
-              <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Field label="University" required error={errors.university}>
-                    <UniversitySelect
-                      value={universityId || university}
-                      onChange={(id, name) => {
-                        setUniversityId(id)
-                        setUniversity(name)
-                        setErrors((current) => ({ ...current, university: undefined }))
-                      }}
-                      className="w-full text-[15px]"
-                    />
-                  </Field>
-                </div>
+              <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+                {careerCategories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setCareerCategory(category)}
+                    className={`shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                      careerCategory === category
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
 
-                <Field label="Year of admission" required error={errors.yearOfAdmission}>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1970}
-                    max={new Date().getFullYear()}
-                    placeholder="e.g. 2023"
-                    value={yearOfAdmission}
-                    onChange={(event) => {
-                      setYearOfAdmission(event.target.value)
-                      setErrors((current) => ({ ...current, yearOfAdmission: undefined }))
-                    }}
-                  />
-                </Field>
+              <div className="max-h-72 space-y-4 overflow-y-auto pr-1">
+                {filteredCareerGroups.length > 0 ? (
+                  filteredCareerGroups.map((group) => (
+                    <div key={group.category}>
+                      <p className="mb-2 pl-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                        {group.category}
+                      </p>
+                      <div className="grid gap-2.5 sm:grid-cols-2">
+                        {group.items.map((career) => {
+                          const isSelected = careerId === career.careerId
 
-                <Field label="Major" required error={errors.major}>
-                  <input
-                    value={major}
-                    onChange={(event) => {
-                      setMajor(event.target.value)
-                      setErrors((current) => ({ ...current, major: undefined }))
-                    }}
-                    placeholder="Enter your major"
-                    className={inputClass}
-                  />
-                </Field>
-
-                <div className="sm:col-span-2">
-                  <Field label="Target career" required error={errors.careerId}>
-                    <div className="mt-2">
-                      <div className="relative mb-6">
-                        <Search className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input
-                          value={careerSearch}
-                          disabled={isLoadingCareers}
-                          onChange={(event) => setCareerSearch(event.target.value)}
-                          placeholder={isLoadingCareers ? 'Loading careers...' : 'Search by role, prerequisite, or description'}
-                          className="w-full h-14 pl-14 pr-6 bg-white rounded-full border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all text-[15px] font-medium text-slate-900 placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                      </div>
-
-                      <div className="mb-6 flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
-                        {careerCategories.map((category) => (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => setCareerCategory(category)}
-                            className={`shrink-0 cursor-pointer rounded-full px-5 py-2 text-[13px] font-bold transition-colors ${
-                              careerCategory === category
-                                ? 'bg-black text-white'
-                                : 'bg-white text-slate-600 hover:bg-slate-100 ring-1 ring-black/5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="space-y-6 pb-2">
-                        {filteredCareerGroups.length > 0 ? (
-                          filteredCareerGroups.map((group) => (
-                            <div key={group.category}>
-                              <p className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-widest text-slate-400">
-                                {group.category}
-                              </p>
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                {group.items.map((career) => {
-                                  const isSelected = careerId === career.careerId
-
-                                  return (
-                                    <button
-                                      key={career.careerId}
-                                      type="button"
-                                      onClick={() => {
-                                        setCareerId(career.careerId)
-                                        setErrors((current) => ({ ...current, careerId: undefined }))
-                                      }}
-                                      className={`text-left p-5 rounded-2xl transition-all duration-300 ${
-                                        isSelected
-                                          ? 'bg-black shadow-[0_8px_20px_rgba(0,0,0,0.12)] scale-[1.01] ring-1 ring-black'
-                                          : 'bg-white hover:bg-black/5 ring-1 ring-black/5'
-                                      }`}
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className={`block text-[16px] font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                                          {career.careerName}
-                                        </span>
-                                        {isSelected && (
-                                          <span className="px-2 py-0.5 rounded border border-white/20 bg-white/10 text-[10px] font-bold text-white tracking-widest uppercase">
-                                            Selected
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`line-clamp-2 block text-[13px] leading-relaxed ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
-                                        {formatPrerequisite(career.prerequisite) || career.description || 'Career roadmap from backend data.'}
-                                      </span>
-                                    </button>
-                                  )
-                                })}
+                          return (
+                            <button
+                              key={career.careerId}
+                              type="button"
+                              onClick={() => {
+                                setCareerId(career.careerId)
+                                setErrors((current) => ({ ...current, careerId: undefined }))
+                              }}
+                              className={`rounded-2xl p-4 text-left transition-all duration-200 ring-1 ${
+                                isSelected
+                                  ? 'bg-indigo-600 ring-indigo-600 shadow-[0_8px_20px_-8px_rgba(79,70,229,0.6)]'
+                                  : 'bg-white ring-slate-200 hover:ring-slate-300 hover:shadow-sm'
+                              }`}
+                            >
+                              <div className="mb-1 flex items-center justify-between gap-2">
+                                <span className={`text-[14.5px] font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                  {career.careerName}
+                                </span>
+                                {isSelected && (
+                                  <span className="rounded-md bg-white/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">
+                                    Selected
+                                  </span>
+                                )}
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-2xl border border-dashed border-slate-200 bg-transparent px-4 py-12 text-center text-[15px] font-medium text-slate-500">
-                            {isLoadingCareers ? 'Loading careers...' : 'No careers match your filters.'}
-                          </div>
-                        )}
+                              <span className={`line-clamp-2 block text-[12.5px] leading-relaxed ${isSelected ? 'text-white/75' : 'text-slate-500'}`}>
+                                {formatPrerequisite(career.prerequisite) || career.description || 'Career roadmap from backend data.'}
+                              </span>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
-                  </Field>
-                </div>
-
-                <div className="sm:col-span-2 mt-2 flex gap-3 rounded-md border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-slate-600">
-                  <BookOpen className="mt-0.5 shrink-0 text-[#00767b]" size={17} />
-                  You can update these details later from your profile settings.
-                </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center text-[14px] font-medium text-slate-400">
+                    {isLoadingCareers ? 'Loading careers…' : 'No careers match your filters.'}
+                  </div>
+                )}
               </div>
-            </section>
-          )}
-        </div>
+            </Field>
+          </div>
 
-        <div className="px-6 py-5 md:px-8 border-t border-black/[0.04] bg-white w-full shrink-0 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={goToProfileStep}
-            className={`text-[15px] font-bold text-slate-500 hover:text-slate-900 transition-colors ${
-              step === 1 ? 'invisible' : ''
-            }`}
-          >
-            Back
-          </button>
-
-          <button
-            type="button"
-            onClick={step === 1 ? goToAcademicStep : handleSave}
-            disabled={isSaving}
-            className="flex items-center justify-center gap-2 rounded-full bg-black px-8 py-3.5 text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
-          >
-            {isSaving ? 'Saving...' : step === 1 ? 'Continue' : 'Save and continue'}
-            {!isSaving && <ArrowRight size={18} />}
-          </button>
+          <div className="sm:col-span-2 flex items-start gap-2.5 rounded-xl bg-indigo-50/70 px-4 py-3 text-[13px] text-slate-600">
+            <Info className="mt-0.5 shrink-0 text-indigo-600" size={16} />
+            You can update these details later from your profile settings.
+          </div>
         </div>
-        </div>
-      </div>
-    </div>
+      )}
+    </OnboardingShell>
   )
 }
 
 const inputClass =
-  'w-full h-14 px-5 bg-white rounded-2xl border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all text-[15px] font-medium text-slate-900 placeholder:text-slate-400'
+  'w-full h-12 px-4 bg-white rounded-xl border border-slate-200 text-[15px] font-medium text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed'
 
 function getCareerCategory(career: CareerRole) {
   const text = `${career.careerName} ${career.prerequisite ?? ''} ${career.description ?? ''}`.toLowerCase()
@@ -464,24 +412,6 @@ function getCareerCategory(career: CareerRole) {
   if (/(frontend|front-end|react|css|html|javascript|typescript|web)/.test(text)) return 'Frontend'
 
   return 'General'
-}
-
-function SectionTitle({
-  title,
-  description,
-}: {
-  icon: ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex items-start gap-3 mb-2">
-      <div>
-        <h3 className="text-[18px] font-bold text-slate-900">{title}</h3>
-        <p className="mt-1 text-[14px] text-slate-500">{description}</p>
-      </div>
-    </div>
-  )
 }
 
 function Field({
@@ -499,14 +429,14 @@ function Field({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-2.5 flex items-center justify-between gap-3 text-[14px] font-bold text-slate-900">
+      <span className="mb-1.5 flex items-center justify-between gap-3 text-[13px] font-semibold text-slate-800">
         <span>
           {label} {required && <span className="text-rose-500">*</span>}
         </span>
-        {hint && <span className="text-xs font-normal text-slate-400">{hint}</span>}
+        {hint && <span className="text-[11.5px] font-normal text-slate-400">{hint}</span>}
       </span>
       {children}
-      {error && <span className="mt-1.5 block text-xs font-medium text-rose-600">{error}</span>}
+      {error && <span className="mt-1 block text-[12px] font-medium text-rose-600">{error}</span>}
     </label>
   )
 }

@@ -7,9 +7,9 @@ export interface UpdateUserProfilePayload {
 }
 
 export interface UpdateStudentProfilePayload {
-  universityId?: string | null
   universityName?: string | null
-  yearOfAdmission?: number | null
+  /** ISO date, e.g. "2023-09-05" — what an <input type="date"> already produces. */
+  admissionDate?: string | null
   major?: string | null
   careerId?: string | null
   bio?: string | null
@@ -23,14 +23,13 @@ export interface UpdateMentorProfilePayload {
 
 export interface UpdateCounselorProfilePayload {
   department: string
-  universityId: string
 }
 
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
-  getCounselorProfile: () => mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
-  getUniversities: () => mainClient.get(ENDPOINTS.UNIVERSITIES.LIST),
+  getCounselorProfile: () =>
+    mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),
 
   updateUserProfile: (data: UpdateUserProfilePayload) =>
     mainClient.patch(ENDPOINTS.USERS.PROFILE, data),
@@ -46,26 +45,30 @@ const profileApi = {
 
   updateAvatar: (file: File) => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append("file", file)
     // Remove Content-Type so Axios/Browser can automatically generate it with the required boundary string
-    return mainClient.patch('/users/profile/avatar', formData, {
-      transformRequest: [(data, headers) => {
-        delete headers['Content-Type'];
-        return data;
-      }],
+    return mainClient.patch("/users/profile/avatar", formData, {
+      transformRequest: [
+        (data, headers) => {
+          delete headers["Content-Type"]
+          return data
+        }
+      ]
     })
   },
 
   uploadTranscript: (file: File) => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append("file", file)
     return mainClient.post(ENDPOINTS.STUDENT.UPLOAD_TRANSCRIPT, formData, {
-      transformRequest: [(data, headers) => {
-        delete headers['Content-Type'];
-        return data;
-      }],
+      transformRequest: [
+        (data, headers) => {
+          delete headers["Content-Type"]
+          return data
+        }
+      ]
     })
-  },
+  }
 }
 
 export default profileApi

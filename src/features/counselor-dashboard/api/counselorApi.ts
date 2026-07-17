@@ -1,61 +1,54 @@
 import { ENDPOINTS, mainClient } from "@/shared/api"
 
+import type {
+  UpdateCounselorProfilePayload,
+  CareerStatistics,
+  CounselorResponse,
+  MissingSkillItem,
+  Feedback,
+  FeedbackListResponse,
+  MyStudent,
+  CreateFeedback,
+  PaginatedStudentResponse
+} from "../types"
+
+export type {
+  UpdateCounselorProfilePayload,
+  CareerStatistics,
+  CounselorResponse,
+  MissingSkillItem,
+  Feedback,
+  FeedbackListResponse,
+  MyStudent,
+  CreateFeedback,
+  PaginatedStudentResponse
+}
+
 /**
- * Counselor API Service
- * Fetches dashboard metrics for the Counselor role.
+ * Đóng gói payload thành FormData theo chuẩn multipart/form-data.
+ *
+ * Lý do dùng Blob cho phần "message":
+ *   - Backend yêu cầu phần JSON phải có Content-Type là "application/json".
+ *   - Nếu append thẳng chuỗi string, trình duyệt sẽ gửi Content-Type là "text/plain" → backend bị lỗi.
+ *   - Bọc JSON trong Blob cho phép chỉ định Content-Type chính xác là "application/json".
  */
-export interface UpdateCounselorProfilePayload {
-  fullName: string
-  yob: string
-  bio: string
-  email: string
-  university: string
-  department: string
-}
-export interface CareerStatistics {
-  careerName: string
-  studentCount: number
-}
+const buildFeedbackFormData = (payload: any): FormData => {
+  const formData = new FormData()
 
-export interface CounselorResponse {
-  total: number
-  careerStatistics: Record<string, number> | null
-  missingSkills: Record<string, number>
-  careerName?: string
-}
+  // Tách attachments ra, phần còn lại sẽ được đóng gói thành JSON request
+  const { attachments, ...requestPayload } = payload
 
-export interface MissingSkillItem {
-  skillName: string
-  count: number
-}
+  // Phần 1: Thêm thông tin tin nhắn dưới dạng JSON (gói vào Blob để đặt đúng Content-Type)
+  formData.append(
+    "request",
+    new Blob([JSON.stringify(requestPayload)], { type: "application/json" })
+  )
 
-export interface Feedback {
-  feedbackId: string
-  senderId: string
-  receiverId: string
-  senderName: string
-  content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
-  createAt: string
-  updateAt: string
-}
-
-export interface FeedbackListResponse {
-  feedbacks: Feedback[]
-}
-export interface MyStudent {
-  studentId: string
-  fullName: string
-  email?: string
-  university: string
-  careerPath: string | null
-  roadmapProgress: number
-  missingSkills: MissingSkillItem[]
-}
-export interface CreateFeedback {
-  receiverId: string
-  content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
+  // Phần 2: Thêm từng file đính kèm (nếu có)
+  if (attachments?.length) {
+    attachments.forEach((file: File) => formData.append("files", file))
+  }
+  return formData
 }
 
 const counselorApi = {
@@ -80,7 +73,7 @@ const counselorApi = {
   getLearningActivity: async () => {
     return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
   },
-
+  // counselor dashboard
   getCareerDistribution: async (): Promise<CareerStatistics[]> => {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.CAREER_DISTRIBUTION
@@ -98,52 +91,104 @@ const counselorApi = {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_FEEDBACK
     )
-    const data = res.data?.data || res.data;
-    if (data && Array.isArray(data.content)) return { feedbacks: data.content };
-    if (Array.isArray(data)) return { feedbacks: data };
-    return data;
+    const data = res.data?.data || res.data
+    if (data && Array.isArray(data.content)) return { feedbacks: data.content }
+    if (Array.isArray(data)) return { feedbacks: data }
+    return data
   },
+  // counselor feedbackS
+  getMyStudent: async (
+    page: number = 0,
+    size: number = 7,
+    search?: string,
+    signal?: AbortSignal
+  ): Promise<PaginatedStudentResponse> => {
+    const searchParam =
+      search && search.trim() ? encodeURIComponent(search.trim()) : ""
+    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}?page=${page}&size=${size}${searchParam ? `&search=${searchParam}` : ""}`
 
-  getMyStudent: async (search?: string): Promise<MyStudent[]> => {
-    const url =
-      search && search.trim()
-        ? `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}/${encodeURIComponent(search.trim())}`
-        : ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST
     try {
-      const res = await mainClient.get(url)
-      const data = res.data?.data || res.data;
-      if (data && Array.isArray(data.content)) return data.content;
-      if (Array.isArray(data)) return data;
-      return data?.students ?? [];
+      const res = await mainClient.get(url, { signal })
+      const data = res.data?.data || res.data
+
+      return {
+        totalPages: data?.totalPages ?? 1,
+        currentPage: data?.currentPage ?? 0,
+        students: data?.students ?? data?.content ?? []
+      }
     } catch {
-      return [];
+      return { totalPages: 1, currentPage: 0, students: [] }
     }
+  },
+  // New Add
+  getStudentInfo: async (
+    studentId: string,
+    signal?: AbortSignal
+  ): Promise<any> => {
+    const res = await mainClient.get(
+      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId),
+      { signal }
+    )
+    return res.data?.data || res.data
   },
   getHistoryFeedback: async (
     studentId: string
   ): Promise<FeedbackListResponse> => {
     const res = await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.HISTORY_FEEDBACK(studentId)
+      ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_INFO(studentId)
     )
     return res.data
   },
   createFeedback: async (payload: CreateFeedback): Promise<CreateFeedback> => {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.CREATE_FEEDBACK,
-      payload
+      buildFeedbackFormData(payload),
+      // Let the browser set multipart/form-data with the boundary (mainClient
+      // otherwise forces application/json).
+      {
+        transformRequest: [
+          (data, headers) => {
+            delete headers["Content-Type"]
+            return data
+          },
+        ],
+      }
     )
     return res.data
   },
-  modifyFeedback: async (payload: { feedbackId: string, content: string, type: string }): Promise<any> => {
+  modifyFeedback: async (payload: {
+    feedbackId: string
+    content: string
+    type: string
+    attachments?: File[]
+  }): Promise<any> => {
     const res = await mainClient.patch(
       ENDPOINTS.COUNSELOR_DASHBOARD.MODIFY_FEEDBACK,
-      payload
+      buildFeedbackFormData(payload),
+      // Let the browser set multipart/form-data with the boundary (mainClient
+      // otherwise forces application/json).
+      {
+        transformRequest: [
+          (data, headers) => {
+            delete headers["Content-Type"]
+            return data
+          },
+        ],
+      }
     )
     return res.data
   },
   deleteFeedback: async (feedbackId: string): Promise<any> => {
-    const res = await mainClient.delete(
+    const res = await mainClient.patch(
       ENDPOINTS.COUNSELOR_DASHBOARD.DELETE_FEEDBACK(feedbackId)
+    )
+    return res.data
+  },
+  exportStudents: async (studentIds: string[]): Promise<Blob> => {
+    const res = await mainClient.post(
+      ENDPOINTS.COUNSELOR_DASHBOARD.EXPORT_STUDENTS,
+      { studentIds },
+      { responseType: "blob" }
     )
     return res.data
   }

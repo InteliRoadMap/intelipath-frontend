@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { SharedAppBackground } from '@/components/ui';
+import { Select } from "@/components";
+import { SharedAppBackground, Skeleton } from '@/components/ui';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 import { RecruitmentPost } from '../types/marketPulse';
 import StudentHeader from './StudentHeader';
@@ -7,95 +8,12 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
+import { normalizeTags } from '@/utils/tags';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
 import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';
 import { TopCompany, SkillTrend, SalaryBracket } from '../types/marketPulse';
 
-// Mock Data based on SQL Schema
-const mockData: RecruitmentPost[] = [
-  {
-    post_id: '1',
-    company_id: 'c1',
-    recruitment_id: 'r1',
-    company: {
-      company_id: 'c1',
-      company_link: 'https://techcorp.com',
-      logo: 'https://logo.clearbit.com/google.com',
-      name: 'TechCorp Solutions',
-      introduction: {},
-      info: {},
-      contact: {}
-    },
-    recruitment: {
-      recruitment_id: 'r1',
-      recruitment_link: '#',
-      title: 'Senior Frontend Developer (React)',
-      salary: '$120,000 - $150,000',
-      location: 'Remote, US',
-      experience: '5+ Years',
-      application_deadline: '2026-08-15',
-      tags: ['React', 'TypeScript', 'Tailwind'],
-      descriptions: {},
-      general_infos: {},
-      related_tags: []
-    }
-  },
-  {
-    post_id: '2',
-    company_id: 'c2',
-    recruitment_id: 'r2',
-    company: {
-      company_id: 'c2',
-      company_link: 'https://innovateai.io',
-      logo: 'https://logo.clearbit.com/openai.com',
-      name: 'Innovate AI',
-      introduction: {},
-      info: {},
-      contact: {}
-    },
-    recruitment: {
-      recruitment_id: 'r2',
-      recruitment_link: '#',
-      title: 'Machine Learning Engineer',
-      salary: 'Competitive',
-      location: 'San Francisco, CA',
-      experience: '3-5 Years',
-      application_deadline: '2026-07-30',
-      tags: ['Python', 'PyTorch', 'AWS'],
-      descriptions: {},
-      general_infos: {},
-      related_tags: []
-    }
-  },
-  {
-    post_id: '3',
-    company_id: 'c3',
-    recruitment_id: 'r3',
-    company: {
-      company_id: 'c3',
-      company_link: 'https://fintech.com',
-      logo: 'https://logo.clearbit.com/stripe.com',
-      name: 'Stripe',
-      introduction: {},
-      info: {},
-      contact: {}
-    },
-    recruitment: {
-      recruitment_id: 'r3',
-      recruitment_link: '#',
-      title: 'Fullstack Engineer',
-      salary: '$140k - $180k',
-      location: 'New York, NY',
-      experience: '4+ Years',
-      application_deadline: '2026-09-01',
-      tags: ['Node.js', 'React', 'PostgreSQL'],
-      descriptions: {},
-      general_infos: {},
-      related_tags: []
-    }
-  }
-];
 
 interface MarketPulsePageViewProps {
   hideLayout?: boolean;
@@ -136,7 +54,15 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
         
         // Handle RecruitmentPostResponse (which might have a nested list of posts depending on backend)
         const postsData = postsRes.data?.data || postsRes.data || [];
-        setRecruitmentPosts(Array.isArray(postsData) ? postsData : []);
+        // Normalize each post's tags so chips, category grouping and search all
+        // work on clean strings instead of raw scraped JSON.
+        const normalizedPosts = (Array.isArray(postsData) ? postsData : []).map((post: RecruitmentPost) => ({
+          ...post,
+          recruitment: post.recruitment
+            ? { ...post.recruitment, tags: normalizeTags(post.recruitment.tags) }
+            : post.recruitment,
+        }));
+        setRecruitmentPosts(normalizedPosts);
       } catch (error) {
         console.error("Failed to fetch market pulse data", error);
       } finally {
@@ -210,24 +136,36 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
       
       <div className="max-w-6xl mx-auto w-full px-6 relative z-10 flex flex-col h-full gap-8">
         
-        {/* Header Section */}
-        <div className="flex flex-col gap-4">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Market Pulse
-          </h1>
-          <p className="text-slate-600 max-w-2xl text-[16px]">
-            Discover the latest recruitment opportunities from top tech companies tailored to your roadmap.
-          </p>
+        {/* Header — sits on the background, no card chrome */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-2.5">
+            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00838f]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00838f]" />
+              Live job market
+            </span>
+            <h1 className="text-[36px] font-extrabold leading-none tracking-tight text-slate-900">
+              Market Pulse
+            </h1>
+            <p className="max-w-xl text-[15px] leading-relaxed text-slate-500">
+              In-demand skills, salary signals and open roles — matched to your roadmap.
+            </p>
+          </div>
+          {!loading && recruitmentPosts.length > 0 && (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-black tabular-nums text-slate-900">{recruitmentPosts.length}</span>
+              <span className="text-[13px] font-semibold text-slate-400">open roles</span>
+            </div>
+          )}
         </div>
 
         {/* Dashboard Bento Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top Hiring Companies */}
-          <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl p-6 lg:row-span-2 flex flex-col">
+          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:row-span-2 flex flex-col">
             <h3 className="text-[16px] font-bold text-slate-800 mb-6">Top Hiring Companies</h3>
             {loading ? (
-              <div className="animate-pulse flex flex-col gap-4">
-                {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl w-full"></div>)}
+              <div className="flex flex-col gap-4">
+                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-12 rounded-xl w-full" />)}
               </div>
             ) : topCompanies.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -241,182 +179,174 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           </div>
 
           {/* Trending Skills */}
-          <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl p-6 lg:col-span-2">
+          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[16px] font-bold text-slate-800">Trending Skills Demand</h3>
-              <select 
+              <Select
                 value={trendingTimeRange}
                 onChange={(e) => setTrendingTimeRange(e.target.value)}
-                className="text-[12px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none cursor-pointer"
+                wrapperClassName="w-auto"
+                className="h-8 rounded-lg bg-slate-50 text-[12px] font-bold text-slate-500"
               >
                 <option value="30days">Last 30 Days</option>
                 <option value="3months">Last 3 Months</option>
-              </select>
+              </Select>
             </div>
             {loading ? (
-              <div className="h-[300px] bg-slate-50 animate-pulse rounded-xl w-full"></div>
+              <Skeleton className="h-[300px] rounded-xl w-full" />
             ) : (
               <TrendingSkillsChart data={trendingSkills} />
             )}
           </div>
 
           {/* Salary Overview */}
-          <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl p-6 lg:col-span-2">
+          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:col-span-2">
             <h3 className="text-[16px] font-bold text-slate-800 mb-2">Salary Overview</h3>
             <p className="text-[13px] text-slate-500 mb-6">Distribution of open jobs across different salary ranges.</p>
             {loading ? (
-              <div className="h-[300px] bg-slate-50 animate-pulse rounded-xl w-full"></div>
+              <Skeleton className="h-[300px] rounded-xl w-full" />
             ) : (
               <SalaryOverviewChart data={salaryOverview} />
             )}
           </div>
         </div>
 
-        <div className="w-full h-px bg-slate-200 my-2"></div>
+        {/* Open positions — section header + toolbar live directly on the background */}
+        <div className="flex flex-col gap-4 pt-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-[20px] font-bold tracking-tight text-slate-900">Open positions</h2>
+              <span className="rounded-full bg-slate-900/[0.06] px-2 py-0.5 text-[12px] font-bold tabular-nums text-slate-500">
+                {filteredData.length}
+              </span>
+            </div>
 
-        {/* Toolbar Section */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search jobs or companies..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-full pl-10 pr-4 py-2.5 text-[14px] outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all shadow-sm"
-            />
-          </div>
-          
-          <div className="flex gap-2 w-full md:w-auto">
-            <select 
-              className="px-4 py-2 w-full md:w-[220px] bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm outline-none cursor-pointer truncate"
-              value={selectedTag || ''}
-              onChange={(e) => setSelectedTag(e.target.value || null)}
-            >
-              <option value="">Filter by Tags</option>
-              {tagGroups.map(group => (
-                <optgroup key={group.category} label={group.category}>
-                  {group.tags.map(tag => (
-                    <option key={tag} value={tag}>{tag}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-
-            <button 
-              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-1"
-            >
-              Sort by Date {sortOrder === 'desc' ? '↓' : '↑'}
-            </button>
-          </div>
-        </div>
-
-        {/* Data Table Section */}
-        <div className="bg-white/80 backdrop-blur-xl border border-slate-200 shadow-sm rounded-2xl overflow-hidden min-h-[600px]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/50">
-                  <th className="px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-slate-500">Company & Role</th>
-                  <th className="px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-slate-500 hidden md:table-cell">Details</th>
-                  <th className="px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Deadline</th>
-                  <th className="px-6 py-4 text-[12px] font-bold uppercase tracking-wider text-slate-500 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredData.map((post) => (
-                  <tr key={post.post_id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="flex items-start gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 shadow-sm p-1.5 shrink-0 flex items-center justify-center">
-                          <img 
-                            src={post.company?.logo} 
-                            alt={post.company?.name}
-                            className="w-full h-full object-contain rounded-lg"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = 'https://placehold.co/40x40/f8fafc/94a3b8?text=Logo';
-                            }}
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <h3 className="text-[15px] font-bold text-slate-900 group-hover:text-[#00838f] transition-colors leading-tight mb-1.5">
-                            {post.recruitment?.title}
-                          </h3>
-                          <div className="text-[13px] font-medium text-slate-600 truncate max-w-[300px] mb-2">
-                            {post.company?.name}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {post.recruitment?.tags?.slice(0,3).map(tag => (
-                              <span key={tag} className="px-2 py-0.5 rounded-md bg-[#00838f]/10 text-[#00838f] border border-[#00838f]/20 text-[10px] font-bold uppercase tracking-wider">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 hidden md:table-cell align-top">
-                      <div className="flex flex-col gap-2.5 min-w-[180px]">
-                        <div className="flex items-start gap-2 text-[13px] text-slate-600">
-                          <MapPin size={15} className="text-slate-400 mt-0.5 shrink-0" /> 
-                          <span className="leading-tight">{post.recruitment?.location}</span>
-                        </div>
-                        <div className="flex items-start gap-2 text-[13px] text-slate-600">
-                          <DollarSign size={15} className="text-slate-400 mt-0.5 shrink-0" /> 
-                          <span className="leading-tight font-semibold text-slate-700">{post.recruitment?.salary}</span>
-                        </div>
-                        <div className="flex items-start gap-2 text-[13px] text-slate-600">
-                          <Briefcase size={15} className="text-slate-400 mt-0.5 shrink-0" /> 
-                          <span className="leading-tight">{post.recruitment?.experience}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 hidden lg:table-cell align-top">
-                      <div className="flex items-start gap-2 text-[13px] font-medium text-slate-600">
-                        <Calendar size={14} className="text-slate-400 mt-0.5 shrink-0" /> 
-                        <span className="leading-tight">
-                          {new Date(post.recruitment?.application_deadline || '').toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 align-middle text-right">
-                      <a 
-                        href={post.recruitment?.recruitment_link || '#'}
-                        target={post.recruitment?.recruitment_link ? "_blank" : "_self"}
-                        rel="noreferrer"
-                        onClick={(e) => {
-                          if (!post.recruitment?.recruitment_link || post.recruitment.recruitment_link === '#') {
-                            e.preventDefault();
-                            // If no link is provided, fallback to opening the company website if available
-                            if (post.company?.company_link) {
-                              window.open(post.company.company_link, '_blank');
-                            }
-                          }
-                        }}
-                        className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-slate-900 !text-white text-[13px] font-bold rounded-full hover:bg-[#00838f] transition-all shadow-sm cursor-pointer"
-                      >
-                        View <ChevronRight size={14} strokeWidth={3} />
-                      </a>
-                    </td>
-                  </tr>
+            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end md:flex-none">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search jobs or companies…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-full border border-slate-200/70 bg-white/70 py-2 pl-9 pr-4 text-[13px] outline-none backdrop-blur-sm transition-all focus:border-[#00838f] focus:bg-white focus:ring-2 focus:ring-[#00838f]/15"
+                />
+              </div>
+              <Select
+                wrapperClassName="w-full sm:w-[200px]"
+                className="rounded-full border-slate-200/70 bg-white/70 text-[13px] font-semibold text-slate-700 backdrop-blur-sm"
+                value={selectedTag || ''}
+                onChange={(e) => setSelectedTag(e.target.value || null)}
+              >
+                <option value="">All tags</option>
+                {tagGroups.map(group => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.tags.map(tag => (
+                      <option key={tag} value={tag}>{tag}</option>
+                    ))}
+                  </optgroup>
                 ))}
-                
-                {filteredData.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                      No recruitment posts found matching your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              </Select>
+              <button
+                onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                className="flex items-center justify-center gap-1.5 rounded-full border border-slate-200/70 bg-white/70 px-4 py-2 text-[13px] font-semibold text-slate-600 backdrop-blur-sm transition-colors hover:bg-white hover:text-slate-900"
+              >
+                Deadline {sortOrder === 'desc' ? '↓' : '↑'}
+              </button>
+            </div>
           </div>
+
+          {/* Job list — barely-there surface, hairline-separated rows that light up on hover */}
+          {loading ? (
+            <div className="flex flex-col gap-2">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-[88px] rounded-xl bg-white/40" />
+              ))}
+            </div>
+          ) : filteredData.length === 0 ? (
+            <div className="rounded-2xl bg-white/30 py-16 text-center text-[13px] text-slate-500 ring-1 ring-slate-900/[0.04]">
+              No recruitment posts found matching your search.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200/60 overflow-hidden rounded-2xl bg-white/25 ring-1 ring-slate-900/[0.04]">
+              {filteredData.map((post) => (
+                <div
+                  key={post.post_id}
+                  className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-white/70 sm:px-5"
+                >
+                  {/* Logo */}
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 ring-1 ring-slate-200/70">
+                    <img
+                      src={post.company?.logo}
+                      alt={post.company?.name}
+                      className="h-full w-full rounded-lg object-contain"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://placehold.co/40x40/f8fafc/94a3b8?text=Logo';
+                      }}
+                    />
+                  </div>
+
+                  {/* Main */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <h3 title={post.recruitment?.title} className="truncate text-[15px] font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#00838f]">
+                      {post.recruitment?.title}
+                    </h3>
+                    <div className="truncate text-[12.5px] font-medium text-slate-500">
+                      {post.company?.name}
+                    </div>
+                    {/* Inline meta */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate-500">
+                      {post.recruitment?.location && (
+                        <span className="inline-flex items-center gap-1.5"><MapPin size={13} className="text-slate-400" />{post.recruitment.location}</span>
+                      )}
+                      {post.recruitment?.salary && (
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><DollarSign size={13} className="text-slate-400" />{post.recruitment.salary}</span>
+                      )}
+                      {post.recruitment?.experience && (
+                        <span className="inline-flex items-center gap-1.5"><Briefcase size={13} className="text-slate-400" />{post.recruitment.experience}</span>
+                      )}
+                    </div>
+                    {post.recruitment?.tags && post.recruitment.tags.length > 0 && (
+                      <div className="mt-0.5 flex flex-wrap gap-1.5">
+                        {post.recruitment.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className="rounded-md bg-[#00838f]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#00838f]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action */}
+                  <div className="flex shrink-0 flex-col items-end gap-2.5">
+                    {post.recruitment?.application_deadline && (
+                      <span className="hidden items-center gap-1.5 text-[12px] font-medium text-slate-500 sm:inline-flex">
+                        <Calendar size={13} className="text-slate-400" />
+                        {new Date(post.recruitment.application_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                    <a
+                      href={post.recruitment?.recruitment_link || '#'}
+                      target={post.recruitment?.recruitment_link ? "_blank" : "_self"}
+                      rel="noreferrer"
+                      onClick={(e) => {
+                        if (!post.recruitment?.recruitment_link || post.recruitment.recruitment_link === '#') {
+                          e.preventDefault();
+                          if (post.company?.company_link) {
+                            window.open(post.company.company_link, '_blank');
+                          }
+                        }
+                      }}
+                      className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-bold !text-white transition-all hover:bg-[#00838f] group-hover:shadow-sm"
+                    >
+                      View <ChevronRight size={13} strokeWidth={3} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         
       </div>

@@ -1,5 +1,5 @@
 import BaseModal from "../components/modals/BaseModal"
-import { DatePicker } from "@/components"
+import { DatePicker, Select } from "@/components"
 import {
   User,
   Mail,
@@ -8,7 +8,6 @@ import {
   Building2,
   GraduationCap,
   ArrowRight,
-  ChevronDown
 } from "lucide-react"
 import { useStudentOnboarding } from "../hooks/useStudentOnboarding"
 
@@ -31,8 +30,8 @@ export default function StudentOnboardingModal({
     setBio,
     university,
     setUniversity,
-    yearOfAdmission,
-    setYearOfAdmission,
+    admissionDate,
+    setAdmissionDate,
     major,
     isSaving,
     errors,
@@ -159,11 +158,11 @@ export default function StudentOnboardingModal({
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                   <Calendar className="w-3.5 h-3.5 text-brand-blue" />
-                  Year of Admission
+                  Admission Date
                 </label>
                 <DatePicker
-                  value={yearOfAdmission ?? ''}
-                  onChange={(val) => setYearOfAdmission(val)}
+                  value={admissionDate ?? ''}
+                  onChange={(val) => setAdmissionDate(val)}
                 />
               </div>
 
@@ -172,20 +171,9 @@ export default function StudentOnboardingModal({
                   <GraduationCap className="w-3.5 h-3.5 text-brand-blue" />
                   Major <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    value={major}
-                    disabled
-                    className="w-full bg-slate-50 cursor-not-allowed border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-500 appearance-none focus:outline-none transition-all shadow-sm"
-                  >
-                    <option value="Software Engineering">
-                      Software Engineering
-                    </option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                  </div>
-                </div>
+                <Select value={major} disabled className="rounded-xl">
+                  <option value="Software Engineering">Software Engineering</option>
+                </Select>
               </div>
             </div>
           </div>

@@ -46,11 +46,13 @@ const renderActiveShape = (props: any) => {
 export default function SalaryOverviewChart({ data }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (!data || data.length === 0) return null;
+  const brackets = data || [];
+  // The backend always returns the five brackets; treat "all zero" as no data.
+  const hasData = brackets.some(b => (Number(b.jobCount) || 0) > 0);
 
   const chartConfig = React.useMemo(() => {
     const config: Record<string, any> = {};
-    data.forEach((entry, index) => {
+    brackets.forEach((entry, index) => {
       const labelStr = String(entry.category || `Bracket ${index}`);
       const safeKey = labelStr.replace(/[^a-zA-Z0-9]/g, "");
       config[safeKey] = {
@@ -59,7 +61,15 @@ export default function SalaryOverviewChart({ data }: Props) {
       };
     });
     return config;
-  }, [data]);
+  }, [brackets]);
+
+  if (!hasData) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-[13px] font-medium text-slate-500">No data available at the moment.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-[300px]">
@@ -68,7 +78,7 @@ export default function SalaryOverviewChart({ data }: Props) {
           <Pie
             activeIndex={activeIndex}
             activeShape={renderActiveShape}
-            data={data}
+            data={brackets}
             cx="50%"
             cy="50%"
             innerRadius={80}
@@ -78,7 +88,7 @@ export default function SalaryOverviewChart({ data }: Props) {
             nameKey="category"
             onMouseEnter={(_, index) => setActiveIndex(index)}
           >
-            {data.map((entry, index) => {
+            {brackets.map((entry, index) => {
               const labelStr = String(entry.category || `Bracket ${index}`);
               const safeKey = labelStr.replace(/[^a-zA-Z0-9]/g, "");
               return (

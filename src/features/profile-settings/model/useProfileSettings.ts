@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
-import { isUuid } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
+import { toast } from "@/utils/toast"
 
 export interface ProfileData {
   full_name: string
@@ -9,12 +9,14 @@ export interface ProfileData {
   bio: string
   email: string
   role: string
-  // Student & Counselor
+  // Student (free text, display only)
   university: string
-  universityId?: string
+  /** Read-only, set by the backend: FPT accounts get the FPT curriculum and its material. */
+  accountType?: "FPT" | "OTHER"
   // Student
   major: string
-  year_of_admission: string
+  /** ISO date, as an <input type="date"> holds it. */
+  admission_date: string
   // Mentor
   company: string
   industry_focus: string
@@ -22,6 +24,7 @@ export interface ProfileData {
   department: string
   // Common
   github_profile?: string
+  avatar_url?: string
 }
 
 const EMPTY_PROFILE: ProfileData = {
@@ -31,22 +34,22 @@ const EMPTY_PROFILE: ProfileData = {
   email: "",
   role: "Student",
   university: "",
-  universityId: "",
+  accountType: "OTHER",
   major: "",
-  year_of_admission: "",
+  admission_date: "",
   company: "",
   industry_focus: "",
   department: "",
-  github_profile: ""
+  github_profile: "",
+  avatar_url: ""
 }
 
 export function useProfileSettings() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [profileData, setProfileData] = useState<ProfileData>(EMPTY_PROFILE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -59,13 +62,19 @@ export function useProfileSettings() {
     try {
       let data: any = {}
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const res = await Promise.race([profileApi.getStudentProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getStudentProfile(),
+          timeout
+        ])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         const res = await Promise.race([profileApi.getMentorProfile(), timeout])
         data = (res as any).data
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
-        const res = await Promise.race([profileApi.getCounselorProfile(), timeout])
+        const res = await Promise.race([
+          profileApi.getCounselorProfile(),
+          timeout
+        ])
         data = (res as any).data
       }
 
@@ -73,23 +82,66 @@ export function useProfileSettings() {
         ...EMPTY_PROFILE,
         ...user,
         ...data,
-        full_name: data?.fullName || data?.userInfo?.fullName || user?.fullName || data?.full_name || "",
-        email: data?.email || data?.userInfo?.email || user?.email || "",
-        role: data?.role || user?.role || "Student",
-        major: data?.major || EMPTY_PROFILE.major,
-        year_of_admission: data?.yearOfAdmission || data?.year_of_admission || "",
-        // Show the university NAME; guard against a UUID slipping into the display.
-        university: (() => {
-          const raw = data?.university || data?.universityName || ""
-          return raw && !isUuid(raw) ? raw : ""
-        })(),
-        universityId: data?.universityId || data?.userInfo?.universityId || "",
-        industry_focus: data?.industryFocus || data?.industry_focus || "",
-        bio: data?.bio || data?.userInfo?.bio || (user as any)?.bio || "",
-        yob: (data?.yob || data?.userInfo?.yob || (user as any)?.yob || "")?.toString().split("T")[0] || ""
+        full_name:
+          data?.fullName ||
+          data?.user?.fullName ||
+          data?.userInfo?.fullName ||
+          user?.fullName ||
+          data?.full_name ||
+          "",
+        email:
+          data?.email ||
+          data?.user?.email ||
+          data?.userInfo?.email ||
+          user?.email ||
+          "",
+        role: data?.role || data?.user?.role || user?.role || "Student",
+        major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
+        // The API sends an ISO date; <input type="date"> wants yyyy-MM-dd with no time.
+        admission_date: String(
+          data?.admissionDate ?? data?.student?.admissionDate ?? ""
+        ).split("T")[0],
+        university:
+          data?.university ||
+          data?.userInfo?.university ||
+          data?.student?.university ||
+          "",
+        accountType: data?.accountType || data?.student?.accountType || "OTHER",
+        department:
+          data?.department || data?.academicCounselor?.department || "",
+        industry_focus:
+          data?.industryFocus ||
+          data?.industry_focus ||
+          data?.industryMentor?.industryFocus ||
+          "",
+        bio:
+          data?.bio ||
+          data?.user?.bio ||
+          data?.userInfo?.bio ||
+          (user as any)?.bio ||
+          "",
+        avatar_url:
+          data?.avatarUrl ||
+          data?.user?.avatarUrl ||
+          data?.userInfo?.avatarUrl ||
+          user?.avatarUrl ||
+          "",
+        yob:
+          (
+            data?.yob ||
+            data?.user?.yob ||
+            data?.userInfo?.yob ||
+            (user as any)?.yob ||
+            ""
+          )
+            ?.toString()
+            .split("T")[0] || ""
       })
     } catch (err) {
-      console.warn("[ProfileSettingsPage] Cannot load profile (API may be offline):", err)
+      console.warn(
+        "[ProfileSettingsPage] Cannot load profile (API may be offline):",
+        err
+      )
       // Fallback to user data from auth context so form still shows something
       setProfileData({
         ...EMPTY_PROFILE,
@@ -99,7 +151,6 @@ export function useProfileSettings() {
       })
     } finally {
       setLoading(false)
-
     }
   }
 
@@ -114,31 +165,38 @@ export function useProfileSettings() {
   const handleSave = async () => {
     setSaving(true)
     setError(null)
-    setSuccess(null)
 
     if (profileData.yob) {
       const birthDate = new Date(profileData.yob)
       const today = new Date()
       if (birthDate >= today) {
-        setError('Date of birth cannot be in the future.')
+        setError("Date of birth cannot be in the future.")
         setSaving(false)
         return
       } else if (today.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('You must be at least 10 years old.')
+        setError("You must be at least 10 years old.")
         setSaving(false)
         return
       }
     }
 
-    if (user?.role?.toUpperCase() === "STUDENT" && profileData.year_of_admission && profileData.yob) {
+    if (
+      user?.role?.toUpperCase() === "STUDENT" &&
+      profileData.admission_date &&
+      profileData.yob
+    ) {
       const birthDate = new Date(profileData.yob)
-      const admissionDate = new Date(profileData.year_of_admission)
-      if (admissionDate <= birthDate) {
-        setError('Admission date must be after your date of birth.')
+      const admissionDate = new Date(profileData.admission_date)
+      if (admissionDate > new Date()) {
+        setError("Admission date cannot be in the future.")
+        setSaving(false)
+        return
+      } else if (admissionDate <= birthDate) {
+        setError("Admission date must be after your date of birth.")
         setSaving(false)
         return
       } else if (admissionDate.getFullYear() - birthDate.getFullYear() < 10) {
-        setError('Admission date seems too early based on your age.')
+        setError("Admission date seems too early based on your age.")
         setSaving(false)
         return
       }
@@ -154,24 +212,14 @@ export function useProfileSettings() {
       ]
 
       if (user?.role?.toUpperCase() === "STUDENT") {
-        const isUnivUuid = isUuid(profileData.universityId)
-        let yearNum: number | null = null
-        if (profileData.year_of_admission) {
-          const parsed = parseInt(String(profileData.year_of_admission), 10)
-          if (Number.isFinite(parsed)) {
-            yearNum = parsed
-          }
-        }
-        // The University field is free text holding the display name. Never let a
-        // UUID leak into universityName; the id (if any) goes to universityId only.
-        const typedUniversity = (profileData.university || "").trim()
         tasks.push(
           profileApi.updateStudentProfile({
-            universityId: isUnivUuid ? profileData.universityId : null,
-            universityName: typedUniversity && !isUuid(typedUniversity) ? typedUniversity : null,
-            yearOfAdmission: yearNum,
-            major: profileData.major,
-          } as any)
+            universityName: profileData.university,
+            admissionDate: profileData.admission_date || null,
+            major: profileData.major
+            // Original: careerId: ""
+            // Removed to prevent wiping out data
+          })
         )
       } else if (user?.role?.toUpperCase() === "MENTOR") {
         tasks.push(
@@ -183,19 +231,37 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department,
-            universityId: profileData.universityId || ""
+            department: profileData.department
           })
         )
       }
 
       await Promise.all(tasks)
 
-      setSuccess("Profile saved successfully!")
-      setTimeout(() => setSuccess(null), 4000)
+      toast.success("Profile saved.")
     } catch (err) {
       console.error("[ProfileSettingsPage] Error saving profile:", err)
       setError("Save failed. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await profileApi.updateAvatar(file)
+      // the backend returns the updated UserResponse, which has avatarUrl
+      const updatedUser = res.data?.data || res.data
+      const newUrl = updatedUser?.avatarUrl || ""
+
+      setProfileData((prev) => ({ ...prev, avatar_url: newUrl }))
+      updateUser({ avatarUrl: newUrl })
+      toast.success("Avatar updated.")
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error uploading avatar:", err)
+      setError("Failed to upload avatar. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -213,9 +279,9 @@ export function useProfileSettings() {
     loading,
     saving,
     error,
-    success,
     handleChange,
     handleSave,
+    handleAvatarUpload,
     loadProfile,
     displayInitial,
     role,

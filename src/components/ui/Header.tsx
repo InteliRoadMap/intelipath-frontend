@@ -16,7 +16,7 @@ export default function Header() {
   return (
     <header className="pointer-events-auto border-b border-white/20 bg-white/30 backdrop-blur-[20px] shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
       <div className="mx-auto flex min-h-[74px] w-full max-w-[1440px] items-center justify-between gap-5 px-4 md:px-8">
-        <Logo hideIcon className="origin-left scale-[0.82] text-slate-950 sm:scale-90" />
+        <Logo iconOnly className="origin-left scale-[0.82] text-slate-950 sm:scale-90" />
 
         <nav className="hidden items-center gap-7 text-[13px] font-semibold text-slate-500 lg:flex">
           <a href="#product" className="transition-colors hover:text-slate-950">Product</a>
