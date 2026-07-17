@@ -99,6 +99,9 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
     uiData.hero.name = backendData.userInfo.fullName || uiData.hero.name;
     uiData.hero.objective = backendData.userInfo.bio || uiData.hero.objective;
     uiData.slug = backendData.userInfo.portfolioSlug;
+    // The slug addresses the page; the id addresses the person. A viewer who
+    // arrived by slug still needs this to send feedback back.
+    uiData.studentId = backendData.userInfo.userId;
     
     // Update contact email if exists
     if (backendData.userInfo.email) {

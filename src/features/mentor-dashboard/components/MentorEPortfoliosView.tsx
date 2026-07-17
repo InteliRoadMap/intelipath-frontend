@@ -17,6 +17,7 @@ const PANEL =
 /** Exactly the fields /mentor/feedback/students sends. Nothing here is aspirational. */
 type MentorStudent = {
   id: string
+  portfolioSlug: string
   fullName: string
   email: string
   career: string
@@ -122,7 +123,7 @@ export function MentorEPortfoliosView() {
             <li key={student.id}>
               <button
                 type="button"
-                onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':studentId', student.id))}
+                onClick={() => navigate(ROUTES.DASHBOARD_MENTOR_PORTFOLIO.replace(':slug', student.portfolioSlug))}
                 className={`${PANEL} group flex w-full items-center gap-4 p-5 text-left transition-all hover:-translate-y-px hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00838f]/40 active:scale-[0.998]`}
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#ccfbf1] text-[13px] font-bold text-[#0f766e]">

@@ -10,7 +10,7 @@ import { ROUTES } from '@/shared';
 export function MentorPortfolioView() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { studentId } = useParams<{ studentId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   
   const [portfolio, setPortfolio] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,11 +22,16 @@ export function MentorPortfolioView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // The URL carries the slug, but feedback is addressed to a person, so it needs
+  // the id the portfolio response carries. Until the portfolio loads there is
+  // nobody to write to.
+  const studentId = portfolio?.studentId;
+
   const handleSubmitFeedback = async () => {
-    if (!feedbackContent.trim()) return;
+    if (!feedbackContent.trim() || !studentId) return;
     setIsSubmitting(true);
     try {
-      await mentorApi.submitFeedback(studentId!, { type: feedbackType, content: feedbackContent });
+      await mentorApi.submitFeedback(studentId, { type: feedbackType, content: feedbackContent });
       // Write notification for Student
       localStorage.setItem('student_notification', JSON.stringify({
         type: 'FEEDBACK_RECEIVED',
@@ -48,13 +53,13 @@ export function MentorPortfolioView() {
   };
 
   useEffect(() => {
-    if (studentId) {
-      mentorApi.getStudentPortfolio(studentId).then(res => {
+    if (slug) {
+      mentorApi.getStudentPortfolio(slug).then(res => {
         setPortfolio(res);
         setIsLoading(false);
       });
     }
-  }, [studentId]);
+  }, [slug]);
 
   const handleLogout = async () => {
     await logout();

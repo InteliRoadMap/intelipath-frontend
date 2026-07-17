@@ -21,7 +21,7 @@ export const ROUTES = {
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_MENTOR_STUDENTS: '/dashboard/mentor/students',
   DASHBOARD_MENTOR_FEEDBACK: '/dashboard/mentor/feedback',
-  DASHBOARD_MENTOR_PORTFOLIO: '/dashboard/mentor/portfolio/:studentId',
+  DASHBOARD_MENTOR_PORTFOLIO: '/dashboard/mentor/portfolio/:slug',
   DASHBOARD_MENTOR_ROADMAP_EDITOR: '/dashboard/mentor/roadmap-editor',
   DASHBOARD_MENTOR_SETTINGS: '/dashboard/mentor/settings',
   DASHBOARD_ADMIN: '/dashboard/admin',
