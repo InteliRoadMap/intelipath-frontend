@@ -546,7 +546,7 @@ export default function StudentRoadmapPageView() {
               </ReactFlowProvider>
             </div>
 
-            {/* Top-left floating stack: target career, AI suggestions, mentor courses, legend */}
+            {/* Top-left floating stack: target career, AI suggestions, legend */}
             {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
               <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2.5">
                 {/* Target Career control (moved here from the old right column). */}

@@ -13,14 +13,16 @@ type MentorHeaderProps = {
 export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorHeaderProps) {
   const navigate = useNavigate()
 
+  // Every tab here must have a matching branch in MentorDashboardView, or the tab
+  // lights up and renders nothing. Portfolios and Progress were commented out while
+  // their views stayed live, which left two finished features with no way in.
+  // AI Mentor is deliberately absent: there is no branch behind it yet.
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "courses", label: "Courses" },
-    // { id: "portfolios", label: "Portfolios" },
-    // { id: "progress", label: "Progress" },
+    { id: "portfolios", label: "E-Portfolios" },
+    { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
     { id: "roadmap", label: "Roadmap Editor" },
-    // { id: "aichat", label: "AI Mentor" },
   ]
 
   return (
