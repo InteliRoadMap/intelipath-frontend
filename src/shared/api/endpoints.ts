@@ -73,9 +73,9 @@ export const ENDPOINTS = {
     TRENDING_SKILLS: "/market-trends/skills/trending",
     SALARY_OVERVIEW: "/market-trends/salary-overview"
   },
-  UNIVERSITIES: {
-    LIST: "/universities"
-  },
+  // UNIVERSITIES: {
+  //   LIST: "/universities"
+  // },
   RECRUITMENT_POSTS: {
     ALL: "/recruitment-posts/",
     COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,
@@ -97,12 +97,13 @@ export const ENDPOINTS = {
     PROFILE: "/counselor/me/profile"
   },
   COUNSELOR_DASHBOARD: {
-    METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
-    METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
-    METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
-    METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
+    // METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
+    // METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
+    // METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
+    // METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
     LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
     CAREER_DISTRIBUTION: "/counselor/dashboard",
+    CURRICULUMS: "/counselor/curriculums",
     MISSING_SKILLS: "/counselor/dashboard/missing-skills",
     GET_STUDENT_FEEDBACK: "/counselor/dashboard/feedback/me",
     GET_STUDENT_LIST: "/counselor/feedback/students",
@@ -113,8 +114,8 @@ export const ENDPOINTS = {
     MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
       `/counselor/feedback/delete/${feedbackId}`,
-    EXPORT_STUDENTS: "/counselor/export-student",
-
+    EXPORT_STUDENTS: "/counselor/export-students",
+    IMPORT_STUDENTS: "/counselor/import-students",
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {

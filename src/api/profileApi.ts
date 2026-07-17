@@ -23,6 +23,7 @@ export interface UpdateMentorProfilePayload {
 
 export interface UpdateCounselorProfilePayload {
   department: string
+  admissionDate?: string | null
 }
 
 const profileApi = {

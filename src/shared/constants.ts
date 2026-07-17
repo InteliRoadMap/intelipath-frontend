@@ -26,7 +26,8 @@ export const ROUTES = {
   DASHBOARD_ADMIN: '/dashboard/admin',
   PROFILE_SETTINGS: "/profile-settings",
   MENTOR_SETTINGS: "/dashboard/mentor/settings",
-  COUNSELOR_SETTINGS: "/dashboard/counselor/settings"
+  COUNSELOR_SETTINGS: "/dashboard/counselor/settings",
+  COUNSELOR_ADD_STUDENT: "/dashboard/counselor/add-student"
 } as const
 
 export const ROLES = {

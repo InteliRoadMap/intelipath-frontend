@@ -11,9 +11,9 @@ export interface ProfileData {
   // Student & Counselor
   university: string
   universityId?: string
-  // Student
+  // Student & Counselor
   major: string
-  year_of_admission: string
+  admissionDate: string
   // Mentor
   company: string
   industry_focus: string
@@ -33,7 +33,7 @@ const EMPTY_PROFILE: ProfileData = {
   university: "",
   universityId: "",
   major: "",
-  year_of_admission: "",
+  admissionDate: "",
   company: "",
   industry_focus: "",
   department: "",
@@ -95,10 +95,10 @@ export function useProfileSettings() {
           "",
         role: data?.role || data?.user?.role || user?.role || "Student",
         major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
-        year_of_admission:
-          data?.yearOfAdmission?.toString() ||
-          data?.year_of_admission?.toString() ||
-          data?.student?.yearOfAdmission?.toString() ||
+        admissionDate:
+          data?.admissionDate ||
+          data?.student?.admissionDate ||
+          data?.academicCounselor?.admissionDate ||
           "",
         universityId:
           data?.universityId ||
@@ -110,6 +110,7 @@ export function useProfileSettings() {
           data?.university ||
           data?.userInfo?.university ||
           data?.student?.university?.name ||
+          data?.academicCounselor?.universityName ||
           data?.academicCounselor?.university?.name ||
           "",
         department:
@@ -188,11 +189,11 @@ export function useProfileSettings() {
 
     if (
       user?.role?.toUpperCase() === "STUDENT" &&
-      profileData.year_of_admission &&
+      profileData.admissionDate &&
       profileData.yob
     ) {
       const birthDate = new Date(profileData.yob)
-      const admissionDate = new Date(profileData.year_of_admission)
+      const admissionDate = new Date(profileData.admissionDate)
       if (admissionDate <= birthDate) {
         setError("Admission date must be after your date of birth.")
         setSaving(false)
@@ -217,7 +218,7 @@ export function useProfileSettings() {
         tasks.push(
           profileApi.updateStudentProfile({
             universityId: profileData.universityId || profileData.university,
-            yearOfAdmission: parseInt(String(profileData.year_of_admission).substring(0, 4) || "0", 10),
+            yearOfAdmission: profileData.admissionDate,
             major: profileData.major
             // Original: careerId: ""
             // Removed to prevent wiping out data
@@ -233,7 +234,8 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department
+            department: profileData.department,
+            admissionDate: profileData.admissionDate ? profileData.admissionDate : null
           })
         )
       }

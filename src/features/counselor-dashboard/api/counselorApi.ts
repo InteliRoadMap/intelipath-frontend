@@ -52,23 +52,23 @@ const buildFeedbackFormData = (payload: any): FormData => {
 }
 
 const counselorApi = {
-  getStudentsMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
-  },
+  // getStudentsMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
+  // },
 
-  getProgressMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
-  },
+  // getProgressMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
+  // },
 
-  getAtRiskMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
-  },
+  // getAtRiskMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
+  // },
 
-  getEngagementMetric: async () => {
-    return await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
-    )
-  },
+  // getEngagementMetric: async () => {
+  //   return await mainClient.get(
+  //     ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
+  //   )
+  // },
 
   getLearningActivity: async () => {
     return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
@@ -189,6 +189,13 @@ const counselorApi = {
       ENDPOINTS.COUNSELOR_DASHBOARD.EXPORT_STUDENTS,
       { studentIds },
       { responseType: "blob" }
+    )
+    return res.data
+  },
+  importStudents: async (students: { username: string; email: string }[]): Promise<any> => {
+    const res = await mainClient.post(
+      ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
+      students
     )
     return res.data
   }

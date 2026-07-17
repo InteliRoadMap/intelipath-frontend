@@ -30,7 +30,8 @@ import {
   List,
   Plus,
   Paperclip,
-  File as FileIcon
+  File as FileIcon,
+  UserPlus
 } from "lucide-react"
 import {
   Briefcase as BriefcasePhos,
@@ -915,7 +916,6 @@ export default function CounselorFeedbackPage() {
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
   const [localSearch, setLocalSearch] = useState("")
-  const [filterUni, setFilterUni] = useState("")
   const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
@@ -937,9 +937,6 @@ export default function CounselorFeedbackPage() {
     setSize
   } = useStudentList()
 
-  const uniqueUnis = Array.from(
-    new Set(students.map((s) => s.university).filter(Boolean))
-  )
   const uniqueCareers = Array.from(
     new Set(students.map((s) => s.careerPath).filter(Boolean))
   )
@@ -1156,6 +1153,19 @@ export default function CounselorFeedbackPage() {
               <MessageSquare size={16} />
               Feedback
             </NavLink>
+            <NavLink
+              to={ROUTES.COUNSELOR_ADD_STUDENT}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <UserPlus size={16} />
+              Add Student
+            </NavLink>
           </div>
 
           <div className="flex items-center justify-end">
@@ -1244,14 +1254,6 @@ export default function CounselorFeedbackPage() {
             placeholder="All Careers"
             options={uniqueCareers}
             onChange={setFilterCareer}
-          />
-
-          <FilterDropdown
-            icon={Building2}
-            value={filterUni}
-            placeholder="All Universities"
-            options={uniqueUnis}
-            onChange={setFilterUni}
           />
 
           <div className="ml-auto flex items-center gap-3 shrink-0">

@@ -13,13 +13,13 @@ import {
   RefreshCw,
   Award,
   GraduationCap,
-  ChevronLeft
+  ChevronLeft,
+  UserPlus
 } from "lucide-react"
 import { useLocation, useNavigate, NavLink } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, DatePicker } from "@/components"
-import { UniversitySelect } from "@/components/ui/UniversitySelect"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { AvatarUploadModal } from "@/components/modals"
 import { useProfileSettings } from "@/features/profile-settings"
@@ -141,6 +141,11 @@ export default function CounselorProfileSettingsPage() {
       icon: MessageSquare,
       path: ROUTES.COUNSELOR_FEEDBACK || "/dashboard/counselor/feedback"
     },
+    {
+      label: "Add Student",
+      icon: UserPlus,
+      path: ROUTES.COUNSELOR_ADD_STUDENT || "/dashboard/counselor/add-student"
+    },
     { label: "Settings", icon: Edit3, path: location.pathname }
   ]
 
@@ -183,6 +188,19 @@ export default function CounselorProfileSettingsPage() {
             >
               <MessageSquare size={16} />
               Feedback
+            </NavLink>
+            <NavLink
+              to={ROUTES.COUNSELOR_ADD_STUDENT}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <UserPlus size={16} />
+              Add Student
             </NavLink>
           </div>
 
@@ -336,9 +354,7 @@ export default function CounselorProfileSettingsPage() {
                         max={new Date().getFullYear()}
                         value={profileData.yob}
                         placeholder="e.g. 1990"
-                        onChange={(e) =>
-                          handleChange("yob", e.target.value)
-                        }
+                        onChange={(e) => handleChange("yob", e.target.value)}
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
                       />
                     </div>
@@ -350,27 +366,24 @@ export default function CounselorProfileSettingsPage() {
                         <Building2 size={16} className="text-[#00838f]" />
                         University
                       </label>
-                      <UniversitySelect
-                        value={profileData.universityId || profileData.university}
-                        onChange={(id, name) => {
-                          handleChange("universityId", id)
-                          handleChange("university", name)
-                        }}
+                      <input
+                        type="text"
+                        value={profileData.university || "Not assigned"}
+                        disabled
+                        aria-readonly="true"
+                        className="w-full cursor-not-allowed bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-500 disabled:opacity-100"
                       />
                     </div>
                     <div>
                       <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                         <Calendar size={16} className="text-[#00838f]" />
-                        Year of Admission
+                        Admission Date
                       </label>
                       <input
-                        type="number"
-                        min="1900"
-                        max={new Date().getFullYear()}
-                        value={profileData.year_of_admission}
-                        placeholder="e.g. 2023"
+                        type="date"
+                        value={profileData.admissionDate}
                         onChange={(e) =>
-                          handleChange("year_of_admission", e.target.value)
+                          handleChange("admissionDate", e.target.value)
                         }
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
                       />

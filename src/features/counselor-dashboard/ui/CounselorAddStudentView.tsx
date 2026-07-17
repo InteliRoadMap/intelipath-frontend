@@ -2,30 +2,28 @@ import {
   Book,
   Building2,
   Calendar,
+  ChevronDown,
   Edit3,
   Mail,
   User,
   LayoutDashboard,
   MessageSquare,
   Sparkles,
+  TrendingUp,
   RefreshCw,
   Award,
   GraduationCap,
-  ChevronLeft
+  ChevronLeft,
+  UserPlus
 } from "lucide-react"
 import { useLocation, useNavigate, NavLink } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import {
-  UserHeaderActions,
-  Logo,
-  DatePicker,
-  SharedAppBackground,
-  MobileNavMenu
-} from "@/components"
+import { UserHeaderActions, Logo, DatePicker } from "@/components"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { useProfileSettings } from "../model/useProfileSettings"
-import { useRef } from "react"
+import { AvatarUploadModal } from "@/components/modals"
+import { useProfileSettings } from "@/features/profile-settings"
+import { useRef, useState, useEffect } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 gsap.registerPlugin(useGSAP)
@@ -35,8 +33,11 @@ export default function CounselorProfileSettingsPage() {
     profileData,
     loading,
     saving,
+    error,
+    success,
     handleChange,
     handleSave,
+    handleAvatarUpload,
     loadProfile,
     displayInitial
   } = useProfileSettings()
@@ -46,6 +47,15 @@ export default function CounselorProfileSettingsPage() {
   const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [avatarError, setAvatarError] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+
+  // Reset avatar error when profile data changes
+  useEffect(() => {
+    setAvatarError(false)
+  }, [profileData.avatar_url])
 
   useGSAP(
     () => {
@@ -131,20 +141,24 @@ export default function CounselorProfileSettingsPage() {
       icon: MessageSquare,
       path: ROUTES.COUNSELOR_FEEDBACK || "/dashboard/counselor/feedback"
     },
+    {
+      label: "Add Student",
+      icon: UserPlus,
+      path: ROUTES.COUNSELOR_ADD_STUDENT || "/dashboard/counselor/add-student"
+    },
     { label: "Settings", icon: Edit3, path: location.pathname }
   ]
 
   return (
     <div
-      className="relative flex flex-col min-h-screen bg-transparent font-sans text-slate-900"
+      className="flex flex-col min-h-screen bg-[#f8fafc] font-sans text-slate-900"
       ref={containerRef}
     >
-      <SharedAppBackground />
       {/* ─── HEADER (Glass Pill Style) ─────────────────────────── */}
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
         <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
           <div className="flex items-center">
-            <Logo iconOnly className="scale-[0.85] origin-left" />
+            <Logo hideIcon className="scale-[0.85] origin-left" />
           </div>
 
           <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
@@ -175,27 +189,22 @@ export default function CounselorProfileSettingsPage() {
               <MessageSquare size={16} />
               Feedback
             </NavLink>
+            <NavLink
+              to={ROUTES.COUNSELOR_ADD_STUDENT}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <UserPlus size={16} />
+              Add Student
+            </NavLink>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
-            <MobileNavMenu
-              items={[
-                {
-                  id: "dashboard",
-                  label: "Dashboard",
-                  active: false,
-                  icon: <LayoutDashboard size={16} />,
-                  onSelect: () => navigate(ROUTES.DASHBOARD_COUNSELOR)
-                },
-                {
-                  id: "feedback",
-                  label: "Feedback",
-                  active: false,
-                  icon: <MessageSquare size={16} />,
-                  onSelect: () => navigate(ROUTES.COUNSELOR_FEEDBACK)
-                }
-              ]}
-            />
+          <div className="flex items-center justify-end">
             <div className="bg-white/80 backdrop-blur-md shadow-sm border border-white/60 rounded-full pr-1 pl-3 py-1 flex items-center gap-2">
               <UserHeaderActions user={user} onLogout={handleLogout} />
             </div>
@@ -256,11 +265,42 @@ export default function CounselorProfileSettingsPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 pb-10">
+          <AvatarUploadModal
+            isOpen={isUploadModalOpen}
+            onClose={() => setIsUploadModalOpen(false)}
+            onUpload={handleAvatarUpload}
+            loading={saving}
+          />
           <div className="flex-[2] space-y-6">
             {/* Identity Card */}
             <div className="section-card bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-[0_18px_45px_rgba(15,23,42,0.04)] hover:border-[#00838f]/30 transition-colors">
               <div className="flex items-start gap-5 mb-8">
-                <AvatarUpload initial={displayInitial} tealTheme />
+                <div className="relative">
+                  {profileData.avatar_url &&
+                  profileData.avatar_url !== "null" &&
+                  profileData.avatar_url !== "undefined" &&
+                  !avatarError ? (
+                    <img
+                      src={profileData.avatar_url}
+                      alt="Avatar"
+                      className="w-20 h-20 rounded-2xl object-cover shadow-lg shadow-[#00838f]/30"
+                      onError={() => setAvatarError(true)}
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00838f] to-[#005f63] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#00838f]/30">
+                      {displayInitial}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    disabled={saving}
+                    className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-[#00838f] rounded-xl flex items-center justify-center shadow-md hover:scale-110 transition-transform border border-slate-100 disabled:opacity-50"
+                    aria-label="Edit avatar"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
                 <div className="mt-2">
                   <h2 className="text-xl font-bold text-slate-900 mb-1">
                     Counselor Identity
@@ -271,114 +311,137 @@ export default function CounselorProfileSettingsPage() {
                 </div>
               </div>
 
-              {/* Form - always visible, loading state shown via overlay on avatar */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <User size={16} className="text-[#00838f]" />
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.full_name || ""}
-                    onChange={(e) => handleChange("full_name", e.target.value)}
-                    disabled={loading}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
-                  />
+              {error && (
+                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                  {error}
                 </div>
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <Calendar size={16} className="text-[#00838f]" />
-                    Year of Birth
-                  </label>
-                  <DatePicker
-                    value={profileData.yob ?? ""}
-                    onChange={(v) => handleChange("yob", v)}
-                  />
+              )}
+              {success && (
+                <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600">
+                  {success}
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <Building2 size={16} className="text-[#00838f]" />
-                    University
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.university || "Not assigned"}
-                    disabled
-                    aria-readonly="true"
-                    className="w-full cursor-not-allowed bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-500 disabled:opacity-100"
-                  />
+              {loading ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
+                  Loading profile data...
                 </div>
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <Calendar size={16} className="text-[#00838f]" />
-                    Admission Date
-                  </label>
-                  <input
-                    type="date"
-                    value={profileData.admissionDate || ""}
-                    onChange={(e) =>
-                      handleChange("admissionDate", e.target.value)
-                    }
-                    disabled={loading}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
-                  />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <User size={16} className="text-[#00838f]" />
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.full_name || ""}
+                        onChange={(e) =>
+                          handleChange("full_name", e.target.value)
+                        }
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Calendar size={16} className="text-[#00838f]" />
+                        Year of Birth
+                      </label>
+                      <input
+                        type="number"
+                        min="1900"
+                        max={new Date().getFullYear()}
+                        value={profileData.yob}
+                        placeholder="e.g. 1990"
+                        onChange={(e) =>
+                          handleChange("yob", e.target.value)
+                        }
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <GraduationCap size={16} className="text-[#00838f]" />
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.department}
-                    placeholder="e.g. Software Engineering"
-                    onChange={(e) => handleChange("department", e.target.value)}
-                    disabled={loading}
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Building2 size={16} className="text-[#00838f]" />
+                        University
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.university || "Not assigned"}
+                        disabled
+                        aria-readonly="true"
+                        className="w-full cursor-not-allowed bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-[14px] font-semibold text-slate-500 disabled:opacity-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                        <Calendar size={16} className="text-[#00838f]" />
+                        Admission Date
+                      </label>
+                      <input
+                        type="date"
+                        value={profileData.admissionDate}
+                        onChange={(e) =>
+                          handleChange("admissionDate", e.target.value)
+                        }
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
+                      />
+                    </div>
+                  </div>
 
-              <div className="mb-8">
-                <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                  <Book size={16} className="text-[#00838f]" />
-                  Professional Bio
-                </label>
-                <textarea
-                  rows={4}
-                  value={profileData.bio}
-                  placeholder="Share your experience and how you can help students..."
-                  onChange={(e) => handleChange("bio", e.target.value)}
-                  disabled={loading}
-                  className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white resize-none disabled:opacity-60"
-                />
-              </div>
+                  <div className="mb-6">
+                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                      <GraduationCap size={16} className="text-[#00838f]" />
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.department}
+                      placeholder="e.g. Software Engineering"
+                      onChange={(e) =>
+                        handleChange("department", e.target.value)
+                      }
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white"
+                    />
+                  </div>
 
-              <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
-                <button
-                  type="button"
-                  onClick={() => void loadProfile()}
-                  disabled={saving || loading}
-                  className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50 px-4 py-2.5 rounded-xl hover:bg-slate-100"
-                >
-                  Discard Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving || loading}
-                  className="px-6 py-2.5 bg-[#00838f] hover:bg-[#006064] text-white rounded-xl text-[13px] font-bold transition-all shadow-md shadow-[#00838f]/20 disabled:cursor-not-allowed disabled:opacity-70 hover:-translate-y-0.5"
-                >
-                  {saving ? "Saving..." : "Save Profile"}
-                </button>
-              </div>
+                  <div className="mb-8">
+                    <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                      <Book size={16} className="text-[#00838f]" />
+                      Professional Bio
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={profileData.bio}
+                      placeholder="Share your experience and how you can help students..."
+                      onChange={(e) => handleChange("bio", e.target.value)}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white resize-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => void loadProfile()}
+                      disabled={saving}
+                      className="text-[13px] font-semibold text-slate-500 hover:text-slate-900 transition-colors disabled:opacity-50 px-4 py-2.5 rounded-xl hover:bg-slate-100"
+                    >
+                      Discard Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-6 py-2.5 bg-[#00838f] hover:bg-[#006064] text-white rounded-xl text-[13px] font-bold transition-all shadow-md shadow-[#00838f]/20 disabled:cursor-not-allowed disabled:opacity-70 hover:-translate-y-0.5"
+                    >
+                      {saving ? "Saving..." : "Save Profile"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
