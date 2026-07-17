@@ -25,7 +25,7 @@ export function FeedbackItem({ feedback: fb }: { feedback: Feedback }) {
       .slice(0, 2)
       .toUpperCase() || "UN"
   const typeStyle = FEEDBACK_TYPE_COLOR[fb.type] ?? FEEDBACK_TYPE_COLOR.OTHER
-  const dateStr = new Date(fb.createAt).toLocaleDateString("vi-VN", {
+  const dateStr = new Date(fb.createdAt).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
