@@ -1,49 +1,89 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Users, ChatTeardropText, Briefcase
-} from '@phosphor-icons/react';
+/* Hallmark · macrostructure: Workbench · tone: utilitarian · anchor hue: teal #00838f
+ * pre-emit critique: P5 H5 E4 S5 R5 V4
+ * Depth system, not widgets. Over the slate-50 blueprint grid (SharedAppBackground),
+ * content sits in ONE recessed well per group — the well's slate body shows through 1px
+ * gaps as hairline dividers, so cells read as carved into a single surface, not as a
+ * scatter of floating glass cards. Only the primary action, and a row on hover, RISE
+ * (opaque white = grid hidden = lifted off the plane). Greeting is bare type on the grid.
+ */
+import { useState, useEffect, useRef } from 'react';
+import { Users, Briefcase } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
 import { ROUTES } from '@/shared';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
+/** Chìm — a recessed instrument panel. Its slate body shows through the gap-px between
+ *  children as hairline dividers; a light inset top edge carves it into the page. */
+const WELL =
+  'overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-200/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]';
+/** A cell resting inside a well: translucent so the grid reads through it (still on the plane). */
+const CELL = 'bg-white/45';
+
 export const WelcomeBanner = ({ user }: { user: any }) => {
   return (
-    <div className="relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-6 md:p-7 shadow-[0_20px_40px_rgba(15,23,42,0.25)] mb-5 gap-4">
-      <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-slate-500/20 blur-3xl" />
-      
-      <div className="relative z-10">
-        <h1 className="text-[32px] font-black text-white tracking-tight mb-2">
-          Good morning, {user?.name || user?.fullName || 'Mentor'}!
-        </h1>
-        <p className="text-[16px] text-white/70 font-medium">
-          Here is what is waiting on you, and the feedback you have sent recently.
-        </p>
-      </div>
+    // Bare type on the grid — the greeting belongs to the background, it does not float above it.
+    <div>
+      <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-900">
+        Good morning, {user?.name || user?.fullName || 'Mentor'}
+      </h1>
+      <p className="mt-1.5 text-[14px] font-medium text-slate-500">
+        Here is what is waiting on you, and the feedback you have sent recently.
+      </p>
     </div>
   );
 };
 
-export const MetricWidget = ({ title, icon: Icon, data, isLoading }: { title: string, icon: any, data: any, isLoading: boolean }) => {
-
+/** The four readouts share ONE carved bar, split by hairline gaps — not four cards. */
+export const MetricStrip = ({
+  items,
+  isLoading,
+}: {
+  items: { title: string; icon: any; data: any }[];
+  isLoading: boolean;
+}) => {
   return (
-    <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={16} weight="regular" className="text-slate-400 group-hover:text-[#00838f] transition-colors" />
-        <p className="text-[11px] text-slate-500 font-bold tracking-widest uppercase">{title}</p>
-      </div>
-      {isLoading || data == null ? (
-        <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-md"></div>
-      ) : (
-        <h2 className="text-[28px] font-bold text-slate-900 leading-none tracking-tight">
-          {typeof data === 'object' ? (data.value ?? data.count ?? data.score ?? data.hours ?? '0') : data}
-        </h2>
-      )}
+    <div className={`${WELL} grid grid-cols-2 gap-px lg:grid-cols-4`}>
+      {items.map(({ title, icon: Icon, data }) => (
+        <div key={title} className={`${CELL} group p-4`}>
+          <div className="mb-2 flex items-center gap-2">
+            <Icon
+              size={15}
+              weight="regular"
+              className="text-slate-400 transition-colors group-hover:text-[#00838f]"
+            />
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              {title}
+            </p>
+          </div>
+          {isLoading || data == null ? (
+            <div className="h-7 w-14 animate-pulse rounded bg-slate-200/70" />
+          ) : (
+            <h2 className="text-[28px] font-semibold leading-none tracking-tight tabular-nums text-slate-900">
+              {typeof data === 'object'
+                ? (data.value ?? data.count ?? data.score ?? data.hours ?? '0')
+                : data}
+            </h2>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
+
+/** Back-compat: the old single-tile export, now one cell of the strip's vocabulary. */
+export const MetricWidget = ({
+  title,
+  icon,
+  data,
+  isLoading,
+}: {
+  title: string;
+  icon: any;
+  data: any;
+  isLoading: boolean;
+}) => <MetricStrip items={[{ title, icon, data }]} isLoading={isLoading} />;
 
 export const PendingReviewsWidget = () => {
   const [data, setData] = useState<any>(null);
@@ -51,114 +91,129 @@ export const PendingReviewsWidget = () => {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     setIsLoading(true);
-    mentorApi.getPendingReviews().then(res => {
-      setData(res);
-      setIsLoading(false);
-    }).catch(() => {
-      setData([]);
-      setIsLoading(false);
-    });
+    mentorApi
+      .getPendingReviews()
+      .then(res => {
+        setData(res);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setData([]);
+        setIsLoading(false);
+      });
   }, []);
 
-  useGSAP(() => {
-    if (!isLoading && data && data.length > 0) {
-      gsap.to(".gsap-mentee-card", {
-        scaleX: 1,
-        autoAlpha: 1,
-        duration: 0.6,
-        stagger: 0.05,
-        ease: "power2.out",
-        clearProps: "all"
-      });
-      gsap.from(".gsap-progress-bar", {
-        scaleX: 0,
-        transformOrigin: "left center",
-        duration: 1.2,
-        ease: "power3.out",
-        stagger: 0.1,
-        delay: 0.2
-      });
-    }
-  }, { scope: containerRef, dependencies: [isLoading, data] });
+  useGSAP(
+    () => {
+      if (!isLoading && data && data.length > 0) {
+        gsap.from('.gsap-review-row', {
+          y: 10,
+          autoAlpha: 0,
+          duration: 0.4,
+          stagger: 0.05,
+          ease: 'power2.out',
+          clearProps: 'all',
+        });
+      }
+    },
+    { scope: containerRef, dependencies: [isLoading, data] }
+  );
 
   return (
     <div ref={containerRef} className="mt-10">
       {/* "Mentee" implies a roster. There isn't one: the only mentor-student tie in the
           schema is a portfolio review request, so this list is a queue. */}
-      <h3 className="font-bold text-slate-900 text-[18px] mb-4">Waiting on your review</h3>
-      
-      <div className="flex flex-col gap-4">
-        {isLoading ? (
-          Array.from({length: 3}).map((_, i) => (
-            <div key={i} className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-100 animate-pulse rounded-full"></div>
-                <div className="flex-1">
-                  <div className="h-5 w-32 bg-slate-100 animate-pulse rounded mb-2"></div>
-                  <div className="h-3 w-48 bg-slate-100 animate-pulse rounded"></div>
-                </div>
+      <h3 className="mb-4 text-[18px] font-semibold tracking-tight text-slate-900">
+        Waiting on your review
+      </h3>
+
+      {isLoading ? (
+        <div className={`${WELL} flex flex-col gap-px`}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={`${CELL} flex items-center gap-4 p-5`}>
+              <div className="h-12 w-12 animate-pulse rounded-full bg-slate-200/70" />
+              <div className="flex-1">
+                <div className="mb-2 h-4 w-40 animate-pulse rounded bg-slate-200/70" />
+                <div className="h-3 w-56 animate-pulse rounded bg-slate-200/70" />
               </div>
+              <div className="hidden h-9 w-28 animate-pulse rounded-xl bg-slate-200/70 sm:block" />
             </div>
-          ))
-        ) : !data || data.length === 0 ? (
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-8 shadow-sm flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <Users size={28} className="text-slate-400" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900 mb-2">Nothing waiting on you</h4>
-            <p className="text-sm text-slate-500 max-w-sm">
-              Students find you in the mentor directory and send a review request from their portfolio. Their requests land here.
-            </p>
-          </div>
-        ) : (
-          data.map((item: any) => (
-            <div key={item.id} className="gsap-mentee-card bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-[15px] font-bold ${
-                    (item.status || 'Pending review') === 'Pending review' ? 'bg-[#ccfbf1] text-[#0f766e]' : 'bg-[#e0e7ff] text-[#4338ca]'
-                  }`}>
-                    {item.initials || item.studentName?.charAt(0) || 'S'}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h4 className="text-[16px] font-bold text-slate-900">{item.studentName || item.name}</h4>
-                      {(item.status || 'Pending review') === 'Reviewed' ? (
-                        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider rounded-md ring-1 ring-emerald-500/20">
-                          {item.status || 'Reviewed'}
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider rounded-md ring-1 ring-amber-500/20">
-                          {item.status || 'Pending review'}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-slate-500 font-medium flex items-center gap-1.5">
-                      {item.university || item.major} <span className="text-slate-300">|</span> {item.yob || item.year} <span className="text-slate-300">|</span> {item.targetCareer || item.role}
-                    </p>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => navigate(ROUTES.PORTFOLIO_INTERNAL.replace(':slug', item.portfolioSlug))}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-[13px] rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+          ))}
+        </div>
+      ) : !data || data.length === 0 ? (
+        <div className={`${WELL} flex flex-col items-center gap-3 px-6 py-14 text-center`}>
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-400">
+            <Users size={20} weight="regular" />
+          </span>
+          <p className="text-[15px] font-semibold text-slate-800">Nothing waiting on you</p>
+          <p className="max-w-sm text-[13px] font-medium text-slate-500">
+            A student appears here once they find you in the mentor directory and send a review
+            request from their portfolio.
+          </p>
+        </div>
+      ) : (
+        <div className={`${WELL} flex flex-col gap-px`}>
+          {data.map((item: any) => {
+            const status = item.status || 'Pending review';
+            const reviewed = status === 'Reviewed';
+            return (
+              <div
+                key={item.id}
+                className={`gsap-review-row ${CELL} flex items-center gap-4 p-5 transition-colors hover:bg-white`}
+              >
+                <span
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-[15px] font-semibold ${
+                    reviewed ? 'bg-[#e0e7ff] text-[#4338ca]' : 'bg-[#ccfbf1] text-[#0f766e]'
+                  }`}
                 >
-                  <Briefcase size={16} weight="bold" /> Portfolio
+                  {item.initials || item.studentName?.charAt(0) || 'S'}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2.5">
+                    <h4 className="truncate text-[15px] font-semibold text-slate-900">
+                      {item.studentName || item.name}
+                    </h4>
+                    <span
+                      className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${
+                        reviewed
+                          ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/20'
+                          : 'bg-amber-50 text-amber-600 ring-amber-500/20'
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+                  <p className="flex items-center gap-1.5 truncate text-[12.5px] font-medium text-slate-500">
+                    {item.university || item.major}
+                    <span className="text-slate-300">·</span>
+                    {item.yob || item.year}
+                    <span className="text-slate-300">·</span>
+                    {item.targetCareer || item.role}
+                  </p>
+                </div>
+
+                {/* Nổi — the one element that lifts off the plane. */}
+                <button
+                  onClick={() =>
+                    navigate(ROUTES.PORTFOLIO_INTERNAL.replace(':slug', item.portfolioSlug))
+                  }
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/5 transition-all hover:-translate-y-px hover:text-slate-900 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00838f]/40 active:translate-y-0 active:shadow-[0_1px_2px_rgba(15,23,42,0.12)]"
+                >
+                  <Briefcase size={15} weight="bold" /> Portfolio
                 </button>
               </div>
-
-
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
 // Kept for compatibility if they are still imported somewhere, though they might be removed later
-export const QuickActionsWidget = () => <div/>;
-export const MentorInsightWidget = () => <div/>;
-export const CareerDistributionWidget = () => <div/>;
+export const QuickActionsWidget = () => <div />;
+export const MentorInsightWidget = () => <div />;
+export const CareerDistributionWidget = () => <div />;

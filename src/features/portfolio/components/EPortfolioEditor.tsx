@@ -420,7 +420,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
 
       {/* HERO SECTION */}
       <header id="hero" className="relative min-h-screen pt-32 pb-16 overflow-hidden bg-[var(--bg-primary)] flex flex-col justify-center">
-        <div className="hero-title-pill absolute top-32 left-0 bg-gradient-to-r from-[var(--primary-color)] to-blue-500 py-6 pr-24 pl-[10vw] rounded-r-[100px] shadow-lg z-10 text-[var(--title-color)]">
+        <div className="hero-title-pill absolute top-32 left-0 bg-[var(--primary-color)] py-6 pr-24 pl-[10vw] rounded-r-[100px] shadow-[0_10px_40px_-12px_rgba(0,0,0,0.25)] z-10 text-[var(--title-color)]">
           <EditableText isEditable={isEditMode} value={data.hero.title} onChange={val => updateHero('title', val)} as="h1" className="text-7xl font-outfit m-0" />
         </div>
         
@@ -528,7 +528,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
             {data.education.map((edu, idx) => (
               <div key={edu.id} className="relative pl-12 mb-12 last:mb-0 group">
                 <div className="absolute left-[-17px] top-1 w-8 h-8 rounded-full bg-[var(--bg-primary)] border-4 border-[var(--primary-color)] shadow-sm group-hover:bg-[var(--primary-color)] transition-colors"></div>
-                <div className="bg-[var(--bg-primary)] p-8 shadow-md border border-[var(--border-color)] transition-transform hover:-translate-y-1" style={{ borderRadius: 'var(--card-radius)' }}>
+                <div className="bg-[var(--bg-primary)] p-8 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-[var(--border-color)] transition-transform hover:-translate-y-0.5" style={{ borderRadius: 'var(--card-radius)' }}>
                   <div className="flex justify-between items-start mb-2">
                     <EditableText isEditable={isEditMode} value={edu.university} onChange={val => {
                       const newEdu = [...data.education];
@@ -609,7 +609,7 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           <h2 className="text-4xl text-center font-bold font-outfit mb-16 text-[var(--title-color)]">Featured Projects</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {data.projects.map((proj, idx) => (
-              <div key={proj.id} className="bg-[var(--bg-primary)] overflow-hidden shadow-lg border border-[var(--border-color)] flex flex-col group transition-transform hover:-translate-y-2 relative" style={{ borderRadius: 'var(--card-radius)' }}>
+              <div key={proj.id} className="bg-[var(--bg-primary)] overflow-hidden shadow-[0_2px_10px_-4px_rgba(0,0,0,0.10)] border border-[var(--border-color)] flex flex-col group transition-transform hover:-translate-y-1 relative" style={{ borderRadius: 'var(--card-radius)' }}>
                 {isEditMode && (
                   <button onClick={() => {
                     setData({ ...data, projects: data.projects.filter(p => p.id !== proj.id) });

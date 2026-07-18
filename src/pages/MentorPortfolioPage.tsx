@@ -48,11 +48,13 @@ export default function MentorPortfolioPage() {
   return (
     <div className="relative min-h-screen bg-[#0a0a0a]">
       {/* The URL is the only way back out of here: the editor renders the student's
-          own portfolio full-bleed, with no app chrome of its own. Fixed so it stays
-          reachable however far down the page you have scrolled. */}
+          own portfolio full-bleed, with no app chrome of its own. Placed bottom-left —
+          the same corner as the student's own "Back to InteliPath" — because the editor's
+          own fixed top navbar (z-50, full width) would otherwise paint over a top-left
+          button and hide it entirely. z-[60] keeps it above that navbar for good. */}
       <button
         onClick={() => navigate(ROUTES.DASHBOARD_MENTOR, { state: { activeTab: 'portfolios' } })}
-        className="fixed left-4 top-4 z-50 flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-[13px] font-bold text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/80"
+        className="fixed bottom-6 left-4 z-[60] flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:-translate-y-px hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 md:left-8"
       >
         <ArrowLeft size={16} />
         Back to E-Portfolios

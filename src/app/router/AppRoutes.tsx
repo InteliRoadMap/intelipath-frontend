@@ -6,7 +6,7 @@ import {
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
-  PublicPortfolioPage, StudentMarketPulsePage, MentorRoadmapEditorPage
+  PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
 import { ROLES, ROUTES } from "@/shared"
@@ -149,14 +149,8 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path={ROUTES.DASHBOARD_MENTOR_ROADMAP_EDITOR}
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
-            <MentorRoadmapEditorPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Roadmap Editor route intentionally unmounted — hidden from the mentor for now.
+          MentorRoadmapEditorPage/View + roadmapEditorApi are kept for a later return. */}
       <Route
         path={ROUTES.DASHBOARD_MENTOR_SETTINGS}
         element={
