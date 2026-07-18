@@ -1,8 +1,6 @@
 import React from "react"
-import { Clock, ArrowRight } from "lucide-react"
+import { Clock, Paperclip } from "lucide-react"
 import type { Feedback } from "@/features/counselor-dashboard/api/counselorApi"
-import { ROUTES } from "@/shared"
-import { useNavigate } from "react-router-dom"
 
 const FEEDBACK_TYPE_COLOR: Record<string, string> = {
   CAREER: "bg-[#e0f2fe] text-[#0284c7]",
@@ -13,9 +11,8 @@ const FEEDBACK_TYPE_COLOR: Record<string, string> = {
 }
 
 export function FeedbackItem({ feedback: fb }: { feedback: Feedback }) {
-  const navigate = useNavigate()
 
-  const name = fb.senderName || "Unknown Student"
+  const name = fb.receiverName || "Unknown Student"
   const initials =
     name
       .split(" ")
@@ -50,25 +47,19 @@ export function FeedbackItem({ feedback: fb }: { feedback: Feedback }) {
         <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2">
           {fb.content}
         </p>
-        <div className="flex items-center justify-between mt-1.5">
-          <div className="flex items-center gap-1 text-[11px] text-slate-400">
+        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-slate-400">
+          <div className="flex items-center gap-1">
             <Clock size={11} />
             {dateStr}
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                ROUTES.COUNSELOR_FEEDBACK +
-                  "?studentId=" +
-                  fb.senderId +
-                  "&tab=feedback"
-              )
-            }
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006064] hover:text-white bg-[#e0f2fe] hover:bg-[#006064] px-2.5 py-1 rounded-md transition-all shadow-sm group-hover/fb:translate-x-0.5"
-          >
-            Reply <ArrowRight size={11} />
-          </button>
+          {fb.attachments && fb.attachments.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Paperclip size={11} />
+              <span className="font-medium text-slate-400">
+                {fb.attachments.length} {fb.attachments.length === 1 ? 'file' : 'files'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

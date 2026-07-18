@@ -117,6 +117,7 @@ export const ENDPOINTS = {
     METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
     LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
     CAREER_DISTRIBUTION: "/counselor/dashboard",
+    CURRICULUMS: "/counselor/curriculums",
     MISSING_SKILLS: "/counselor/dashboard/missing-skills",
     GET_STUDENT_FEEDBACK: "/counselor/dashboard/feedback/me",
     GET_STUDENT_LIST: "/counselor/feedback/students",
@@ -127,8 +128,9 @@ export const ENDPOINTS = {
     MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
       `/counselor/feedback/delete/${feedbackId}`,
-    EXPORT_STUDENTS: "/counselor/export-student",
-
+    EXPORT_STUDENTS: "/counselor/export-students",
+    IMPORT_STUDENTS: "/counselor/import-students",
+    CHECK_STUDENT_EMAIL: (email: string) => `/counselor/import-student/${email}`,
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {

@@ -22,6 +22,7 @@ export const ROUTES = {
   DASHBOARD_STUDENT_SETTINGS: '/dashboard/student/settings',
   DASHBOARD_COUNSELOR: '/dashboard/counselor',
   COUNSELOR_FEEDBACK: "/dashboard/counselor/feedback",
+  COUNSELOR_ADD_STUDENT: "/dashboard/counselor/add-student",
   DASHBOARD_MENTOR: '/dashboard/mentor',
   DASHBOARD_MENTOR_STUDENTS: '/dashboard/mentor/students',
   DASHBOARD_MENTOR_FEEDBACK: '/dashboard/mentor/feedback',

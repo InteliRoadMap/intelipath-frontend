@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import {
   WelcomePage, RegisterPage, ForgotPasswordPage, ResetPasswordPage,
   DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
-  CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
+  CounselorDashboardPage, CounselorFeedbackPage, CounselorAddStudentPage, MentorDashboardPage, AdminDashboardPage,
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
@@ -114,6 +114,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
             <CounselorFeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.COUNSELOR_ADD_STUDENT}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
+            <CounselorAddStudentPage />
           </ProtectedRoute>
         }
       />
