@@ -36,6 +36,15 @@ export interface ApiClientConfig {
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean //prevent infinite retry loops
+  // Set true on a request's config when the caller renders its own inline error UI,
+  // so the global interceptor doesn't also toast the same message.
+  skipErrorToast?: boolean
+}
+
+// Public request-config extension so callers can pass `skipErrorToast` with proper
+// typing instead of casting to `any`.
+export interface RequestConfig {
+  skipErrorToast?: boolean
 }
 
 let isRefreshing = false
@@ -325,7 +334,7 @@ export function createApiClient({
       // -------------------------------------------------------------
       // GLOBAL ERROR HANDLING (Frontend API Error Handling Guide)
       // -------------------------------------------------------------
-      if (status && status !== 401) {
+      if (status && status !== 401 && !originalRequest?.skipErrorToast) {
         const data = res?.data as any;
         const beError = data?.error;
         const beMessage = data?.message;
@@ -333,14 +342,14 @@ export function createApiClient({
         // 403: Forbidden
         if (status === 403) {
           toast.error("403 - You do not have permission to access this resource.");
-        } 
+        }
         // 400 & 404: Bad Request or Not Found
         else if (status === 404 || status === 400) {
           // If it's a validation error, let the component handle it natively
           if (beError !== "VALIDATION_ERROR" && beMessage) {
             toast.error(`Error: ${beMessage}`);
           }
-        } 
+        }
         // 500: Internal Server Error
         else if (status >= 500) {
           toast.error("An internal server error occurred. Please try again later.");

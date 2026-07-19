@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import {
-  WelcomePage, RegisterPage, ForgotPasswordPage, ResetPasswordPage,
+  WelcomePage, RegisterPage, ResetPasswordPage,
   DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
   CounselorDashboardPage, CounselorFeedbackPage, CounselorAddStudentPage, MentorDashboardPage, AdminDashboardPage,
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
@@ -24,7 +24,9 @@ export const AppRoutes = () => {
       {/* <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} /> */}
       <Route path={ROUTES.LOGIN} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+      {/* Forgot password is a view inside the login popup now, not a page.
+          The path stays as a redirect so any old link / navigate lands home. */}
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
       <Route path={ROUTES.OAUTH_CALLBACK} element={<GuestRoute><OAuthCallbackPage /></GuestRoute>} />
 

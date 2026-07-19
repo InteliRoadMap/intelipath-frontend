@@ -189,7 +189,7 @@ export const PendingReviewsWidget = () => {
                   <p className="flex items-center gap-1.5 truncate text-[12.5px] font-medium text-slate-500">
                     {item.university || item.major}
                     <span className="text-slate-300">·</span>
-                    {item.yob || item.year}
+                    {item.yob ? new Date(item.yob).getFullYear() : item.year}
                     <span className="text-slate-300">·</span>
                     {item.targetCareer || item.role}
                   </p>

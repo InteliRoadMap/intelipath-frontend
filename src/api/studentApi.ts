@@ -1,4 +1,5 @@
-import { ENDPOINTS, mainClient } from "@/shared/api"
+import type { AxiosRequestConfig } from "axios"
+import { ENDPOINTS, mainClient, type RequestConfig } from "@/shared/api"
 
 const studentApi = {
   getFeedback: async () => {
@@ -51,13 +52,15 @@ const studentApi = {
   },
 
   requestPortfolioReview: async (mentorEmail: string) => {
-    // We send the email to the backend, backend maps to mentor_id and creates portfolio_review_requests
-    try {
-      const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_REQUEST_REVIEW, { email: mentorEmail });
-      return res.data;
-    } catch (e) {
-      throw e;
-    }
+    // We send the email to the backend, backend maps to mentor_id and creates portfolio_review_requests.
+    // skipErrorToast: RequestReviewModal already renders its own inline error banner —
+    // without this the global interceptor's toast duplicates the same message.
+    const res = await mainClient.post(
+      ENDPOINTS.STUDENT.PORTFOLIO_REQUEST_REVIEW,
+      { email: mentorEmail },
+      { skipErrorToast: true } as AxiosRequestConfig & RequestConfig
+    );
+    return res.data;
   }
 }
 
