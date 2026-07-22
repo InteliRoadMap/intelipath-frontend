@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import logoMark from '@/assets/logo-mark.png'
 
 interface OnboardingShellProps {
   /** 1-based index of the current step. */
@@ -11,8 +10,12 @@ interface OnboardingShellProps {
   subtitle: string
   error?: string
   children: ReactNode
-  /** Gives the card more room. The skill picker needs it; the short forms do not. */
-  wide?: boolean
+  /**
+   * The second pane. When given, the card widens and the body splits in two on `md` and
+   * up — short fields on the left, the thing you browse on the right — so a long list stops
+   * pushing the fields that feed it off the top of the screen. Below `md` the two stack.
+   */
+  aside?: ReactNode
   onBack?: () => void
   backLabel?: string
   onNext: () => void
@@ -22,13 +25,12 @@ interface OnboardingShellProps {
 }
 
 /**
- * The onboarding surface (Personal → Academic → Skills).
+ * The onboarding dialog (Personal → Academic → Skills).
  *
- * It owns the whole viewport rather than floating over the dashboard. Onboarding is not an
- * interruption of a page you were using — until it is finished there is no dashboard to
- * speak of, and the old scrim sat over an empty "Welcome to InteliPath" placeholder, so the
- * card appeared to hover above a blank form belonging to no product. The wordmark and the
- * app's own background carry that identity instead.
+ * Deliberately the same object as the sign-in dialog — same scrim, width, rounding, padding
+ * and title scale — because it is the same kind of moment for the same person. Earlier
+ * versions of this were a full-bleed surface twice that size in an indigo accent the rest of
+ * the app does not use, which read as a different product's form.
  */
 export default function OnboardingShell({
   step,
@@ -38,7 +40,7 @@ export default function OnboardingShell({
   subtitle,
   error,
   children,
-  wide = false,
+  aside,
   onBack,
   backLabel = 'Back',
   onNext,
@@ -47,91 +49,86 @@ export default function OnboardingShell({
   nextDisabled = false,
 }: OnboardingShellProps) {
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col overflow-y-auto bg-slate-50">
-      {/* Two soft brand washes, far enough apart to read as light rather than decoration. */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full blur-[140px]"
-          style={{ background: 'rgba(79,70,229,0.14)' }}
-        />
-        <div
-          className="absolute -bottom-40 -right-32 h-[480px] w-[480px] rounded-full blur-[140px]"
-          style={{ background: 'rgba(59,130,246,0.12)' }}
-        />
-      </div>
+    <div className="fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto px-4 py-8">
+      {/* Same scrim the sign-in dialog uses. The app stays visible behind it, dimmed —
+          which is what tells you this is a step on top of InteliPath rather than a blank
+          form belonging to nothing. */}
+      <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
 
-      <div className="relative z-10 flex min-h-full flex-col items-center px-4 py-6 sm:px-6 sm:py-8">
-        {/* Deliberately not the linked Logo: onboarding has to be finished, and a wordmark
-            that navigates to the landing page is an exit from a flow with no way back in. */}
-        <div className={`mb-5 flex w-full items-center gap-2.5 ${wide ? 'max-w-3xl' : 'max-w-xl'}`}>
-          <img src={logoMark} alt="" className="h-7 w-auto shrink-0" draggable={false} />
-          <span className="text-[18px] font-bold tracking-tight text-slate-900">InteliPath</span>
-        </div>
-
-        <div
-          className={`animate-fade-in flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0_24px_70px_-24px_rgba(15,23,42,0.35)] ring-1 ring-slate-950/[0.06] ${
-            wide ? 'max-w-3xl' : 'max-w-xl'
-          }`}
-        >
-          {/* ── Header + stepper ─────────────────────────────────── */}
-          <header className="shrink-0 px-7 pb-6 pt-7 sm:px-9">
+      {/* Sized and padded like that dialog too: same rounding, same p-6, same title scale.
+          It is the same kind of moment for the same person and should not arrive twice the
+          size in a different accent. */}
+      <div
+        className={`animate-fade-in relative z-10 m-auto flex w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl ${
+          aside ? 'max-w-3xl' : 'max-w-md'
+        }`}
+      >
+      {/* ── Header + stepper ─────────────────────────────────── */}
+          <header className="shrink-0 px-6 pb-4 pt-6">
             <div className="flex items-end justify-between gap-4">
-              <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-indigo-600">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-900">
                 Step {step} / {totalSteps}
               </span>
-              <span className="text-[12px] font-medium text-slate-400">{stepLabels[step - 1]}</span>
+              <span className="text-[11px] font-medium text-slate-400">{stepLabels[step - 1]}</span>
             </div>
 
-            <div className="mt-2.5 flex gap-1.5">
+            <div className="mt-2 flex gap-1.5">
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <span
                   key={i}
-                  className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                    i < step ? 'bg-indigo-600' : 'bg-slate-200'
+                  className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                    i < step ? 'bg-slate-900' : 'bg-slate-200'
                   }`}
                 />
               ))}
             </div>
 
-            <h1 className="mt-6 font-display text-[23px] font-bold tracking-tight text-slate-900 sm:text-[26px]">
-              {title}
-            </h1>
-            <p className="mt-1.5 text-[14.5px] leading-relaxed text-slate-500">{subtitle}</p>
+            <h1 className="mt-4 text-xl font-bold tracking-tight text-slate-900">{title}</h1>
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{subtitle}</p>
           </header>
 
           {/* ── Body ─────────────────────────────────────────────── */}
-          <div className="flex-1 px-7 pb-6 sm:px-9">
-            {error && (
-              <div className="mb-5 rounded-xl border border-rose-200/70 bg-rose-50 px-4 py-3 text-[13.5px] font-medium text-rose-600">
-                {error}
+          {error && (
+            <div className="mx-6 mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
+
+          {aside ? (
+            <div className="grid flex-1 md:grid-cols-2">
+              <div className="px-6 pb-5">{children}</div>
+              {/* Tinted and ruled off so the browsing pane reads as a different job from the
+                  fields, the way the sign-in card sets its form against its panel. */}
+              <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-5 md:border-l md:border-t-0 md:py-0 md:pt-0">
+                {aside}
               </div>
-            )}
-            {children}
-          </div>
+            </div>
+          ) : (
+            <div className="flex-1 px-6 pb-5">{children}</div>
+          )}
 
           {/* ── Footer ───────────────────────────────────────────── */}
-          <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 px-7 py-4 sm:px-9">
+          <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 px-6 py-3.5">
             <button
               type="button"
               onClick={onBack}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[14px] font-semibold text-slate-500 transition-colors hover:text-slate-900 ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-semibold text-slate-500 transition-colors hover:text-slate-900 ${
                 onBack ? '' : 'pointer-events-none opacity-0'
               }`}
             >
-              <ArrowLeft size={16} /> {backLabel}
+              <ArrowLeft size={15} /> {backLabel}
             </button>
 
             <button
               type="button"
               onClick={onNext}
               disabled={nextLoading || nextDisabled}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-[14.5px] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(79,70,229,0.8)] transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-indigo-600"
+              className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-950"
             >
               {nextLabel}
-              {!nextLoading && <ArrowRight size={17} />}
+              {!nextLoading && <ArrowRight size={15} />}
             </button>
-          </footer>
-        </div>
+        </footer>
       </div>
     </div>
   )

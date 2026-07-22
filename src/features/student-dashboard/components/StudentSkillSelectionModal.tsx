@@ -147,10 +147,62 @@ export default function StudentSkillSelectionModal({
     }
   }
 
-  if (!isOpen) return null
-
   const selectedCount = selectedIds.size
   const busy = isLoading || isSearching
+
+  // The list is what you browse; the search box and the chips you have already picked
+  // are what you steer it with. Splitting them means picking a skill near the bottom
+  // of a long category never scrolls the search box out of reach.
+  const skillList = (
+    <div className="flex h-full flex-col py-5">
+      {/* No card chrome of its own: this pane is already the tinted, ruled-off half of the
+          dialog, and boxing it again would be a border inside a border. */}
+      <div className="max-h-[46vh] min-h-52 overflow-y-auto pr-1">
+      {busy ? (
+        <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
+          <Spinner size={24} className="text-slate-900" label="Loading skills" />
+          <span>Loading skills…</span>
+        </div>
+      ) : matchCount === 0 ? (
+        <div className="flex min-h-44 items-center justify-center px-4 text-center text-[14px] font-medium text-slate-400">
+          {query.trim() ? `No skills found for “${query.trim()}”.` : 'No skills available.'}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {groups.map((group) => (
+            <div key={group.name}>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                {group.name}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map((skill) => {
+                  const isSelected = selectedIds.has(skill.skillId)
+                  return (
+                    <button
+                      key={skill.skillId}
+                      type="button"
+                      onClick={() => toggleSkill(skill)}
+                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition-all ${
+                        isSelected
+                          ? 'bg-slate-950 text-white ring-slate-950'
+                          : 'bg-white text-slate-600 ring-slate-200 hover:text-slate-900 hover:ring-slate-300'
+                      }`}
+                    >
+                      {isSelected && <Check size={13} strokeWidth={3} />}
+                      {skill.skillName}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    </div>
+  )
+
+  if (!isOpen) return null
 
   return (
     <OnboardingShell
@@ -160,7 +212,7 @@ export default function StudentSkillSelectionModal({
       title="Select your current skills"
       subtitle="Pick what you can already do. Your roadmap starts from there instead of the beginning."
       error={error}
-      wide
+      aside={skillList}
       onBack={onBack}
       onNext={handleSave}
       nextLabel={
@@ -176,9 +228,9 @@ export default function StudentSkillSelectionModal({
       {/* Chosen skills stay in view. Without this the only record of a choice was the chip
           turning blue somewhere in a long scrolling list. */}
       {selectedCount > 0 && (
-        <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3.5">
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-[12.5px] font-semibold text-indigo-900">
+            <span className="text-[12.5px] font-semibold text-slate-900">
               {selectedCount} selected
             </span>
             <button
@@ -196,7 +248,7 @@ export default function StudentSkillSelectionModal({
                 type="button"
                 onClick={() => toggleSkill(skill)}
                 title={`Remove ${skill.skillName}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 py-1.5 pl-3 pr-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-indigo-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 py-1.5 pl-3 pr-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-slate-800"
               >
                 {skill.skillName}
                 <X size={12} strokeWidth={3} />
@@ -220,7 +272,7 @@ export default function StudentSkillSelectionModal({
             if (!nextQuery.trim()) setIsSearching(false)
           }}
           placeholder="Search skills by name…"
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
         />
       </div>
 
@@ -242,49 +294,6 @@ export default function StudentSkillSelectionModal({
           ))}
         </div>
       )}
-
-      <div className="mt-3 max-h-[42vh] min-h-52 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-        {busy ? (
-          <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
-            <Spinner size={24} className="text-indigo-600" label="Loading skills" />
-            <span>Loading skills…</span>
-          </div>
-        ) : matchCount === 0 ? (
-          <div className="flex min-h-44 items-center justify-center px-4 text-center text-[14px] font-medium text-slate-400">
-            {query.trim() ? `No skills found for “${query.trim()}”.` : 'No skills available.'}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {groups.map((group) => (
-              <div key={group.name}>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                  {group.name}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {group.items.map((skill) => {
-                    const isSelected = selectedIds.has(skill.skillId)
-                    return (
-                      <button
-                        key={skill.skillId}
-                        type="button"
-                        onClick={() => toggleSkill(skill)}
-                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition-all ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white ring-indigo-600 shadow-[0_4px_12px_-4px_rgba(79,70,229,0.6)]'
-                            : 'bg-white text-slate-600 ring-slate-200 hover:text-slate-900 hover:ring-slate-300'
-                        }`}
-                      >
-                        {isSelected && <Check size={13} strokeWidth={3} />}
-                        {skill.skillName}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </OnboardingShell>
   )
 }
