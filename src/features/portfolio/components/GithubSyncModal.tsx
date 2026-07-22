@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
-import { portfolioApi, GithubRankedRepo, GithubLinkState } from '@/features/portfolio/api/portfolioApi';
-import { GH_LINK_STATE_KEY, GH_LINK_RETURN_KEY } from './GithubLinkCallback';
+import { portfolioApi, GithubRankedRepo } from '@/features/portfolio/api/portfolioApi';
+import { useGithubLink } from '@/features/portfolio/hooks/useGithubLink';
 import { toast } from '@/utils/toast';
 
 // lucide-react dropped brand marks, so we ship our own GitHub glyph (same path as the
@@ -46,23 +46,15 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   const [isImporting, setIsImporting] = useState(false);
   // needsReconnect => GitHub isn't linked / token expired; offer the OAuth reconnect button.
   const [error, setError] = useState<{ message: string; needsReconnect: boolean } | null>(null);
-  // Which GitHub account is connected. Null until the status call lands.
-  const [link, setLink] = useState<GithubLinkState | null>(null);
-  const [isUnlinking, setIsUnlinking] = useState(false);
+  // Link state and its actions are shared with the profile settings page, so the two
+  // cannot drift into different ideas of what "connected" means.
+  const { link, isBusy: isUnlinking, refresh: loadStatus, connect: reconnect,
+          disconnect, changeAccount } = useGithubLink();
   // Disconnecting logs the student out of GitHub here, so it asks first rather than
   // firing on a stray click next to "Import".
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   const existing = new Set(existingRepoUrls.map(normalizeUrl));
-
-  const loadStatus = async () => {
-    try {
-      setLink(await portfolioApi.getGithubLinkStatus());
-    } catch {
-      // Non-fatal: the repo list below already tells the student whether sync works.
-      setLink(null);
-    }
-  };
 
   const loadRepos = async () => {
     setIsLoading(true);
@@ -133,47 +125,14 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
     }
   };
 
-  // Begin the dedicated link flow: get the authorize URL, stash a CSRF state + where to
-  // return, then hand off to GitHub. On return, GithubLinkCallback finishes the exchange.
-  const reconnect = async () => {
-    try {
-      const { authorizeUrl, state } = await portfolioApi.linkGithubStart();
-      sessionStorage.setItem(GH_LINK_STATE_KEY, state);
-      sessionStorage.setItem(GH_LINK_RETURN_KEY, window.location.pathname + window.location.search);
-      window.location.href = authorizeUrl;
-    } catch {
-      toast.error('Could not start GitHub connection. Please try again.');
-    }
-  };
-
-  const disconnect = async () => {
-    setIsUnlinking(true);
-    try {
-      setLink(await portfolioApi.unlinkGithub());
-      setRepos([]);
-      setSelected(new Set());
-      setConfirmingDisconnect(false);
-      setError({ message: 'Connect your GitHub account to sync repositories.', needsReconnect: true });
-      toast.success('GitHub account disconnected.');
-    } catch {
-      toast.error('Could not disconnect GitHub. Please try again.');
-    } finally {
-      setIsUnlinking(false);
-    }
-  };
-
-  // Switching accounts is disconnect-then-connect. The unlink revokes the authorization
-  // itself, not just our token, which is what makes GitHub show its account chooser again
-  // instead of silently reconnecting the account the student is trying to leave.
-  const changeAccount = async () => {
-    setIsUnlinking(true);
-    try {
-      await portfolioApi.unlinkGithub();
-      await reconnect();
-    } catch {
-      toast.error('Could not switch GitHub accounts. Please try again.');
-      setIsUnlinking(false);
-    }
+  // Unlinking leaves this modal showing a repo list the student can no longer use, so it
+  // also clears the picker and drops back to the "Connect GitHub" invite.
+  const handleDisconnect = async () => {
+    if (!(await disconnect())) return;
+    setRepos([]);
+    setSelected(new Set());
+    setConfirmingDisconnect(false);
+    setError({ message: 'Connect your GitHub account to sync repositories.', needsReconnect: true });
   };
 
   return (
@@ -207,7 +166,7 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
                   >
                     Cancel
                   </Button>
-                  <Button variant="destructive" size="sm" disabled={isUnlinking} onClick={disconnect} className="gap-1.5">
+                  <Button variant="destructive" size="sm" disabled={isUnlinking} onClick={handleDisconnect} className="gap-1.5">
                     {isUnlinking && <Loader2 className="animate-spin" size={13} />}
                     Disconnect
                   </Button>
