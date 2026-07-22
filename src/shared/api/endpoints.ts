@@ -41,6 +41,11 @@ export const ENDPOINTS = {
   CAREER_ROLES: {
     LIST: "/careers"
   },
+  MENTOR_DIRECTORY: {
+    // Mentors a student may request a portfolio review from. Separate from MENTOR_DASHBOARD
+    // because that group is mentor-only, while this one is read by students.
+    LIST: "/mentors"
+  },
   CURRICULUM: {
     // FPT subject declaration -> transcript evidence -> dynamic roadmap.
     FPT_SUBJECTS: "/students/me/fpt-subjects",

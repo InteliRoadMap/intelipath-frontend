@@ -1,6 +1,17 @@
 import type { AxiosRequestConfig } from "axios"
 import { ENDPOINTS, mainClient, type RequestConfig } from "@/shared/api"
 
+/** Mirrors backend MentorDirectoryResponse — one mentor a student can pick to review them. */
+export interface MentorDirectoryEntry {
+  userId: string;
+  fullName: string;
+  // The identifier request-review takes. Carried so the student never has to know it.
+  email: string;
+  avatarUrl: string | null;
+  company: string | null;
+  industryFocus: string | null;
+}
+
 const studentApi = {
   getFeedback: async () => {
     try {
@@ -49,6 +60,17 @@ const studentApi = {
 
     // NEW LOGIC: Instant resolve for mock
     return { success: true };
+  },
+
+  // Mentors the student can ask for a review. Fetched as one page rather than paged in the
+  // UI: the roster is small enough to filter in the browser, and someone choosing a reviewer
+  // wants to compare the whole list rather than click through it.
+  getMentorDirectory: async (): Promise<MentorDirectoryEntry[]> => {
+    const res = await mainClient.get(
+      ENDPOINTS.MENTOR_DIRECTORY.LIST,
+      { params: { page: 0, size: 100 }, skipErrorToast: true } as AxiosRequestConfig & RequestConfig
+    );
+    return res.data?.content ?? [];
   },
 
   requestPortfolioReview: async (mentorEmail: string) => {
