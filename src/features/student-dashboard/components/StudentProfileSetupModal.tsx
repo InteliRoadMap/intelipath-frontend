@@ -5,6 +5,7 @@ import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, formatPrerequisite } from '@/lib/utils'
 import { studentDashboardService } from '../services'
 import type { CareerRole } from '../types'
+import { useHorizontalWheelScroll } from '@/hooks/useHorizontalWheelScroll'
 import OnboardingShell from './OnboardingShell'
 
 interface StudentProfileSetupModalProps {
@@ -43,6 +44,7 @@ export default function StudentProfileSetupModal({
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoadingCareers, setIsLoadingCareers] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const careerCategoryRef = useHorizontalWheelScroll()
 
   const careerGroups = useMemo(() => {
     const groups = new Map<string, CareerRole[]>()
@@ -214,7 +216,12 @@ export default function StudentProfileSetupModal({
               />
             </div>
 
-            <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+            {/* One row, scrolled sideways with the wheel. Wrapping instead would push the
+                career list down every time a category is added. */}
+            <div
+              ref={careerCategoryRef}
+              className="mb-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
+            >
               {careerCategories.map((category) => (
                 <button
                   key={category}
@@ -231,7 +238,7 @@ export default function StudentProfileSetupModal({
               ))}
             </div>
 
-            <div className="max-h-72 space-y-4 overflow-y-auto pr-1">
+            <div className="space-y-4 pr-1">
               {filteredCareerGroups.length > 0 ? (
                 filteredCareerGroups.map((group) => (
                   <div key={group.category}>

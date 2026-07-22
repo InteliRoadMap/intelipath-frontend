@@ -59,8 +59,15 @@ export default function OnboardingShell({
           It is the same kind of moment for the same person and should not arrive twice the
           size in a different accent. */}
       <div
+        // A split step takes a fixed height rather than sizing to its content: the pane on
+        // the right is filtered, and a card that shrinks to fit "Product & Design" then
+        // jumps back for "All" makes the whole dialog twitch under the cursor. Capped to
+        // the viewport either way, so the footer never ends up below the fold — which is
+        // what made the buttons look like they had disappeared.
         className={`animate-fade-in relative z-10 m-auto flex w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl ${
-          aside ? 'max-w-3xl' : 'max-w-md'
+          aside
+            ? 'h-[min(calc(100dvh-4rem),640px)] max-w-3xl'
+            : 'max-h-[calc(100dvh-4rem)] max-w-md'
         }`}
       >
       {/* ── Header + stepper ─────────────────────────────────── */}
@@ -94,17 +101,19 @@ export default function OnboardingShell({
             </div>
           )}
 
+          {/* min-h-0 on the scrolling regions: a flex child defaults to min-height:auto and
+              would refuse to shrink below its content, defeating the cap above. */}
           {aside ? (
-            <div className="grid flex-1 md:grid-cols-2">
-              <div className="px-6 pb-5">{children}</div>
+            <div className="grid min-h-0 flex-1 md:grid-cols-2">
+              <div className="min-h-0 overflow-y-auto px-6 pb-5">{children}</div>
               {/* Tinted and ruled off so the browsing pane reads as a different job from the
                   fields, the way the sign-in card sets its form against its panel. */}
-              <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-5 md:border-l md:border-t-0 md:py-0 md:pt-0">
+              <div className="min-h-0 overflow-y-auto border-t border-slate-100 bg-slate-50/60 px-6 py-5 md:border-l md:border-t-0 md:py-0">
                 {aside}
               </div>
             </div>
           ) : (
-            <div className="flex-1 px-6 pb-5">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5">{children}</div>
           )}
 
           {/* ── Footer ───────────────────────────────────────────── */}

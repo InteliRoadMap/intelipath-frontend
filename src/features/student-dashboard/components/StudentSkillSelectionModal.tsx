@@ -157,7 +157,7 @@ export default function StudentSkillSelectionModal({
     <div className="flex h-full flex-col py-5">
       {/* No card chrome of its own: this pane is already the tinted, ruled-off half of the
           dialog, and boxing it again would be a border inside a border. */}
-      <div className="max-h-[46vh] min-h-52 overflow-y-auto pr-1">
+      <div className="min-h-52 pr-1">
       {busy ? (
         <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
           <Spinner size={24} className="text-slate-900" label="Loading skills" />
