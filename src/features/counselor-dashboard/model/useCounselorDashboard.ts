@@ -118,12 +118,14 @@ export function useMissingSkills(
     counselorApi
       .getSkillMissing(activeSearch)
       .then((res: any) => {
-        setTotalStudents(res.total ?? 0)
+        setTotalStudents(res.total ?? 0) // 1. Lưu tổng số sinh viên đang theo đuổi nghề này
+        // 2. Lấy object chứa dữ liệu skill bị hổng từ Backend
         const missingSkillsData =
           res.totalMissingSkills ?? res.missingSkills ?? {}
         const items: MissingSkillItem[] = Object.entries(missingSkillsData)
           .map(([skillName, count]) => ({ skillName, count: Number(count) }))
           .sort((a, b) => b.count - a.count)
+        // 4. Lưu vào state để component Chart render
         setData(items)
         setResolvedCareerName(res.careerName || activeSearch)
         onTotalLoaded?.(items.length)

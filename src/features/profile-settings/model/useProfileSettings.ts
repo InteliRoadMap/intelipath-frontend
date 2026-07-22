@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
 import { useAuth } from "@/context/AuthContext"
+import { toast } from "@/utils/toast"
 
 export interface ProfileData {
   full_name: string
@@ -103,6 +104,8 @@ export function useProfileSettings() {
         university:
           data?.university ||
           data?.userInfo?.university ||
+          data?.academicCounselor?.universityName ||
+          data?.student?.universityName ||
           data?.student?.university ||
           "",
         accountType: data?.accountType || data?.student?.accountType || "OTHER",
