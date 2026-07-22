@@ -83,6 +83,10 @@ export const ENDPOINTS = {
     ROADMAP_PROGRESS: "/student/dashboard/roadmap-progress",
     SKILL_GAPS: "/student/dashboard/skill-gaps",
     MENTOR_FEEDBACK: "/student/dashboard/mentor-feedback",
+    // Read state lives on the server (feedback.status NEW/READ/DELETED). Marking read in
+    // the browser alone is what made an opened notification come back unread on reload.
+    MENTOR_FEEDBACK_READ: (id: string) => `/student/dashboard/mentor-feedback/${id}/read`,
+    MENTOR_FEEDBACK_DISMISS: (id: string) => `/student/dashboard/mentor-feedback/${id}`,
     RECOMMENDATIONS: "/student/dashboard/recommendations",
     MARKET_DEMAND: "/student/dashboard/market-demand",
     AI_HISTORY: "/student/dashboard/ai-history",

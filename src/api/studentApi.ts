@@ -29,22 +29,6 @@ const studentApi = {
         }));
       }
 
-      // Prepend local mock if exists
-      const localNotif = localStorage.getItem('student_notification');
-      if (localNotif) {
-        try {
-          const parsed = JSON.parse(localNotif);
-          results.unshift({
-            id: 'local-mock-1',
-            mentorName: parsed.senderName || 'Mentor',
-            mentorRole: 'Industry Expert',
-            type: parsed.type || 'SKILL',
-            submittedAt: Date.now(),
-            content: parsed.content || 'Your portfolio has received a new review!'
-          });
-        } catch(e) {}
-      }
-
       return results;
     } catch {
       return [];

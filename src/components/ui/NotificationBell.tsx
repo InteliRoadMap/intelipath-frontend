@@ -1,363 +1,35 @@
-import { useState, useRef, useEffect } from "react"
-import dashboardApi from "../../api/dashboardApi"
-import { useAuth } from "@/context"
+import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import {
-  Bell,
-  BellOff,
-  X,
-  CheckCircle,
-  Info,
-  AlertTriangle,
-  CheckCheck,
-  Check,
-  Circle,
-  Trash2
-} from "lucide-react"
+import { Bell, X, Loader2, Check, CheckCheck, Trash2 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
+import dashboardApi from "../../api/dashboardApi"
 
+/**
+ * One notification. Every field comes from the server — including `read`, which is the
+ * whole point: it used to be hardcoded false on every fetch, so an item the student had
+ * already opened came back unread as soon as the component remounted.
+ */
 export interface Notification {
   id: string
-  type: "info" | "success" | "warning"
   title: string
   message: string
   time: string
   read: boolean
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    type: "success",
-    title: "Roadmap updated",
-    message:
-      "Your learning roadmap has been updated based on your latest skill assessment.",
-    time: "2 min ago",
-    read: false
-  },
-  {
-    id: "2",
-    type: "info",
-    title: "New mentor available",
-    message:
-      "A new mentor specializing in React and TypeScript is now available for booking.",
-    time: "1 hr ago",
-    read: false
-  },
-  {
-    id: "3",
-    type: "warning",
-    title: "Skill gap detected",
-    message:
-      "Market demand for Python has risen significantly. Consider adding it to your roadmap.",
-    time: "3 hr ago",
-    read: false
-  },
-  {
-    id: "4",
-    type: "info",
-    title: "AI Mentor session ready",
-    message:
-      "Your scheduled AI Mentor session is ready. Join now to get personalized guidance.",
-    time: "Yesterday",
-    read: true
-  },
-  {
-    id: "5",
-    type: "success",
-    title: "Profile setup complete",
-    message:
-      "Great! Your profile is fully set up. You can now access all features.",
-    time: "2 days ago",
-    read: true
-  },
-  {
-    id: "6",
-    type: "info",
-    title: "Weekly report available",
-    message:
-      "Your weekly learning progress report is now available. Check your dashboard.",
-    time: "3 days ago",
-    read: true
-  },
-  {
-    id: "7",
-    type: "warning",
-    title: "Incomplete skills",
-    message:
-      "You have 3 unrated skills. Rate them to get a more accurate roadmap suggestion.",
-    time: "4 days ago",
-    read: true
-  },
-  {
-    id: "8",
-    type: "success",
-    title: "Counselor feedback received",
-    message:
-      "Your counselor has reviewed your progress and left new feedback for you.",
-    time: "5 days ago",
-    read: true
-  }
-]
-
-// ─── Icons per type ────────────────────────────────────────────────────────────
-function NotifIcon({ type }: { type: Notification["type"] }) {
-  if (type === "success")
-    return (
-      <CheckCircle size={22} className="text-emerald-500 shrink-0 mt-0.5" />
-    )
-  if (type === "warning")
-    return (
-      <AlertTriangle size={22} className="text-amber-500 shrink-0 mt-0.5" />
-    )
-  return <Info size={22} className="text-sky-500 shrink-0 mt-0.5" />
+/** Backend MentorFeedbackItemResponse. */
+interface FeedbackItem {
+  id: string
+  name?: string
+  time?: string
+  text?: string
+  read?: boolean
 }
 
-// ─── Single notification row ───────────────────────────────────────────────────
-function NotifItem({
-  notif,
-  onOpen,
-  compact = false
-}: {
-  notif: Notification
-  onOpen: (notif: Notification) => void
-  compact?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(notif)}
-      className={`w-full text-left flex items-start gap-4 px-6 py-4 transition-colors hover:bg-slate-50 ${
-        !notif.read ? "bg-[#f0fafa]" : "bg-white"
-      }`}
-    >
-      <NotifIcon type={notif.type} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <p
-            className={`text-[15px] leading-6 ${
-              !notif.read
-                ? "font-semibold text-slate-900"
-                : "font-medium text-slate-700"
-            } ${compact ? "line-clamp-1" : ""}`}
-          >
-            {notif.title}
-          </p>
-          <span className="shrink-0 text-[13px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
-            {notif.time}
-          </span>
-        </div>
-        <p
-          className={`mt-1 text-[13px] leading-5 text-slate-500 ${
-            compact ? "line-clamp-1" : "line-clamp-2"
-          }`}
-        >
-          {stripMarkdown(notif.message)}
-        </p>
-      </div>
-      {!notif.read && (
-        <span className="mt-2 shrink-0 h-2.5 w-2.5 rounded-full bg-[#00838f]" />
-      )}
-    </button>
-  )
-}
-
-function NotifEmpty({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className={`flex flex-col items-center justify-center text-center ${compact ? "py-10 px-6" : "py-20 px-6"}`}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4">
-        <BellOff size={24} className="text-slate-400" />
-      </div>
-      <p className="text-[15px] font-semibold text-slate-800">You're all caught up</p>
-      <p className="text-[13px] text-slate-500 mt-1 max-w-[220px]">
-        New feedback and updates will show up here.
-      </p>
-    </div>
-  )
-}
-
-// ─── Full-page row (with per-item actions) ─────────────────────────────────────
-function NotifRow({
-  notif,
-  onOpen,
-  onToggleRead,
-  onDelete
-}: {
-  notif: Notification
-  onOpen: (notif: Notification) => void
-  onToggleRead: (id: string) => void
-  onDelete: (id: string) => void
-}) {
-  return (
-    <div
-      className={`group relative flex items-start gap-3.5 px-4 py-3.5 transition-colors cursor-pointer hover:bg-slate-50 ${
-        !notif.read ? "bg-[#f5fbfb]" : "bg-white"
-      }`}
-      onClick={() => onOpen(notif)}
-    >
-      {/* Unread accent bar */}
-      {!notif.read && <span className="absolute left-0 top-0 h-full w-[3px] bg-[#00838f]" />}
-      <NotifIcon type={notif.type} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className={`text-[14.5px] leading-6 truncate ${!notif.read ? "font-bold text-slate-900" : "font-semibold text-slate-600"}`}>
-            {notif.title}
-          </p>
-          {!notif.read && <span className="shrink-0 h-2 w-2 rounded-full bg-[#00838f]" />}
-        </div>
-        <p className="mt-0.5 text-[13px] leading-5 text-slate-500 line-clamp-2">
-          {stripMarkdown(notif.message)}
-        </p>
-        <span className="mt-1 block text-[12px] text-slate-400 font-medium">{notif.time}</span>
-      </div>
-      {/* Actions — visible on hover (always on touch) */}
-      <div
-        className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          title={notif.read ? "Mark as unread" : "Mark as read"}
-          onClick={() => onToggleRead(notif.id)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-[#e0f5f5] hover:text-[#00838f] transition-colors"
-        >
-          {notif.read ? <Circle size={16} /> : <Check size={17} />}
-        </button>
-        <button
-          type="button"
-          title="Delete"
-          onClick={() => onDelete(notif.id)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Full-page panel (fixed overlay) ──────────────────────────────────────────
-export function NotifFullPage({
-  notifications,
-  onOpen,
-  onReadAll,
-  onToggleRead,
-  onDelete,
-  onClearAll,
-  onClose
-}: {
-  notifications: Notification[]
-  onOpen: (notif: Notification) => void
-  onReadAll: () => void
-  onToggleRead: (id: string) => void
-  onDelete: (id: string) => void
-  onClearAll: () => void
-  onClose: () => void
-}) {
-  const [filter, setFilter] = useState<"all" | "unread">("all")
-  const unread = notifications.filter((n) => !n.read).length
-  const shown = filter === "unread" ? notifications.filter((n) => !n.read) : notifications
-
-  return createPortal(
-    <div
-      className="fixed inset-0 flex flex-col bg-slate-50"
-      style={{
-        zIndex: 9999,
-        animation: "notif-slide-up 0.22s cubic-bezier(0.22,1,0.36,1)"
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-white/90 backdrop-blur-sm sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0f5f5]">
-            <Bell size={22} className="text-[#00838f]" />
-          </div>
-          <div>
-            <h2 className="text-[18px] font-bold text-slate-900">Notifications</h2>
-            <p className="text-[13px] text-slate-500">
-              {unread > 0 ? `${unread} unread` : "All caught up"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {unread > 0 && (
-            <button
-              type="button"
-              onClick={onReadAll}
-              className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-[#00838f] hover:bg-[#e0f5f5] transition-colors"
-            >
-              <CheckCheck size={16} /> Mark all read
-            </button>
-          )}
-          {notifications.length > 0 && (
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-            >
-              <Trash2 size={15} /> Clear all
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Content — centered card so the space feels intentional */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm overflow-hidden">
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2">
-            {(["all", "unread"] as const).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilter(f)}
-                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold capitalize transition-colors ${
-                  filter === f ? "bg-[#e0f5f5] text-[#00838f]" : "text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                {f}
-                {f === "unread" && unread > 0 && (
-                  <span className="ml-1.5 rounded-full bg-[#00838f] px-1.5 py-0.5 text-[10px] font-bold text-white">{unread}</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="divide-y divide-slate-100">
-            {shown.length > 0 ? (
-              shown.map((n) => (
-                <NotifRow key={n.id} notif={n} onOpen={onOpen} onToggleRead={onToggleRead} onDelete={onDelete} />
-              ))
-            ) : (
-              <NotifEmpty />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes notif-slide-up {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </div>,
-    document.body
-  )
-}
-
-// ─── Markdown helpers ──────────────────────────────────────────────────────────
-// Feedback is written in markdown (e.g. **Strengths:** ...). Strip it to plain
-// text for compact list previews; render it richly in the detail view.
+// Feedback is written in markdown (**Strengths:** ...). Previews are one line of plain
+// text; the detail view renders it properly.
 function stripMarkdown(md: string): string {
   return (md || "")
     .replace(/```[\s\S]*?```/g, "")
@@ -374,317 +46,256 @@ function stripMarkdown(md: string): string {
     .trim()
 }
 
-const notifMarkdown = {
-  p: (props: any) => <p className="text-[14px] leading-6 text-slate-600 mb-2.5" {...props} />,
+const markdownComponents = {
+  p: (props: any) => <p className="mb-2.5 text-[14px] leading-6 text-slate-600" {...props} />,
   strong: (props: any) => <strong className="font-bold text-slate-900" {...props} />,
-  ul: (props: any) => <ul className="list-disc pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600" {...props} />,
-  ol: (props: any) => <ol className="list-decimal pl-5 mb-2.5 space-y-1 text-[14px] text-slate-600" {...props} />,
+  ul: (props: any) => <ul className="mb-2.5 list-disc space-y-1 pl-5 text-[14px] text-slate-600" {...props} />,
+  ol: (props: any) => <ol className="mb-2.5 list-decimal space-y-1 pl-5 text-[14px] text-slate-600" {...props} />,
   li: (props: any) => <li className="leading-6" {...props} />,
-  h1: (props: any) => <h3 className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
-  h2: (props: any) => <h3 className="text-[15px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
-  h3: (props: any) => <h3 className="text-[14px] font-bold text-slate-900 mt-3 mb-1.5" {...props} />,
-  a: (props: any) => <a className="text-[#00838f] font-medium underline" target="_blank" rel="noreferrer" {...props} />,
+  h1: (props: any) => <h3 className="mb-1.5 mt-3 text-[15px] font-bold text-slate-900" {...props} />,
+  h2: (props: any) => <h3 className="mb-1.5 mt-3 text-[15px] font-bold text-slate-900" {...props} />,
+  h3: (props: any) => <h3 className="mb-1.5 mt-3 text-[14px] font-bold text-slate-900" {...props} />,
+  a: (props: any) => (
+    <a className="font-medium text-indigo-600 underline" target="_blank" rel="noreferrer" {...props} />
+  ),
 }
 
-// ─── Notification detail (centered modal) ──────────────────────────────────────
-function NotifDetail({ notif, onClose }: { notif: Notification; onClose: () => void }) {
+function NotificationDetail({ notif, onClose }: { notif: Notification; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
+
   return createPortal(
-    <div
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 10000, animation: "notif-fade-in 0.15s ease-out" }}
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
-        style={{ animation: "notif-pop-in 0.2s cubic-bezier(0.22,1,0.36,1)" }}
+        className="relative flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
-          <div className="flex items-start gap-3 min-w-0">
-            <NotifIcon type={notif.type} />
-            <div className="min-w-0">
-              <h2 className="text-[16px] font-bold text-slate-900 leading-snug">{notif.title}</h2>
-              {notif.time && <p className="text-[12px] text-slate-400 font-medium mt-0.5">{notif.time}</p>}
-            </div>
+          <div className="min-w-0">
+            <h2 className="text-[16px] font-bold leading-snug text-slate-900">{notif.title}</h2>
+            {notif.time && <p className="mt-0.5 text-[12px] font-medium text-slate-400">{notif.time}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <X size={18} />
           </button>
         </div>
-        {/* Body — rendered markdown */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={notifMarkdown}>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
             {notif.message}
           </ReactMarkdown>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }
 
-// ─── Main exported component ───────────────────────────────────────────────────
-export default function NotificationBell({ asMenuItem, onCloseMenu }: { asMenuItem?: boolean; onCloseMenu?: () => void } = {}) {
-  const { user } = useAuth()
+/**
+ * The notifications entry in the user menu, for students only.
+ *
+ * Read and dismiss are both persisted before the list is trusted, so the state survives a
+ * reload. Counselors, mentors and admins never render this: the only notification the
+ * product has is feedback addressed to a student, and its endpoint is student-only.
+ */
+export default function NotificationBell({ onCloseMenu }: { onCloseMenu?: () => void } = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isFullPage, setIsFullPage] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
   const [detail, setDetail] = useState<Notification | null>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read).length
-  const previewNotifs = notifications.slice(0, 4)
 
-  useEffect(() => {
-    // The mentor-feedback endpoint is student-only (hasRole('STUDENT')); calling
-    // it as a mentor/counselor/admin returns Access Denied. Only students receive
-    // mentor feedback, so skip the fetch for other roles.
-    if (user?.role?.toUpperCase() !== "STUDENT") {
+  const load = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const res = await dashboardApi.getMentorFeedback()
+      const data: FeedbackItem[] = res.data?.data || res.data || []
+      setNotifications(
+        (Array.isArray(data) ? data : []).map((fb) => ({
+          id: String(fb.id),
+          title: fb.name ? `New feedback from ${fb.name}` : "New feedback",
+          message: fb.text?.trim() || "Open to read the full feedback.",
+          time: fb.time || "",
+          read: Boolean(fb.read),
+        })),
+      )
+    } catch {
       setNotifications([])
-      return
+    } finally {
+      setIsLoading(false)
     }
-    // Fetch notifications from backend
-    const fetchNotifications = async () => {
-      try {
-        const res = await dashboardApi.getMentorFeedback()
-        const data = res.data?.data || res.data
-        
-        let mappedNotifs: Notification[] = []
-        
-        if (data && Array.isArray(data)) {
-          // Backend MentorFeedbackItemResponse fields: id, name, time, text.
-          // (`time` is already a formatted relative string, e.g. "2 days ago".)
-          mappedNotifs = data.map((fb: any) => ({
-            id: fb.id || fb.feedbackId || Math.random().toString(),
-            type: "info",
-            title: fb.name ? `New feedback from ${fb.name}` : "New feedback",
-            message: fb.text?.trim() || "Tap to read the full feedback.",
-            time: fb.time || "",
-            read: false,
-          }))
-        }
+  }, [])
 
-        // Check local storage mock notification
-        const localNotif = localStorage.getItem('student_notification')
-        if (localNotif) {
-          try {
-            const parsed = JSON.parse(localNotif)
-            mappedNotifs.unshift({
-              id: "local-mock-1",
-              type: "success",
-              title: `New feedback from ${parsed.senderName || 'Mentor'}`,
-              message: "Your portfolio has received a new review!",
-              time: new Date().toLocaleDateString(),
-              read: false,
-            })
-          } catch(e) {}
-        }
-        
-        setNotifications(mappedNotifs)
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err)
-      }
-    }
-    fetchNotifications()
-  }, [user?.role])
-
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsDropdownOpen(false)
-      }
+    load()
+  }, [load])
+
+  const setRead = (id: string, read: boolean) =>
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read } : n)))
+
+  const persistRead = async (id: string) => {
+    setRead(id, true)
+    try {
+      await dashboardApi.markMentorFeedbackRead(id)
+    } catch {
+      // Roll the badge back rather than leave the student looking at a count the server
+      // disagrees with — that mismatch is what made the old badge feel broken.
+      setRead(id, false)
     }
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isDropdownOpen])
-
-  const markRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
   }
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  const toggleRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)))
-  }
-
-  // Dismiss is client-side (the feedback endpoint is read-only); also drop the
-  // local mock so it doesn't reappear on the next render.
-  const deleteNotif = (id: string) => {
-    if (id === "local-mock-1") localStorage.removeItem("student_notification")
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }
-
-  const clearAll = () => {
-    localStorage.removeItem("student_notification")
-    setNotifications([])
-  }
-
-  const handleViewAll = () => {
-    setIsDropdownOpen(false)
-    setIsFullPage(true)
-    if (onCloseMenu) onCloseMenu()
-  }
-
-  // Open a notification's full detail (rendered markdown) and mark it read.
-  const openDetail = (notif: Notification) => {
-    markRead(notif.id)
+  const open = (notif: Notification) => {
     setDetail(notif)
-    setIsDropdownOpen(false)
+    setIsOpen(false)
+    onCloseMenu?.()
+    if (!notif.read) persistRead(notif.id)
+  }
+
+  const markAllRead = async () => {
+    const unread = notifications.filter((n) => !n.read)
+    if (unread.length === 0) return
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    const results = await Promise.allSettled(
+      unread.map((n) => dashboardApi.markMentorFeedbackRead(n.id)),
+    )
+    // Restore only what actually failed; one bad request must not undo the rest.
+    results.forEach((result, i) => {
+      if (result.status === "rejected") setRead(unread[i].id, false)
+    })
+  }
+
+  const dismiss = async (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    try {
+      await dashboardApi.dismissMentorFeedback(id)
+    } catch {
+      // Reload rather than re-insert: the row's place in the list is the server's to decide.
+      load()
+    }
   }
 
   return (
     <>
-      {/* Bell button + Dropdown */}
-      <div className={asMenuItem ? "w-full" : "relative"} ref={dropdownRef}>
-        {asMenuItem ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsDropdownOpen((v) => !v)
-            }}
-            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="relative text-slate-500">
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-rose-500" />
-                )}
-              </div>
-              <span className="text-[14px] font-medium text-slate-700">Notifications</span>
-            </div>
-            {unreadCount > 0 && (
-              <span className="text-[12px] font-bold text-white bg-rose-500 px-2 py-0.5 rounded-full">{unreadCount}</span>
-            )}
-          </button>
-        ) : (
-          <button
-            type="button"
-            id="notification-bell-btn"
-            onClick={() => setIsDropdownOpen((v) => !v)}
-            className="relative w-10 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors"
-            title="Notifications"
-          >
-            <Bell size={20} />
-            {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
-            )}
-          </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen((v) => !v)
+        }}
+        className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+      >
+        <div className="flex items-center gap-3">
+          <Bell size={18} className="text-slate-500" />
+          <span className="text-[14px] font-medium text-slate-700">Notifications</span>
+        </div>
+        {unreadCount > 0 && (
+          <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[11px] font-bold text-white">
+            {unreadCount}
+          </span>
         )}
+      </button>
 
-        {/* Dropdown */}
-        {isDropdownOpen && (
-          <div
-            className={`absolute mt-2 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${asMenuItem ? '' : 'right-0'}`}
-            style={{
-              top: asMenuItem ? "0" : "100%",
-              right: asMenuItem ? "100%" : "0",
-              marginRight: asMenuItem ? "8px" : "0",
-              zIndex: 9998,
-              animation: "notif-dropdown-in 0.18s cubic-bezier(0.22,1,0.36,1)"
-            }}
-          >
-            {/* Dropdown header */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-bold text-slate-900">
-                  Notifications
-                </span>
-                {unreadCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </div>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    markAllRead()
-                  }}
-                  className="text-[11px] font-semibold text-[#00838f] hover:underline"
-                >
-                  Mark all read
-                </button>
-              )}
-            </div>
-
-            {/* Notification list */}
-            <div className="divide-y divide-slate-100 max-h-[320px] overflow-y-auto">
-              {notifications.length > 0 ? (
-                previewNotifs.map((n) => (
-                  <NotifItem key={n.id} notif={n} onOpen={openDetail} compact />
-                ))
-              ) : (
-                <NotifEmpty compact />
-              )}
-            </div>
-
-            {/* View all button */}
-            <div className="border-t border-slate-100 p-2">
+      {isOpen && (
+        <div
+          className="absolute right-full top-0 mr-2 w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          style={{ zIndex: 9998 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <span className="text-[14px] font-bold text-slate-900">Notifications</span>
+            {unreadCount > 0 && (
               <button
                 type="button"
-                id="notification-view-all-btn"
-                onClick={handleViewAll}
-                className="w-full rounded-xl py-2 text-center text-[13px] font-semibold text-[#00838f] hover:bg-[#e0f5f5] transition-colors"
+                onClick={markAllRead}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-indigo-600 hover:underline"
               >
-                View all notifications
+                <CheckCheck size={14} /> Mark all read
               </button>
-            </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Full-page panel */}
-      {isFullPage && (
-        <NotifFullPage
-          notifications={notifications}
-          onOpen={openDetail}
-          onReadAll={markAllRead}
-          onToggleRead={toggleRead}
-          onDelete={deleteNotif}
-          onClearAll={clearAll}
-          onClose={() => {
-            setIsFullPage(false)
-          }}
-        />
+          <div className="max-h-[340px] divide-y divide-slate-100 overflow-y-auto">
+            {isLoading && (
+              <div className="flex flex-col items-center gap-2 py-12 text-slate-400">
+                <Loader2 className="animate-spin" size={20} />
+                <p className="text-[13px]">Loading…</p>
+              </div>
+            )}
+
+            {!isLoading && notifications.length === 0 && (
+              <div className="px-6 py-12 text-center">
+                <p className="text-[14px] font-semibold text-slate-700">You're all caught up</p>
+                <p className="mt-1 text-[12.5px] text-slate-500">
+                  Feedback from your counselor or mentor will appear here.
+                </p>
+              </div>
+            )}
+
+            {!isLoading &&
+              notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`group relative flex items-start gap-2 px-4 py-3 transition-colors hover:bg-slate-50 ${
+                    notif.read ? "bg-white" : "bg-indigo-50/40"
+                  }`}
+                >
+                  {!notif.read && <span className="absolute left-0 top-0 h-full w-[3px] bg-indigo-600" />}
+
+                  <button type="button" onClick={() => open(notif)} className="min-w-0 flex-1 text-left">
+                    <div className="flex items-start justify-between gap-2">
+                      <p
+                        className={`truncate text-[13.5px] ${
+                          notif.read ? "font-medium text-slate-600" : "font-bold text-slate-900"
+                        }`}
+                      >
+                        {notif.title}
+                      </p>
+                      {notif.time && (
+                        <span className="shrink-0 text-[11.5px] font-medium text-slate-400">
+                          {notif.time}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-5 text-slate-500">
+                      {stripMarkdown(notif.message)}
+                    </p>
+                  </button>
+
+                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                    {!notif.read && (
+                      <button
+                        type="button"
+                        title="Mark as read"
+                        onClick={() => persistRead(notif.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        <Check size={15} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      title="Dismiss"
+                      onClick={() => dismiss(notif.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
       )}
 
-      {/* Detail modal (rendered feedback) */}
-      {detail && <NotifDetail notif={detail} onClose={() => setDetail(null)} />}
-
-      <style>{`
-        @keyframes notif-dropdown-in {
-          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes notif-fade-in {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        @keyframes notif-pop-in {
-          from { opacity: 0; transform: translateY(10px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
+      {detail && <NotificationDetail notif={detail} onClose={() => setDetail(null)} />}
     </>
   )
 }
