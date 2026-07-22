@@ -31,6 +31,10 @@ export const ENDPOINTS = {
     PORTFOLIO_SLUG: "/student/portfolio/slug",
     // OLD CODE: (no old code for UPLOAD_TRANSCRIPT, just adding new endpoint)
     PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import",
+    PORTFOLIO_GITHUB_REPOS: "/student/portfolio/projects/github-repos",
+    PORTFOLIO_GITHUB_IMPORT_BATCH: "/student/portfolio/projects/github-import-batch",
+    PORTFOLIO_GITHUB_LINK_START: "/student/portfolio/github/link/start",
+    PORTFOLIO_GITHUB_LINK: "/student/portfolio/github/link",
     PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
     UPLOAD_TRANSCRIPT: "/student/profile/transcript"
   },

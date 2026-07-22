@@ -6,6 +6,8 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   OAUTH_CALLBACK: '/auth/callback',
+  // Dedicated GitHub "Connect for repo sync" callback (account linking, not login).
+  GITHUB_LINK_CALLBACK: '/github/callback',
   // Two addresses for one portfolio, split by who is looking:
   // /portfolio/<slug> is the internal view, for signed-in staff and students.
   // /p/<slug> is the link a student shares with the outside world.

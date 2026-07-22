@@ -16,6 +16,7 @@ import { ROUTES } from '@/shared';
 import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { RequestReviewModal } from './RequestReviewModal';
+import { GithubSyncModal, GithubIcon } from './GithubSyncModal';
 import { toast } from '@/utils/toast';
 import profileApi from '@/api/profileApi';
 
@@ -55,6 +56,25 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [githubUrl, setGithubUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  // Sync-GitHub picker (list all repos, multi-select, batch import)
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+
+  // Returning from the GitHub "Connect" flow: reopen the picker (now that a token exists)
+  // or report failure, then strip the flag from the URL so a refresh doesn't retrigger it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get('github');
+    if (!flag) return;
+    if (flag === 'connected') {
+      toast.success('GitHub connected. Choose repositories to import.');
+      setIsSyncModalOpen(true);
+    } else if (flag === 'error') {
+      toast.error('Could not connect GitHub. Please try again.');
+    }
+    params.delete('github');
+    const qs = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
+  }, []);
 
   // Avatar upload state (real file upload, not a URL prompt)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -143,7 +163,27 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
     }
   };
 
-  
+  // Append projects imported through the Sync-GitHub picker. Mirrors handleImport's
+  // mapping but for many repos at once, skipping any whose repo is already listed.
+  const handleBatchImported = (aiProjects: any[]) => {
+    setData(prev => {
+      const existingLinks = new Set(prev.projects.map(p => (p.codeLink || '').toLowerCase()));
+      const mapped = aiProjects
+        .map(aiData => ({
+          id: aiData.projectId || 'proj-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+          title: aiData.projectName || 'Project Name',
+          tech: aiData.techStack ? Object.values(aiData.techStack).flat().join(', ') : 'Tech Stack',
+          description: aiData.description || 'Project description',
+          icon: 'fab fa-github',
+          codeLink: aiData.repoUrl || '#',
+          demoLink: aiData.demoUrl || '#',
+        }))
+        .filter(p => !existingLinks.has((p.codeLink || '').toLowerCase()));
+      return { ...prev, projects: [...prev.projects, ...mapped] };
+    });
+    setIsImportModalOpen(false);
+  };
+
   // Auto-save logic
   const debouncedData = useDebounce(data, 1500); // 1.5s delay after stop typing
   
@@ -695,8 +735,30 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                   </DialogHeader>
                   
                   <div className="flex flex-col gap-4 mt-4">
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+                      <h4 className="mb-1 flex items-center gap-2 font-bold text-slate-800">
+                        <GithubIcon size={16} /> Sync from GitHub
+                      </h4>
+                      <p className="mb-3 text-sm text-slate-500">
+                        Connect your GitHub account to browse all your repositories — ranked by quality — and add several at once.
+                      </p>
+                      <Button
+                        variant="brand"
+                        className="w-full gap-2 font-bold"
+                        onClick={() => { setIsImportModalOpen(false); setIsSyncModalOpen(true); }}
+                      >
+                        <GithubIcon size={16} /> Browse my repositories
+                      </Button>
+                    </div>
+
+                    <div className="relative flex items-center py-1">
+                      <div className="flex-grow border-t border-slate-200"></div>
+                      <span className="mx-4 flex-shrink-0 text-sm font-semibold text-slate-400">OR</span>
+                      <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><i className="fab fa-github"></i> Import from GitHub (AI)</h4>
+                      <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><i className="fab fa-github"></i> Import a single repo (AI)</h4>
                       <p className="text-sm text-slate-500 mb-3">Paste a public repository URL and InteliPath AI will automatically summarize the project for you.</p>
                       <div className="flex gap-2">
                         <Input 
@@ -751,8 +813,15 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         <p className="text-[var(--text-color)] text-sm font-semibold">© 2026 IntelPath.</p>
       </footer>
 
+      <GithubSyncModal
+        open={isSyncModalOpen}
+        onOpenChange={setIsSyncModalOpen}
+        existingRepoUrls={data.projects.map(p => p.codeLink).filter(Boolean) as string[]}
+        onImported={handleBatchImported}
+      />
+
       {iconPickerProjectIdx !== null && (
-        <IconPicker 
+        <IconPicker
           currentIcon={data.projects[iconPickerProjectIdx].icon}
           onSelect={(icon) => {
             const newProj = [...data.projects];

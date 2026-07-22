@@ -9,6 +9,7 @@ import {
   PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
+import { GithubLinkCallback } from "@/features/portfolio/components/GithubLinkCallback"
 import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {
@@ -29,6 +30,14 @@ export const AppRoutes = () => {
       <Route path={ROUTES.FORGOT_PASSWORD} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
       <Route path={ROUTES.OAUTH_CALLBACK} element={<GuestRoute><OAuthCallbackPage /></GuestRoute>} />
+      <Route
+        path={ROUTES.GITHUB_LINK_CALLBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <GithubLinkCallback />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Routes */}
       <Route
