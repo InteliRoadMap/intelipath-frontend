@@ -1,4 +1,9 @@
-import { ENDPOINTS, mainClient, publicClient } from '@/shared/api';
+import type { AxiosRequestConfig } from 'axios';
+import { ENDPOINTS, mainClient, publicClient, type RequestConfig } from '@/shared/api';
+
+// skipErrorToast config: the Sync-GitHub UI renders its own inline states, so the global
+// interceptor's error toast would be redundant/misleading (e.g. "not connected yet").
+const NO_TOAST = { skipErrorToast: true } as AxiosRequestConfig & RequestConfig;
 
 export interface PortfolioData {
   id: string;
@@ -56,6 +61,33 @@ export interface PortfolioData {
   studentId?: string;
 }
 
+// Mirrors backend GithubRepoRankResponse — one ranked repo in the Sync-GitHub picker.
+export interface GithubRankedRepo {
+  name: string;
+  fullName: string;
+  repoUrl: string;
+  description: string | null;
+  homepage: string | null;
+  language: string | null;
+  stars: number;
+  forks: number;
+  isPrivate: boolean;
+  fork: boolean;
+  lastPushedAt: string | null;
+  qualityScore: number;
+  qualityTier: 'HIGH' | 'MEDIUM' | 'LOW';
+  highlights: string[];
+}
+
+// Mirrors backend GithubLinkResponse — shared by the link, status and unlink endpoints.
+// When `linked` is false the remaining fields are null/false.
+export interface GithubLinkState {
+  linked: boolean;
+  githubLogin: string | null;
+  scopes: string | null;
+  repoAccess: boolean;
+}
+
 const defaultPortfolioData: PortfolioData = {
   id: 'new',
   theme: 'light',
@@ -99,6 +131,9 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
     uiData.hero.name = backendData.userInfo.fullName || uiData.hero.name;
     uiData.hero.objective = backendData.userInfo.bio || uiData.hero.objective;
     uiData.slug = backendData.userInfo.portfolioSlug;
+    // The slug addresses the page; the id addresses the person. A viewer who
+    // arrived by slug still needs this to send feedback back.
+    uiData.studentId = backendData.userInfo.userId;
     
     // Update contact email if exists
     if (backendData.userInfo.email) {
@@ -301,6 +336,49 @@ export const portfolioApi = {
 
   importGithubProject: async (repoUrl: string) => {
     const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT, { repoUrl });
+    return res.data;
+  },
+
+  // Sync-GitHub: list & rank the student's own repos (public + private) via their
+  // linked GitHub account. No AI runs here — ranking is a cheap heuristic on the server.
+  // skipErrorToast: the modal renders its own inline "Connect GitHub" state for the
+  // not-linked (400) case, so the global error toast would be wrong/redundant.
+  listGithubRepos: async (): Promise<GithubRankedRepo[]> => {
+    const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_REPOS, NO_TOAST);
+    return res.data;
+  },
+
+  // Sync-GitHub: run AI analysis over the repos the student selected in the picker
+  // and return the resulting (unsaved) project entries to append to the portfolio.
+  importGithubBatch: async (repoUrls: string[]) => {
+    const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT_BATCH, { repoUrls }, NO_TOAST);
+    return res.data;
+  },
+
+  // Connect-GitHub link flow (account linking, separate from login). start() returns the
+  // GitHub authorize URL + a CSRF state; complete() exchanges the returned code for a token
+  // stored on the signed-in student.
+  linkGithubStart: async (): Promise<{ authorizeUrl: string; state: string }> => {
+    const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_LINK_START, NO_TOAST);
+    return res.data;
+  },
+
+  linkGithubComplete: async (code: string): Promise<GithubLinkState> => {
+    const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_LINK, { code }, NO_TOAST);
+    return res.data;
+  },
+
+  // Which GitHub account is connected, if any. Same path as linkGithubComplete — the
+  // verb is what distinguishes reading the link from creating or removing it.
+  getGithubLinkStatus: async (): Promise<GithubLinkState> => {
+    const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_LINK, NO_TOAST);
+    return res.data;
+  },
+
+  // Revokes the authorization at GitHub and drops the stored token. Imported projects
+  // stay in the portfolio. Safe to call when nothing is linked.
+  unlinkGithub: async (): Promise<GithubLinkState> => {
+    const res = await mainClient.delete(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_LINK, NO_TOAST);
     return res.data;
   }
 };

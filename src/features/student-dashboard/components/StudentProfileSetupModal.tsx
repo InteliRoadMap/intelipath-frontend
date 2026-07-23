@@ -5,6 +5,7 @@ import { useAuth } from '@/context'
 import { getErrorMessage, isUuid, formatPrerequisite } from '@/lib/utils'
 import { studentDashboardService } from '../services'
 import type { CareerRole } from '../types'
+import { useHorizontalWheelScroll } from '@/hooks/useHorizontalWheelScroll'
 import OnboardingShell from './OnboardingShell'
 
 interface StudentProfileSetupModalProps {
@@ -43,6 +44,7 @@ export default function StudentProfileSetupModal({
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoadingCareers, setIsLoadingCareers] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const careerCategoryRef = useHorizontalWheelScroll()
 
   const careerGroups = useMemo(() => {
     const groups = new Map<string, CareerRole[]>()
@@ -197,6 +199,99 @@ export default function StudentProfileSetupModal({
     }
   }
 
+  // The career list is long and is browsed, not typed into. Kept beside the short
+  // academic fields rather than under them, so choosing a career never pushes the
+  // university and major fields off the top of the card.
+  const careerPane = (
+    <div className="flex h-full flex-col md:py-5">
+          <Field label="Target career" required error={errors.careerId}>
+            <div className="relative mb-3">
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+              <input
+                value={careerSearch}
+                disabled={isLoadingCareers}
+                onChange={(event) => setCareerSearch(event.target.value)}
+                placeholder={isLoadingCareers ? 'Loading careers…' : 'Search by role or keyword'}
+                className={`${inputClass} pl-11`}
+              />
+            </div>
+
+            {/* One row, scrolled sideways with the wheel. Wrapping instead would push the
+                career list down every time a category is added. */}
+            <div
+              ref={careerCategoryRef}
+              className="mb-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
+            >
+              {careerCategories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setCareerCategory(category)}
+                  className={`shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                    careerCategory === category
+                      ? 'bg-slate-950 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-4 pr-1">
+              {filteredCareerGroups.length > 0 ? (
+                filteredCareerGroups.map((group) => (
+                  <div key={group.category}>
+                    <p className="mb-2 pl-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                      {group.category}
+                    </p>
+                    <div className="grid gap-2.5">
+                      {group.items.map((career) => {
+                        const isSelected = careerId === career.careerId
+
+                        return (
+                          <button
+                            key={career.careerId}
+                            type="button"
+                            onClick={() => {
+                              setCareerId(career.careerId)
+                              setErrors((current) => ({ ...current, careerId: undefined }))
+                            }}
+                            className={`rounded-2xl p-4 text-left transition-all duration-200 ring-1 ${
+                              isSelected
+                                ? 'bg-slate-950 ring-slate-950'
+                                : 'bg-white ring-slate-200 hover:ring-slate-300 hover:shadow-sm'
+                            }`}
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <span className={`text-[14.5px] font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                {career.careerName}
+                              </span>
+                              {isSelected && (
+                                <span className="rounded-md bg-white/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                            <span className={`line-clamp-2 block text-[12.5px] leading-relaxed ${isSelected ? 'text-white/75' : 'text-slate-500'}`}>
+                              {formatPrerequisite(career.prerequisite) || career.description || 'Career roadmap from backend data.'}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center text-[14px] font-medium text-slate-400">
+                  {isLoadingCareers ? 'Loading careers…' : 'No careers match your filters.'}
+                </div>
+              )}
+            </div>
+          </Field>
+    </div>
+  )
+
   if (!isOpen) return null
 
   const isPersonal = step === 1
@@ -213,14 +308,15 @@ export default function StudentProfileSetupModal({
           : 'This helps us recommend relevant skills and milestones.'
       }
       error={errors.general}
+      aside={isPersonal ? undefined : careerPane}
       onBack={isPersonal ? undefined : goToProfileStep}
       onNext={isPersonal ? goToAcademicStep : handleSave}
       nextLabel={isSaving ? 'Saving…' : isPersonal ? 'Continue' : 'Save & continue'}
       nextLoading={isSaving}
     >
       {isPersonal ? (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
             <Field label="Full name" required error={errors.fullName}>
               <input
                 value={fullName}
@@ -254,7 +350,7 @@ export default function StudentProfileSetupModal({
             />
           </Field>
 
-          <div className="sm:col-span-2">
+          <div>
             <Field label="Bio" hint={`${bio.length}/300 · Optional`}>
               <textarea
                 value={bio}
@@ -267,8 +363,8 @@ export default function StudentProfileSetupModal({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
             <Field label="University" required error={errors.university}>
               <input
                 type="text"
@@ -305,91 +401,9 @@ export default function StudentProfileSetupModal({
             />
           </Field>
 
-          <div className="sm:col-span-2">
-            <Field label="Target career" required error={errors.careerId}>
-              <div className="relative mb-3">
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-                <input
-                  value={careerSearch}
-                  disabled={isLoadingCareers}
-                  onChange={(event) => setCareerSearch(event.target.value)}
-                  placeholder={isLoadingCareers ? 'Loading careers…' : 'Search by role or keyword'}
-                  className={`${inputClass} pl-11`}
-                />
-              </div>
 
-              <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                {careerCategories.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => setCareerCategory(category)}
-                    className={`shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                      careerCategory === category
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              <div className="max-h-72 space-y-4 overflow-y-auto pr-1">
-                {filteredCareerGroups.length > 0 ? (
-                  filteredCareerGroups.map((group) => (
-                    <div key={group.category}>
-                      <p className="mb-2 pl-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                        {group.category}
-                      </p>
-                      <div className="grid gap-2.5 sm:grid-cols-2">
-                        {group.items.map((career) => {
-                          const isSelected = careerId === career.careerId
-
-                          return (
-                            <button
-                              key={career.careerId}
-                              type="button"
-                              onClick={() => {
-                                setCareerId(career.careerId)
-                                setErrors((current) => ({ ...current, careerId: undefined }))
-                              }}
-                              className={`rounded-2xl p-4 text-left transition-all duration-200 ring-1 ${
-                                isSelected
-                                  ? 'bg-indigo-600 ring-indigo-600 shadow-[0_8px_20px_-8px_rgba(79,70,229,0.6)]'
-                                  : 'bg-white ring-slate-200 hover:ring-slate-300 hover:shadow-sm'
-                              }`}
-                            >
-                              <div className="mb-1 flex items-center justify-between gap-2">
-                                <span className={`text-[14.5px] font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                                  {career.careerName}
-                                </span>
-                                {isSelected && (
-                                  <span className="rounded-md bg-white/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white">
-                                    Selected
-                                  </span>
-                                )}
-                              </div>
-                              <span className={`line-clamp-2 block text-[12.5px] leading-relaxed ${isSelected ? 'text-white/75' : 'text-slate-500'}`}>
-                                {formatPrerequisite(career.prerequisite) || career.description || 'Career roadmap from backend data.'}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center text-[14px] font-medium text-slate-400">
-                    {isLoadingCareers ? 'Loading careers…' : 'No careers match your filters.'}
-                  </div>
-                )}
-              </div>
-            </Field>
-          </div>
-
-          <div className="sm:col-span-2 flex items-start gap-2.5 rounded-xl bg-indigo-50/70 px-4 py-3 text-[13px] text-slate-600">
-            <Info className="mt-0.5 shrink-0 text-indigo-600" size={16} />
+          <div className="flex items-start gap-2.5 rounded-xl bg-slate-50 px-4 py-3 text-[13px] text-slate-600">
+            <Info className="mt-0.5 shrink-0 text-slate-700" size={16} />
             You can update these details later from your profile settings.
           </div>
         </div>
@@ -399,7 +413,7 @@ export default function StudentProfileSetupModal({
 }
 
 const inputClass =
-  'w-full h-12 px-4 bg-white rounded-xl border border-slate-200 text-[15px] font-medium text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed'
+  'w-full h-12 px-4 bg-white rounded-xl border border-slate-200 text-[15px] font-medium text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed'
 
 function getCareerCategory(career: CareerRole) {
   const text = `${career.careerName} ${career.prerequisite ?? ''} ${career.description ?? ''}`.toLowerCase()

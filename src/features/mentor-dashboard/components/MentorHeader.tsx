@@ -17,12 +17,12 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
   // lights up and renders nothing. Portfolios and Progress were commented out while
   // their views stayed live, which left two finished features with no way in.
   // AI Mentor is deliberately absent: there is no branch behind it yet.
+  // Roadmap Editor is hidden from the mentor for now — its route is unmounted in
+  // AppRoutes too. The view + API are kept in the codebase to bring back later.
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
     { id: "portfolios", label: "E-Portfolios" },
-    { id: "progress", label: "Progress" },
     { id: "market", label: "Market Pulse" },
-    { id: "roadmap", label: "Roadmap Editor" },
   ]
 
   return (
@@ -39,7 +39,7 @@ export function MentorHeader({ user, activeTab, onTabChange, onLogout }: MentorH
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00838f]/40 ${
                 activeTab === tab.id
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-700 hover:text-slate-900 hover:bg-white/40"

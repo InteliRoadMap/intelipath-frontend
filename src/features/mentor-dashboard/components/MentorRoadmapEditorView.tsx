@@ -4,6 +4,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  BackgroundVariant,
   Controls,
   useNodesState,
   useEdgesState,
@@ -18,6 +19,7 @@ import careerApi from "@/api/careerApi"
 import roadmapEditorApi, { type EditorNode, type UpsertNodePayload } from "../api/roadmapEditorApi"
 import { getDynamicLayoutedElements } from "@/features/student-dashboard/components/RoadmapVectorGraph"
 import { Select } from "@/components"
+import { SharedAppBackground } from "@/components/ui"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
@@ -286,16 +288,23 @@ const MentorRoadmapEditorView = () => {
 
   const nodeOptions = editorNodes.filter(n => n.nodeId !== selectedId)
 
-  const fieldClass = "w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15"
+  const fieldClass = "w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-medium text-slate-800 outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
   const labelClass = "text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block"
 
   return (
-    <div className="min-h-screen h-screen bg-slate-50 font-sans text-slate-950 flex flex-col overflow-hidden">
+    <div className="relative min-h-screen h-screen bg-transparent font-sans text-slate-950 flex flex-col overflow-hidden">
+      {/* Same blueprint-grid plane as the rest of the app. The panels below sit on it —
+          toolbar and inspector as translucent shelves, the canvas as a raised table —
+          so the editor reads as one surface, not a slate-50 box with its own grid. */}
+      <SharedAppBackground />
       <MentorHeader user={user} activeTab="roadmap" onTabChange={handleTabChange} onLogout={handleLogout} />
 
       <main className="flex-1 flex flex-col mt-[92px] px-4 pb-4 gap-3 overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 px-4 py-2.5 shadow-sm shrink-0">
+        {/* relative z-30 lifts this toolbar's stacking context above the canvas row below,
+            so the Career dropdown (absolute inside it) paints AND receives clicks over the
+            ReactFlow pane — backdrop-blur traps the menu's own z-50 inside this context. */}
+        <div className="relative z-30 flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur-md px-4 py-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] shrink-0">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Career</span>
           <Select
             value={careerId}
@@ -330,7 +339,7 @@ const MentorRoadmapEditorView = () => {
 
         <div className="flex-1 flex gap-3 min-h-0">
           {/* Canvas */}
-          <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="flex-1 rounded-2xl border border-slate-200/70 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)] overflow-hidden">
             <ReactFlowProvider>
               <ReactFlow
                 nodes={rfNodes}
@@ -341,20 +350,20 @@ const MentorRoadmapEditorView = () => {
                 nodesDraggable={false}
                 nodesConnectable={false}
                 fitView
-                fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+                fitViewOptions={{ padding: 0.15, minZoom: 0.7, maxZoom: 0.7 }}
                 minZoom={0.35}
                 panOnScroll
                 zoomOnScroll={false}
                 proOptions={{ hideAttribution: true }}
               >
-                <Background gap={24} color="#e2e8f0" />
+                <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#cbd5e1" />
                 <Controls showInteractive={false} />
               </ReactFlow>
             </ReactFlowProvider>
           </div>
 
           {/* Edit panel */}
-          <div className="w-[330px] shrink-0 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+          <div className="w-[330px] shrink-0 rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur-md shadow-[0_4px_20px_rgba(15,23,42,0.06)] flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                 {selectedId ? "Edit node" : "New node"}
@@ -374,7 +383,7 @@ const MentorRoadmapEditorView = () => {
               <div>
                 <label className={labelClass}>Description</label>
                 <textarea
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15 min-h-[70px]"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 min-h-[70px]"
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                 />
@@ -431,7 +440,7 @@ const MentorRoadmapEditorView = () => {
               <div>
                 <label className={labelClass}>Resource links (one URL per line)</label>
                 <textarea
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/15 min-h-[80px]"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-800 outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 min-h-[80px]"
                   placeholder="https://..."
                   value={form.resourcesText}
                   onChange={e => setForm({ ...form, resourcesText: e.target.value })}

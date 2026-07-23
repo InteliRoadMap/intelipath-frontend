@@ -1,4 +1,16 @@
-import { ENDPOINTS, mainClient } from "@/shared/api"
+import type { AxiosRequestConfig } from "axios"
+import { ENDPOINTS, mainClient, type RequestConfig } from "@/shared/api"
+
+/** Mirrors backend MentorDirectoryResponse — one mentor a student can pick to review them. */
+export interface MentorDirectoryEntry {
+  userId: string;
+  fullName: string;
+  // The identifier request-review takes. Carried so the student never has to know it.
+  email: string;
+  avatarUrl: string | null;
+  company: string | null;
+  industryFocus: string | null;
+}
 
 const studentApi = {
   getFeedback: async () => {
@@ -15,22 +27,6 @@ const studentApi = {
           submittedAt: fb.createAt || Date.now(),
           content: fb.content || ''
         }));
-      }
-
-      // Prepend local mock if exists
-      const localNotif = localStorage.getItem('student_notification');
-      if (localNotif) {
-        try {
-          const parsed = JSON.parse(localNotif);
-          results.unshift({
-            id: 'local-mock-1',
-            mentorName: parsed.senderName || 'Mentor',
-            mentorRole: 'Industry Expert',
-            type: parsed.type || 'SKILL',
-            submittedAt: Date.now(),
-            content: parsed.content || 'Your portfolio has received a new review!'
-          });
-        } catch(e) {}
       }
 
       return results;
@@ -50,14 +46,27 @@ const studentApi = {
     return { success: true };
   },
 
+  // Mentors the student can ask for a review. Fetched as one page rather than paged in the
+  // UI: the roster is small enough to filter in the browser, and someone choosing a reviewer
+  // wants to compare the whole list rather than click through it.
+  getMentorDirectory: async (): Promise<MentorDirectoryEntry[]> => {
+    const res = await mainClient.get(
+      ENDPOINTS.MENTOR_DIRECTORY.LIST,
+      { params: { page: 0, size: 100 }, skipErrorToast: true } as AxiosRequestConfig & RequestConfig
+    );
+    return res.data?.content ?? [];
+  },
+
   requestPortfolioReview: async (mentorEmail: string) => {
-    // We send the email to the backend, backend maps to mentor_id and creates portfolio_review_requests
-    try {
-      const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_REQUEST_REVIEW, { email: mentorEmail });
-      return res.data;
-    } catch (e) {
-      throw e;
-    }
+    // We send the email to the backend, backend maps to mentor_id and creates portfolio_review_requests.
+    // skipErrorToast: RequestReviewModal already renders its own inline error banner —
+    // without this the global interceptor's toast duplicates the same message.
+    const res = await mainClient.post(
+      ENDPOINTS.STUDENT.PORTFOLIO_REQUEST_REVIEW,
+      { email: mentorEmail },
+      { skipErrorToast: true } as AxiosRequestConfig & RequestConfig
+    );
+    return res.data;
   }
 }
 

@@ -11,6 +11,7 @@ import {
   Check,
   CheckCircle,
   Clock,
+  CaretDown,
   GitFork,
   GraduationCap,
   LinkSimple,
@@ -236,6 +237,9 @@ export default function StudentRoadmapPageView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const pageRef = useRef<HTMLDivElement>(null)
+  // Phone only: the tools stack starts folded so the canvas is what you land on.
+  // Above `sm` the CSS shows the stack regardless and this never comes into play.
+  const [controlsOpen, setControlsOpen] = useState(false)
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerSearch, setCareerSearch] = useState("")
   const [selectedCareerId, setSelectedCareerId] = useState("")
@@ -518,8 +522,10 @@ export default function StudentRoadmapPageView() {
     })
   }, { scope: pageRef, dependencies: [showCareerSelector], revertOnUpdate: true })
 
+  // dvh, not vh: on mobile Safari and Chrome the URL bar makes 100vh taller than what is
+  // actually on screen, which pushed the canvas and its zoom controls off the bottom.
   return (
-    <div ref={pageRef} className="relative h-screen w-screen overflow-hidden bg-transparent font-sans text-slate-900 flex flex-col">
+    <div ref={pageRef} className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-transparent font-sans text-slate-900">
       <SharedAppBackground />
 
       <StudentHeader
@@ -529,7 +535,7 @@ export default function StudentRoadmapPageView() {
       />
 
       {/* Main Canvas Area */}
-      <main className="relative z-10 flex-1 w-full flex mt-[72px] overflow-hidden p-4">
+      <main className="relative z-10 mt-[72px] flex w-full flex-1 overflow-hidden p-2 sm:p-4">
 
         {/* Vector Graph Area — now full width; details live in a slide-in drawer. */}
         <div className="flex-1 w-full h-full relative overflow-hidden bg-transparent rounded-2xl">
@@ -548,9 +554,9 @@ export default function StudentRoadmapPageView() {
 
             {/* Top-left floating stack: target career, AI suggestions, legend */}
             {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
-              <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2.5">
+              <div className="absolute top-2 left-2 z-20 flex max-h-[calc(100%-1rem)] flex-col items-start gap-2.5 overflow-y-auto sm:top-4 sm:left-4 sm:max-h-[calc(100%-2rem)]">
                 {/* Target Career control (moved here from the old right column). */}
-                <div className="bg-white/70 backdrop-blur-md rounded-xl ring-1 ring-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.06)] px-3.5 py-3 w-[260px]">
+                <div className="w-[260px] max-w-[calc(100vw-1rem)] rounded-xl bg-white/70 px-3.5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md sm:max-w-[calc(100vw-2rem)]">
                   <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
                     <Target size={12} weight="bold" />
                     Target Career
@@ -585,27 +591,49 @@ export default function StudentRoadmapPageView() {
                     </div>
                   </div>
                 </div>
-                <RoadmapRecommendationsPanel
-                  hasCareer={Boolean(currentCareerId)}
-                  onApplied={loadRoadmap}
-                  refreshSignal={recsRefresh}
-                />
-                {currentCareerId && isFptAccount && (
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedNodeData(null); setShowFptPanel(true) }}
-                    className="group flex w-[260px] items-center gap-2.5 rounded-xl bg-white/70 px-3.5 py-2.5 text-left shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-all hover:-translate-y-px hover:bg-white active:scale-[0.99]"
-                  >
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm">
-                      <GraduationCap size={17} weight="fill" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[12px] font-bold text-slate-800">FPT courses taken</span>
-                      <span className="block text-[10px] text-slate-500">Personalize your roadmap</span>
-                    </span>
-                  </button>
-                )}
-                <StageLegend />
+                {/* On a phone this stack and the canvas want the same space, and the stack
+                    wins by default — 260px of controls over a 375px viewport leaves nothing
+                    to read. Everything below the career card folds away behind one toggle,
+                    closed to begin with, so the roadmap is what you land on. */}
+                <button
+                  type="button"
+                  onClick={() => setControlsOpen((open) => !open)}
+                  aria-expanded={controlsOpen}
+                  className="flex w-[260px] max-w-[calc(100vw-1rem)] items-center justify-between gap-2 rounded-xl bg-white/70 px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-500 shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-colors hover:text-slate-900 sm:hidden"
+                >
+                  {controlsOpen ? 'Hide tools' : 'Tools & legend'}
+                  <CaretDown
+                    size={12}
+                    weight="bold"
+                    className={`transition-transform ${controlsOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                <div
+                  className={`${controlsOpen ? 'flex' : 'hidden'} w-[260px] max-w-[calc(100vw-1rem)] flex-col items-start gap-2.5 sm:flex sm:max-w-[calc(100vw-2rem)]`}
+                >
+                  <RoadmapRecommendationsPanel
+                    hasCareer={Boolean(currentCareerId)}
+                    onApplied={loadRoadmap}
+                    refreshSignal={recsRefresh}
+                  />
+                  {currentCareerId && isFptAccount && (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedNodeData(null); setShowFptPanel(true) }}
+                      className="group flex w-full items-center gap-2.5 rounded-xl bg-white/70 px-3.5 py-2.5 text-left shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-all hover:-translate-y-px hover:bg-white active:scale-[0.99]"
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm">
+                        <GraduationCap size={17} weight="fill" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[12px] font-bold text-slate-800">FPT courses taken</span>
+                        <span className="block text-[10px] text-slate-500">Personalize your roadmap</span>
+                      </span>
+                    </button>
+                  )}
+                  <StageLegend />
+                </div>
               </div>
             )}
         </div>
@@ -618,9 +646,12 @@ export default function StudentRoadmapPageView() {
         />
 
         {/* Node detail — a right-docked panel that fades into the background
-            (no card / shadow / widget chrome), not a floating popup. */}
+            (no card / shadow / widget chrome), not a floating popup.
+            Full width on a phone: at 375px the old 380px panel was the whole screen anyway,
+            but faded to transparent on its left edge, so it read as a broken overlay rather
+            than a sheet. Below `sm` it becomes opaque and owns the viewport. */}
         {selectedNodeData && !showFptPanel && (
-        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-[380px] max-w-[calc(100%-1rem)] flex-col justify-start bg-gradient-to-l from-slate-50 via-slate-50/85 to-transparent pl-10 pr-5 pt-6">
+        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-full flex-col justify-start bg-slate-50 px-4 pt-4 sm:w-[380px] sm:max-w-[calc(100%-1rem)] sm:bg-gradient-to-l sm:from-slate-50 sm:via-slate-50/85 sm:to-transparent sm:pl-10 sm:pr-5 sm:pt-6">
           <style>{`@keyframes rmPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}.roadmap-node-panel{animation:rmPanelIn .2s ease-out}`}</style>
           <div className="pointer-events-auto flex max-h-full flex-col">
           {/* Compact header: stage dot + node name + close. */}

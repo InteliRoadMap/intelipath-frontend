@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useLogin } from "@/features/auth"
-import { ROUTES } from "@/shared"
-import { Link } from "react-router-dom"
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
@@ -23,11 +21,16 @@ const GithubIcon = () => (
   </svg>
 )
 
+interface LoginFormProps {
+  /** Switch the popup to its "forgot password" view (no navigation). */
+  onForgotPassword: () => void
+}
+
 /**
  * Credentials sign-in for provisioned accounts (staff and FPT students), plus the
  * OAuth providers that students from other schools use. Rendered inside LoginDialog.
  */
-export default function LoginForm() {
+export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   const {
     oauthError,
     username,
@@ -93,12 +96,13 @@ export default function LoginForm() {
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="login-password">Password</FieldLabel>
-            <Link
-              to={ROUTES.FORGOT_PASSWORD}
+            <button
+              type="button"
+              onClick={onForgotPassword}
               className="ml-auto text-xs font-medium text-slate-500 underline-offset-4 hover:underline"
             >
               Forgot your password?
-            </Link>
+            </button>
           </div>
           <Input
             id="login-password"

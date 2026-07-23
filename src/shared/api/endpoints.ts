@@ -31,11 +31,20 @@ export const ENDPOINTS = {
     PORTFOLIO_SLUG: "/student/portfolio/slug",
     // OLD CODE: (no old code for UPLOAD_TRANSCRIPT, just adding new endpoint)
     PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import",
+    PORTFOLIO_GITHUB_REPOS: "/student/portfolio/projects/github-repos",
+    PORTFOLIO_GITHUB_IMPORT_BATCH: "/student/portfolio/projects/github-import-batch",
+    PORTFOLIO_GITHUB_LINK_START: "/student/portfolio/github/link/start",
+    PORTFOLIO_GITHUB_LINK: "/student/portfolio/github/link",
     PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
     UPLOAD_TRANSCRIPT: "/student/profile/transcript"
   },
   CAREER_ROLES: {
     LIST: "/careers"
+  },
+  MENTOR_DIRECTORY: {
+    // Mentors a student may request a portfolio review from. Separate from MENTOR_DASHBOARD
+    // because that group is mentor-only, while this one is read by students.
+    LIST: "/mentors"
   },
   CURRICULUM: {
     // FPT subject declaration -> transcript evidence -> dynamic roadmap.
@@ -74,6 +83,10 @@ export const ENDPOINTS = {
     ROADMAP_PROGRESS: "/student/dashboard/roadmap-progress",
     SKILL_GAPS: "/student/dashboard/skill-gaps",
     MENTOR_FEEDBACK: "/student/dashboard/mentor-feedback",
+    // Read state lives on the server (feedback.status NEW/READ/DELETED). Marking read in
+    // the browser alone is what made an opened notification come back unread on reload.
+    MENTOR_FEEDBACK_READ: (id: string) => `/student/dashboard/mentor-feedback/${id}/read`,
+    MENTOR_FEEDBACK_DISMISS: (id: string) => `/student/dashboard/mentor-feedback/${id}`,
     RECOMMENDATIONS: "/student/dashboard/recommendations",
     MARKET_DEMAND: "/student/dashboard/market-demand",
     AI_HISTORY: "/student/dashboard/ai-history",
@@ -117,6 +130,7 @@ export const ENDPOINTS = {
     METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
     LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
     CAREER_DISTRIBUTION: "/counselor/dashboard",
+    CURRICULUMS: "/counselor/curriculums",
     MISSING_SKILLS: "/counselor/dashboard/missing-skills",
     GET_STUDENT_FEEDBACK: "/counselor/dashboard/feedback/me",
     GET_STUDENT_LIST: "/counselor/feedback/students",
@@ -127,8 +141,9 @@ export const ENDPOINTS = {
     MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
       `/counselor/feedback/delete/${feedbackId}`,
-    EXPORT_STUDENTS: "/counselor/export-student",
-
+    EXPORT_STUDENTS: "/counselor/export-students",
+    IMPORT_STUDENTS: "/counselor/import-students",
+    CHECK_STUDENT_EMAIL: (email: string) => `/counselor/import-student/${email}`,
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {

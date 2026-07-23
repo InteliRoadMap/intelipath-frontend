@@ -52,23 +52,23 @@ const buildFeedbackFormData = (payload: any): FormData => {
 }
 
 const counselorApi = {
-  getStudentsMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
-  },
+  // getStudentsMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
+  // },
 
-  getProgressMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
-  },
+  // getProgressMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
+  // },
 
-  getAtRiskMetric: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
-  },
+  // getAtRiskMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
+  // },
 
-  getEngagementMetric: async () => {
-    return await mainClient.get(
-      ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
-    )
-  },
+  // getEngagementMetric: async () => {
+  //   return await mainClient.get(
+  //     ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
+  //   )
+  // },
 
   getLearningActivity: async () => {
     return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
@@ -78,6 +78,11 @@ const counselorApi = {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.CAREER_DISTRIBUTION
     )
+    return res.data
+  },
+
+  getCurriculums: async (): Promise<{ curriculums: string[] }> => {
+    const res = await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.CURRICULUMS)
     return res.data
   },
 
@@ -150,8 +155,8 @@ const counselorApi = {
           (data, headers) => {
             delete headers["Content-Type"]
             return data
-          },
-        ],
+          }
+        ]
       }
     )
     return res.data
@@ -172,8 +177,8 @@ const counselorApi = {
           (data, headers) => {
             delete headers["Content-Type"]
             return data
-          },
-        ],
+          }
+        ]
       }
     )
     return res.data
@@ -191,6 +196,29 @@ const counselorApi = {
       { responseType: "blob" }
     )
     return res.data
+  },
+  importStudents: async (students: any[]): Promise<Blob> => {
+    const res = await mainClient.post(
+      ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
+      { accounts: students },
+      { responseType: "blob" }
+    )
+    return res.data
+  },
+  checkStudentEmail: async (email: string): Promise<boolean> => {
+    try {
+      await mainClient.get(
+        ENDPOINTS.COUNSELOR_DASHBOARD.CHECK_STUDENT_EMAIL(email)
+      )
+      // If it succeeds (HTTP 200), the email is valid and does not exist.
+      return false
+    } catch (err: any) {
+      // If it throws HTTP 400, our backend returns BadRequestException indicating it exists.
+      if (err?.response?.status === 400) {
+        return true
+      }
+      throw err
+    }
   }
 }
 
