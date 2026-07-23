@@ -1,6 +1,6 @@
 import React from "react"
 import { Clock, Paperclip } from "lucide-react"
-import type { Feedback } from "@/features/counselor-dashboard/api/counselorApi"
+import type { Feedback } from "@/features/counselor/api/counselorApi"
 
 const FEEDBACK_TYPE_COLOR: Record<string, string> = {
   CAREER: "bg-[#e0f2fe] text-[#0284c7]",

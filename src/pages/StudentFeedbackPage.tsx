@@ -1,4 +1,4 @@
-import { StudentFeedbackPageView } from "@/features/student-dashboard/components/StudentFeedbackPageView"
+import { StudentFeedbackPageView } from "@/features/student/components/StudentFeedbackPageView"
 
 export default function StudentFeedbackPage() {
   return <StudentFeedbackPageView />

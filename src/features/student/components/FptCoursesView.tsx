@@ -17,7 +17,7 @@ import { ROUTES } from "@/shared"
 import fptCoursesApi, {
   type FptCourseDetail,
   type FptCourseListItem,
-} from "@/features/student-dashboard/api/fptCoursesApi"
+} from "@/features/student/api/fptCoursesApi"
 import { toast } from "@/lib/toast"
 import StudentHeader from "./StudentHeader"
 

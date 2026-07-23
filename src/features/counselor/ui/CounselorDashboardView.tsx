@@ -31,7 +31,7 @@ import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
 import { useNavigate, NavLink } from "react-router-dom"
 import { ROUTES } from "@/shared"
-import type { CareerStatistics, MissingSkillItem, Feedback } from "@/features/counselor-dashboard/api/counselorApi"
+import type { CareerStatistics, MissingSkillItem, Feedback } from "@/features/counselor/api/counselorApi"
 import {
   useCareerDistribution,
   useMissingSkills,

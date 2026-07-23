@@ -1,4 +1,4 @@
-import { MarketPulsePageView } from "@/features/student-dashboard/components"
+import { MarketPulsePageView } from "@/features/student/components"
 
 export default function StudentMarketPulsePage() {
   return <MarketPulsePageView />

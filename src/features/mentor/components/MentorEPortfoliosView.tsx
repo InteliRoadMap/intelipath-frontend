@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, ArrowsClockwise, Briefcase, FolderOpen, Warning } from '@phosphor-icons/react'
 import { ROUTES } from '@/shared'
-import mentorApi from '@/features/mentor-dashboard/api/mentorApi'
+import mentorApi from '@/features/mentor/api/mentorApi'
 
 /** Chìm — a recessed well; its slate body shows through gap-px as hairline dividers. */
 const WELL =

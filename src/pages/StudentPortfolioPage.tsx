@@ -5,7 +5,7 @@ import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioA
 import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
 
 import { useAuth } from '@/context';
-import { studentDashboardService } from '@/features/student-dashboard/services/studentDashboardService';
+import { studentDashboardService } from '@/features/student/services/studentDashboardService';
 
 export const StudentPortfolioPage = () => {
   const { user } = useAuth();

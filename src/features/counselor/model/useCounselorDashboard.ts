@@ -3,7 +3,7 @@ import counselorApi, {
   type CareerStatistics,
   type MissingSkillItem,
   type Feedback
-} from "@/features/counselor-dashboard/api/counselorApi"
+} from "@/features/counselor/api/counselorApi"
 
 // ─── useCareerDistribution ────────────────────────────────────────────────────
 export interface UseCareerDistributionResult {

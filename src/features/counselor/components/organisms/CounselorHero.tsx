@@ -1,6 +1,6 @@
 import React, { forwardRef } from "react"
 import { Sparkles, RefreshCw } from "lucide-react"
-import { StatPill } from "@/features/counselor-dashboard/components/molecules/StatPill"
+import { StatPill } from "@/features/counselor/components/molecules/StatPill"
 import { StatItem } from "@/types/dashboard"
 
 interface CounselorHeroProps {

@@ -13,11 +13,11 @@ import {
   MetricStrip,
   PendingReviewsWidget
 } from './MentorDashboardWidgets';
-import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
+import mentorApi from '@/features/mentor/api/mentorApi';
 import { Users, Layers, Timer } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
-import MarketPulsePageView from '../../student-dashboard/components/MarketPulsePageView';
+import MarketPulsePageView from '../../student/components/MarketPulsePageView';
 
 export function MentorDashboardView() {
   const { user, logout } = useAuth();

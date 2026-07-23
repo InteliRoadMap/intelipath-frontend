@@ -7,7 +7,7 @@ import StudentHeader from './StudentHeader';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
+import marketPulseApi from '@/features/student/api/marketPulseApi';
 import { normalizeTags } from '@/lib/tags';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';

@@ -48,8 +48,8 @@ import type {
   MyStudent,
   MissingSkillItem,
   Feedback
-} from "@/features/counselor-dashboard/api/counselorApi"
-import counselorApi from "@/features/counselor-dashboard/api/counselorApi"
+} from "@/features/counselor/api/counselorApi"
+import counselorApi from "@/features/counselor/api/counselorApi"
 import { toast } from "@/lib/toast"
 import {
   useStudentList,

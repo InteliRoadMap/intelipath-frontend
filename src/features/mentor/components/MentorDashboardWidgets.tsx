@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, Briefcase } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
-import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
+import mentorApi from '@/features/mentor/api/mentorApi';
 import { ROUTES } from '@/shared';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
