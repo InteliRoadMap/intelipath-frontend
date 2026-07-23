@@ -1,14 +1,15 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import {
-  WelcomePage, RegisterPage, ForgotPasswordPage, ResetPasswordPage,
+  WelcomePage, RegisterPage, ResetPasswordPage,
   DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
-  CounselorDashboardPage, CounselorFeedbackPage, MentorDashboardPage, AdminDashboardPage, 
+  CounselorDashboardPage, CounselorFeedbackPage, CounselorAddStudentPage, MentorDashboardPage, AdminDashboardPage,
   OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
   CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
   MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
-  PublicPortfolioPage, StudentMarketPulsePage, MentorRoadmapEditorPage
+  PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
+import { GithubLinkCallback } from "@/features/portfolio/components/GithubLinkCallback"
 import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {
@@ -24,9 +25,19 @@ export const AppRoutes = () => {
       {/* <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} /> */}
       <Route path={ROUTES.LOGIN} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+      {/* Forgot password is a view inside the login popup now, not a page.
+          The path stays as a redirect so any old link / navigate lands home. */}
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<Navigate to={ROUTES.HOME} replace />} />
       <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
       <Route path={ROUTES.OAUTH_CALLBACK} element={<GuestRoute><OAuthCallbackPage /></GuestRoute>} />
+      <Route
+        path={ROUTES.GITHUB_LINK_CALLBACK}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+            <GithubLinkCallback />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Routes */}
       <Route
@@ -118,6 +129,14 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path={ROUTES.COUNSELOR_ADD_STUDENT}
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.COUNSELOR]}>
+            <CounselorAddStudentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.DASHBOARD_MENTOR}
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
@@ -142,21 +161,15 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path={ROUTES.DASHBOARD_MENTOR_PORTFOLIO}
+        path={ROUTES.PORTFOLIO_INTERNAL}
         element={
           <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
             <MentorPortfolioPage />
           </ProtectedRoute>
         }
       />
-      <Route
-        path={ROUTES.DASHBOARD_MENTOR_ROADMAP_EDITOR}
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.MENTOR]}>
-            <MentorRoadmapEditorPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Roadmap Editor route intentionally unmounted — hidden from the mentor for now.
+          MentorRoadmapEditorPage/View + roadmapEditorApi are kept for a later return. */}
       <Route
         path={ROUTES.DASHBOARD_MENTOR_SETTINGS}
         element={

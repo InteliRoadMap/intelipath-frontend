@@ -24,7 +24,8 @@ import {
   Sparkles,
   AlertCircle,
   Search,
-  Paperclip
+  Paperclip,
+  UserPlus
 } from "lucide-react"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
 import { useAuth } from "@/context"
@@ -755,6 +756,17 @@ export default function CounselorDashboard() {
             >
               <MessageSquare size={16} />
               Feedback
+            </NavLink>
+            <NavLink
+              to={ROUTES.COUNSELOR_ADD_STUDENT}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-5 py-2 rounded-full transition-all duration-300 ${
+                  isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900 hover:bg-white/40"
+                }`
+              }
+            >
+              <UserPlus size={16} />
+              Add Student
             </NavLink>
           </div>
 

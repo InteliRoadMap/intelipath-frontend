@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Search } from 'lucide-react'
+import { Check, Search, X } from 'lucide-react'
 import { Spinner } from '@/components/ui'
 import { isUuid } from '@/lib/utils'
 import { getSkillErrorMessage, studentDashboardService } from '../services'
@@ -13,6 +13,8 @@ interface StudentSkillSelectionModalProps {
 }
 
 const STEP_LABELS = ['Personal', 'Academic', 'Skills']
+const ALL = 'All'
+const UNCATEGORISED = 'Other'
 
 export default function StudentSkillSelectionModal({
   isOpen,
@@ -22,8 +24,9 @@ export default function StudentSkillSelectionModal({
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [searchResults, setSearchResults] = useState<SkillItem[]>([])
   const [hasSkillCatalog, setHasSkillCatalog] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [selected, setSelected] = useState<SkillItem[]>([])
   const [query, setQuery] = useState('')
+  const [category, setCategory] = useState(ALL)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
@@ -36,7 +39,7 @@ export default function StudentSkillSelectionModal({
       .then(({ selectedSkills, skills: availableSkills }) => {
         setError('')
         setQuery('')
-        setSelectedIds(selectedSkills.map((skill) => skill.skillId))
+        setSelected(selectedSkills)
         setSkills(availableSkills)
         setHasSkillCatalog(availableSkills.length > 0)
       })
@@ -74,27 +77,54 @@ export default function StudentSkillSelectionModal({
     }
   }, [hasSkillCatalog, isOpen, query])
 
-  const visibleSkills = useMemo(() => {
+  const source = hasSkillCatalog ? skills : searchResults
+  const selectedIds = useMemo(() => new Set(selected.map((s) => s.skillId)), [selected])
+
+  const categories = useMemo(() => {
+    const names = new Set<string>()
+    source.forEach((skill) => names.add(skill.category?.trim() || UNCATEGORISED))
+    return [ALL, ...[...names].sort((a, b) => a.localeCompare(b))]
+  }, [source])
+
+  /**
+   * Grouped by category rather than one flat wall of chips. The catalog runs to several
+   * hundred skills, and a student scanning it for "the React one" has no landmarks in an
+   * undifferentiated blob — the career step in this same flow already groups this way.
+   */
+  const groups = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase()
-    if (!normalizedQuery) return skills
+    const matching = source.filter((skill) => {
+      const inCategory = category === ALL || (skill.category?.trim() || UNCATEGORISED) === category
+      const matchesQuery =
+        !normalizedQuery || skill.skillName.toLocaleLowerCase().includes(normalizedQuery)
+      return inCategory && matchesQuery
+    })
 
-    const sourceSkills = hasSkillCatalog ? skills : searchResults
-    return sourceSkills.filter((skill) =>
-      skill.skillName.toLocaleLowerCase().includes(normalizedQuery),
-    )
-  }, [hasSkillCatalog, query, searchResults, skills])
+    const byCategory = new Map<string, SkillItem[]>()
+    matching.forEach((skill) => {
+      const key = skill.category?.trim() || UNCATEGORISED
+      byCategory.set(key, [...(byCategory.get(key) ?? []), skill])
+    })
 
-  const toggleSkill = (skill: SkillItem) => {
-    const isSelected = selectedIds.includes(skill.skillId)
-    setSelectedIds((current) =>
-      isSelected
-        ? current.filter((id) => id !== skill.skillId)
-        : [...current, skill.skillId],
+    return [...byCategory.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, items]) => ({
+        name,
+        items: [...items].sort((a, b) => a.skillName.localeCompare(b.skillName)),
+      }))
+  }, [category, query, source])
+
+  const matchCount = groups.reduce((total, group) => total + group.items.length, 0)
+
+  const toggleSkill = (skill: SkillItem) =>
+    setSelected((current) =>
+      current.some((s) => s.skillId === skill.skillId)
+        ? current.filter((s) => s.skillId !== skill.skillId)
+        : [...current, skill],
     )
-  }
 
   const handleSave = async () => {
-    const uniqueSkillIds = [...new Set(selectedIds)]
+    const uniqueSkillIds = [...new Set(selected.map((s) => s.skillId))]
     if (uniqueSkillIds.length === 0) {
       setError('Select at least one skill.')
       return
@@ -108,7 +138,7 @@ export default function StudentSkillSelectionModal({
     setIsSaving(true)
     try {
       const selectedSkills = await studentDashboardService.selectSkills(uniqueSkillIds)
-      setSelectedIds(selectedSkills.map((skill) => skill.skillId))
+      setSelected(selectedSkills)
       onComplete()
     } catch (requestError) {
       setError(getSkillErrorMessage(requestError))
@@ -117,9 +147,62 @@ export default function StudentSkillSelectionModal({
     }
   }
 
-  if (!isOpen) return null
+  const selectedCount = selectedIds.size
+  const busy = isLoading || isSearching
 
-  const selectedCount = new Set(selectedIds).size
+  // The list is what you browse; the search box and the chips you have already picked
+  // are what you steer it with. Splitting them means picking a skill near the bottom
+  // of a long category never scrolls the search box out of reach.
+  const skillList = (
+    <div className="flex h-full flex-col py-5">
+      {/* No card chrome of its own: this pane is already the tinted, ruled-off half of the
+          dialog, and boxing it again would be a border inside a border. */}
+      <div className="min-h-52 pr-1">
+      {busy ? (
+        <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
+          <Spinner size={24} className="text-slate-900" label="Loading skills" />
+          <span>Loading skills…</span>
+        </div>
+      ) : matchCount === 0 ? (
+        <div className="flex min-h-44 items-center justify-center px-4 text-center text-[14px] font-medium text-slate-400">
+          {query.trim() ? `No skills found for “${query.trim()}”.` : 'No skills available.'}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {groups.map((group) => (
+            <div key={group.name}>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                {group.name}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map((skill) => {
+                  const isSelected = selectedIds.has(skill.skillId)
+                  return (
+                    <button
+                      key={skill.skillId}
+                      type="button"
+                      onClick={() => toggleSkill(skill)}
+                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition-all ${
+                        isSelected
+                          ? 'bg-slate-950 text-white ring-slate-950'
+                          : 'bg-white text-slate-600 ring-slate-200 hover:text-slate-900 hover:ring-slate-300'
+                      }`}
+                    >
+                      {isSelected && <Check size={13} strokeWidth={3} />}
+                      {skill.skillName}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    </div>
+  )
+
+  if (!isOpen) return null
 
   return (
     <OnboardingShell
@@ -127,16 +210,59 @@ export default function StudentSkillSelectionModal({
       totalSteps={3}
       stepLabels={STEP_LABELS}
       title="Select your current skills"
-      subtitle="Your choices help build a roadmap at the right level."
+      subtitle="Pick what you can already do. Your roadmap starts from there instead of the beginning."
       error={error}
+      aside={skillList}
       onBack={onBack}
       onNext={handleSave}
-      nextLabel={isSaving ? 'Saving…' : selectedCount > 0 ? `Save ${selectedCount} skill${selectedCount > 1 ? 's' : ''}` : 'Save'}
+      nextLabel={
+        isSaving
+          ? 'Saving…'
+          : selectedCount > 0
+            ? `Save ${selectedCount} skill${selectedCount > 1 ? 's' : ''}`
+            : 'Save'
+      }
       nextLoading={isSaving}
       nextDisabled={isLoading}
     >
-      <div className="relative mb-3">
-        <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+      {/* Chosen skills stay in view. Without this the only record of a choice was the chip
+          turning blue somewhere in a long scrolling list. */}
+      {selectedCount > 0 && (
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+          <div className="mb-2.5 flex items-center justify-between">
+            <span className="text-[12.5px] font-semibold text-slate-900">
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected([])}
+              className="text-[12px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {selected.map((skill) => (
+              <button
+                key={skill.skillId}
+                type="button"
+                onClick={() => toggleSkill(skill)}
+                title={`Remove ${skill.skillName}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 py-1.5 pl-3 pr-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-slate-800"
+              >
+                {skill.skillName}
+                <X size={12} strokeWidth={3} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+          size={17}
+        />
         <input
           id="skill-search"
           value={query}
@@ -146,52 +272,28 @@ export default function StudentSkillSelectionModal({
             if (!nextQuery.trim()) setIsSearching(false)
           }}
           placeholder="Search skills by name…"
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
         />
       </div>
 
-      <div className="mb-2 flex items-center justify-between px-0.5">
-        <p className="text-[12.5px] font-medium text-slate-500">
-          Tap every skill you already have — it tailors your roadmap level.
-        </p>
-        {selectedCount > 0 && (
-          <span className="text-[12px] font-semibold text-indigo-600">{selectedCount} selected</span>
-        )}
-      </div>
-
-      <div className="min-h-52 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-        {isLoading || isSearching ? (
-          <div className="flex min-h-44 flex-col items-center justify-center gap-2 text-[13px] text-slate-400">
-            <Spinner size={24} className="text-[#00838f]" label="Loading skills" />
-            <span>Loading skills…</span>
-          </div>
-        ) : visibleSkills.length === 0 ? (
-          <div className="flex min-h-44 items-center justify-center px-4 text-center text-[14px] font-medium text-slate-400">
-            {query.trim() ? `No skills found for "${query.trim()}".` : 'No skills available.'}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {visibleSkills.map((skill) => {
-              const selected = selectedIds.includes(skill.skillId)
-              return (
-                <button
-                  key={skill.skillId}
-                  type="button"
-                  onClick={() => toggleSkill(skill)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-all ring-1 ${
-                    selected
-                      ? 'bg-indigo-600 text-white ring-indigo-600 shadow-[0_4px_12px_-4px_rgba(79,70,229,0.6)]'
-                      : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  {selected && <Check size={13} />}
-                  {skill.skillName}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      {categories.length > 2 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {categories.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setCategory(name)}
+              className={`rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                category === name
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
     </OnboardingShell>
   )
 }

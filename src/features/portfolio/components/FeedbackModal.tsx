@@ -70,14 +70,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, s
     try {
       await mentorApi.submitFeedback(studentData.id, { type: category, content: finalContent });
       localStorage.removeItem(`draft_feedback_${studentData.id}`);
-      
-      // Write notification for Student
-      localStorage.setItem('student_notification', JSON.stringify({
-        type: 'FEEDBACK_RECEIVED',
-        message: 'A mentor just provided feedback on your E-Portfolio.',
-        timestamp: Date.now()
-      }));
-
+      // No local "notification" is written here: this runs in the mentor's browser, and the
+      // student reads theirs in another. The saved feedback is the notification — the
+      // student's bell reads it from the server, and an email goes out as well.
       setSubmitSuccess(true);
     } catch (e) {
       setError('Failed to submit feedback. Please try again.');

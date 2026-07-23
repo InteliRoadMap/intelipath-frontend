@@ -1,23 +1,29 @@
 import React, { useState } from "react"
-import { Mail, ArrowLeft, ArrowRight } from "lucide-react"
-import { useNavigate } from "react-router-dom"
-import authApi from "@/features/auth/api/authApi";
-import { isValidEmail, getErrorMessage } from "@/lib";
-import { ROUTES } from "@/shared";
+import { LoaderCircle, MailCheck } from "lucide-react"
+import authApi from "@/features/auth/api/authApi"
+import { Button, Field, FieldDescription, FieldGroup, FieldLabel, Input } from "@/components"
+import { isValidEmail, getErrorMessage } from "@/lib"
 
-export default function ForgotPasswordForm() {
+type ForgotPasswordFormProps = {
+  /** Return to the sign-in view of the popup. */
+  onBack: () => void
+}
+
+/**
+ * "Forgot password" step of the sign-in popup. Chromeless (no card / header of
+ * its own) — LoginDialog supplies the dialog frame and title around it.
+ */
+export default function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState("")
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const navigate = useNavigate()
+  const [sent, setSent] = useState(false)
 
   // ── Submit ──────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Client-side validation
     if (!email.trim()) {
       setError("Please enter your email address.")
       return
@@ -30,149 +36,86 @@ export default function ForgotPasswordForm() {
     setIsSubmitting(true)
     try {
       // POST /api/v1/auth/forgot-password { email }
+      // The backend always answers 200 whether or not the address exists, so we
+      // never branch on the result — we just confirm the link is on its way.
       await authApi.forgotPassword(email)
-
-      // 200 OK — email exists and OTP sent
-      console.log("[ForgotPassword] OTP sent. Navigating to /reset-password...")
-      navigate(`/reset-password?email=${encodeURIComponent(email)}`)
-    } catch (err: any) {
-      const status = err?.response?.status
-
-      if (status === 404) {
-        // 404 — Email not found
-        console.warn(
-          "[ForgotPassword] Email not found (404)."
-        )
-        setError(
-          err.response?.data?.message || "Email not found. Please check your email or sign up for a new account."
-        )
-      } else {
-        setError(getErrorMessage(err))
-      }
+      setSent(true)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  return (
-    <div className="w-full">
-      <div className="mb-8 select-none">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 mb-2">
-          Forgot Password?
-        </h2>
-        <p className="text-sm text-slate-600 font-light leading-relaxed">
-          Enter your registered email and we'll send you an{" "}
-          <span className="text-brand-cyan font-medium">OTP code</span> to reset
-          your password.
+  // ── Sent state ──────────────────────────────────────────────────────────
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-5 py-1 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+          <MailCheck className="h-6 w-6" />
+        </div>
+        <p className="mx-auto max-w-xs text-sm leading-relaxed text-slate-600">
+          If an account exists for{" "}
+          <span className="font-medium text-slate-800">{email}</span>, we've sent a link
+          to reset your password. It expires in 30 minutes.
         </p>
-      </div>
-
-      {/* Error banner */}
-      {error && (
-        <div
-          className="mb-5 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30
-          text-rose-400 text-sm leading-relaxed"
-        >
-          {error}
-          {/* Hiện thêm gợi ý nếu là 404 */}
-          {error.includes("not found") && (
-            <p className="mt-1 text-xs text-rose-400/70">
-              Redirecting to Sign In...
-            </p>
-          )}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Email input */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="forgot-email"
-            className="text-xs font-semibold text-slate-600 tracking-wide"
-          >
-            Email Address
-          </label>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-              <Mail className="w-4 h-4" />
-            </span>
-            <input
-              id="forgot-email"
-              type="email"
-              autoComplete="email"
-              placeholder="e.g. engineering@university.edu"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setError("")
-              }}
-              className="w-full text-sm pl-10 pr-4 py-3 rounded-xl glass-input"
-              disabled={isSubmitting}
-            />
-          </div>
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          id="forgot-submit-btn"
-          disabled={isSubmitting}
-          className="relative w-full py-3.5 px-4 rounded-xl text-sm font-semibold
-            tracking-wide text-white flex items-center justify-center gap-2 overflow-hidden group
-            bg-linear-to-r from-brand-electric via-brand-blue to-brand-cyan
-            hover:brightness-110 active:brightness-95
-            hover:shadow-[0_0_24px_rgba(6,182,212,0.3)]
-            transition-all duration-300 shadow-md cursor-pointer
-            disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? (
-            <>
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              <span>Sending...</span>
-            </>
-          ) : (
-            <>
-              <span>Send OTP Code</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-            </>
-          )}
-          <div
-            className="absolute top-0 -inset-full h-full w-1/2 z-10 transform -skew-x-12
-            bg-linear-to-r from-transparent to-white/10 opacity-40
-            group-hover:animate-[shimmer_1.2s_ease-in-out_infinite]"
-          />
-        </button>
-      </form>
-
-      {/* Back to login */}
-      <div className="text-center mt-8">
-        <button
-          onClick={() => navigate(ROUTES.LOGIN)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold
-            text-slate-500 hover:text-brand-cyan transition-colors duration-150 cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
+        <Button type="button" variant="outline" onClick={onBack} className="w-full">
           Back to Sign In
-        </button>
+        </Button>
       </div>
-    </div>
+    )
+  }
+
+  // ── Main form ─────────────────────────────────────────────────────────────
+  return (
+    <form onSubmit={handleSubmit}>
+      <FieldGroup>
+        {error && (
+          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {error}
+          </p>
+        )}
+
+        <Field>
+          <FieldLabel htmlFor="forgot-email">Email</FieldLabel>
+          <Input
+            id="forgot-email"
+            type="email"
+            autoComplete="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              setError("")
+            }}
+            disabled={isSubmitting}
+            className={error ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/15" : ""}
+          />
+        </Field>
+
+        <Field>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Sending…
+              </>
+            ) : (
+              "Send reset link"
+            )}
+          </Button>
+          <FieldDescription className="text-center">
+            Remember your password?{" "}
+            <button
+              type="button"
+              onClick={onBack}
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Back to Sign In
+            </button>
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
+    </form>
   )
 }

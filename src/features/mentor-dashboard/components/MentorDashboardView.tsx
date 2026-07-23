@@ -8,19 +8,15 @@ import { ROUTES } from '@/shared';
 import { MentorHeader } from './MentorHeader';
 
 // Sections
-import { 
-  WelcomeBanner, 
-  MetricWidget, 
-  PendingReviewsWidget, 
-  CareerDistributionWidget, 
-  QuickActionsWidget, 
-  MentorInsightWidget 
+import {
+  WelcomeBanner,
+  MetricStrip,
+  PendingReviewsWidget
 } from './MentorDashboardWidgets';
 import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
-import { Users, Layers, Gauge } from 'lucide-react';
+import { Users, Layers, Timer } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
-import { MentorProgressReportsView } from './MentorProgressReportsView';
 import MarketPulsePageView from '../../student-dashboard/components/MarketPulsePageView';
 
 export function MentorDashboardView() {
@@ -70,10 +66,6 @@ export function MentorDashboardView() {
         user={user}
         activeTab={activeTab}
         onTabChange={(tab) => {
-          if (tab === 'roadmap') {
-            navigate(ROUTES.DASHBOARD_MENTOR_ROADMAP_EDITOR);
-            return;
-          }
           setActiveTab(tab);
         }}
         onLogout={handleLogout}
@@ -84,14 +76,31 @@ export function MentorDashboardView() {
           <div className="space-y-5">
             <section className="gsap-fade-section">
               <WelcomeBanner user={user} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <MetricWidget title="TOTAL MENTEES" icon={Users} data={metrics?.mentees} isLoading={metricsLoading} />
-                <MetricWidget title="PENDING REVIEWS" icon={Layers} data={metrics?.pendingReviews} isLoading={metricsLoading} />
-                <MetricWidget title="FEEDBACK SENT" icon={ChatTeardropText} data={metrics?.feedbacks} isLoading={metricsLoading} />
-                <MetricWidget title="AVG. PROGRESS" icon={Gauge} data={metrics?.responseTime} isLoading={metricsLoading} />
+              {/*
+                Every label here now says what the field actually holds. Three of the four
+                used to lie: "TOTAL MENTEES" counts students who sent a review request —
+                there is no roster and no assignment anywhere in the schema; "FEEDBACK SENT"
+                only counts the last seven days; and "AVG. PROGRESS" was rendering
+                responseTime, a duration, under a label about progress. The DTO has no
+                progress field at all.
+              */}
+              <div className="mt-6">
+                <MetricStrip
+                  isLoading={metricsLoading}
+                  items={[
+                    { title: 'WAITING ON YOU', icon: Layers, data: metrics?.pendingReviews },
+                    { title: 'STUDENTS WHO ASKED', icon: Users, data: metrics?.mentees },
+                    { title: 'FEEDBACK SENT · 7 DAYS', icon: ChatTeardropText, data: metrics?.feedbacks },
+                    { title: 'AVG. RESPONSE', icon: Timer, data: metrics?.responseTime },
+                  ]}
+                />
               </div>
             </section>
-            
+
+            {/*
+              The queue leads. A mentor's only tie to a student in this system is a
+              portfolio review request, so the page is an inbox, not a roster.
+            */}
             <section className="gsap-fade-section">
               <PendingReviewsWidget />
             </section>
@@ -103,14 +112,6 @@ export function MentorDashboardView() {
             <MentorEPortfoliosView />
           </div>
         )}
-
-        {activeTab === 'progress' && (
-          <div className="gsap-fade-section">
-            <MentorProgressReportsView />
-          </div>
-        )}
-
-
 
         {activeTab === 'market' && (
           <div className="gsap-fade-section pt-10">

@@ -14,7 +14,7 @@ const authApi = {
     return await publicClient.post(ENDPOINTS.AUTH.FORGOT_PASSWORD, { email })
   },
 
-  resetPassword: async (data: { email: string; otp: string; newPassword: string }) => {
+  resetPassword: async (data: { token: string; newPassword: string }) => {
     return await publicClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, data)
   },
 

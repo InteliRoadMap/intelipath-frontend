@@ -56,10 +56,9 @@ const mentorApi = {
     } catch { return []; }
   },
 
-  getStudentPortfolio: async (studentId: string) => {
+  getStudentPortfolio: async (slug: string) => {
     try {
-      // FE routes to the public portfolio API as suggested by BE
-      const res = await mainClient.get(`/public-portfolio/${studentId}`);
+      const res = await mainClient.get(`/public-portfolio/slug/${slug}`);
       const rawData = res.data?.data || res.data;
       return mapToFrontendData(rawData);
     } catch {
