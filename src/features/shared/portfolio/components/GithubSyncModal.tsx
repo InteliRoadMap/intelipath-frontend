@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
-import { portfolioApi, GithubRankedRepo } from '@/features/portfolio/api/portfolioApi';
-import { useGithubLink } from '@/features/portfolio/hooks/useGithubLink';
+import { portfolioApi, GithubRankedRepo } from '@/features/shared/portfolio/api/portfolioApi';
+import { useGithubLink } from '@/features/shared/portfolio/hooks/useGithubLink';
 import { toast } from '@/lib/toast';
 
 // lucide-react dropped brand marks, so we ship our own GitHub glyph (same path as the

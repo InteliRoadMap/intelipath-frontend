@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowSquareOut, GithubLogo } from '@phosphor-icons/react'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { useGithubLink } from '@/features/portfolio/hooks/useGithubLink'
+import { useGithubLink } from '@/features/shared/portfolio/hooks/useGithubLink'
 
 interface GithubConnectionFieldProps {
   /** The stored profile URL. Falls back to the linked login when the record predates it. */

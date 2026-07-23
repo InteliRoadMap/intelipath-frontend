@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { portfolioApi, type GithubLinkState } from '@/features/portfolio/api/portfolioApi'
-import { GH_LINK_STATE_KEY, GH_LINK_RETURN_KEY } from '@/features/portfolio/components/GithubLinkCallback'
+import { portfolioApi, type GithubLinkState } from '@/features/shared/portfolio/api/portfolioApi'
+import { GH_LINK_STATE_KEY, GH_LINK_RETURN_KEY } from '@/features/shared/portfolio/components/GithubLinkCallback'
 import { toast } from '@/lib/toast'
 
 /**

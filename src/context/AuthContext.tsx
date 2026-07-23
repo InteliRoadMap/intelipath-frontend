@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useRef } from "react"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import { userApi } from "@/api"
-import { User, AuthState } from "@/features/auth"
+import { User, AuthState } from "@/features/shared/auth"
 import { jwtDecode } from "jwt-decode"
 
 interface LoginTokens {

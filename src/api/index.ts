@@ -1,4 +1,4 @@
-export { default as authApi } from '@/features/auth/api/authApi'
+export { default as authApi } from '@/features/shared/auth/api/authApi'
 export { default as adminApi } from '@/features/admin/api/adminApi'
 export { default as counselorApi } from '@/features/counselor/api/counselorApi'
 export { default as mentorApi } from '@/features/mentor/api/mentorApi'

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { SignOut, CaretDown, GearSix } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
-import type { User } from '@/features/auth'
+import type { User } from '@/features/shared/auth'
 import NotificationBell from './NotificationBell'
 
 interface UserHeaderActionsProps {

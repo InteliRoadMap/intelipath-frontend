@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { portfolioApi } from '@/features/portfolio/api/portfolioApi';
+import { portfolioApi } from '@/features/shared/portfolio/api/portfolioApi';
 import { ROUTES } from '@/shared';
 
 // sessionStorage keys shared with GithubSyncModal's "Connect GitHub" kickoff.

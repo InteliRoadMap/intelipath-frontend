@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
+import { portfolioApi, PortfolioData } from '@/features/shared/portfolio/api/portfolioApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import { EditableText } from './EditableText';
 import { ThemeEditor } from './ThemeEditor';
@@ -7,7 +7,7 @@ import { IconPicker } from './IconPicker';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import '@/features/portfolio/styles.css';
+import '@/features/shared/portfolio/styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
 import mentorApi from '@/features/mentor/api/mentorApi';

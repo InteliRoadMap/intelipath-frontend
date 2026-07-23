@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { LoaderCircle, MailCheck } from "lucide-react"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import { Button, Field, FieldDescription, FieldGroup, FieldLabel, Input } from "@/components"
 import { isValidEmail, getErrorMessage } from "@/lib"
 

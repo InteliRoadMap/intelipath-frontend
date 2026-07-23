@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { MapTrifold, Robot, SquaresFour, TrendUp, IdentificationCard, ChatTeardropText } from "@phosphor-icons/react"
 import { UserHeaderActions, Logo, MobileNavMenu } from "@/components"
 import { ROUTES } from "@/shared"
-import type { User } from "@/features/auth/types"
+import type { User } from "@/features/shared/auth/types"
 
 type StudentHeaderProps = {
   user: User | null

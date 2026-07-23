@@ -20,7 +20,7 @@ import {
   RocketLaunch,
   Sparkle
 } from "@phosphor-icons/react"
-import { LoginDialog } from "@/features/auth"
+import { LoginDialog } from "@/features/shared/auth"
 import { SharedAppBackground, Logo } from "@/components"
 
 const FEATURES = [

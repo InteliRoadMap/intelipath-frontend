@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, ShieldAlert, ShieldCheck } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import {
   Button,
   Card,

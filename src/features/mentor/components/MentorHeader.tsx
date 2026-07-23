@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom"
 import { UserHeaderActions, Logo, MobileNavMenu } from "@/components"
 import { ROUTES } from "@/shared"
-import type { User } from "@/features/auth/types"
+import type { User } from "@/features/shared/auth/types"
 
 type MentorHeaderProps = {
   user: User | null

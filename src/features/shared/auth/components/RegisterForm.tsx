@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { Eye, EyeOff, LoaderCircle } from "lucide-react"
 import { isAxiosError } from "axios"
 import { useNavigate } from "react-router-dom"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import {
   Button,
   Card,
