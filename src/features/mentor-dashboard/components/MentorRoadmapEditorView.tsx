@@ -23,7 +23,7 @@ import { SharedAppBackground } from "@/components/ui"
 import { MentorHeader } from "./MentorHeader"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 const STAGES = ["FOUNDATION", "CORE", "PRACTICAL", "ADVANCED", "JOB_READY"]
 const POLICIES = ["MANUAL_ONLY", "EVIDENCE_ALLOWED", "NEVER_COMPLETE"]

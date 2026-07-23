@@ -11,9 +11,9 @@ import {
 } from "recharts"
 import { Search, TrendingDown } from "lucide-react"
 import { useMissingSkills } from "@/features/counselor-dashboard/model/useCounselorDashboard"
-import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
-import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
-import { ChartTooltip } from "@/components/counselor-dashboard/atoms/ChartTooltip"
+import { ErrorBanner } from "@/features/counselor-dashboard/components/atoms/ErrorBanner"
+import { EmptyState } from "@/features/counselor-dashboard/components/atoms/EmptyState"
+import { ChartTooltip } from "@/features/counselor-dashboard/components/atoms/ChartTooltip"
 
 export function MissingSkillsChart({
   careerFilter,

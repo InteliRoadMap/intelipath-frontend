@@ -17,7 +17,7 @@ import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { RequestReviewModal } from './RequestReviewModal';
 import { GithubSyncModal, GithubIcon } from './GithubSyncModal';
-import { toast } from '@/utils/toast';
+import { toast } from '@/lib/toast';
 import profileApi from '@/api/profileApi';
 
 gsap.registerPlugin(ScrollTrigger);

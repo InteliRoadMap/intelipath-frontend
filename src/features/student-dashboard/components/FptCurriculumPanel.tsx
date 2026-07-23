@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Check, GraduationCap, MagnifyingGlass, Sparkle, X } from "@phosphor-icons/react"
 import { Skeleton } from "@/components/ui"
 import roadmapApi from "@/api/roadmapApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 /** FLM subject names are "English_Tiếng Việt"; show only the English half. */
 const enName = (name: string) => (name || "").split("_")[0].trim() || name

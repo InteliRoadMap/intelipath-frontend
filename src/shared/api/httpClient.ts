@@ -18,7 +18,7 @@ import axios, {
 import { ENDPOINTS } from "./endpoints"
 import { API_BASE_URL } from "@/app/config/appConfig"
 import { ROUTES } from "@/shared"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 // Every request use client also go through interceptor
 // client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller

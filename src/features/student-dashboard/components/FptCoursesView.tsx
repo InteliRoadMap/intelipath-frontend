@@ -18,7 +18,7 @@ import fptCoursesApi, {
   type FptCourseDetail,
   type FptCourseListItem,
 } from "@/features/student-dashboard/api/fptCoursesApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 import StudentHeader from "./StudentHeader"
 
 /** The roadmap's panel chrome, so a section here reads as the same surface as one there. */

@@ -1,9 +1,9 @@
 import React from "react"
 import { MessageSquare } from "lucide-react"
 import { useFeedbackList } from "@/features/counselor-dashboard/model/useCounselorDashboard"
-import { ErrorBanner } from "@/components/counselor-dashboard/atoms/ErrorBanner"
-import { EmptyState } from "@/components/counselor-dashboard/atoms/EmptyState"
-import { FeedbackItem } from "@/components/counselor-dashboard/molecules/FeedbackItem"
+import { ErrorBanner } from "@/features/counselor-dashboard/components/atoms/ErrorBanner"
+import { EmptyState } from "@/features/counselor-dashboard/components/atoms/EmptyState"
+import { FeedbackItem } from "@/features/counselor-dashboard/components/molecules/FeedbackItem"
 
 export function FeedbackListWidget({
   onTotalLoaded

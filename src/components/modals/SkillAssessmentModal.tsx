@@ -1,6 +1,6 @@
 import { Check, Search, Sparkles, X } from "lucide-react"
-import BaseModal from "../components/modals/BaseModal"
-import { useSkillAssessment } from "../hooks/useSkillAssessment"
+import BaseModal from "./BaseModal"
+import { useSkillAssessment } from "@/hooks/useSkillAssessment"
 
 interface SkillsModalProps {
   isOpen: boolean

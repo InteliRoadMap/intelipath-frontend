@@ -3,7 +3,7 @@ import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check } from 'luc
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
 import { portfolioApi, GithubRankedRepo } from '@/features/portfolio/api/portfolioApi';
 import { useGithubLink } from '@/features/portfolio/hooks/useGithubLink';
-import { toast } from '@/utils/toast';
+import { toast } from '@/lib/toast';
 
 // lucide-react dropped brand marks, so we ship our own GitHub glyph (same path as the
 // login screen's) and reuse it across the portfolio Sync-GitHub UI.

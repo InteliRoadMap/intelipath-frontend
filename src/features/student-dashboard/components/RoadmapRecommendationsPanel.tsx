@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { CaretDown, CaretUp, Check, Sparkle, X } from "@phosphor-icons/react"
 import roadmapApi from "@/api/roadmapApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 import type { RoadmapRecommendation, RoadmapRecommendationDecision } from "../types"
 
 interface RoadmapRecommendationsPanelProps {

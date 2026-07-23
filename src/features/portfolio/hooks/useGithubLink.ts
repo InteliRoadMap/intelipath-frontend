@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { portfolioApi, type GithubLinkState } from '@/features/portfolio/api/portfolioApi'
 import { GH_LINK_STATE_KEY, GH_LINK_RETURN_KEY } from '@/features/portfolio/components/GithubLinkCallback'
-import { toast } from '@/utils/toast'
+import { toast } from '@/lib/toast'
 
 /**
  * The student's GitHub connection: who is linked, and how to connect, disconnect or switch.

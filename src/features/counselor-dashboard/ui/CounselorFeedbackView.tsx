@@ -50,7 +50,7 @@ import type {
   Feedback
 } from "@/features/counselor-dashboard/api/counselorApi"
 import counselorApi from "@/features/counselor-dashboard/api/counselorApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 import {
   useStudentList,
   useStudentDetailInfo,

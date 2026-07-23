@@ -1,4 +1,4 @@
-import BaseModal from "../components/modals/BaseModal"
+import BaseModal from "./BaseModal"
 import { DatePicker, Select } from "@/components"
 import {
   User,
@@ -9,7 +9,7 @@ import {
   GraduationCap,
   ArrowRight,
 } from "lucide-react"
-import { useStudentOnboarding } from "../hooks/useStudentOnboarding"
+import { useStudentOnboarding } from "@/hooks/useStudentOnboarding"
 
 interface StudentOnboardingModalProps {
   isOpen: boolean

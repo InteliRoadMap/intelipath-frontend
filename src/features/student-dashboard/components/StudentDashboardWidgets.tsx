@@ -34,7 +34,7 @@ import { Skeleton } from "@/components/ui"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { useAuth } from "@/context"
 import roadmapApi from "@/api/roadmapApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 import { studentDashboardService } from "../services"
 import { useDashboardData, useRoadmapProgress } from "../hooks"
 import type {

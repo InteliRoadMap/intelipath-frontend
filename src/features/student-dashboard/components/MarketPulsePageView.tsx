@@ -8,7 +8,7 @@ import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import marketPulseApi from '@/features/student-dashboard/api/marketPulseApi';
-import { normalizeTags } from '@/utils/tags';
+import { normalizeTags } from '@/lib/tags';
 import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
 import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
 import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';

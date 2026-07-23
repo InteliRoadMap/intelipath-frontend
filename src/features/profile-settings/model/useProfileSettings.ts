@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import profileApi from "@/api/profileApi"
 import { useAuth } from "@/context/AuthContext"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 export interface ProfileData {
   full_name: string
