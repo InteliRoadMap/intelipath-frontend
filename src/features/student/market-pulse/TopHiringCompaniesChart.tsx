@@ -1,5 +1,5 @@
 import React from 'react';
-import { TopCompany } from '../../types/marketPulse';
+import { TopCompany } from './marketPulse';
 import { motion } from 'framer-motion';
 
 interface Props {

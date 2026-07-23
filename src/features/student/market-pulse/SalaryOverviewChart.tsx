@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SalaryBracket } from '../../types/marketPulse';
+import { SalaryBracket } from './marketPulse';
 import { PieChart, Pie, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 

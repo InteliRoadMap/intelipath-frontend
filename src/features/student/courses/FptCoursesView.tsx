@@ -17,9 +17,9 @@ import { ROUTES } from "@/shared"
 import fptCoursesApi, {
   type FptCourseDetail,
   type FptCourseListItem,
-} from "@/features/student/api/fptCoursesApi"
+} from "@/features/student/courses/fptCoursesApi"
 import { toast } from "@/lib/toast"
-import StudentHeader from "./StudentHeader"
+import StudentHeader from "@/features/student/common/StudentHeader"
 
 /** The roadmap's panel chrome, so a section here reads as the same surface as one there. */
 const PANEL =

@@ -17,7 +17,7 @@ import mentorApi from '@/features/mentor/api/mentorApi';
 import { Users, Layers, Timer } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
-import MarketPulsePageView from '../../student/components/MarketPulsePageView';
+import MarketPulsePageView from '@/features/student/market-pulse/MarketPulsePageView';
 
 export function MentorDashboardView() {
   const { user, logout } = useAuth();

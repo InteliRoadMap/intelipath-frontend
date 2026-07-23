@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { SkillTrend } from '../../types/marketPulse';
+import { SkillTrend } from './marketPulse';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 

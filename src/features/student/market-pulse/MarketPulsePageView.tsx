@@ -2,17 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { Select } from "@/components";
 import { SharedAppBackground, Skeleton } from '@/components/ui';
 import { Search, MapPin, Briefcase, DollarSign, Calendar, ChevronRight } from 'lucide-react';
-import { RecruitmentPost } from '../types/marketPulse';
-import StudentHeader from './StudentHeader';
+import { RecruitmentPost } from './marketPulse';
+import StudentHeader from '@/features/student/common/StudentHeader';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import marketPulseApi from '@/features/student/api/marketPulseApi';
+import marketPulseApi from '@/features/student/market-pulse/marketPulseApi';
 import { normalizeTags } from '@/lib/tags';
-import TopHiringCompaniesChart from './market-pulse/TopHiringCompaniesChart';
-import TrendingSkillsChart from './market-pulse/TrendingSkillsChart';
-import SalaryOverviewChart from './market-pulse/SalaryOverviewChart';
-import { TopCompany, SkillTrend, SalaryBracket } from '../types/marketPulse';
+import TopHiringCompaniesChart from './TopHiringCompaniesChart';
+import TrendingSkillsChart from './TrendingSkillsChart';
+import SalaryOverviewChart from './SalaryOverviewChart';
+import { TopCompany, SkillTrend, SalaryBracket } from './marketPulse';
 
 
 interface MarketPulsePageViewProps {

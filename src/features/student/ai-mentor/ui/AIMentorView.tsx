@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { SharedAppBackground } from "@/components"
-import StudentHeader from "@/features/student/components/StudentHeader"
+import StudentHeader from "@/features/student/common/StudentHeader"
 import chatApi, { ChatSession, ChatMessage } from "@/features/student/ai-mentor/api/chatApi"
 import { 
   Bot, 
@@ -28,7 +28,7 @@ import {
   Lightbulb
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
-import GradeReportUI from "@/features/student/components/GradeReportUI"
+import GradeReportUI from "@/features/student/courses/GradeReportUI"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'

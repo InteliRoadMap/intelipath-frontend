@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
-import StudentHeader from './StudentHeader';
+import StudentHeader from '@/features/student/common/StudentHeader';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';

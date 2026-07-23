@@ -4,7 +4,7 @@ import { Spinner } from '@/components/ui'
 import { isUuid } from '@/lib/utils'
 import { getSkillErrorMessage, studentDashboardService } from '../services'
 import type { SkillItem } from '../types'
-import { useChipFlight } from '../hooks/useChipFlight'
+import { useChipFlight } from './useChipFlight'
 import OnboardingShell from './OnboardingShell'
 
 interface StudentSkillSelectionModalProps {

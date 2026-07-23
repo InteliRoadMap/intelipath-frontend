@@ -15,9 +15,9 @@ import {
   SkillMatchWidget
 } from "./StudentDashboardWidgets"
 import { SharedAppBackground } from "@/components"
-import StudentProfileSetupModal from "./StudentProfileSetupModal"
-import StudentSkillSelectionModal from "./StudentSkillSelectionModal"
-import StudentHeader from "./StudentHeader"
+import StudentProfileSetupModal from "@/features/student/onboarding/StudentProfileSetupModal"
+import StudentSkillSelectionModal from "@/features/student/onboarding/StudentSkillSelectionModal"
+import StudentHeader from "@/features/student/common/StudentHeader"
 
 gsap.registerPlugin(useGSAP)
 
