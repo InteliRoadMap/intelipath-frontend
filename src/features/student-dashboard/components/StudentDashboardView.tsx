@@ -31,11 +31,10 @@ export default function StudentDashboardView() {
     if (!isInitializing && activeSetupStep === null) {
       // Minimalist staggered fade up
       gsap.from(".anim-block", {
-        y: 30,
         opacity: 0,
-        duration: 0.8,
-        stagger: 0.1,
-        ease: "power3.out",
+        duration: 0.4,
+        stagger: 0.06,
+        ease: "power1.out",
       });
     }
   }, { scope: dashboardRef, dependencies: [isInitializing, activeSetupStep] })

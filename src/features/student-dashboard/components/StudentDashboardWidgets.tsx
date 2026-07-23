@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
-  CheckCircle2,
   Clock,
   TrendingUp,
   Target,
@@ -20,11 +19,19 @@ import {
   Tooltip as RechartsTooltip,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Cell,
   CartesianGrid,
   XAxis,
-  YAxis
+  YAxis,
+  ReferenceLine,
+  RadialBarChart,
+  RadialBar,
+  PolarAngleAxis
 } from "recharts"
 import { Skeleton } from "@/components/ui"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { useAuth } from "@/context"
 import roadmapApi from "@/api/roadmapApi"
 import { toast } from "@/utils/toast"
@@ -387,7 +394,7 @@ export const ActionableListWidget = () => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 min-h-[660px]">
+      <div className="flex flex-col gap-3 h-[660px]">
         {!isNext ? (
           <ShortcutSuggestions />
         ) : status === "loading" ? (
@@ -565,7 +572,7 @@ export const MarketDemandChartWidget = () => {
   )
 }
 
-// 6. Skill Match — grouped progress instead of an unreadable 22-axis radar.
+// 6. Skill Match — horizontal bar chart (replaces an unreadable 22-axis radar).
 type SkillRow = {
   id: string
   name: string
@@ -579,30 +586,119 @@ const IMPORTANCE_GROUPS: { key: SkillRow["importance"]; label: string; accent: s
   { key: "LOW", label: "Optional", accent: "#94a3b8" },
 ]
 
-const barColor = (pct: number) =>
-  pct >= 100 ? "#10b981" : pct > 0 ? "#3b82f6" : "#cbd5e1"
+const IMPORTANCE_ACCENT: Record<SkillRow["importance"], string> = {
+  HIGH: "#ef4444",
+  AVG: "#f59e0b",
+  LOW: "#94a3b8",
+}
 
-const SkillProgressRow = ({ row }: { row: SkillRow }) => {
-  const mastered = row.pct >= 100
+const skillChartConfig: ChartConfig = {
+  pct: { label: "Mastery" },
+}
+
+const ReadinessGauge = ({ value }: { value: number }) => {
+  const data = [{ value: Math.min(value, 100), fill: value >= 100 ? "#10b981" : "#000000" }]
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <span className={`text-[12px] font-bold truncate ${mastered ? "text-slate-500" : "text-slate-800"}`}>
-            {row.name}
-          </span>
-          <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: barColor(row.pct) }}>
-            {mastered ? "Mastered" : `${Math.round(row.pct)}%`}
-          </span>
-        </div>
-        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${Math.max(row.pct, 3)}%`, backgroundColor: barColor(row.pct) }}
-          />
-        </div>
+    <div className="relative h-24 w-24 shrink-0">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart
+          data={data}
+          startAngle={90}
+          endAngle={-270}
+          innerRadius="72%"
+          outerRadius="100%"
+          barSize={10}
+        >
+          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+          <RadialBar dataKey="value" cornerRadius={10} background={{ fill: "#e2e8f0" }} />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[17px] font-black text-black tabular-nums">{value}%</span>
       </div>
-      {mastered && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
+    </div>
+  )
+}
+
+const SKILL_ROW_HEIGHT = 34
+const SKILL_CHART_MAX_HEIGHT = 340
+const SKILL_CHART_MARGIN = { top: 4, right: 28, left: 4, bottom: 4 }
+const SKILL_Y_AXIS_WIDTH = 120
+
+const SkillGapChart = ({ rows }: { rows: SkillRow[] }) => {
+  // Longest gaps first so the most important thing to fix is at the top.
+  const data = [...rows].sort((a, b) => a.pct - b.pct)
+  const height = Math.max(data.length * SKILL_ROW_HEIGHT, 120)
+  const scrollable = height > SKILL_CHART_MAX_HEIGHT
+
+  return (
+    <div>
+      {/* % scale stays fixed above the list — only the rows below scroll. */}
+      <ChartContainer config={skillChartConfig} className="w-full" style={{ height: 24 }}>
+        <BarChart data={[]} layout="vertical" margin={SKILL_CHART_MARGIN}>
+          <XAxis
+            type="number"
+            domain={[0, 100]}
+            orientation="top"
+            height={20}
+            tickFormatter={(v) => `${v}%`}
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 600 }}
+          />
+          <YAxis type="category" dataKey="name" width={SKILL_Y_AXIS_WIDTH} hide />
+        </BarChart>
+      </ChartContainer>
+
+      <div
+        className={scrollable ? "overflow-y-auto pr-1" : undefined}
+        style={scrollable ? { maxHeight: SKILL_CHART_MAX_HEIGHT } : undefined}
+      >
+    <ChartContainer config={skillChartConfig} className="w-full" style={{ height }}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={SKILL_CHART_MARGIN}
+        barCategoryGap={10}
+      >
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+        <XAxis type="number" domain={[0, 100]} height={0} tick={false} axisLine={false} tickLine={false} />
+        <YAxis
+          type="category"
+          dataKey="name"
+          axisLine={false}
+          tickLine={false}
+          width={SKILL_Y_AXIS_WIDTH}
+          tick={{ fontSize: 12, fill: "#334155", fontWeight: 700 }}
+        />
+        <ReferenceLine x={100} stroke="#cbd5e1" strokeDasharray="4 4" />
+        <ChartTooltip
+          cursor={{ fill: "#f8fafc" }}
+          content={
+            <ChartTooltipContent
+              hideLabel
+              formatter={(value, _name, item) => {
+                const row = item.payload as SkillRow
+                return (
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <span className="font-bold text-slate-700">{row.name}</span>
+                    <span className="font-mono font-bold text-slate-950">
+                      {row.pct >= 100 ? "Mastered" : `${Math.round(Number(value))}%`}
+                    </span>
+                  </div>
+                )
+              }}
+            />
+          }
+        />
+        <Bar dataKey="pct" radius={[0, 6, 6, 0]} maxBarSize={16}>
+          {data.map((row) => (
+            <Cell key={row.id} fill={row.pct >= 100 ? "#10b981" : IMPORTANCE_ACCENT[row.importance]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ChartContainer>
+      </div>
     </div>
   )
 }
@@ -650,7 +746,7 @@ export const SkillMatchWidget = () => {
         )}
       </div>
 
-      <div className="w-full rounded-3xl bg-[#f9f9f9] p-5">
+      <div className="w-full min-h-[420px] rounded-3xl bg-[#f9f9f9] p-5">
         {status === "loading" ? (
           <LoadingState rows={5} />
         ) : status === "error" || total === 0 ? (
@@ -658,14 +754,12 @@ export const SkillMatchWidget = () => {
         ) : (
           <>
             {/* Readiness summary */}
-            <div className="mb-5 flex items-center gap-4">
+            <div className="mb-5 flex items-center gap-5">
+              <ReadinessGauge value={readiness} />
               <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[28px] font-black text-black tabular-nums">{readiness}%</span>
-                  <span className="text-[12px] font-bold text-slate-500">career readiness</span>
-                </div>
-                <div className="mt-2 h-2.5 w-full rounded-full bg-slate-200 overflow-hidden">
-                  <div className="h-full rounded-full bg-black transition-all duration-500" style={{ width: `${readiness}%` }} />
+                <div className="text-[13px] font-bold text-slate-700">Career readiness</div>
+                <div className="mt-1 text-[12px] font-medium text-slate-400">
+                  Based on {total} skill{total === 1 ? "" : "s"} required for your target career.
                 </div>
               </div>
               <div className="text-right shrink-0">
@@ -674,31 +768,20 @@ export const SkillMatchWidget = () => {
               </div>
             </div>
 
-            {/* Grouped skill bars, gaps first within each group */}
-            <div className="space-y-4">
-              {IMPORTANCE_GROUPS.map((group) => {
-                const groupRows = visible
-                  .filter((r) => r.importance === group.key)
-                  .sort((a, b) => a.pct - b.pct)
-                if (groupRows.length === 0) return null
-                return (
-                  <div key={group.key}>
-                    <div className="mb-2 flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: group.accent }} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                        {group.label}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-300">
-                        {groupRows.filter((r) => r.pct >= 100).length}/{groupRows.length}
-                      </span>
-                    </div>
-                    <div className="space-y-2.5">
-                      {groupRows.map((row) => <SkillProgressRow key={row.id} row={row} />)}
-                    </div>
-                  </div>
-                )
-              })}
+            {/* Legend */}
+            <div className="mb-3 flex items-center gap-4">
+              {IMPORTANCE_GROUPS.map((group) => (
+                <div key={group.key} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: group.accent }} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    {group.label}
+                  </span>
+                </div>
+              ))}
             </div>
+
+            {/* Per-skill mastery, longest gaps first */}
+            <SkillGapChart rows={visible} />
           </>
         )}
       </div>

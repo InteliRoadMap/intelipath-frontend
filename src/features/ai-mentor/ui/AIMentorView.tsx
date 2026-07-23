@@ -23,7 +23,9 @@ import {
   ArrowUp,
   Compass,
   BookOpen,
-  TrendingUp
+  TrendingUp,
+  Copy,
+  Lightbulb
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
 import GradeReportUI from "@/features/student-dashboard/components/GradeReportUI"
@@ -36,6 +38,33 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { motion, AnimatePresence } from 'framer-motion'
+
+const CodeBlockHeader = ({ lang, codeStr }: { lang: string; codeStr: string }) => {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="flex items-center justify-between rounded-t-lg border-b border-zinc-800 bg-zinc-900 px-4 py-2">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">{lang || "text"}</span>
+      <button
+        onClick={() => {
+          navigator.clipboard?.writeText(codeStr)
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1500)
+        }}
+        className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 transition-colors hover:text-zinc-100"
+      >
+        {copied ? (
+          <>
+            <Check size={12} /> Copied
+          </>
+        ) : (
+          <>
+            <Copy size={12} /> Copy
+          </>
+        )}
+      </button>
+    </div>
+  )
+}
 
 const processMarkdown = (text: string) => {
   // Markdown from the model is data, not source code to repair. Heuristics that
@@ -107,14 +136,17 @@ export default function AIMentorPage() {
         }
         
         return (
-          <SyntaxHighlighter
-            {...props}
-            children={codeStr}
-            style={vscDarkPlus}
-            language={lang}
-            PreTag="div"
-            className="rounded-md my-2"
-          />
+          <div className="my-3 overflow-hidden rounded-lg border border-zinc-800 shadow-sm">
+            <CodeBlockHeader lang={lang} codeStr={codeStr} />
+            <SyntaxHighlighter
+              {...props}
+              children={codeStr}
+              style={vscDarkPlus}
+              language={lang}
+              PreTag="div"
+              customStyle={{ margin: 0, borderRadius: 0 }}
+            />
+          </div>
         );
       }
       
@@ -122,6 +154,25 @@ export default function AIMentorPage() {
         <code {...props} className={`${className} bg-zinc-100 text-zinc-800 px-1.5 py-0.5 rounded-md font-mono text-[13.5px]`}>
           {children}
         </code>
+      )
+    },
+    h2({children}: any) {
+      return (
+        <h2 className="mt-6 mb-2 flex items-center gap-2 text-[17px] font-bold text-zinc-900 first:mt-0">
+          <span className="h-4 w-1 shrink-0 rounded-full bg-[#00838f]" />
+          {children}
+        </h2>
+      )
+    },
+    h3({children}: any) {
+      return <h3 className="mt-5 mb-1.5 text-[15px] font-bold text-zinc-800 first:mt-0">{children}</h3>
+    },
+    blockquote({children}: any) {
+      return (
+        <div className="my-4 flex gap-3 rounded-xl border border-[#00838f]/20 bg-[#00838f]/5 px-4 py-3">
+          <Lightbulb size={16} className="mt-0.5 shrink-0 text-[#00838f]" />
+          <div className="text-[14px] leading-relaxed text-zinc-700 [&>p]:m-0 [&>p+p]:mt-2">{children}</div>
+        </div>
       )
     },
     table({children}: any) {

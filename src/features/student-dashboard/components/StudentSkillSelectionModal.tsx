@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { Spinner } from '@/components/ui'
 import { isUuid } from '@/lib/utils'
 import { getSkillErrorMessage, studentDashboardService } from '../services'
 import type { SkillItem } from '../types'
+import { useChipFlight } from '../hooks/useChipFlight'
 import OnboardingShell from './OnboardingShell'
 
 interface StudentSkillSelectionModalProps {
@@ -31,6 +32,7 @@ export default function StudentSkillSelectionModal({
   const [isLoading, setIsLoading] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const takeOff = useChipFlight()
 
   useEffect(() => {
     if (!isOpen) return
@@ -90,10 +92,15 @@ export default function StudentSkillSelectionModal({
    * Grouped by category rather than one flat wall of chips. The catalog runs to several
    * hundred skills, and a student scanning it for "the React one" has no landmarks in an
    * undifferentiated blob — the career step in this same flow already groups this way.
+   *
+   * Picked skills are removed from here: they live in the tray on the other side, and a
+   * skill shown ticked in one column while also sitting in the other reads as two copies
+   * of the same thing.
    */
   const groups = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase()
     const matching = source.filter((skill) => {
+      if (selectedIds.has(skill.skillId)) return false
       const inCategory = category === ALL || (skill.category?.trim() || UNCATEGORISED) === category
       const matchesQuery =
         !normalizedQuery || skill.skillName.toLocaleLowerCase().includes(normalizedQuery)
@@ -112,7 +119,7 @@ export default function StudentSkillSelectionModal({
         name,
         items: [...items].sort((a, b) => a.skillName.localeCompare(b.skillName)),
       }))
-  }, [category, query, source])
+  }, [category, query, selectedIds, source])
 
   const matchCount = groups.reduce((total, group) => total + group.items.length, 0)
 
@@ -175,24 +182,20 @@ export default function StudentSkillSelectionModal({
                 {group.name}
               </p>
               <div className="flex flex-wrap gap-2">
-                {group.items.map((skill) => {
-                  const isSelected = selectedIds.has(skill.skillId)
-                  return (
-                    <button
-                      key={skill.skillId}
-                      type="button"
-                      onClick={() => toggleSkill(skill)}
-                      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition-all ${
-                        isSelected
-                          ? 'bg-slate-950 text-white ring-slate-950'
-                          : 'bg-white text-slate-600 ring-slate-200 hover:text-slate-900 hover:ring-slate-300'
-                      }`}
-                    >
-                      {isSelected && <Check size={13} strokeWidth={3} />}
-                      {skill.skillName}
-                    </button>
-                  )
-                })}
+                {group.items.map((skill) => (
+                  <button
+                    key={skill.skillId}
+                    type="button"
+                    data-chip-id={skill.skillId}
+                    onClick={(event) => {
+                      takeOff(event.currentTarget, skill.skillId)
+                      toggleSkill(skill)
+                    }}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:text-slate-900 hover:ring-slate-300"
+                  >
+                    {skill.skillName}
+                  </button>
+                ))}
               </div>
             </div>
           ))}
@@ -225,39 +228,6 @@ export default function StudentSkillSelectionModal({
       nextLoading={isSaving}
       nextDisabled={isLoading}
     >
-      {/* Chosen skills stay in view. Without this the only record of a choice was the chip
-          turning blue somewhere in a long scrolling list. */}
-      {selectedCount > 0 && (
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
-          <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-[12.5px] font-semibold text-slate-900">
-              {selectedCount} selected
-            </span>
-            <button
-              type="button"
-              onClick={() => setSelected([])}
-              className="text-[12px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
-            >
-              Clear all
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {selected.map((skill) => (
-              <button
-                key={skill.skillId}
-                type="button"
-                onClick={() => toggleSkill(skill)}
-                title={`Remove ${skill.skillName}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 py-1.5 pl-3 pr-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-slate-800"
-              >
-                {skill.skillName}
-                <X size={12} strokeWidth={3} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="relative">
         <Search
           className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -292,6 +262,44 @@ export default function StudentSkillSelectionModal({
               {name}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Below the controls, not above them. The tray is the result of searching, and
+          putting it first meant every skill picked pushed the search box further down the
+          pane — the thing you steer with kept retreating from the thing you steer. */}
+      {selectedCount > 0 && (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+          <div className="mb-2.5 flex items-center justify-between">
+            <span className="text-[12.5px] font-semibold text-slate-900">
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected([])}
+              className="text-[12px] font-semibold text-slate-500 transition-colors hover:text-rose-600"
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {selected.map((skill) => (
+              <button
+                key={skill.skillId}
+                type="button"
+                data-chip-id={skill.skillId}
+                onClick={(event) => {
+                  takeOff(event.currentTarget, skill.skillId)
+                  toggleSkill(skill)
+                }}
+                title={`Remove ${skill.skillName}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 py-1.5 pl-3 pr-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-slate-800"
+              >
+                {skill.skillName}
+                <X size={12} strokeWidth={3} />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </OnboardingShell>
