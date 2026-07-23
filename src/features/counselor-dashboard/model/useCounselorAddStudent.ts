@@ -97,7 +97,7 @@ export function useCounselorAddStudent() {
       )
 
       if (draftExists) {
-        setErrors({ general: "Email này đã tồn tại trong danh sách chờ bên dưới." })
+        setErrors({ general: "This email already exists in the draft list below." })
         setIsSubmitting(false)
         return
       }
@@ -105,7 +105,7 @@ export function useCounselorAddStudent() {
       // 2. Check if email already exists in the backend
       const emailExists = await counselorApi.checkStudentEmail(form.email.trim())
       if (emailExists) {
-        setErrors({ general: "Email này đã tồn tại trong hệ thống." })
+        setErrors({ general: "This email already exists in the system." })
         setIsSubmitting(false)
         return
       }
