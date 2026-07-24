@@ -5,8 +5,14 @@ import { ROLES, ROUTES } from '@/shared'
 export default function DashboardPage() {
   const { user } = useAuth()
 
-  // Default missing or unknown roles to STUDENT
-  const rawRole = user?.role?.toUpperCase()
+  // No real user (a stale/expired session that slipped through) → back to Welcome. Never
+  // coerce a missing user/role into a STUDENT dashboard: that is the "empty dashboard" bug.
+  if (!user || !user.role) {
+    return <Navigate to={ROUTES.HOME} replace />
+  }
+
+  // A present-but-unrecognised role still defaults to STUDENT.
+  const rawRole = user.role.toUpperCase()
   const role = (rawRole === ROLES.ADMIN || rawRole === ROLES.MENTOR || rawRole === ROLES.COUNSELOR)
     ? rawRole
     : ROLES.STUDENT

@@ -23,6 +23,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// A 200 from /users/me is not proof of a session: an empty or thin body would otherwise
+// flip isAuthenticated=true with an empty user, and DashboardPage then defaults the missing
+// role to STUDENT and renders an empty dashboard instead of sending the visitor to Welcome.
+// A usable user must carry both an id and a role.
+const isUsableUser = (u: unknown): u is User =>
+  Boolean(u) && typeof u === "object" &&
+  Boolean((u as Partial<User>).id) && Boolean((u as Partial<User>).role)
+
 const initialState: AuthState = {
   user: null,
   accessToken: null,
@@ -224,11 +232,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         try {
           const decoded: any = jwtDecode(storedToken)
-          if (decoded && decoded.role && !userInfo.role) {
+          if (decoded && decoded.role && !userInfo?.role) {
             userInfo = { ...userInfo, role: decoded.role }
           }
         } catch {
           // ignore decode errors
+        }
+
+        // Guard: without a real user (id + role) this is not a session. Log out so the
+        // router sends the visitor back to Welcome instead of an empty dashboard.
+        if (!isUsableUser(userInfo)) {
+          clearStoredAuth()
+          if (active) {
+            dispatch({ type: "LOGOUT" })
+          }
+          return
         }
 
         localStorage.setItem("user", JSON.stringify(userInfo))
@@ -248,10 +266,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setupRefreshTimer(storedToken, undefined, storedExpiresIn)
         }
       } catch {
-        // Token expired or invalid - clear and force re-login
+        // Token expired or invalid - clear and force re-login (router → Welcome).
         clearStoredAuth()
         if (active) {
-          dispatch({ type: "SET_LOADING", payload: false })
+          dispatch({ type: "LOGOUT" })
         }
       }
     }
@@ -293,11 +311,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If the backend doesn't return role, try to extract from token
       try {
         const decoded: any = jwtDecode(accessToken)
-        if (decoded && decoded.role && !userInfo.role) {
+        if (decoded && decoded.role && !userInfo?.role) {
           userInfo = { ...userInfo, role: decoded.role }
         }
       } catch (e) {
         console.warn("Failed to decode role from token")
+      }
+
+      // A login that yields no real user (id + role) must fail loudly rather than seat an
+      // empty session — otherwise the visitor lands on an empty dashboard, not Welcome.
+      if (!isUsableUser(userInfo)) {
+        clearStoredAuth()
+        throw new Error("Login succeeded but /users/me returned no usable profile")
       }
 
       localStorage.setItem("user", JSON.stringify(userInfo))
