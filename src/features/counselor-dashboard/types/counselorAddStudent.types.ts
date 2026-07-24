@@ -25,3 +25,12 @@ export interface FormErrors {
   curriculum?: string
   general?: string
 }
+
+// Payload sent to BE when importing student accounts (matches ImportStudentAccountsRequest.java)
+export interface ImportStudentAccount {
+  fullName: string
+  email: string
+  admissionDate: string // "yyyy-MM-dd" format required by BE LocalDate
+  major: string
+  curriculum: string
+}

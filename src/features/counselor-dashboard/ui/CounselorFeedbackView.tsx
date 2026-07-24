@@ -436,7 +436,7 @@ function FeedbackTab({
     await send({
       receiverId: student.studentId,
       content: content.trim(),
-      type: type as "GENERAL" | "SKILL" | "CAREER",
+      type: type as "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO",
       attachments: attachments
     })
     setContent("")

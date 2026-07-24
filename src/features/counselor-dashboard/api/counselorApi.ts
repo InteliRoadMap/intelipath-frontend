@@ -9,7 +9,8 @@ import type {
   FeedbackListResponse,
   MyStudent,
   CreateFeedback,
-  PaginatedStudentResponse
+  PaginatedStudentResponse,
+  ImportStudentAccount
 } from "../types"
 
 export type {
@@ -193,15 +194,15 @@ const counselorApi = {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.EXPORT_STUDENTS,
       { studentIds },
-      { responseType: "blob" }
+      { responseType: "blob" } //"Kết quả trả về là File Excel dạng Byte, đừng dịch ra JSON kẻo lỗi!"
     )
     return res.data
   },
-  importStudents: async (students: any[]): Promise<Blob> => {
+  importStudents: async (students: ImportStudentAccount[]): Promise<Blob> => {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
       { accounts: students },
-      { responseType: "blob" }
+      { responseType: "blob" } //"Kết quả trả về là File Excel dạng Byte, đừng dịch ra JSON kẻo lỗi!"
     )
     return res.data
   },

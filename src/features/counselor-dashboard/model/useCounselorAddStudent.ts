@@ -93,17 +93,23 @@ export function useCounselorAddStudent() {
     try {
       // 1. Check if email already exists in drafts (Recently Added Students)
       const draftExists = addedStudents.some(
-        (s) => s.email.toLowerCase() === form.email.trim().toLowerCase() && s.id !== editingDraftId
+        (s) =>
+          s.email.toLowerCase() === form.email.trim().toLowerCase() &&
+          s.id !== editingDraftId
       )
 
       if (draftExists) {
-        setErrors({ general: "This email already exists in the draft list below." })
+        setErrors({
+          general: "This email already exists in the draft list below."
+        })
         setIsSubmitting(false)
         return
       }
 
       // 2. Check if email already exists in the backend
-      const emailExists = await counselorApi.checkStudentEmail(form.email.trim())
+      const emailExists = await counselorApi.checkStudentEmail(
+        form.email.trim()
+      )
       if (emailExists) {
         setErrors({ general: "This email already exists in the system." })
         setIsSubmitting(false)
@@ -201,6 +207,9 @@ export function useCounselorAddStudent() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    setErrors({})
+    setSuccessMsg(null)
+
     try {
       const data = await file.arrayBuffer()
       const workbook = xlsx.read(data)
@@ -211,7 +220,8 @@ export function useCounselorAddStudent() {
         dateNF: "m/d/yyyy"
       })
 
-      const newDrafts: AddedStudent[] = []
+      const validParsedRows: AddedStudent[] = []
+      const fileEmails = new Set<string>()
 
       jsonData.forEach((row) => {
         // Handle different column names flexibly
@@ -255,31 +265,68 @@ export function useCounselorAddStudent() {
           major &&
           curriculum
         ) {
-          newDrafts.push({
-            id: crypto.randomUUID(),
-            email: String(email).trim(),
-            fullName: String(fullName).trim(),
-            admissionDate: parsedDate,
-            major: String(major).trim(),
-            curriculum: String(curriculum).trim(),
-            addedAt: new Date().toLocaleString("vi-VN")
-          })
+          const emailStr = String(email).trim().toLowerCase()
+          // 1. Check duplicate within the Excel file itself
+          if (!fileEmails.has(emailStr)) {
+            fileEmails.add(emailStr)
+            validParsedRows.push({
+              id: crypto.randomUUID(),
+              email: String(email).trim(),
+              fullName: String(fullName).trim(),
+              admissionDate: parsedDate,
+              major: String(major).trim(),
+              curriculum: String(curriculum).trim(),
+              addedAt: new Date().toLocaleString("vi-VN")
+            })
+          }
         }
       })
+
+      // 2. Filter out emails that already exist in the Draft list (addedStudents)
+      const nonDraftRows = validParsedRows.filter(
+        (row) =>
+          !addedStudents.some(
+            (s) => s.email.toLowerCase() === row.email.toLowerCase()
+          )
+      )
+
+      // 3. Check against the Backend Database
+      const checkResults = await Promise.all(
+        nonDraftRows.map(async (row) => {
+          try {
+            const existsInDb = await counselorApi.checkStudentEmail(row.email)
+            return { row, exists: existsInDb }
+          } catch {
+            return { row, exists: true } // Skip if API fails
+          }
+        })
+      )
+
+      const newDrafts = checkResults
+        .filter((res) => !res.exists)
+        .map((res) => res.row)
+      const skippedCount = jsonData.length - newDrafts.length
 
       if (newDrafts.length > 0) {
         setAddedStudents((prev) => [...newDrafts, ...prev])
         setSuccessMsg(
-          `Imported ${newDrafts.length} students from Excel file successfully.`
+          `Imported ${newDrafts.length} new students. ${
+            skippedCount > 0
+              ? `(${skippedCount} skipped due to duplicates/errors)`
+              : ""
+          }`
         )
+        setErrors({})
       } else {
         setErrors({
           general:
-            "No valid students found in the Excel file. Please ensure there are 'Username', 'Email', 'FullName', 'Year', 'Major', 'Curriculum' columns."
+            "No valid new students found. They might be duplicates or missing required columns."
         })
+        setSuccessMsg(null)
       }
     } catch (err) {
       setErrors({ general: "Failed to parse the Excel file." })
+      setSuccessMsg(null)
     } finally {
       setIsImportModalOpen(false)
       // reset file input if needed
