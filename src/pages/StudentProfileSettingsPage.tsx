@@ -19,6 +19,7 @@ import StudentHeader from "@/features/student/common/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "@/features/shared/profile-settings"
 import GithubConnectionField from "@/features/shared/profile-settings/ui/GithubConnectionField"
+import TranscriptUploadField from "@/features/shared/profile-settings/ui/TranscriptUploadField"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -33,6 +34,7 @@ export default function StudentProfileSettingsPage() {
     error,
     handleChange,
     handleSave,
+    handleTranscriptUpload,
     loadProfile,
     displayInitial
   } = useProfileSettings()
@@ -309,6 +311,14 @@ export default function StudentProfileSettingsPage() {
                   />
                 </div>
                 <GithubConnectionField profileUrl={profileData.github_profile} />
+              </div>
+
+              <div className="mb-6">
+                <TranscriptUploadField
+                  transcriptUrl={profileData.transcript_url}
+                  onUpload={handleTranscriptUpload}
+                  busy={saving}
+                />
               </div>
 
               <div className="mb-8">

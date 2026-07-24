@@ -25,6 +25,8 @@ export interface ProfileData {
   // Common
   github_profile?: string
   avatar_url?: string
+  // Student: transcript uploaded for AI Mentor personalization
+  transcript_url?: string
 }
 
 const EMPTY_PROFILE: ProfileData = {
@@ -41,7 +43,8 @@ const EMPTY_PROFILE: ProfileData = {
   industry_focus: "",
   department: "",
   github_profile: "",
-  avatar_url: ""
+  avatar_url: "",
+  transcript_url: ""
 }
 
 export function useProfileSettings() {
@@ -126,6 +129,7 @@ export function useProfileSettings() {
           data?.userInfo?.avatarUrl ||
           user?.avatarUrl ||
           "",
+        transcript_url: data?.transcriptUrl || data?.student?.transcriptUrl || "",
         yob:
           (
             data?.yob ||
@@ -267,6 +271,25 @@ export function useProfileSettings() {
     }
   }
 
+  const handleTranscriptUpload = async (file: File) => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await profileApi.uploadTranscript(file)
+      const updated = (res as any).data?.data || (res as any).data
+      const newUrl = updated?.transcriptUrl || ""
+
+      setProfileData((prev) => ({ ...prev, transcript_url: newUrl }))
+      toast.success("Transcript uploaded. The AI Mentor can now use it.")
+    } catch (err) {
+      console.error("[ProfileSettingsPage] Error uploading transcript:", err)
+      setError("Failed to upload transcript. Please try again.")
+      toast.error("Failed to upload transcript. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const displayInitial = profileData.full_name?.[0]?.toUpperCase() ?? "U"
   const role = profileData.role || user?.role || "Student"
   const githubName =
@@ -282,6 +305,7 @@ export function useProfileSettings() {
     handleChange,
     handleSave,
     handleAvatarUpload,
+    handleTranscriptUpload,
     loadProfile,
     displayInitial,
     role,
