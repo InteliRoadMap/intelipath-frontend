@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { portfolioApi, PortfolioData } from '@/features/portfolio/api/portfolioApi';
-import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
+import { portfolioApi, PortfolioData } from '@/features/shared/portfolio/api/portfolioApi';
+import { EPortfolioEditor } from '@/features/shared/portfolio/components/EPortfolioEditor';
 import { SharedAppBackground } from '@/components/ui';
 
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useRef } from "react"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import { userApi } from "@/api"
-import { User, AuthState } from "@/features/auth"
+import { User, AuthState } from "@/features/shared/auth"
 import { jwtDecode } from "jwt-decode"
 
 interface LoginTokens {
@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (import.meta.env.DEV) {
         console.group("[AUTH REFRESH] Refresh scheduled")
-        console.log("refreshToken:", currentRefreshToken)
+        console.log("refreshMode:", currentRefreshToken ? "body" : "HttpOnly cookie")
         console.log("accessTokenExpiresAt:", new Date(expireTime).toISOString())
         console.log(
           "refreshAt:",
@@ -184,9 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
-            if (nextRefreshToken) {
-              localStorage.setItem("refreshToken", nextRefreshToken)
-            }
+            // nextRefreshToken is NOT persisted: it only ever lives in the HttpOnly
+            // cookie the backend just rotated on this response.
             if (nextExpiresIn) {
               localStorage.setItem("tokenExpiresIn", nextExpiresIn)
             }
@@ -212,7 +211,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const restoreSession = async () => {
       const storedToken = localStorage.getItem("accessToken")
       const storedUser = localStorage.getItem("user")
-      const storedRefreshToken = localStorage.getItem("refreshToken")
       const storedExpiresIn = localStorage.getItem("tokenExpiresIn")
 
       if (!storedToken || !storedUser) {
@@ -241,17 +239,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             payload: {
               user: userInfo,
               accessToken: storedToken,
-              refreshToken: storedRefreshToken
+              // The refresh token itself is never in localStorage — it lives only in
+              // the backend's HttpOnly cookie, sent automatically on the refresh call.
+              refreshToken: null
             }
           })
-          
-          // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
-          // if (storedRefreshToken) {
-          //   setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
-          // }
 
-          // NEW LOGIC: Schedule refresh timer even if storedRefreshToken is null (relying on HttpOnly Cookie)
-          setupRefreshTimer(storedToken, storedRefreshToken || undefined, storedExpiresIn)
+          setupRefreshTimer(storedToken, undefined, storedExpiresIn)
         }
       } catch {
         // Token expired or invalid - clear and force re-login
@@ -276,7 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (import.meta.env.DEV) {
       console.group("[AUTH SESSION] Tokens received after login")
       console.log("hasAccessToken:", Boolean(accessToken))
-      console.log("refreshToken:", refreshToken)
+      console.log("refreshMode:", refreshToken ? "body" : "HttpOnly cookie")
       console.log(
         "accessTokenExpiresAt:",
         getExpirationTime(accessToken, expiresIn)
@@ -286,8 +280,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.groupEnd()
     }
 
+    // The refresh token is never written to localStorage: the backend already set it
+    // as an HttpOnly cookie (unreadable by JS), which is the only copy kept client-side.
+    // Keeping a second, JS-readable copy here would hand an XSS payload a free session.
     localStorage.setItem("accessToken", accessToken)
-    if (refreshToken) localStorage.setItem("refreshToken", refreshToken)
     if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
 
     try {

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import mentorApi from '@/features/mentor-dashboard/api/mentorApi';
-import { PortfolioData } from '@/features/portfolio/api/portfolioApi';
-import { EPortfolioEditor } from '@/features/portfolio/components/EPortfolioEditor';
+import mentorApi from '@/features/mentor/api/mentorApi';
+import { PortfolioData } from '@/features/shared/portfolio/api/portfolioApi';
+import { EPortfolioEditor } from '@/features/shared/portfolio/components/EPortfolioEditor';
 import { ROUTES } from '@/shared';
 
 export default function MentorPortfolioPage() {
