@@ -30,7 +30,7 @@ import { useCounselorAddStudent } from "../model/useCounselorAddStudent"
 // ─── Nav Items ──────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.DASHBOARD_COUNSELOR },
-  { label: "Feedback", icon: MessageSquare, to: ROUTES.COUNSELOR_FEEDBACK },
+  { label: "View Student", icon: MessageSquare, to: ROUTES.COUNSELOR_FEEDBACK },
   { label: "Add Student", icon: UserPlus, to: ROUTES.COUNSELOR_ADD_STUDENT }
 ]
 
