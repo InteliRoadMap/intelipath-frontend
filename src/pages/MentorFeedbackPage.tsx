@@ -1,4 +1,4 @@
-import { MentorFeedbackHistoryView } from "../features/mentor-dashboard/components/MentorFeedbackHistoryView"
+import { MentorFeedbackHistoryView } from "../features/mentor/components/MentorFeedbackHistoryView"
 
 export default function MentorFeedbackPage() {
   return <MentorFeedbackHistoryView />

@@ -15,9 +15,11 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
-import StudentHeader from "@/features/student-dashboard/components/StudentHeader"
+import StudentHeader from "@/features/student/common/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { useProfileSettings } from "@/features/profile-settings"
+import { useProfileSettings } from "@/features/shared/profile-settings"
+import GithubConnectionField from "@/features/shared/profile-settings/ui/GithubConnectionField"
+import TranscriptUploadField from "@/features/shared/profile-settings/ui/TranscriptUploadField"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -32,6 +34,7 @@ export default function StudentProfileSettingsPage() {
     error,
     handleChange,
     handleSave,
+    handleTranscriptUpload,
     loadProfile,
     displayInitial
   } = useProfileSettings()
@@ -307,21 +310,15 @@ export default function StudentProfileSettingsPage() {
                     className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
                   />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5 font-medium text-slate-700">
-                    <GithubLogo size={16} className="text-emerald-600" />
-                    GitHub Profile
-                  </div>
-                  <input
-                    type="url"
-                    value={profileData.github_profile || ""}
-                    placeholder="e.g. https://github.com/username"
-                    onChange={(e) =>
-                      handleChange("github_profile", e.target.value)
-                    }
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all hover:bg-white"
-                  />
-                </div>
+                <GithubConnectionField profileUrl={profileData.github_profile} />
+              </div>
+
+              <div className="mb-6">
+                <TranscriptUploadField
+                  transcriptUrl={profileData.transcript_url}
+                  onUpload={handleTranscriptUpload}
+                  busy={saving}
+                />
               </div>
 
               <div className="mb-8">

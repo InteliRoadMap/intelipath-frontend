@@ -22,7 +22,7 @@ import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, DatePicker } from "@/components"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { AvatarUploadModal } from "@/components/modals"
-import { useProfileSettings } from "@/features/profile-settings"
+import { useProfileSettings } from "@/features/shared/profile-settings"
 import { useRef, useState, useEffect } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -136,7 +136,7 @@ export default function CounselorProfileSettingsPage() {
       path: ROUTES.DASHBOARD_COUNSELOR || "/dashboard/counselor"
     },
     {
-      label: "Feedback",
+      label: "View Student",
       icon: MessageSquare,
       path: ROUTES.COUNSELOR_FEEDBACK || "/dashboard/counselor/feedback"
     },
@@ -186,7 +186,7 @@ export default function CounselorProfileSettingsPage() {
               }
             >
               <MessageSquare size={16} />
-              Feedback
+              View Student
             </NavLink>
             <NavLink
               to={ROUTES.COUNSELOR_ADD_STUDENT}

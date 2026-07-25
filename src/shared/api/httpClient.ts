@@ -18,7 +18,7 @@ import axios, {
 import { ENDPOINTS } from "./endpoints"
 import { API_BASE_URL } from "@/app/config/appConfig"
 import { ROUTES } from "@/shared"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 // Every request use client also go through interceptor
 // client request -> request interceptor (attach token) -> send request to backend -> response interceptor (handle errors, refresh token) -> response to caller
@@ -36,6 +36,15 @@ export interface ApiClientConfig {
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean //prevent infinite retry loops
+  // Set true on a request's config when the caller renders its own inline error UI,
+  // so the global interceptor doesn't also toast the same message.
+  skipErrorToast?: boolean
+}
+
+// Public request-config extension so callers can pass `skipErrorToast` with proper
+// typing instead of casting to `any`.
+export interface RequestConfig {
+  skipErrorToast?: boolean
 }
 
 let isRefreshing = false
@@ -80,7 +89,11 @@ export const decrementLoading = () => {
 }
 
 export const getStoredToken = () => localStorage.getItem("accessToken")
-const defaultGetRefreshToken = () => localStorage.getItem("refreshToken")
+// Refresh no longer reads a stored token: the refresh token lives only in the
+// backend's HttpOnly cookie (unreadable by JS), so an XSS payload can't steal it
+// the way it could from localStorage. The refresh request below always sends `{}`
+// and relies on the cookie being sent automatically via `withCredentials`.
+const defaultGetRefreshToken = () => null
 
 export const handleUnauthorized = (error?: AxiosError) => {
   if (error) {
@@ -157,7 +170,9 @@ export function createApiClient({
     },
     (error) => {
       decrementLoading();
-      console.error(" [API REQUEST ERROR]", error)
+      if (import.meta.env.DEV) {
+        console.error(" [API REQUEST ERROR]", error)
+      }
       return Promise.reject(error)
     }
   )
@@ -279,18 +294,13 @@ export function createApiClient({
             }
           )
 
-          const {
-            accessToken,
-            refreshToken: rotatedRefreshToken,
-            expiresIn
-          } = refreshResponse.data
+          const { accessToken, expiresIn } = refreshResponse.data
 
           // Assuming refreshResponse being successful means cookies are set
           if (refreshResponse.status === 200 || refreshResponse.status === 201) {
             localStorage.setItem("accessToken", accessToken)
-            if (rotatedRefreshToken) {
-              localStorage.setItem("refreshToken", rotatedRefreshToken)
-            }
+            // rotatedRefreshToken is NOT persisted: the backend already rotated the
+            // HttpOnly cookie on this same response, which is the only copy we keep.
             if (expiresIn) {
               localStorage.setItem("tokenExpiresIn", expiresIn)
             }
@@ -325,7 +335,7 @@ export function createApiClient({
       // -------------------------------------------------------------
       // GLOBAL ERROR HANDLING (Frontend API Error Handling Guide)
       // -------------------------------------------------------------
-      if (status && status !== 401) {
+      if (status && status !== 401 && !originalRequest?.skipErrorToast) {
         const data = res?.data as any;
         const beError = data?.error;
         const beMessage = data?.message;
@@ -333,14 +343,14 @@ export function createApiClient({
         // 403: Forbidden
         if (status === 403) {
           toast.error("403 - You do not have permission to access this resource.");
-        } 
+        }
         // 400 & 404: Bad Request or Not Found
         else if (status === 404 || status === 400) {
           // If it's a validation error, let the component handle it natively
           if (beError !== "VALIDATION_ERROR" && beMessage) {
             toast.error(`Error: ${beMessage}`);
           }
-        } 
+        }
         // 500: Internal Server Error
         else if (status >= 500) {
           toast.error("An internal server error occurred. Please try again later.");

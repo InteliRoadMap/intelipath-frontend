@@ -3,12 +3,12 @@ import { Spinner } from "@/components/ui"
 import {
   portfolioApi,
   PortfolioData
-} from "@/features/portfolio/api/portfolioApi"
+} from "@/features/shared/portfolio/api/portfolioApi"
 // We will create this component next
-import { EPortfolioEditor } from "@/features/portfolio/components/EPortfolioEditor"
+import { EPortfolioEditor } from "@/features/shared/portfolio/components/EPortfolioEditor"
 
 import { useAuth } from "@/context"
-import { studentDashboardService } from "@/features/student-dashboard/services/studentDashboardService"
+import { studentDashboardService } from "@/features/student/services/studentDashboardService"
 
 export const StudentPortfolioPage = () => {
   const { user } = useAuth()

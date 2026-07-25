@@ -38,7 +38,7 @@ import {
   Select
 } from "@/components"
 import { useAuth } from "@/context"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 import { ROLES, ROUTES } from "@/shared"
 import { AdminContentTab, AdminMarketTab, AdminSystemTab } from "./components/AdminExtraTabs"
 import { AdminFlmSyncTab } from "./components/AdminFlmSyncTab"

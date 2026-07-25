@@ -2,7 +2,7 @@ export { default as WelcomePage } from './WelcomePage'
 // Login is a popup on the landing page now (LoginDialog), not a page.
 // export { default as LoginPage } from './LoginPage'
 export { default as RegisterPage } from './RegisterPage'
-export { default as ForgotPasswordPage } from './ForgotPasswordPage'
+// ForgotPasswordPage retired — forgot password is a view inside the login popup.
 export { default as ResetPasswordPage } from './ResetPasswordPage'
 export { default as DashboardPage } from './DashboardPage'
 export { default as StudentDashboardPage } from './StudentDashboardPage'

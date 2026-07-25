@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { SignOut, CaretDown, GearSix } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/shared'
-import type { User } from '@/features/auth'
+import type { User } from '@/features/shared/auth'
 import NotificationBell from './NotificationBell'
 
 interface UserHeaderActionsProps {
@@ -80,8 +80,12 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         </div>
 
         <div className="p-2 flex flex-col gap-1">
-          {/* Notifications */}
-          <NotificationBell asMenuItem onCloseMenu={() => setShowDropdown(false)} />
+          {/* Students only. The one notification this product has is feedback addressed to a
+              student, and its endpoint is student-only — for every other role the bell was a
+              control that could never show anything. */}
+          {role === 'STUDENT' && (
+            <NotificationBell onCloseMenu={() => setShowDropdown(false)} />
+          )}
 
           {/* Settings */}
           <button

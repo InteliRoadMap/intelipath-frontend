@@ -28,13 +28,15 @@ export default function OAuthCallbackPage() {
     document.cookie = name + "=; Max-Age=-99999999; path=/"
   }
 
+  // The backend only ever sets "token" as a plain, JS-readable cookie for this
+  // one-time handoff. The refresh token is HttpOnly (same cookie name reused by
+  // AuthenticationCookieService), so document.cookie can never see its value here
+  // by design — there is nothing for this page to read or forward.
   const [token] = useState(() => getCookie("token"))
-  const [refreshToken] = useState(() => getCookie("refreshToken") || null)
 
   useEffect(() => {
     if (token) deleteCookie("token")
-    if (refreshToken) deleteCookie("refreshToken")
-  }, [token, refreshToken])
+  }, [token])
 
   const callbackError = urlError
     ? `URL Error: ${urlError}`
@@ -67,7 +69,8 @@ export default function OAuthCallbackPage() {
       ? new Date(tokenResult.decoded.exp * 1000).toISOString()
       : undefined
 
-    login({ accessToken: token, refreshToken, expiresIn })
+    // No refresh token to pass here: it never leaves the backend's HttpOnly cookie.
+    login({ accessToken: token, refreshToken: null, expiresIn })
       .then(() => {
         const userRole = role?.toUpperCase() || ROLES.STUDENT
         if (userRole === ROLES.ADMIN) navigate(ROUTES.DASHBOARD_ADMIN)
@@ -80,7 +83,7 @@ export default function OAuthCallbackPage() {
         console.error("Login Error:", err)
         setLoginError("Login failed: " + (err.message || JSON.stringify(err)))
       })
-  }, [callbackError, login, navigate, refreshToken, token, tokenResult.decoded])
+  }, [callbackError, login, navigate, token, tokenResult.decoded])
 
   if (errorDetails) {
     return (

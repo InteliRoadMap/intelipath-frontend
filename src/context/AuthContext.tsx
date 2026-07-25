@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useRef } from "react"
-import authApi from "@/features/auth/api/authApi"
+import authApi from "@/features/shared/auth/api/authApi"
 import { userApi } from "@/api"
-import { User, AuthState } from "@/features/auth"
+import { User, AuthState } from "@/features/shared/auth"
 import { jwtDecode } from "jwt-decode"
 
 interface LoginTokens {
@@ -22,6 +22,14 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// A 200 from /users/me is not proof of a session: an empty or thin body would otherwise
+// flip isAuthenticated=true with an empty user, and DashboardPage then defaults the missing
+// role to STUDENT and renders an empty dashboard instead of sending the visitor to Welcome.
+// A usable user must carry both an id and a role.
+const isUsableUser = (u: unknown): u is User =>
+  Boolean(u) && typeof u === "object" &&
+  Boolean((u as Partial<User>).id) && Boolean((u as Partial<User>).role)
 
 const initialState: AuthState = {
   user: null,
@@ -162,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (import.meta.env.DEV) {
         console.group("[AUTH REFRESH] Refresh scheduled")
-        console.log("refreshToken:", currentRefreshToken)
+        console.log("refreshMode:", currentRefreshToken ? "body" : "HttpOnly cookie")
         console.log("accessTokenExpiresAt:", new Date(expireTime).toISOString())
         console.log(
           "refreshAt:",
@@ -184,9 +192,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (accessToken) {
             localStorage.setItem("accessToken", accessToken)
-            if (nextRefreshToken) {
-              localStorage.setItem("refreshToken", nextRefreshToken)
-            }
+            // nextRefreshToken is NOT persisted: it only ever lives in the HttpOnly
+            // cookie the backend just rotated on this response.
             if (nextExpiresIn) {
               localStorage.setItem("tokenExpiresIn", nextExpiresIn)
             }
@@ -212,7 +219,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const restoreSession = async () => {
       const storedToken = localStorage.getItem("accessToken")
       const storedUser = localStorage.getItem("user")
-      const storedRefreshToken = localStorage.getItem("refreshToken")
       const storedExpiresIn = localStorage.getItem("tokenExpiresIn")
 
       if (!storedToken || !storedUser) {
@@ -226,11 +232,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         try {
           const decoded: any = jwtDecode(storedToken)
-          if (decoded && decoded.role && !userInfo.role) {
+          if (decoded && decoded.role && !userInfo?.role) {
             userInfo = { ...userInfo, role: decoded.role }
           }
         } catch {
           // ignore decode errors
+        }
+
+        // Guard: without a real user (id + role) this is not a session. Log out so the
+        // router sends the visitor back to Welcome instead of an empty dashboard.
+        if (!isUsableUser(userInfo)) {
+          clearStoredAuth()
+          if (active) {
+            dispatch({ type: "LOGOUT" })
+          }
+          return
         }
 
         localStorage.setItem("user", JSON.stringify(userInfo))
@@ -241,23 +257,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             payload: {
               user: userInfo,
               accessToken: storedToken,
-              refreshToken: storedRefreshToken
+              // The refresh token itself is never in localStorage — it lives only in
+              // the backend's HttpOnly cookie, sent automatically on the refresh call.
+              refreshToken: null
             }
           })
-          
-          // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
-          // if (storedRefreshToken) {
-          //   setupRefreshTimer(storedToken, storedRefreshToken, storedExpiresIn)
-          // }
 
-          // NEW LOGIC: Schedule refresh timer even if storedRefreshToken is null (relying on HttpOnly Cookie)
-          setupRefreshTimer(storedToken, storedRefreshToken || undefined, storedExpiresIn)
+          setupRefreshTimer(storedToken, undefined, storedExpiresIn)
         }
       } catch {
-        // Token expired or invalid - clear and force re-login
+        // Token expired or invalid - clear and force re-login (router → Welcome).
         clearStoredAuth()
         if (active) {
-          dispatch({ type: "SET_LOADING", payload: false })
+          dispatch({ type: "LOGOUT" })
         }
       }
     }
@@ -276,7 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (import.meta.env.DEV) {
       console.group("[AUTH SESSION] Tokens received after login")
       console.log("hasAccessToken:", Boolean(accessToken))
-      console.log("refreshToken:", refreshToken)
+      console.log("refreshMode:", refreshToken ? "body" : "HttpOnly cookie")
       console.log(
         "accessTokenExpiresAt:",
         getExpirationTime(accessToken, expiresIn)
@@ -286,8 +298,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.groupEnd()
     }
 
+    // The refresh token is never written to localStorage: the backend already set it
+    // as an HttpOnly cookie (unreadable by JS), which is the only copy kept client-side.
+    // Keeping a second, JS-readable copy here would hand an XSS payload a free session.
     localStorage.setItem("accessToken", accessToken)
-    if (refreshToken) localStorage.setItem("refreshToken", refreshToken)
     if (expiresIn) localStorage.setItem("tokenExpiresIn", expiresIn)
 
     try {
@@ -297,11 +311,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If the backend doesn't return role, try to extract from token
       try {
         const decoded: any = jwtDecode(accessToken)
-        if (decoded && decoded.role && !userInfo.role) {
+        if (decoded && decoded.role && !userInfo?.role) {
           userInfo = { ...userInfo, role: decoded.role }
         }
       } catch (e) {
         console.warn("Failed to decode role from token")
+      }
+
+      // A login that yields no real user (id + role) must fail loudly rather than seat an
+      // empty session — otherwise the visitor lands on an empty dashboard, not Welcome.
+      if (!isUsableUser(userInfo)) {
+        clearStoredAuth()
+        throw new Error("Login succeeded but /users/me returned no usable profile")
       }
 
       localStorage.setItem("user", JSON.stringify(userInfo))
