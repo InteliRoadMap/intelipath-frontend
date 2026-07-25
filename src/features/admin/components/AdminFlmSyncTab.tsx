@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react"
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/components"
 import adminApi, { type FlmSyncStatus, type MirrorStatus } from "@/features/admin/api/adminApi"
-import { toast } from "@/utils/toast"
+import { toast } from "@/lib/toast"
 
 // Legacy autocomplete prefixes — only a hint now; the curriculum id drives discovery
 // (combos + electives) so this stays empty unless someone needs the old fallback.

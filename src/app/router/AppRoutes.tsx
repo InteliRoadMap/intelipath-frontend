@@ -9,7 +9,7 @@ import {
   PublicPortfolioPage, StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
-import { GithubLinkCallback } from "@/features/portfolio/components/GithubLinkCallback"
+import { GithubLinkCallback } from "@/features/shared/portfolio/components/GithubLinkCallback"
 import { ROLES, ROUTES } from "@/shared"
 
 export const AppRoutes = () => {

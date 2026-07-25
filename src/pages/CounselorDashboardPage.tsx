@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react"
 import gsap from "gsap"
 import { Users, TrendingDown, MessageSquare } from "lucide-react"
-import { CounselorDashboardTemplate } from "@/components/counselor-dashboard/templates/CounselorDashboardTemplate"
-import { CounselorHero } from "@/components/counselor-dashboard/organisms/CounselorHero"
-import { CareerDistributionChart } from "@/components/counselor-dashboard/organisms/CareerDistributionChart"
-import { MissingSkillsChart } from "@/components/counselor-dashboard/organisms/MissingSkillsChart"
-import { FeedbackListWidget } from "@/components/counselor-dashboard/organisms/FeedbackListWidget"
+import { CounselorDashboardTemplate } from "@/features/counselor/components/templates/CounselorDashboardTemplate"
+import { CounselorHero } from "@/features/counselor/components/organisms/CounselorHero"
+import { CareerDistributionChart } from "@/features/counselor/components/organisms/CareerDistributionChart"
+import { MissingSkillsChart } from "@/features/counselor/components/organisms/MissingSkillsChart"
+import { FeedbackListWidget } from "@/features/counselor/components/organisms/FeedbackListWidget"
 import { StatItem } from "@/types/dashboard"
 
 export function CounselorDashboardPage() {
