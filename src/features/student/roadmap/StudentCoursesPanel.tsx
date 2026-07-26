@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { BookOpen, Users, GraduationCap, CaretRight, CaretDown, CaretUp, LinkSimple, ArrowUpRight, X } from "@phosphor-icons/react"
-import courseApi, { type Course } from "@/features/mentor-dashboard/api/courseApi"
-import { emitToast } from "@/utils/toast"
+import courseApi, { type Course } from "@/features/mentor/api/courseApi"
+import { emitToast } from "@/lib/toast"
 
 interface Props {
   careerId?: string | null
