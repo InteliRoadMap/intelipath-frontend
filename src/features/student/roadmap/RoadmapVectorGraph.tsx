@@ -468,6 +468,11 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     const maxX = Math.max(...real.map((n) => n.position.x + ((n.data?.level ?? 0) > 0 ? TOPIC_W : CHILD_W)));
     const contentCenter = (minX + maxX) / 2;
     rfRef.current.setViewport({ x: width / 2 - contentCenter * zoom, y: 60, zoom });
+    // Only mark as centred once it actually happened. buildRoadmapGraph is now
+    // synchronous, so this effect can run before ReactFlow's onInit sets rfRef;
+    // if we flagged "centred" before rfRef existed, onInit would then skip it and
+    // the roadmap would stay stuck at the left edge.
+    hasCenteredRef.current = true;
   };
 
   useEffect(() => {
@@ -485,8 +490,10 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
       setEdges(layoutedEdges);
       setTranslateExtent(computeExtent(layoutedNodes));
       if (!hasCenteredRef.current) {
-        hasCenteredRef.current = true;
-        // Wait a frame so the flow has its final width before centring.
+        // Wait a frame so the flow has its final width before centring. If the
+        // ReactFlow instance isn't ready yet (sync data can beat onInit), this
+        // no-ops and onInit centres once it mounts; the flag is set inside
+        // centerRoadmap only on a real centring.
         requestAnimationFrame(() => centerRoadmap(layoutedNodes));
       }
     } catch (e) {
@@ -547,9 +554,9 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
         nodeTypes={nodeTypes}
         onInit={(instance) => {
           rfRef.current = instance;
-          // Nodes may already be laid out (e.g. tab revisit); centre if so.
+          // Nodes may already be laid out (sync data can beat onInit); centre now
+          // that the instance exists. centerRoadmap sets the flag on success.
           if (!hasCenteredRef.current && nodes.length) {
-            hasCenteredRef.current = true;
             requestAnimationFrame(() => centerRoadmap(nodes));
           }
         }}
