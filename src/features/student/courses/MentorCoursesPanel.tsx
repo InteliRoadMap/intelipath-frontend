@@ -23,7 +23,7 @@ function sourceLabel(url: string): string {
  * Mentor-authored courses for the student's current career. Shown as a single
  * sidebar trigger that opens a roomy modal for browsing lessons and resources.
  */
-export function StudentCoursesPanel({ careerId, careerName }: Props) {
+export function MentorCoursesPanel({ careerId, careerName }: Props) {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
@@ -204,4 +204,4 @@ export function StudentCoursesPanel({ careerId, careerName }: Props) {
   )
 }
 
-export default StudentCoursesPanel
+export default MentorCoursesPanel
