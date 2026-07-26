@@ -4,15 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared';
 import StudentHeader from '@/features/student/common/StudentHeader';
 import { Card, CardHeader, CardTitle, CardDescription, Badge } from '@/components';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Spinner } from '@/components/ui';
 import { ChatTeardropText, PaperPlaneRight, CheckCircle } from '@phosphor-icons/react';
-import studentApi from '@/api/studentApi';
+import studentApi, { type StudentFeedbackItem } from '@/api/studentApi';
 
 export function StudentFeedbackPageView() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [feedbackList, setFeedbackList] = useState<any[]>([]);
+  const [feedbackList, setFeedbackList] = useState<StudentFeedbackItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [replyContent, setReplyContent] = useState('');
@@ -86,7 +86,6 @@ export function StudentFeedbackPageView() {
                     <h3 className="font-bold text-slate-900 text-lg">{item.mentorName}</h3>
                     <p className="text-xs font-medium text-slate-500">{item.mentorRole}</p>
                   </div>
-                  {/* Original: <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200"> */}
                   <Badge variant="info" className="bg-indigo-50 text-indigo-700 border-indigo-200">
                     {item.type}
                   </Badge>
@@ -135,7 +134,7 @@ export function StudentFeedbackPageView() {
                           className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                           {isReplying ? (
-                            <><i className="fas fa-spinner fa-spin"></i> Sending...</>
+                            <><Spinner size={16} label="Sending reply" /> Sending...</>
                           ) : (
                             <><PaperPlaneRight size={18} weight="fill" /> Send Reply</>
                           )}
