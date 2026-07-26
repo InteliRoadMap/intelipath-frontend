@@ -30,7 +30,7 @@ import {
   DatePicker
 } from "@/components"
 import { ROUTES } from "@/shared"
-import { useCounselorAddStudent } from "../model/useCounselorAddStudent"
+import { useCounselorAddStudent } from "../hooks/useCounselorAddStudent"
 
 // ─── Nav Items ──────────────────────────────────────────────────────────────
 const NAV_ITEMS = [

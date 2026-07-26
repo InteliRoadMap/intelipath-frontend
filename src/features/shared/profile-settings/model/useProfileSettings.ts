@@ -102,7 +102,10 @@ export function useProfileSettings() {
         major: data?.major || data?.student?.major || EMPTY_PROFILE.major,
         // The API sends an ISO date; <input type="date"> wants yyyy-MM-dd with no time.
         admission_date: String(
-          data?.admissionDate ?? data?.student?.admissionDate ?? ""
+          data?.admissionDate ??
+            data?.academicCounselor?.admissionDate ??
+            data?.student?.admissionDate ??
+            ""
         ).split("T")[0],
         university:
           data?.university ||
@@ -131,7 +134,8 @@ export function useProfileSettings() {
           data?.userInfo?.avatarUrl ||
           user?.avatarUrl ||
           "",
-        transcript_url: data?.transcriptUrl || data?.student?.transcriptUrl || "",
+        transcript_url:
+          data?.transcriptUrl || data?.student?.transcriptUrl || "",
         yob:
           (
             data?.yob ||
@@ -237,7 +241,8 @@ export function useProfileSettings() {
       } else if (user?.role?.toUpperCase() === "COUNSELOR") {
         tasks.push(
           profileApi.updateCounselorProfile({
-            department: profileData.department
+            department: profileData.department,
+            admissionDate: profileData.admission_date || null
           })
         )
       }
