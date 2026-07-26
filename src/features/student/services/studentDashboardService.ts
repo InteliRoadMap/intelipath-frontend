@@ -172,37 +172,40 @@ const normalizeNode = (node: any): RoadmapNode | null => {
   }
 }
 
-const normalizeStudentRoadmap = (responseData: unknown): StudentRoadmap => {
-  const data = unwrapResponse<any>(responseData)
-  
-  let rawNodes: any[] = []
-  let targetCareerRole: string | undefined
-  let progress: number | undefined
-
-  // Recursive finder to locate the actual node array or root node
-  const findRoadmapData = (obj: any): any => {
-    if (!obj || typeof obj !== 'object') return null;
-    if (Array.isArray(obj)) {
-      if (obj.length > 0 && (obj[0].nodeId || obj[0].id || obj[0].title || obj[0].name || obj[0].nodeName || obj[0].NodeName)) {
-        return obj; // Found the array of nodes!
-      }
-      for (const item of obj) {
-        const found = findRoadmapData(item);
-        if (found) return found;
-      }
-      return null;
+// The roadmap endpoint wraps its node array/root at an unpredictable depth
+// (envelope, `data`, `roadmap`, `steps`, …). Walk the response and return the
+// first array-of-nodes or root node found. Shared by the flat normalizer and
+// the graph builder so the "where are the nodes" logic lives in one place.
+const findRoadmapData = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) {
+    if (obj.length > 0 && (obj[0].nodeId || obj[0].id || obj[0].title || obj[0].name || obj[0].nodeName || obj[0].NodeName)) {
+      return obj; // Found the array of nodes!
     }
-    // Is this object itself a node?
-    if (obj.nodeId || obj.id || obj.title || obj.name || obj.nodeName || obj.NodeName) {
-      if (obj.children || obj.status || obj.level || obj.Level) return obj;
-    }
-    // Otherwise, search its keys
-    for (const key of Object.keys(obj)) {
-      const found = findRoadmapData(obj[key]);
+    for (const item of obj) {
+      const found = findRoadmapData(item);
       if (found) return found;
     }
     return null;
-  };
+  }
+  // Is this object itself a node?
+  if (obj.nodeId || obj.id || obj.title || obj.name || obj.nodeName || obj.NodeName) {
+    if (obj.children || obj.status || obj.level || obj.Level) return obj;
+  }
+  // Otherwise, search its keys
+  for (const key of Object.keys(obj)) {
+    const found = findRoadmapData(obj[key]);
+    if (found) return found;
+  }
+  return null;
+};
+
+const normalizeStudentRoadmap = (responseData: unknown): StudentRoadmap => {
+  const data = unwrapResponse<any>(responseData)
+
+  let rawNodes: any[] = []
+  let targetCareerRole: string | undefined
+  let progress: number | undefined
 
   if (data && typeof data === 'object') {
     const extractedData = findRoadmapData(data) || data;
@@ -408,10 +411,8 @@ export const studentDashboardService = {
     return unwrapResponse(response.data)
   },
 
-  getRoadmapGraphData: async (): Promise<{ nodes: any[], edges: any[] }> => {
+  buildRoadmapGraph: (responseData: unknown): { nodes: any[], edges: any[] } => {
     try {
-      const response = await roadmapApi.getStudentRoadmap();
-      
       const rows: any[] = [];
       const nameToId: Record<string, string> = {};
       
@@ -437,29 +438,7 @@ export const studentDashboardService = {
         }
       };
 
-      const findRoadmapData = (obj: any): any => {
-        if (!obj || typeof obj !== 'object') return null;
-        if (Array.isArray(obj)) {
-          if (obj.length > 0 && (obj[0].nodeId || obj[0].id || obj[0].title || obj[0].name || obj[0].nodeName || obj[0].NodeName)) {
-            return obj;
-          }
-          for (const item of obj) {
-            const found = findRoadmapData(item);
-            if (found) return found;
-          }
-          return null;
-        }
-        if (obj.nodeId || obj.id || obj.title || obj.name || obj.nodeName || obj.NodeName) {
-          if (obj.children || obj.status || obj.level || obj.Level) return obj;
-        }
-        for (const key of Object.keys(obj)) {
-          const found = findRoadmapData(obj[key]);
-          if (found) return found;
-        }
-        return null;
-      };
-
-      const extractedData = findRoadmapData(response.data) || response.data;
+      const extractedData = findRoadmapData(responseData) || responseData;
       
       if (Array.isArray(extractedData)) {
         extractedData.forEach(registerNameId);
@@ -613,7 +592,7 @@ export const studentDashboardService = {
 
       return { nodes, edges };
     } catch (error) {
-      console.error("[Student Roadmap] Failed to fetch roadmap graph data from API:", error);
+      console.error("[Student Roadmap] Failed to build roadmap graph:", error);
       return { nodes: [], edges: [] };
     }
   }

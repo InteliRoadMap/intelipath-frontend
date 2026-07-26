@@ -476,23 +476,22 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
       setEdges([]);
       return;
     }
-    const processData = async () => {
-      try {
-        const { nodes: rawNodes, edges: rawEdges } = await studentDashboardService.getRoadmapGraphData();
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getDynamicLayoutedElements(rawNodes, rawEdges, themeColor, optimisticStatusMap, chosenNodeIds);
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
-        setTranslateExtent(computeExtent(layoutedNodes));
-        if (!hasCenteredRef.current) {
-          hasCenteredRef.current = true;
-          // Wait a frame so the flow has its final width before centring.
-          requestAnimationFrame(() => centerRoadmap(layoutedNodes));
-        }
-      } catch (e) {
-        console.error("Graph layout error", e);
+    try {
+      // Build the graph from the SAME payload the page already fetched
+      // (kept on `_rawResponse`) instead of hitting the roadmap endpoint again.
+      const { nodes: rawNodes, edges: rawEdges } = studentDashboardService.buildRoadmapGraph(roadmapData._rawResponse);
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getDynamicLayoutedElements(rawNodes, rawEdges, themeColor, optimisticStatusMap, chosenNodeIds);
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+      setTranslateExtent(computeExtent(layoutedNodes));
+      if (!hasCenteredRef.current) {
+        hasCenteredRef.current = true;
+        // Wait a frame so the flow has its final width before centring.
+        requestAnimationFrame(() => centerRoadmap(layoutedNodes));
       }
-    };
-    processData();
+    } catch (e) {
+      console.error("Graph layout error", e);
+    }
   }, [roadmapData, setNodes, setEdges, themeColor, optimisticStatusMap, chosenNodeIds]);
 
   const handleNodeClick = (event: React.MouseEvent, node: any) => {
@@ -528,13 +527,11 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
 
   if (roadmapData && (!roadmapData.nodes || roadmapData.nodes.length === 0)) {
     return (
-      <div className="flex h-full w-full flex-col p-8 bg-white border border-rose-200 rounded-xl overflow-auto m-4 max-w-[800px] mx-auto shadow-sm z-50">
-        <h2 className="text-xl font-bold text-rose-600 mb-4">Roadmap Display Error</h2>
-        <p className="text-slate-600 mb-4">The backend returned data, but couldn't find any nodes to display. Could you send me this raw data so I can fix the parsing logic?</p>
-        <p className="text-sm font-bold text-slate-800 mb-2">Raw Data Dump:</p>
-        <pre className="text-[11px] bg-slate-100 p-4 rounded-lg overflow-auto border border-slate-200">
-          {JSON.stringify(roadmapData, null, 2)}
-        </pre>
+      <div className="flex h-full w-full items-center justify-center bg-transparent p-8">
+        <div className="max-w-sm text-center text-slate-400">
+          <p className="text-[15px] font-bold text-slate-600">Your roadmap is being prepared</p>
+          <p className="mt-1.5 text-[13px]">No milestones to show yet. Pick or change your target career to generate one.</p>
+        </div>
       </div>
     );
   }

@@ -347,12 +347,6 @@ export default function StudentRoadmapPageView() {
         setRoadmapData({ ...roadmapData, nodes: updatedNodes });
       }
       setOptimisticStatusMap(prev => ({ ...prev, [selectedNodeData.id]: newStatus }));
-      
-      console.log(
-        newStatus === 'completed' 
-          ? 'Node marked as completed!' 
-          : 'Node marked as in progress'
-      );
 
       // 3. Gọi ngầm Backend để lấy cây Roadmap mới nhất (đã được tính toán Auto-Unlock)
       studentDashboardService.getStudentRoadmap().then(freshData => {
