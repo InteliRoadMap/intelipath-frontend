@@ -23,14 +23,21 @@ import {
   FileText,
   Briefcase
 } from "lucide-react"
-import { UserHeaderActions, Logo, SharedAppBackground, DatePicker } from "@/components"
+import {
+  UserHeaderActions,
+  Logo,
+  SharedAppBackground,
+  DatePicker
+} from "@/components"
 import { ROUTES } from "@/shared"
 import { useCounselorAddStudent } from "../model/useCounselorAddStudent"
 
 // ─── Nav Items ──────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, to: ROUTES.DASHBOARD_COUNSELOR },
-  { label: "Feedback", icon: MessageSquare, to: ROUTES.COUNSELOR_FEEDBACK },
+
+  { label: "View Student", icon: MessageSquare, to: ROUTES.COUNSELOR_FEEDBACK },
+
   { label: "Add Student", icon: UserPlus, to: ROUTES.COUNSELOR_ADD_STUDENT }
 ]
 
@@ -288,19 +295,36 @@ export default function CounselorAddStudentView() {
                         errors.curriculum
                           ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
                           : curriculumOpen
-                          ? "border-[#00838f] ring-2 ring-[#00838f]/20"
-                          : "border-slate-200 focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
+                            ? "border-[#00838f] ring-2 ring-[#00838f]/20"
+                            : "border-slate-200 focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20"
                       }`}
                   >
                     <FileText
                       size={15}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                     />
-                    <span className={form.curriculum ? "text-slate-800" : "text-slate-400"}>
+                    <span
+                      className={
+                        form.curriculum ? "text-slate-800" : "text-slate-400"
+                      }
+                    >
                       {form.curriculum || "Select Curriculum"}
                     </span>
-                    <div className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-transform duration-200 ${curriculumOpen ? "rotate-180" : ""}`}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <div
+                      className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-transform duration-200 ${curriculumOpen ? "rotate-180" : ""}`}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
                     </div>
                   </button>
 
@@ -314,14 +338,20 @@ export default function CounselorAddStudentView() {
                       <div className="absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
                         <div
                           className="px-3 py-2 text-[13px] text-slate-400 cursor-pointer hover:bg-slate-50 transition-colors"
-                          onClick={() => { handleChange("curriculum", ""); setCurriculumOpen(false) }}
+                          onClick={() => {
+                            handleChange("curriculum", "")
+                            setCurriculumOpen(false)
+                          }}
                         >
                           Select Curriculum
                         </div>
                         {curriculums.map((c) => (
                           <div
                             key={c}
-                            onClick={() => { handleChange("curriculum", c); setCurriculumOpen(false) }}
+                            onClick={() => {
+                              handleChange("curriculum", c)
+                              setCurriculumOpen(false)
+                            }}
                             className={`px-3 py-2.5 text-[13px] font-medium cursor-pointer transition-colors
                               ${
                                 form.curriculum === c
@@ -356,7 +386,7 @@ export default function CounselorAddStudentView() {
                   Import Excel
                 </button>
               )}
-              
+
               {editingDraftId && (
                 <button
                   type="button"
@@ -380,7 +410,13 @@ export default function CounselorAddStudentView() {
                 ) : (
                   <UserPlus size={15} />
                 )}
-                {isSubmitting ? (editingDraftId ? "Updating..." : "Creating...") : (editingDraftId ? "Update Student" : "Add Student")}
+                {isSubmitting
+                  ? editingDraftId
+                    ? "Updating..."
+                    : "Creating..."
+                  : editingDraftId
+                    ? "Update Student"
+                    : "Add Student"}
               </button>
             </div>
           </form>
@@ -463,21 +499,26 @@ export default function CounselorAddStudentView() {
                         {st.major}
                       </span>
                       <span className="text-[11px] text-slate-500">
-                        Enroll {st.admissionDate ? (st.admissionDate.split('-').length === 3 ? `${parseInt(st.admissionDate.split('-')[1])}/${parseInt(st.admissionDate.split('-')[2])}/${st.admissionDate.split('-')[0]}` : st.admissionDate) : (st as any).yearOfAdmission || "N/A"}
+                        Enroll{" "}
+                        {st.admissionDate
+                          ? st.admissionDate.split("-").length === 3
+                            ? `${parseInt(st.admissionDate.split("-")[1])}/${parseInt(st.admissionDate.split("-")[2])}/${st.admissionDate.split("-")[0]}`
+                            : st.admissionDate
+                          : (st as any).yearOfAdmission || "N/A"}
                       </span>
                     </div>
                     <div className="col-span-2 text-[12px] text-slate-600 font-medium truncate pr-2">
                       {st.curriculum}
                     </div>
                     <div className="col-span-1 flex items-center justify-end gap-1.5">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleEditDraft(st.id)}
                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                       >
                         <Edit2 size={14} />
                       </button>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleDeleteDraft(st.id)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
@@ -539,11 +580,11 @@ export default function CounselorAddStudentView() {
 
             <div className="p-6">
               <label className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 hover:border-[#00838f]/50 transition-colors cursor-pointer group relative">
-                <input 
-                  type="file" 
-                  accept=".xlsx, .xls, .csv" 
-                  onChange={handleFileUpload} 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                <input
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-50 transition-all pointer-events-none">
                   <Upload

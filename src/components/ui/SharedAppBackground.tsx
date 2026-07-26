@@ -5,7 +5,7 @@ export default function SharedAppBackground() {
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       style={{
         // Flat, neutral base — no tint, no aurora, just the blueprint grid.
-        background: "#f8fafc", // slate-50
+        background: "#f8fafc" // slate-50
       }}
     >
       {/* Even blueprint grid across the whole page. */}
@@ -16,7 +16,7 @@ export default function SharedAppBackground() {
             linear-gradient(to right, #e2e8f0 1px, transparent 1px),
             linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)
           `,
-          backgroundSize: "20px 30px",
+          backgroundSize: "20px 30px"
         }}
       />
     </div>

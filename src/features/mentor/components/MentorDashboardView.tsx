@@ -107,6 +107,12 @@ export function MentorDashboardView() {
           </div>
         )}
 
+        {activeTab === 'courses' && (
+          <div className="gsap-fade-section">
+            <MentorCoursesView />
+          </div>
+        )}
+
         {activeTab === 'portfolios' && (
           <div className="gsap-fade-section">
             <MentorEPortfoliosView />

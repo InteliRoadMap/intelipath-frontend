@@ -37,6 +37,7 @@ import StudentProfileSetupModal from "@/features/student/onboarding/StudentProfi
 import StudentSkillSelectionModal from "@/features/student/onboarding/StudentSkillSelectionModal"
 import StudentHeader from "@/features/student/common/StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
+import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import FptCurriculumPanel from "@/features/student/courses/FptCurriculumPanel"
 import StageLegend from "./StageLegend"

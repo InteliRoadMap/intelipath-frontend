@@ -32,7 +32,8 @@ export const ENDPOINTS = {
     // OLD CODE: (no old code for UPLOAD_TRANSCRIPT, just adding new endpoint)
     PORTFOLIO_GITHUB_IMPORT: "/student/portfolio/projects/github-import",
     PORTFOLIO_GITHUB_REPOS: "/student/portfolio/projects/github-repos",
-    PORTFOLIO_GITHUB_IMPORT_BATCH: "/student/portfolio/projects/github-import-batch",
+    PORTFOLIO_GITHUB_IMPORT_BATCH:
+      "/student/portfolio/projects/github-import-batch",
     PORTFOLIO_GITHUB_LINK_START: "/student/portfolio/github/link/start",
     PORTFOLIO_GITHUB_LINK: "/student/portfolio/github/link",
     PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
@@ -49,8 +50,10 @@ export const ENDPOINTS = {
   CURRICULUM: {
     // FPT subject declaration -> transcript evidence -> dynamic roadmap.
     FPT_SUBJECTS: "/students/me/fpt-subjects",
-    FPT_SUBJECT_DETAIL: (code: string) => `/students/me/fpt-subjects/${encodeURIComponent(code)}`,
-    FPT_MATERIAL_DOWNLOAD: (id: string) => `/students/me/fpt-materials/${id}/download`,
+    FPT_SUBJECT_DETAIL: (code: string) =>
+      `/students/me/fpt-subjects/${encodeURIComponent(code)}`,
+    FPT_MATERIAL_DOWNLOAD: (id: string) =>
+      `/students/me/fpt-materials/${id}/download`,
     CURRICULUM_TERM: "/students/me/curriculum-term",
     SET_CURRICULUM: "/students/me/curriculum"
   },
@@ -61,22 +64,27 @@ export const ENDPOINTS = {
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
     COMPARE_SKILLS: "/roadmap/skills/compare",
-    // Choose-one selections (pick which alternative in a CHOOSE_ONE group)
     SELECTIONS: "/roadmaps/selections",
-    CLEAR_SELECTION: (groupNodeId: string) => `/roadmaps/selections/${groupNodeId}`
+    CLEAR_SELECTION: (groupNodeId: string) =>
+      `/roadmaps/selections/${groupNodeId}`
   },
+
   ROADMAP_RECOMMENDATIONS: {
-    PENDING: '/roadmaps/recommendations',
-    GENERATE: '/roadmaps/recommendations/generate',
-    ACCEPT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/accept`,
-    REJECT: (recommendationId: string) => `/roadmaps/recommendations/${recommendationId}/reject`
+    PENDING: "/roadmaps/recommendations",
+    GENERATE: "/roadmaps/recommendations/generate",
+    ACCEPT: (recommendationId: string) =>
+      `/roadmaps/recommendations/${recommendationId}/accept`,
+    REJECT: (recommendationId: string) =>
+      `/roadmaps/recommendations/${recommendationId}/reject`
   },
   ROADMAP_EDITOR: {
-    CAREER_NODES: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
-    CREATE_NODE: (careerId: string) => `/roadmaps/editor/careers/${careerId}/nodes`,
+    CAREER_NODES: (careerId: string) =>
+      `/roadmaps/editor/careers/${careerId}/nodes`,
+    CREATE_NODE: (careerId: string) =>
+      `/roadmaps/editor/careers/${careerId}/nodes`,
     UPDATE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
     DELETE_NODE: (nodeId: string) => `/roadmaps/editor/nodes/${nodeId}`,
-    SAVE_POSITIONS: '/roadmaps/editor/nodes/positions'
+    SAVE_POSITIONS: "/roadmaps/editor/nodes/positions"
   },
   STUDENT_DASHBOARD: {
     OVERVIEW: "/student/dashboard",
@@ -85,8 +93,10 @@ export const ENDPOINTS = {
     MENTOR_FEEDBACK: "/student/dashboard/mentor-feedback",
     // Read state lives on the server (feedback.status NEW/READ/DELETED). Marking read in
     // the browser alone is what made an opened notification come back unread on reload.
-    MENTOR_FEEDBACK_READ: (id: string) => `/student/dashboard/mentor-feedback/${id}/read`,
-    MENTOR_FEEDBACK_DISMISS: (id: string) => `/student/dashboard/mentor-feedback/${id}`,
+    MENTOR_FEEDBACK_READ: (id: string) =>
+      `/student/dashboard/mentor-feedback/${id}/read`,
+    MENTOR_FEEDBACK_DISMISS: (id: string) =>
+      `/student/dashboard/mentor-feedback/${id}`,
     RECOMMENDATIONS: "/student/dashboard/recommendations",
     MARKET_DEMAND: "/student/dashboard/market-demand",
     AI_HISTORY: "/student/dashboard/ai-history",
@@ -97,6 +107,9 @@ export const ENDPOINTS = {
     TRENDING_SKILLS: "/market-trends/skills/trending",
     SALARY_OVERVIEW: "/market-trends/salary-overview"
   },
+  // UNIVERSITIES: {
+  //   LIST: "/universities"
+  // },
   RECRUITMENT_POSTS: {
     ALL: "/recruitment-posts/",
     COMPANY: (companyId: string) => `/recruitment-posts/company/${companyId}`,
@@ -116,18 +129,18 @@ export const ENDPOINTS = {
   },
   ADMIN_FLM: {
     SYNC: "/admin/flm/sync",
-    SYNC_STATUS: (jobId: string) => `/admin/flm/sync/${jobId}`,
-    MIRROR: "/admin/flm/mirror-materials",
-    MIRROR_STATUS: (jobId: string) => `/admin/flm/mirror-materials/${jobId}`
+    STATUS: "/admin/flm/status",
+    JOBS: "/admin/flm/jobs",
+    JOB: (jobId: string) => `/admin/flm/jobs/${jobId}`
   },
   COUNSELOR: {
     PROFILE: "/counselor/me/profile"
   },
   COUNSELOR_DASHBOARD: {
-    METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
-    METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
-    METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
-    METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
+    // METRICS_STUDENTS: "/counselor/dashboard/metrics/students",
+    // METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
+    // METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
+    // METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
     LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
     CAREER_DISTRIBUTION: "/counselor/dashboard",
     CURRICULUMS: "/counselor/curriculums",
@@ -136,14 +149,16 @@ export const ENDPOINTS = {
     GET_STUDENT_LIST: "/counselor/feedback/students",
     GET_STUDENT_INFO: (studentId: string) =>
       `/counselor/feedback/student/info/${studentId}`,
-    HISTORY_FEEDBACK: (studentId: string) => `/counselor/feedback/student/info/${studentId}`,
+    HISTORY_FEEDBACK: (studentId: string) =>
+      `/counselor/feedback/student/info/${studentId}`,
     CREATE_FEEDBACK: "/counselor/feedback/create",
     MODIFY_FEEDBACK: "/counselor/feedback/modify",
     DELETE_FEEDBACK: (feedbackId: string) =>
       `/counselor/feedback/delete/${feedbackId}`,
     EXPORT_STUDENTS: "/counselor/export-students",
     IMPORT_STUDENTS: "/counselor/import-students",
-    CHECK_STUDENT_EMAIL: (email: string) => `/counselor/import-student/${email}`,
+    CHECK_STUDENT_EMAIL: (email: string) =>
+      `/counselor/import-student/${email}`,
     GET_COUNSELOR_PROFILE: "/counselor/me/profile"
   },
   MENTOR_DASHBOARD: {
@@ -167,4 +182,18 @@ export const ENDPOINTS = {
     STREAM: (sessionId: string) => `/chat/sessions/${sessionId}/stream`,
     UPLOAD_FILE: "/chat/files/upload"
   },
+  MENTOR_COURSES: {
+    LIST: "/mentor/courses",
+    CREATE: "/mentor/courses",
+    UPDATE: (id: string) => `/mentor/courses/${id}`,
+    DELETE: (id: string) => `/mentor/courses/${id}`,
+    PUBLISH: (id: string) => `/mentor/courses/${id}/publish`
+  },
+  COURSES: {
+    BROWSE: "/courses",
+    DETAIL: (id: string) => `/courses/${id}`,
+    ENROLL: (id: string) => `/courses/${id}/enroll`,
+    PROGRESS: (id: string) => `/courses/${id}/progress`,
+    MY_ENROLLMENTS: "/courses/me/enrollments"
+  }
 } as const

@@ -533,19 +533,6 @@ export const studentDashboardService = {
             stage: row.stage || row.Stage || null,
             completedAt: row.completedAt ?? row.completed_at ?? null,
             completionPolicy: row.completionPolicy || row.completion_policy || null,
-            // v2 personalization hints — drive CHOOSE_ONE styling + selection UX.
-            selection: row.selection || row.Selection || 'ALL',
-            chooseCount: row.chooseCount ?? row.choose_count ?? null,
-            nodeKind: row.nodeKind || row.node_kind || 'CORE',
-            axis: row.axis || row.Axis || 'MAIN',
-            isOptional: row.isOptional ?? row.is_optional ?? false,
-            isCheckpoint: row.isCheckpoint ?? row.is_checkpoint ?? false,
-            // Set below once parent refs are resolved (the CHOOSE_ONE group this node belongs to).
-            parentNodeId: null as string | null,
-            // Topic (spine) node that auto-completes from its child sub-skills.
-            parentTopic: row.parentTopic ?? row.parent_topic ?? false,
-            childTotal: row.childTotal ?? row.child_total ?? 0,
-            childCompleted: row.childCompleted ?? row.child_completed ?? 0,
             // Hand-placed coordinates from the mentor editor; null = auto-layout.
             positionX: row.positionX ?? row.position_x ?? null,
             positionY: row.positionY ?? row.position_y ?? null,

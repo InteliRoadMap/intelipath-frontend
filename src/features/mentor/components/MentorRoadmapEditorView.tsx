@@ -446,6 +446,10 @@ const MentorRoadmapEditorView = () => {
                   onChange={e => setForm({ ...form, resourcesText: e.target.value })}
                 />
               </div>
+
+              {selectedId && careerId && (
+                <NodeCoursesSection careerId={careerId} nodeId={selectedId} />
+              )}
             </div>
 
             <div className="p-4 border-t border-slate-100 flex gap-2">

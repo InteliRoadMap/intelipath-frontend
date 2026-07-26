@@ -9,7 +9,8 @@ import type {
   FeedbackListResponse,
   MyStudent,
   CreateFeedback,
-  PaginatedStudentResponse
+  PaginatedStudentResponse,
+  ImportStudentAccount
 } from "../types"
 
 export type {
@@ -55,7 +56,13 @@ const counselorApi = {
   // getStudentsMetric: async () => {
   //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
   // },
+  // getStudentsMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_STUDENTS)
+  // },
 
+  // getProgressMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
+  // },
   // getProgressMetric: async () => {
   //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_PROGRESS)
   // },
@@ -63,7 +70,15 @@ const counselorApi = {
   // getAtRiskMetric: async () => {
   //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
   // },
+  // getAtRiskMetric: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_AT_RISK)
+  // },
 
+  // getEngagementMetric: async () => {
+  //   return await mainClient.get(
+  //     ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
+  //   )
+  // },
   // getEngagementMetric: async () => {
   //   return await mainClient.get(
   //     ENDPOINTS.COUNSELOR_DASHBOARD.METRICS_ENGAGEMENT
@@ -193,15 +208,15 @@ const counselorApi = {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.EXPORT_STUDENTS,
       { studentIds },
-      { responseType: "blob" }
+      { responseType: "blob" } //"Kết quả trả về là File Excel dạng Byte, đừng dịch ra JSON kẻo lỗi!"
     )
     return res.data
   },
-  importStudents: async (students: any[]): Promise<Blob> => {
+  importStudents: async (students: ImportStudentAccount[]): Promise<Blob> => {
     const res = await mainClient.post(
       ENDPOINTS.COUNSELOR_DASHBOARD.IMPORT_STUDENTS,
       { accounts: students },
-      { responseType: "blob" }
+      { responseType: "blob" } //"Kết quả trả về là File Excel dạng Byte, đừng dịch ra JSON kẻo lỗi!"
     )
     return res.data
   },

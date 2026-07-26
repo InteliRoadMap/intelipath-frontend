@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from "react"
 
 import counselorApi, {
   type MyStudent,
-  type Feedback
+  type Feedback,
+  type CreateFeedback
 } from "@/features/counselor/api/counselorApi"
 
 // ─── useStudentList ───────────────────────────────────────────────────────────
@@ -112,15 +113,9 @@ export function useStudentDetailInfo(
 }
 
 // ─── useSendFeedback ──────────────────────────────────────────────────────────
-export interface SendFeedbackPayload {
-  receiverId: string
-  content: string
-  type: "GENERAL" | "SKILL" | "CAREER"
-  attachments?: File[]
-}
 
 export interface UseSendFeedbackResult {
-  send: (payload: SendFeedbackPayload) => Promise<void>
+  send: (payload: CreateFeedback) => Promise<void>
   sending: boolean
   sent: boolean
   resetSent: () => void
@@ -131,7 +126,7 @@ export function useSendFeedback(onSuccess?: () => void): UseSendFeedbackResult {
   const [sent, setSent] = useState(false)
 
   const send = useCallback(
-    async (payload: SendFeedbackPayload) => {
+    async (payload: CreateFeedback) => {
       if (!payload.content.trim()) return
       setSending(true)
       try {

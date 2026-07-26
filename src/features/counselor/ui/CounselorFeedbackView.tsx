@@ -436,7 +436,7 @@ function FeedbackTab({
     await send({
       receiverId: student.studentId,
       content: content.trim(),
-      type: type as "GENERAL" | "SKILL" | "CAREER",
+      type: type as "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO",
       attachments: attachments
     })
     setContent("")
@@ -1190,7 +1190,7 @@ export default function CounselorFeedbackPage() {
               }
             >
               <MessageSquare size={16} />
-              Feedback
+              View Student
             </NavLink>
             <NavLink
               to={ROUTES.COUNSELOR_ADD_STUDENT}

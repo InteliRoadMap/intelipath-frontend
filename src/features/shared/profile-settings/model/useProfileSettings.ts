@@ -107,6 +107,8 @@ export function useProfileSettings() {
         university:
           data?.university ||
           data?.userInfo?.university ||
+          data?.academicCounselor?.universityName ||
+          data?.student?.universityName ||
           data?.student?.university ||
           "",
         accountType: data?.accountType || data?.student?.accountType || "OTHER",

@@ -755,7 +755,7 @@ export default function CounselorDashboard() {
               }
             >
               <MessageSquare size={16} />
-              Feedback
+              View Student
             </NavLink>
             <NavLink
               to={ROUTES.COUNSELOR_ADD_STUDENT}
