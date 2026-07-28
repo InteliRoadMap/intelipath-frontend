@@ -5,14 +5,12 @@ import {
   Edit3,
   Mail,
   User,
-  GraduationCap,
   Sparkles,
   RefreshCw,
   ChevronLeft,
   Target
 } from "lucide-react"
-import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { SharedAppBackground } from "@/components"
@@ -40,7 +38,6 @@ export default function MentorProfileSettingsPage() {
 
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
 
@@ -116,10 +113,6 @@ export default function MentorProfileSettingsPage() {
     await logout()
     navigate(ROUTES.LOGIN)
   }
-
-  const navItems = [
-    { label: "Settings", icon: PencilSimple, path: location.pathname }
-  ]
 
   return (
     <div

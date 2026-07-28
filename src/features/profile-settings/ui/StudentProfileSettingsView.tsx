@@ -10,11 +10,10 @@ import {
   RefreshCw,
   ChevronLeft
 } from "lucide-react"
-import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
+import { SharedAppBackground } from "@/components"
 import StudentHeader from "@/features/student/common/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "@/features/shared/profile-settings"
@@ -40,7 +39,6 @@ export default function StudentProfileSettingsPage() {
 
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
 
@@ -116,10 +114,6 @@ export default function StudentProfileSettingsPage() {
     await logout()
     navigate(ROUTES.LOGIN)
   }
-
-  const navItems = [
-    { label: "Settings", icon: PencilSimple, path: location.pathname }
-  ]
 
   return (
     <div
