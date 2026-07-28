@@ -23,7 +23,6 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [trendingTimeRange, setTrendingTimeRange] = useState('30days');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -71,6 +70,16 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
     };
     fetchDashboardData();
   }, []);
+
+  // The window the trend data actually covers, so the card states its real range instead
+  // of the fixed "Last 30 Days / 3 Months" choice that never reached the API.
+  const trendingWeeks = useMemo(() => {
+    const dates = new Set<string>();
+    trendingSkills.forEach((skill) =>
+      skill.dataPoints?.forEach((point) => dates.add(point.date))
+    );
+    return dates.size;
+  }, [trendingSkills]);
 
   const tagGroups = useMemo(() => {
     const groups: Record<string, Set<string>> = {
@@ -158,57 +167,66 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
           )}
         </div>
 
-        {/* Dashboard Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Top Hiring Companies */}
-          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:row-span-2 flex flex-col">
-            <h3 className="text-[16px] font-bold text-slate-800 mb-6">Top Hiring Companies</h3>
-            {loading ? (
-              <div className="flex flex-col gap-4">
-                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-12 rounded-xl w-full" />)}
-              </div>
-            ) : topCompanies.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-4">
-                <p className="text-[13px] text-slate-500 font-medium text-center">No data available at the moment.</p>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        {/* Dashboard — sections sit directly on the background, separated by hairlines
+            rather than boxed into cards, so the page reads as one surface. */}
+        <div className="flex flex-col gap-9">
+          <div className="grid grid-cols-1 gap-9 lg:grid-cols-5 lg:gap-12">
+            {/* Top Hiring Companies */}
+            <section className="lg:col-span-2">
+              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Top hiring companies
+              </h3>
+              <p className="mb-5 text-[13px] text-slate-500">Who is posting the most roles.</p>
+              {loading ? (
+                <div className="flex flex-col gap-4">
+                  {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl bg-white/40" />)}
+                </div>
+              ) : topCompanies.length === 0 ? (
+                <p className="py-10 text-center text-[13px] font-medium text-slate-500">
+                  No data available at the moment.
+                </p>
+              ) : (
                 <TopHiringCompaniesChart data={topCompanies} />
-              </div>
-            )}
+              )}
+            </section>
+
+            {/* Salary Overview */}
+            <section className="lg:col-span-3">
+              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Salary overview
+              </h3>
+              <p className="mb-5 text-[13px] text-slate-500">
+                How open roles spread across salary ranges.
+              </p>
+              {loading ? (
+                <Skeleton className="h-[300px] w-full rounded-xl bg-white/40" />
+              ) : (
+                <SalaryOverviewChart data={salaryOverview} />
+              )}
+            </section>
           </div>
 
-          {/* Trending Skills */}
-          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[16px] font-bold text-slate-800">Trending Skills Demand</h3>
-              <Select
-                value={trendingTimeRange}
-                onChange={(e) => setTrendingTimeRange(e.target.value)}
-                wrapperClassName="w-auto"
-                className="h-8 rounded-lg bg-slate-50 text-[12px] font-bold text-slate-500"
-              >
-                <option value="30days">Last 30 Days</option>
-                <option value="3months">Last 3 Months</option>
-              </Select>
+          {/* Trending Skills — full width below, so the rows stay short in two columns */}
+          <section className="border-t border-slate-900/[0.06] pt-8">
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Trending skills demand
+              </h3>
+              {!loading && trendingWeeks > 0 && (
+                <span className="shrink-0 text-[12px] font-medium text-slate-400">
+                  Last {trendingWeeks} {trendingWeeks === 1 ? 'week' : 'weeks'}
+                </span>
+              )}
             </div>
+            <p className="mb-5 text-[13px] text-slate-500">
+              Ranked by openings, with the change since the previous reading.
+            </p>
             {loading ? (
-              <Skeleton className="h-[300px] rounded-xl w-full" />
+              <Skeleton className="h-[280px] w-full rounded-xl bg-white/40" />
             ) : (
               <TrendingSkillsChart data={trendingSkills} />
             )}
-          </div>
-
-          {/* Salary Overview */}
-          <div className="bg-white/55 backdrop-blur-md ring-1 ring-slate-900/[0.05] rounded-2xl p-6 lg:col-span-2">
-            <h3 className="text-[16px] font-bold text-slate-800 mb-2">Salary Overview</h3>
-            <p className="text-[13px] text-slate-500 mb-6">Distribution of open jobs across different salary ranges.</p>
-            {loading ? (
-              <Skeleton className="h-[300px] rounded-xl w-full" />
-            ) : (
-              <SalaryOverviewChart data={salaryOverview} />
-            )}
-          </div>
+          </section>
         </div>
 
         {/* Open positions — section header + toolbar live directly on the background */}
