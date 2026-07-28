@@ -17,6 +17,7 @@ import mentorApi from '@/features/mentor/api/mentorApi';
 import { Users, Layers, Timer } from 'lucide-react';
 import { ChatTeardropText } from '@phosphor-icons/react';
 import { MentorEPortfoliosView } from './MentorEPortfoliosView';
+import { MentorCoursesView } from './MentorCoursesView';
 import MarketPulsePageView from '@/features/student/market-pulse/MarketPulsePageView';
 
 export function MentorDashboardView() {
@@ -104,6 +105,12 @@ export function MentorDashboardView() {
             <section className="gsap-fade-section">
               <PendingReviewsWidget />
             </section>
+          </div>
+        )}
+
+        {activeTab === 'courses' && (
+          <div className="gsap-fade-section">
+            <MentorCoursesView />
           </div>
         )}
 

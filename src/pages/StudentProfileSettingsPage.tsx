@@ -19,7 +19,7 @@ import StudentHeader from "@/features/student/common/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "@/features/shared/profile-settings"
 import GithubConnectionField from "@/features/shared/profile-settings/ui/GithubConnectionField"
-import TranscriptUploadField from "@/features/shared/profile-settings/ui/TranscriptUploadField"
+import ChangePasswordCard from "@/features/shared/profile-settings/ui/ChangePasswordCard"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -34,7 +34,6 @@ export default function StudentProfileSettingsPage() {
     error,
     handleChange,
     handleSave,
-    handleTranscriptUpload,
     loadProfile,
     displayInitial
   } = useProfileSettings()
@@ -313,14 +312,6 @@ export default function StudentProfileSettingsPage() {
                 <GithubConnectionField profileUrl={profileData.github_profile} />
               </div>
 
-              <div className="mb-6">
-                <TranscriptUploadField
-                  transcriptUrl={profileData.transcript_url}
-                  onUpload={handleTranscriptUpload}
-                  busy={saving}
-                />
-              </div>
-
               <div className="mb-8">
                 <label className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-700">
                   <Book size={16} className="text-emerald-600" />
@@ -464,6 +455,8 @@ export default function StudentProfileSettingsPage() {
                     <Edit3 size={15} />
                   </button>
                 </div>
+
+                <ChangePasswordCard />
               </div>
             </div>
           </div>

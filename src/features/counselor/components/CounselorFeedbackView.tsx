@@ -37,8 +37,7 @@ import {
   Briefcase as BriefcasePhos,
   BookOpen,
   ChatCenteredText,
-  PaperPlaneTilt,
-  Folder as FolderPhos
+  PaperPlaneTilt
 } from "@phosphor-icons/react"
 import { useNavigate, useSearchParams, NavLink } from "react-router-dom"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
@@ -55,7 +54,7 @@ import {
   useStudentList,
   useStudentDetailInfo,
   useSendFeedback
-} from "../model/useCounselorFeedback"
+} from "../hooks/useCounselorFeedback"
 
 // ─── Shared UI ───────────────────────────────────────────────────
 function EmptyState({
@@ -488,21 +487,13 @@ function FeedbackTab({
                   weight="fill"
                 />
               )}
-              {type === "PORTFOLIO" && (
-                <FolderPhos
-                  size={18}
-                  className="text-slate-500"
-                  weight="fill"
-                />
-              )}
+
               <span>
                 {type === "CAREER"
                   ? "Career Advice"
                   : type === "SKILL"
                     ? "Skill Guidance"
-                    : type === "PORTFOLIO"
-                      ? "Portfolio Feedback"
-                      : "General Note"}
+                    : "General Note"}
               </span>
             </div>
             <ChevronDown
@@ -537,13 +528,7 @@ function FeedbackTab({
                     color: "text-[#006064]",
                     bgHover: "hover:bg-[#f0fafa]"
                   },
-                  {
-                    value: "PORTFOLIO",
-                    label: "Portfolio Feedback",
-                    icon: FolderPhos,
-                    color: "text-slate-500",
-                    bgHover: "hover:bg-slate-50"
-                  }
+
                 ] as const
               ).map(({ value, label, icon: Icon, color, bgHover }) => (
                 <button
@@ -1190,7 +1175,7 @@ export default function CounselorFeedbackPage() {
               }
             >
               <MessageSquare size={16} />
-              Feedback
+              View Student
             </NavLink>
             <NavLink
               to={ROUTES.COUNSELOR_ADD_STUDENT}

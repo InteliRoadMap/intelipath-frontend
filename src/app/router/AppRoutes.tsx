@@ -1,12 +1,31 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import {
-  WelcomePage, RegisterPage, ResetPasswordPage,
-  DashboardPage, StudentDashboardPage, StudentRoadmapPage, AIMentorPage, 
-  CounselorDashboardPage, CounselorFeedbackPage, CounselorAddStudentPage, MentorDashboardPage, AdminDashboardPage,
-  OAuthCallbackPage, NotFoundPage, ProfileSettingsPage, MentorProfileSettingsPage, 
-  CounselorProfileSettingsPage, StudentPortfolioPage, StudentCoursesPage, MentorStudentsPage,
-  MentorFeedbackPage, MentorPortfolioPage, StudentFeedbackPage, StudentProfileSettingsPage,
-  PublicPortfolioPage, StudentMarketPulsePage
+  WelcomePage,
+  RegisterPage,
+  ResetPasswordPage,
+  DashboardPage,
+  StudentDashboardPage,
+  StudentRoadmapPage,
+  AIMentorPage,
+  CounselorDashboardPage,
+  CounselorFeedbackPage,
+  CounselorAddStudentPage,
+  MentorDashboardPage,
+  AdminDashboardPage,
+  OAuthCallbackPage,
+  NotFoundPage,
+  ProfileSettingsPage,
+  MentorProfileSettingsPage,
+  CounselorProfileSettingsPage,
+  StudentPortfolioPage,
+  StudentCoursesPage,
+  MentorStudentsPage,
+  MentorFeedbackPage,
+  MentorPortfolioPage,
+  StudentFeedbackPage,
+  StudentProfileSettingsPage,
+  PublicPortfolioPage,
+  StudentMarketPulsePage
 } from "@/pages"
 import { ProtectedRoute, GuestRoute } from "@/app/router"
 import { GithubLinkCallback } from "@/features/shared/portfolio/components/GithubLinkCallback"
@@ -16,20 +35,54 @@ export const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path={ROUTES.HOME} element={<GuestRoute><WelcomePage /></GuestRoute>} />
+      <Route
+        path={ROUTES.HOME}
+        element={
+          <GuestRoute>
+            <WelcomePage />
+          </GuestRoute>
+        }
+      />
       <Route path={ROUTES.PUBLIC_PORTFOLIO} element={<PublicPortfolioPage />} />
 
       {/* Login is a popup on the landing page now (LoginDialog), not a page.
           The path stays as a redirect because logout and other flows still
           navigate(ROUTES.LOGIN) — without it they would land on 404. */}
       {/* <Route path={ROUTES.LOGIN} element={<GuestRoute><LoginPage /></GuestRoute>} /> */}
-      <Route path={ROUTES.LOGIN} element={<Navigate to={ROUTES.HOME} replace />} />
-      <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
+      <Route
+        path={ROUTES.LOGIN}
+        element={<Navigate to={ROUTES.HOME} replace />}
+      />
+      <Route
+        path={ROUTES.REGISTER}
+        element={
+          <GuestRoute>
+            <RegisterPage />
+          </GuestRoute>
+        }
+      />
       {/* Forgot password is a view inside the login popup now, not a page.
           The path stays as a redirect so any old link / navigate lands home. */}
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<Navigate to={ROUTES.HOME} replace />} />
-      <Route path={ROUTES.RESET_PASSWORD} element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
-      <Route path={ROUTES.OAUTH_CALLBACK} element={<GuestRoute><OAuthCallbackPage /></GuestRoute>} />
+      <Route
+        path={ROUTES.FORGOT_PASSWORD}
+        element={<Navigate to={ROUTES.HOME} replace />}
+      />
+      <Route
+        path={ROUTES.RESET_PASSWORD}
+        element={
+          <GuestRoute>
+            <ResetPasswordPage />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OAUTH_CALLBACK}
+        element={
+          <GuestRoute>
+            <OAuthCallbackPage />
+          </GuestRoute>
+        }
+      />
       <Route
         path={ROUTES.GITHUB_LINK_CALLBACK}
         element={

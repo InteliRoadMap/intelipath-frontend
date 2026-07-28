@@ -160,15 +160,15 @@ export default function DatePicker({
         ref={triggerRef}
         type="button"
         onClick={() => { setOpen(o => !o); setView('days') }}
-        className="w-full h-12 flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 text-[15px] font-medium hover:border-slate-300 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all group"
+        className="w-full h-12 flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 text-[15px] font-medium hover:border-slate-300 focus:outline-none focus:border-[#00838f] focus:ring-4 focus:ring-[#00838f]/10 transition-all group"
       >
-        <Calendar size={16} className="text-indigo-500 shrink-0" />
+        <Calendar size={16} className="text-[#00838f] shrink-0" />
         <span className={parsed ? 'text-slate-900 font-medium' : 'text-slate-400'}>
           {displayValue}
         </span>
         <ChevronDown
           size={14}
-          className={`ml-auto text-slate-400 group-hover:text-indigo-500 transition-all ${open ? 'rotate-180' : ''}`}
+          className={`ml-auto text-slate-400 group-hover:text-[#00838f] transition-all ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -191,11 +191,11 @@ export default function DatePicker({
 
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={() => setView('months')}
-                    className="text-[14px] font-bold text-slate-800 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">
+                    className="text-[14px] font-bold text-slate-800 hover:text-[#00838f] px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">
                     {MONTHS_FULL[viewMonth]}
                   </button>
                   <button type="button" onClick={() => setView('years')}
-                    className="text-[14px] font-bold text-slate-800 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">
+                    className="text-[14px] font-bold text-slate-800 hover:text-[#00838f] px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">
                     {viewYear}
                   </button>
                 </div>
@@ -226,9 +226,9 @@ export default function DatePicker({
                           isFutureDay(day)
                             ? 'text-slate-200 cursor-not-allowed'
                             : isSelected(day)
-                              ? 'bg-indigo-600 text-white font-bold shadow-sm'
+                              ? 'bg-[#00838f] text-white font-bold shadow-sm'
                               : isToday(day)
-                                ? 'bg-indigo-50 text-indigo-600 font-bold'
+                                ? 'bg-[#e0f2f1] text-[#00838f] font-bold'
                                 : 'hover:bg-slate-100 text-slate-700'
                         }`}
                       >
@@ -248,7 +248,7 @@ export default function DatePicker({
                 </button>
                 <button type="button"
                   onClick={() => { selectDay(today.getDate()); setViewYear(today.getFullYear()); setViewMonth(today.getMonth()) }}
-                  className="text-[12px] font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                  className="text-[12px] font-semibold text-[#00838f] hover:text-[#006064] transition-colors">
                   Today
                 </button>
               </div>
@@ -264,7 +264,7 @@ export default function DatePicker({
                   <CaretLeft size={14} weight="bold" />
                 </button>
                 <button type="button" onClick={() => setView('years')}
-                  className="text-[14px] font-bold text-slate-800 hover:text-indigo-600 px-3 py-1 rounded-lg hover:bg-slate-50 transition-colors">
+                  className="text-[14px] font-bold text-slate-800 hover:text-[#00838f] px-3 py-1 rounded-lg hover:bg-slate-50 transition-colors">
                   {viewYear}
                 </button>
                 <button type="button" onClick={() => setViewYear(y => y + 1)}
@@ -278,9 +278,9 @@ export default function DatePicker({
                   <button key={m} type="button" onClick={() => selectMonth(i)}
                     className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                       parsed && parsed.getFullYear() === viewYear && parsed.getMonth() === i
-                        ? 'bg-indigo-600 text-white shadow-sm'
+                        ? 'bg-[#00838f] text-white shadow-sm'
                         : today.getMonth() === i && today.getFullYear() === viewYear
-                          ? 'bg-indigo-50 text-indigo-600 font-bold'
+                          ? 'bg-[#e0f2f1] text-[#00838f] font-bold'
                           : 'hover:bg-slate-100 text-slate-700'
                     }`}>
                     {m}
@@ -319,9 +319,9 @@ export default function DatePicker({
                   <button key={y} type="button" onClick={() => selectYear(y)}
                     className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                       viewYear === y
-                        ? 'bg-indigo-600 text-white shadow-sm'
+                        ? 'bg-[#00838f] text-white shadow-sm'
                         : today.getFullYear() === y
-                          ? 'bg-indigo-50 text-indigo-600 font-bold'
+                          ? 'bg-[#e0f2f1] text-[#00838f] font-bold'
                           : 'hover:bg-slate-100 text-slate-700'
                     }`}>
                     {y}
