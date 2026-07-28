@@ -85,10 +85,10 @@ const counselorApi = {
   //   )
   // },
 
-  getLearningActivity: async () => {
-    return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
-  },
-  // counselor dashboard
+  // getLearningActivity: async () => {
+  //   return await mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.LEARNING_ACTIVITY)
+  // },
+  //---------- counselor dashboard
   getCareerDistribution: async (): Promise<CareerStatistics[]> => {
     const res = await mainClient.get(
       ENDPOINTS.COUNSELOR_DASHBOARD.CAREER_DISTRIBUTION

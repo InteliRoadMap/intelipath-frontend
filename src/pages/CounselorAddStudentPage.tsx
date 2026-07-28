@@ -1,1 +1,1 @@
-export { default } from "@/features/counselor/ui/CounselorAddStudentView"
+export { default } from "@/features/counselor/components/CounselorAddStudentView"

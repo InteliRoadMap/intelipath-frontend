@@ -144,7 +144,7 @@ export const ENDPOINTS = {
     // METRICS_PROGRESS: "/counselor/dashboard/metrics/progress",
     // METRICS_AT_RISK: "/counselor/dashboard/metrics/at-risk",
     // METRICS_ENGAGEMENT: "/counselor/dashboard/metrics/engagement",
-    LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
+    // LEARNING_ACTIVITY: "/counselor/dashboard/learning-activity",
     CAREER_DISTRIBUTION: "/counselor/dashboard",
     CURRICULUMS: "/counselor/curriculums",
     MISSING_SKILLS: "/counselor/dashboard/missing-skills",

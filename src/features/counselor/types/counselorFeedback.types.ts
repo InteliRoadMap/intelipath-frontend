@@ -7,7 +7,7 @@ export interface Feedback {
   senderName: string
   receiverName: string
   content: string
-  type: "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO"
+  type: "GENERAL" | "SKILL" | "CAREER"
   attachments?: {
     attachmentId: string
     fileName: string
@@ -25,7 +25,7 @@ export interface FeedbackListResponse {
 export interface CreateFeedback {
   receiverId: string
   content: string
-  type: "GENERAL" | "SKILL" | "CAREER" | "PORTFOLIO"
+  type: "GENERAL" | "SKILL" | "CAREER"
   attachments?: File[]
 }
 
