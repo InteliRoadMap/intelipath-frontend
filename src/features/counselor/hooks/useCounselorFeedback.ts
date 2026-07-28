@@ -14,6 +14,9 @@ export interface UseStudentListResult {
   setPage: (page: number) => void
   search: string
   setSearch: (search: string) => void
+  career: string
+  setCareer: (career: string) => void
+  careers: string[]
   totalPages: number
   size: number
   setSize: (size: number) => void
@@ -25,6 +28,8 @@ export function useStudentList(): UseStudentListResult {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0) // 0-indexed for backend
   const [search, setSearch] = useState("")
+  const [career, setCareer] = useState("")
+  const [careers, setCareers] = useState<string[]>([])
   const [size, setSize] = useState(7)
   const [totalPages, setTotalPages] = useState(1)
 
@@ -32,10 +37,11 @@ export function useStudentList(): UseStudentListResult {
     (signal?: AbortSignal) => {
       setLoading(true)
       counselorApi
-        .getMyStudent(page, size, search, signal)
+        .getMyStudent(page, size, search, career, signal)
         .then((r) => {
           setStudents(r.students)
           setTotalPages(r.totalPages)
+          if (r.careers) setCareers(r.careers)
         })
         .catch((error) => {
           if (error?.name === "CanceledError" || error?.message === "canceled")
@@ -46,7 +52,7 @@ export function useStudentList(): UseStudentListResult {
         })
         .finally(() => setLoading(false))
     },
-    [page, search, size]
+    [page, search, career, size]
   )
 
   useEffect(() => {
@@ -64,6 +70,9 @@ export function useStudentList(): UseStudentListResult {
     setPage,
     search,
     setSearch,
+    career,
+    setCareer,
+    careers,
     totalPages,
     size,
     setSize,
