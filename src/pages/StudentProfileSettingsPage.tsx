@@ -15,10 +15,11 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { UserHeaderActions, Logo, SharedAppBackground } from "@/components"
-import StudentHeader from "@/features/student-dashboard/components/StudentHeader"
+import StudentHeader from "@/features/student/common/StudentHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { useProfileSettings } from "@/features/profile-settings"
-import GithubConnectionField from "@/features/profile-settings/ui/GithubConnectionField"
+import { useProfileSettings } from "@/features/shared/profile-settings"
+import GithubConnectionField from "@/features/shared/profile-settings/ui/GithubConnectionField"
+import ChangePasswordCard from "@/features/shared/profile-settings/ui/ChangePasswordCard"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -454,6 +455,8 @@ export default function StudentProfileSettingsPage() {
                     <Edit3 size={15} />
                   </button>
                 </div>
+
+                <ChangePasswordCard />
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from
 import { mainClient } from "@/shared/api"
 import adminApi from "@/features/admin/api/adminApi"
 import type { AdminSystemHealth } from "@/features/admin/admin.types"
-import { normalizeTags } from "@/utils/tags"
+import { normalizeTags } from "@/lib/tags"
 
 function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>()

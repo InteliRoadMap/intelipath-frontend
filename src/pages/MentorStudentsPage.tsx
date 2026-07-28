@@ -1,4 +1,4 @@
-import { MentorStudentsView } from "@/features/mentor-dashboard/components";
+import { MentorStudentsView } from "@/features/mentor/components";
 
 export default function MentorStudentsPage() {
   return <MentorStudentsView />;

@@ -1,6 +1,16 @@
 import type { AxiosRequestConfig } from "axios"
 import { ENDPOINTS, mainClient, type RequestConfig } from "@/shared/api"
 
+/** One mentor feedback row, normalized from the dashboard feedback endpoint. */
+export interface StudentFeedbackItem {
+  id: string;
+  mentorName: string;
+  mentorRole: string;
+  type: string;
+  submittedAt: string | number;
+  content: string;
+}
+
 /** Mirrors backend MentorDirectoryResponse — one mentor a student can pick to review them. */
 export interface MentorDirectoryEntry {
   userId: string;
@@ -13,11 +23,11 @@ export interface MentorDirectoryEntry {
 }
 
 const studentApi = {
-  getFeedback: async () => {
+  getFeedback: async (): Promise<StudentFeedbackItem[]> => {
     try {
       const res = await mainClient.get(ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK);
       const data = res.data?.data || res.data;
-      let results = [];
+      let results: StudentFeedbackItem[] = [];
       if (data && Array.isArray(data)) {
         results = data.map((fb: any) => ({
           id: fb.feedbackId || fb.id || Math.random().toString(),
