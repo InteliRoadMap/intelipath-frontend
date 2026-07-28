@@ -939,7 +939,6 @@ export default function CounselorFeedbackPage() {
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
   const [localSearch, setLocalSearch] = useState("")
-  const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(
@@ -956,13 +955,12 @@ export default function CounselorFeedbackPage() {
     setPage,
     search: hookSearch,
     setSearch: setHookSearch,
+    career,
+    setCareer,
+    careers,
     totalPages,
     setSize
   } = useStudentList()
-
-  const uniqueCareers = Array.from(
-    new Set(students.map((s) => s.careerPath).filter(Boolean))
-  )
 
   // Auto-open from dashboard link
   useEffect(() => {
@@ -1274,10 +1272,13 @@ export default function CounselorFeedbackPage() {
 
           <FilterDropdown
             icon={Briefcase}
-            value={filterCareer}
+            value={career}
             placeholder="All Careers"
-            options={uniqueCareers}
-            onChange={setFilterCareer}
+            options={careers}
+            onChange={(val) => {
+              setCareer(val)
+              setPage(0)
+            }}
           />
 
           <div className="ml-auto flex items-center gap-3 shrink-0">

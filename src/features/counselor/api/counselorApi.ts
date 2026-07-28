@@ -121,11 +121,16 @@ const counselorApi = {
     page: number = 0,
     size: number = 7,
     search?: string,
+    career?: string,
     signal?: AbortSignal
   ): Promise<PaginatedStudentResponse> => {
     const searchParam =
       search && search.trim() ? encodeURIComponent(search.trim()) : ""
-    const url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}?page=${page}&size=${size}${searchParam ? `&search=${searchParam}` : ""}`
+    const careerParam =
+      career && career.trim() ? encodeURIComponent(career.trim()) : ""
+    let url = `${ENDPOINTS.COUNSELOR_DASHBOARD.GET_STUDENT_LIST}?page=${page}&size=${size}`
+    if (searchParam) url += `&search=${searchParam}`
+    if (careerParam) url += `&career=${careerParam}`
 
     try {
       const res = await mainClient.get(url, { signal })
@@ -134,10 +139,11 @@ const counselorApi = {
       return {
         totalPages: data?.totalPages ?? 1,
         currentPage: data?.currentPage ?? 0,
+        careers: data?.careers ?? [],
         students: data?.students ?? data?.content ?? []
       }
     } catch {
-      return { totalPages: 1, currentPage: 0, students: [] }
+      return { totalPages: 1, currentPage: 0, careers: [], students: [] }
     }
   },
   // New Add

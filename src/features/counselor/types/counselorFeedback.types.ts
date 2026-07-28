@@ -32,5 +32,6 @@ export interface CreateFeedback {
 export interface PaginatedStudentResponse {
   totalPages: number
   currentPage: number
+  careers: string[]
   students: MyStudent[]
 }
