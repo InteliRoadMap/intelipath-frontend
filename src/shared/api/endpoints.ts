@@ -13,7 +13,8 @@ export const ENDPOINTS = {
   },
   USERS: {
     ME: "/users/me",
-    PROFILE: "/users/profile"
+    PROFILE: "/users/profile",
+    CHANGE_PASSWORD: "/users/profile/password"
   },
   STUDENT_OLD: {
     PROFILE: "/students/profile",

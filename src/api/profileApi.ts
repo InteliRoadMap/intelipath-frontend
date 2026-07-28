@@ -26,6 +26,11 @@ export interface UpdateCounselorProfilePayload {
   admissionDate?: string | null
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
@@ -43,6 +48,9 @@ const profileApi = {
 
   updateCounselorProfile: (data: UpdateCounselorProfilePayload) =>
     mainClient.patch(ENDPOINTS.COUNSELOR.PROFILE, data),
+
+  changePassword: (data: ChangePasswordPayload) =>
+    mainClient.patch(ENDPOINTS.USERS.CHANGE_PASSWORD, data),
 
   updateAvatar: (file: File) => {
     const formData = new FormData()

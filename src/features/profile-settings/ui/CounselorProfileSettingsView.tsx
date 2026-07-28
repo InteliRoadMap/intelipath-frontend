@@ -26,6 +26,7 @@ import {
 } from "@/components"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "@/features/shared/profile-settings"
+import ChangePasswordCard from "@/features/shared/profile-settings/ui/ChangePasswordCard"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -417,6 +418,8 @@ export default function CounselorProfileSettingsPage() {
                     </p>
                   </div>
                 </div>
+
+                <ChangePasswordCard />
               </div>
             </div>
 

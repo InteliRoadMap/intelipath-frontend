@@ -19,6 +19,7 @@ import { SharedAppBackground } from "@/components"
 import { MentorHeader } from "@/features/mentor/components/MentorHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
 import { useProfileSettings } from "@/features/shared/profile-settings"
+import ChangePasswordCard from "@/features/shared/profile-settings/ui/ChangePasswordCard"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -451,6 +452,8 @@ export default function MentorProfileSettingsPage() {
                     <Edit3 size={15} />
                   </button>
                 </div>
+
+                <ChangePasswordCard />
               </div>
             </div>
           </div>
