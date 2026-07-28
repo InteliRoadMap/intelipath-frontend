@@ -25,7 +25,7 @@ import {
   MobileNavMenu
 } from "@/components"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { useProfileSettings } from "@/features/shared/profile-settings"
+import { useProfileSettings } from "@/features/shared/profile-settings/model/useProfileSettings"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -128,7 +128,7 @@ export default function CounselorProfileSettingsPage() {
       path: ROUTES.DASHBOARD_COUNSELOR || "/dashboard/counselor"
     },
     {
-      label: "Feedback",
+      label: "View Student",
       icon: MessageSquare,
       path: ROUTES.COUNSELOR_FEEDBACK || "/dashboard/counselor/feedback"
     },
@@ -174,7 +174,7 @@ export default function CounselorProfileSettingsPage() {
               }
             >
               <MessageSquare size={16} />
-              Feedback
+              View Student
             </NavLink>
             <NavLink
               to={ROUTES.COUNSELOR_ADD_STUDENT}
@@ -203,7 +203,7 @@ export default function CounselorProfileSettingsPage() {
                 },
                 {
                   id: "feedback",
-                  label: "Feedback",
+                  label: "View Student",
                   active: false,
                   icon: <MessageSquare size={16} />,
                   onSelect: () => navigate(ROUTES.COUNSELOR_FEEDBACK)
@@ -338,10 +338,14 @@ export default function CounselorProfileSettingsPage() {
                     <Calendar size={16} className="text-[#00838f]" />
                     Admission Date
                   </label>
-                  <DatePicker
-                    value={profileData.admission_date ?? ""}
-                    onChange={(v) => handleChange("admission_date", v)}
-                    pastOnly
+                  <input
+                    type="date"
+                    value={profileData.admission_date || ""}
+                    onChange={(e) =>
+                      handleChange("admission_date", e.target.value)
+                    }
+                    disabled={loading}
+                    className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-[#00838f] focus:ring-2 focus:ring-[#00838f]/20 transition-all hover:bg-white disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -416,6 +420,13 @@ export default function CounselorProfileSettingsPage() {
                       {profileData.email || "Not set"}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    className="text-[#00838f] hover:text-[#006064] bg-white p-2 rounded-lg shadow-sm border border-slate-200 transition-all hover:scale-105"
+                    aria-label="Edit email"
+                  >
+                    <Edit3 size={15} />
+                  </button>
                 </div>
               </div>
             </div>

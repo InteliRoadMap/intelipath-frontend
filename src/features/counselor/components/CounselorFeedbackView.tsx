@@ -527,8 +527,7 @@ function FeedbackTab({
                     icon: ChatCenteredText,
                     color: "text-[#006064]",
                     bgHover: "hover:bg-[#f0fafa]"
-                  },
-
+                  }
                 ] as const
               ).map(({ value, label, icon: Icon, color, bgHover }) => (
                 <button
@@ -939,7 +938,6 @@ export default function CounselorFeedbackPage() {
   const defaultTab = (searchParams.get("tab") as TabKey) || "feedback"
 
   const [localSearch, setLocalSearch] = useState("")
-  const [filterCareer, setFilterCareer] = useState("")
   const [selected, setSelected] = useState<MyStudent | null>(null)
 
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(
@@ -956,13 +954,12 @@ export default function CounselorFeedbackPage() {
     setPage,
     search: hookSearch,
     setSearch: setHookSearch,
+    career,
+    setCareer,
+    careers,
     totalPages,
     setSize
   } = useStudentList()
-
-  const uniqueCareers = Array.from(
-    new Set(students.map((s) => s.careerPath).filter(Boolean))
-  )
 
   // Auto-open from dashboard link
   useEffect(() => {
@@ -1146,7 +1143,7 @@ export default function CounselorFeedbackPage() {
       <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-6 md:px-8 pt-6 pointer-events-none">
         <nav className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between transition-all">
           <div className="flex items-center">
-            <Logo hideIcon className="scale-[0.85] origin-left" />
+            <Logo iconOnly className="scale-[0.85] origin-left" />
           </div>
 
           <div className="hidden lg:flex items-center gap-1 bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-1.5 py-1.5 text-[13px] font-bold">
@@ -1274,10 +1271,13 @@ export default function CounselorFeedbackPage() {
 
           <FilterDropdown
             icon={Briefcase}
-            value={filterCareer}
+            value={career}
             placeholder="All Careers"
-            options={uniqueCareers}
-            onChange={setFilterCareer}
+            options={careers}
+            onChange={(val) => {
+              setCareer(val)
+              setPage(0)
+            }}
           />
 
           <div className="ml-auto flex items-center gap-3 shrink-0">
