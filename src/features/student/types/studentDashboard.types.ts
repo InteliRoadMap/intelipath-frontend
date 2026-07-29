@@ -43,6 +43,9 @@ export type StudentRoadmap = {
   targetCareerRole?: string
   progress?: number
   nodes: RoadmapNode[]
+  /** The untouched API payload, kept so the graph builder can render from the
+   *  same fetch instead of hitting the roadmap endpoint a second time. */
+  _rawResponse?: unknown
 }
 
 export type CareerRole = {

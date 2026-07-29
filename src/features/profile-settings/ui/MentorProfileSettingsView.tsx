@@ -5,20 +5,19 @@ import {
   Edit3,
   Mail,
   User,
-  GraduationCap,
   Sparkles,
   RefreshCw,
   ChevronLeft,
   Target
 } from "lucide-react"
-import { PencilSimple, GithubLogo } from "@phosphor-icons/react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
-import { SharedAppBackground, DatePicker } from "@/components"
-import { MentorHeader } from "@/features/mentor-dashboard/components/MentorHeader"
+import { SharedAppBackground } from "@/components"
+import { MentorHeader } from "@/features/mentor/components/MentorHeader"
 import { AvatarUpload } from "@/components/profile/AvatarUpload"
-import { useProfileSettings } from "../model/useProfileSettings"
+import { useProfileSettings } from "@/features/shared/profile-settings"
+import ChangePasswordCard from "@/features/shared/profile-settings/ui/ChangePasswordCard"
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
@@ -30,6 +29,7 @@ export default function MentorProfileSettingsPage() {
     profileData,
     loading,
     saving,
+    error,
     handleChange,
     handleSave,
     loadProfile,
@@ -38,7 +38,6 @@ export default function MentorProfileSettingsPage() {
 
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<SVGSVGElement>(null)
 
@@ -81,30 +80,30 @@ export default function MentorProfileSettingsPage() {
           duration: 0.35,
           ease: "power2.in"
         })
-        .to(sparkleRef.current, {
-          scale: 1.15,
-          opacity: 1,
-          rotate: -15,
-          duration: 0.25,
-          ease: "power2.out"
-        })
-        .to(sparkleRef.current, {
-          scale: 1.4,
-          opacity: 0.6,
-          rotate: 10,
-          duration: 0.3,
-          ease: "power2.inOut"
-        })
-        .to(sparkleRef.current, {
-          scale: 1,
-          opacity: 1,
-          rotate: 0,
-          duration: 0.5,
-          ease: "elastic.out(1, 0.5)"
-        })
-        .to(sparkleRef.current, {
-          duration: 2.5
-        })
+          .to(sparkleRef.current, {
+            scale: 1.15,
+            opacity: 1,
+            rotate: -15,
+            duration: 0.25,
+            ease: "power2.out"
+          })
+          .to(sparkleRef.current, {
+            scale: 1.4,
+            opacity: 0.6,
+            rotate: 10,
+            duration: 0.3,
+            ease: "power2.inOut"
+          })
+          .to(sparkleRef.current, {
+            scale: 1,
+            opacity: 1,
+            rotate: 0,
+            duration: 0.5,
+            ease: "elastic.out(1, 0.5)"
+          })
+          .to(sparkleRef.current, {
+            duration: 2.5
+          })
       }
     },
     { scope: containerRef }
@@ -115,17 +114,18 @@ export default function MentorProfileSettingsPage() {
     navigate(ROUTES.LOGIN)
   }
 
-  const navItems = [
-    { label: "Settings", icon: PencilSimple, path: location.pathname }
-  ]
-
   return (
-    <div className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden" ref={containerRef}>
+    <div
+      className="flex flex-col min-h-screen bg-transparent relative font-sans text-slate-900 overflow-hidden"
+      ref={containerRef}
+    >
       <SharedAppBackground />
-      <MentorHeader 
+      <MentorHeader
         user={user}
         activeTab=""
-        onTabChange={(tab) => navigate(ROUTES.DASHBOARD_MENTOR, { state: { activeTab: tab } })}
+        onTabChange={(tab) =>
+          navigate(ROUTES.DASHBOARD_MENTOR, { state: { activeTab: tab } })
+        }
         onLogout={handleLogout}
       />
 
@@ -135,7 +135,11 @@ export default function MentorProfileSettingsPage() {
           onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-500 hover:text-slate-900 transition-all w-fit group mb-4 hover:-translate-x-1"
         >
-          <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-slate-900 transition-colors" />
+          <ChevronLeft
+            size={16}
+            strokeWidth={2.5}
+            className="text-slate-400 group-hover:text-slate-900 transition-colors"
+          />
           Back to home
         </button>
 
@@ -143,14 +147,20 @@ export default function MentorProfileSettingsPage() {
         <div className="page-header relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-black p-7 md:p-9 shadow-[0_30px_60px_rgba(15,23,42,0.3)]">
           <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-slate-500/20 blur-3xl" />
-          
+
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-5">
               <div className="hero-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
-                <Sparkles ref={sparkleRef} size={28} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                <Sparkles
+                  ref={sparkleRef}
+                  size={28}
+                  className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                />
               </div>
               <div>
-                <p className="text-white/60 text-[12px] font-semibold uppercase tracking-widest mb-1">Mentor Portal</p>
+                <p className="text-white/60 text-[12px] font-semibold uppercase tracking-widest mb-1">
+                  Mentor Portal
+                </p>
                 <h1 className="text-white text-[26px] md:text-[30px] font-bold leading-tight">
                   Profile Settings
                 </h1>
@@ -163,16 +173,37 @@ export default function MentorProfileSettingsPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", duration: 0.3, ease: "back.out(2)" })}
-                onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, boxShadow: "none", duration: 0.3, ease: "power2.out" })}
+                onMouseEnter={(e) =>
+                  gsap.to(e.currentTarget, {
+                    scale: 1.05,
+                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    duration: 0.3,
+                    ease: "back.out(2)"
+                  })
+                }
+                onMouseLeave={(e) =>
+                  gsap.to(e.currentTarget, {
+                    scale: 1,
+                    boxShadow: "none",
+                    duration: 0.3,
+                    ease: "power2.out"
+                  })
+                }
                 onClick={(e) => {
-                  gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                  gsap.fromTo(
+                    e.currentTarget,
+                    { scale: 0.95 },
+                    { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" }
+                  )
                   void loadProfile()
                 }}
                 disabled={loading || saving}
                 className="flex items-center gap-2 text-[13px] font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-2xl transition-colors"
               >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={14}
+                  className={loading ? "animate-spin" : ""}
+                />
                 Reload
               </button>
             </div>
@@ -195,6 +226,12 @@ export default function MentorProfileSettingsPage() {
                 </div>
               </div>
 
+              {error && (
+                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                  {error}
+                </div>
+              )}
+
               {loading ? (
                 <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
                   Loading profile data...
@@ -209,8 +246,10 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.full_name || ''}
-                        onChange={(e) => handleChange("full_name", e.target.value)}
+                        value={profileData.full_name || ""}
+                        onChange={(e) =>
+                          handleChange("full_name", e.target.value)
+                        }
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
@@ -219,10 +258,11 @@ export default function MentorProfileSettingsPage() {
                         <Calendar size={16} className="text-slate-700" />
                         Year of Birth
                       </label>
-                      <DatePicker
-                        value={profileData.yob || ''}
-                        onChange={(val) => handleChange("yob", val)}
-                        pastOnly
+                      <input
+                        type="date"
+                        value={profileData.yob || ""}
+                        onChange={(e) => handleChange("yob", e.target.value)}
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
                   </div>
@@ -235,9 +275,11 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.company || ''}
+                        value={profileData.company || ""}
                         placeholder="e.g. Google, FPT Software"
-                        onChange={(e) => handleChange("company", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("company", e.target.value)
+                        }
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
@@ -248,9 +290,11 @@ export default function MentorProfileSettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value={profileData.industry_focus || ''}
+                        value={profileData.industry_focus || ""}
                         placeholder="e.g. Software Engineering, Data Science"
-                        onChange={(e) => handleChange("industry_focus", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("industry_focus", e.target.value)
+                        }
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white"
                       />
                     </div>
@@ -263,7 +307,7 @@ export default function MentorProfileSettingsPage() {
                     </label>
                     <textarea
                       rows={4}
-                      value={profileData.bio || ''}
+                      value={profileData.bio || ""}
                       placeholder="Share your experience and how you can help students..."
                       onChange={(e) => handleChange("bio", e.target.value)}
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3 text-[14px] text-slate-900 focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 transition-all hover:bg-white resize-none"
@@ -273,10 +317,32 @@ export default function MentorProfileSettingsPage() {
                   <div className="flex items-center justify-end gap-4 border-t border-slate-100 pt-6">
                     <button
                       type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, duration: 0.3, ease: "back.out(2)", backgroundColor: "#f1f5f9" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.3, ease: "power2.out", backgroundColor: "transparent" })}
+                      onMouseEnter={(e) =>
+                        gsap.to(e.currentTarget, {
+                          scale: 1.05,
+                          duration: 0.3,
+                          ease: "back.out(2)",
+                          backgroundColor: "#f1f5f9"
+                        })
+                      }
+                      onMouseLeave={(e) =>
+                        gsap.to(e.currentTarget, {
+                          scale: 1,
+                          duration: 0.3,
+                          ease: "power2.out",
+                          backgroundColor: "transparent"
+                        })
+                      }
                       onClick={(e) => {
-                        gsap.fromTo(e.currentTarget, { scale: 0.95 }, { scale: 1.05, duration: 0.4, ease: "elastic.out(1, 0.3)" })
+                        gsap.fromTo(
+                          e.currentTarget,
+                          { scale: 0.95 },
+                          {
+                            scale: 1.05,
+                            duration: 0.4,
+                            ease: "elastic.out(1, 0.3)"
+                          }
+                        )
                         void loadProfile()
                       }}
                       disabled={saving}
@@ -286,10 +352,34 @@ export default function MentorProfileSettingsPage() {
                     </button>
                     <button
                       type="button"
-                      onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, y: -2, boxShadow: "0 10px 15px -3px rgba(15, 23, 42, 0.3)", duration: 0.3, ease: "back.out(2)" })}
-                      onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)", duration: 0.3, ease: "power2.out" })}
+                      onMouseEnter={(e) =>
+                        gsap.to(e.currentTarget, {
+                          scale: 1.05,
+                          y: -2,
+                          boxShadow: "0 10px 15px -3px rgba(15, 23, 42, 0.3)",
+                          duration: 0.3,
+                          ease: "back.out(2)"
+                        })
+                      }
+                      onMouseLeave={(e) =>
+                        gsap.to(e.currentTarget, {
+                          scale: 1,
+                          y: 0,
+                          boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)",
+                          duration: 0.3,
+                          ease: "power2.out"
+                        })
+                      }
                       onClick={(e) => {
-                        gsap.fromTo(e.currentTarget, { scale: 0.9 }, { scale: 1.05, duration: 0.5, ease: "elastic.out(1, 0.3)" })
+                        gsap.fromTo(
+                          e.currentTarget,
+                          { scale: 0.9 },
+                          {
+                            scale: 1.05,
+                            duration: 0.5,
+                            ease: "elastic.out(1, 0.3)"
+                          }
+                        )
                         handleSave()
                       }}
                       disabled={saving}
@@ -322,20 +412,47 @@ export default function MentorProfileSettingsPage() {
                   </div>
                   <button
                     type="button"
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.1, y: -2, duration: 0.3, ease: "back.out(2)" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.3, ease: "power2.out" })}
-                    onClick={(e) => gsap.fromTo(e.currentTarget, { scale: 0.8 }, { scale: 1.1, duration: 0.4, ease: "elastic.out(1, 0.3)" })}
+                    onMouseEnter={(e) =>
+                      gsap.to(e.currentTarget, {
+                        scale: 1.1,
+                        y: -2,
+                        duration: 0.3,
+                        ease: "back.out(2)"
+                      })
+                    }
+                    onMouseLeave={(e) =>
+                      gsap.to(e.currentTarget, {
+                        scale: 1,
+                        y: 0,
+                        duration: 0.3,
+                        ease: "power2.out"
+                      })
+                    }
+                    onClick={(e) =>
+                      gsap.fromTo(
+                        e.currentTarget,
+                        { scale: 0.8 },
+                        {
+                          scale: 1.1,
+                          duration: 0.4,
+                          ease: "elastic.out(1, 0.3)"
+                        }
+                      )
+                    }
                     className="text-slate-700 hover:text-slate-900 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
                     aria-label="Edit email"
                   >
                     <Edit3 size={15} />
                   </button>
                 </div>
+
+                <ChangePasswordCard />
               </div>
             </div>
           </div>
         </div>
       </main>
+
     </div>
   )
 }

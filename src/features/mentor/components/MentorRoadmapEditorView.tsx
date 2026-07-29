@@ -21,6 +21,7 @@ import { getDynamicLayoutedElements } from "@/features/student/roadmap/RoadmapVe
 import { Select } from "@/components"
 import { SharedAppBackground } from "@/components/ui"
 import { MentorHeader } from "./MentorHeader"
+import { NodeCoursesSection } from "./NodeCoursesSection"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { toast } from "@/lib/toast"

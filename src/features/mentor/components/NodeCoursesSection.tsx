@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { BookOpen, Plus, Trash, Users, X } from "@phosphor-icons/react"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
-import { emitToast } from "@/utils/toast"
+import { emitToast } from "@/lib/toast"
 import { Select } from "@/components"
 import ConfirmModal from "@/components/modals/ConfirmModal"
 

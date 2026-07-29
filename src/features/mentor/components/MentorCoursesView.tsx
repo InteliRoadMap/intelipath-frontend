@@ -3,7 +3,7 @@ import { BookOpen, Plus, Trash, PencilSimple, Users, GraduationCap, X } from "@p
 import { ENDPOINTS, mainClient } from "@/shared/api"
 import courseApi, { type Course, type CourseLevel, type CourseLesson } from "../api/courseApi"
 import roadmapEditorApi, { type EditorNode } from "../api/roadmapEditorApi"
-import { emitToast } from "@/utils/toast"
+import { emitToast } from "@/lib/toast"
 import { Select } from "@/components"
 import ConfirmModal from "@/components/modals/ConfirmModal"
 

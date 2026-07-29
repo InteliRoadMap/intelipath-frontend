@@ -37,7 +37,6 @@ import StudentProfileSetupModal from "@/features/student/onboarding/StudentProfi
 import StudentSkillSelectionModal from "@/features/student/onboarding/StudentSkillSelectionModal"
 import StudentHeader from "@/features/student/common/StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
-import { StudentCoursesPanel } from "./StudentCoursesPanel"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
 import FptCurriculumPanel from "@/features/student/courses/FptCurriculumPanel"
 import StageLegend from "./StageLegend"
@@ -347,12 +346,6 @@ export default function StudentRoadmapPageView() {
         setRoadmapData({ ...roadmapData, nodes: updatedNodes });
       }
       setOptimisticStatusMap(prev => ({ ...prev, [selectedNodeData.id]: newStatus }));
-      
-      console.log(
-        newStatus === 'completed' 
-          ? 'Node marked as completed!' 
-          : 'Node marked as in progress'
-      );
 
       // 3. Gọi ngầm Backend để lấy cây Roadmap mới nhất (đã được tính toán Auto-Unlock)
       studentDashboardService.getStudentRoadmap().then(freshData => {

@@ -25,10 +25,15 @@ import {
   BookOpen,
   TrendingUp,
   Copy,
-  Lightbulb
+  Lightbulb,
+  PanelRightClose,
+  PanelRightOpen
 } from "lucide-react"
 import robotImg from "@/assets/robot/head.png"
 import GradeReportUI from "@/features/student/courses/GradeReportUI"
+import MentorContextPanel from "@/features/student/ai-mentor/ui/MentorContextPanel"
+import { splitSources } from "@/features/student/ai-mentor/lib/sources"
+import { useProfileSettings } from "@/features/shared/profile-settings"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -79,6 +84,7 @@ export default function AIMentorPage() {
   const location = useLocation()
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isContextPanelOpen, setIsContextPanelOpen] = useState(true)
   const [inputValue, setInputValue] = useState("")
   const [isSending, setIsSending] = useState(false)
   
@@ -92,6 +98,12 @@ export default function AIMentorPage() {
   const [externalLink, setExternalLink] = useState<string | null>(null)
   const [editingSessionName, setEditingSessionName] = useState("")
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
+
+  const {
+    profileData,
+    loading: profileLoading,
+    handleTranscriptUpload
+  } = useProfileSettings()
 
   const markdownComponents = useMemo(() => ({
     code({node, inline, className, children, ...props}: any) {
@@ -489,6 +501,16 @@ export default function AIMentorPage() {
 
   const emptyStateTitle = "How can I help you today?".split(" ")
 
+  // The thread is centred on the viewport, not on the section between the panels, so
+  // it does not jump sideways when a panel opens. Only one side needs compensating —
+  // with both panels open their widths already cancel out.
+  const chatOffsetClass =
+    isSidebarOpen && !isContextPanelOpen
+      ? "xl:pr-[260px]"
+      : !isSidebarOpen && isContextPanelOpen
+        ? "xl:pl-[280px]"
+        : ""
+
   return (
     <div ref={containerRef} className="flex flex-col h-screen overflow-hidden bg-transparent text-slate-900 font-sans relative selection:bg-[#0a0a0a] selection:text-white">
       <SharedAppBackground />
@@ -619,7 +641,7 @@ export default function AIMentorPage() {
         <section className="flex-1 flex flex-col min-w-0 relative h-full bg-transparent">
           {/* Floating Sidebar Toggle */}
           <div className="absolute top-4 left-4 z-20">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="text-zinc-500 hover:text-zinc-900 transition-colors p-2 bg-white/60 hover:bg-white/80 backdrop-blur-md rounded-lg shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-white/60"
               title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -628,8 +650,19 @@ export default function AIMentorPage() {
             </button>
           </div>
 
+          {/* Floating Context Panel Toggle */}
+          <div className="absolute top-4 right-4 z-20">
+            <button
+              onClick={() => setIsContextPanelOpen(!isContextPanelOpen)}
+              className="text-zinc-500 hover:text-zinc-900 transition-colors p-2 bg-white/60 hover:bg-white/80 backdrop-blur-md rounded-lg shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-white/60"
+              title={isContextPanelOpen ? "Hide context panel" : "Show context panel"}
+            >
+              {isContextPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+            </button>
+          </div>
+
           {/* Messages Container */}
-          <div className={`flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth w-full relative z-0 transition-all duration-300 ${isSidebarOpen ? 'xl:pr-[260px]' : ''}`}>
+          <div className={`flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth w-full relative z-0 transition-all duration-300 ${chatOffsetClass}`}>
             <div className="max-w-3xl mx-auto w-full min-h-full flex flex-col pt-12 pb-48">
               
               {messages.length === 0 ? (
@@ -728,9 +761,12 @@ export default function AIMentorPage() {
                         )
                       }
 
-                      // AI Message
+                      // AI Message. The trailing "**Sources:**" footer is peeled off the
+                      // markdown and rendered as chips below the answer.
+                      const { body, sources } = splitSources(msg.content)
+
                       return (
-                        <motion.div 
+                        <motion.div
                           key={msg.messageId}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -746,13 +782,29 @@ export default function AIMentorPage() {
                               </div>
                             ) : (
                               <div className="prose prose-zinc max-w-none text-[15px] prose-headings:font-semibold prose-headings:text-zinc-900 prose-headings:mt-5 prose-headings:mb-2 prose-headings:first:mt-0 prose-h1:text-[19px] prose-h2:text-[17px] prose-h3:text-[15px] prose-p:leading-[1.7] prose-p:my-2.5 prose-strong:text-zinc-900 prose-strong:font-semibold prose-ul:my-2.5 prose-ol:my-2.5 prose-li:my-1 prose-li:marker:text-zinc-400 prose-hr:my-5 prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-code:text-zinc-800 prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13px] prose-a:text-blue-600 prose-a:font-medium">
-                                  <ReactMarkdown 
+                                  <ReactMarkdown
                                     remarkPlugins={[remarkGfm, remarkBreaks]}
                                     rehypePlugins={[rehypeRaw]}
                                     components={markdownComponents}
                                   >
-                                    {processMarkdown(msg.content)}
+                                    {processMarkdown(body)}
                                   </ReactMarkdown>
+                              </div>
+                            )}
+
+                            {sources.length > 0 && (
+                              <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-zinc-100 pt-3">
+                                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                                  Sources
+                                </span>
+                                {sources.map((source) => (
+                                  <span
+                                    key={source}
+                                    className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-zinc-600"
+                                  >
+                                    {source}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -767,7 +819,7 @@ export default function AIMentorPage() {
           </div>
 
           {/* Input Area (Vercel Template Style) */}
-          <div className={`absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pt-10 pb-6 px-4 md:px-0 z-20 transition-all duration-300 ${isSidebarOpen ? 'xl:pr-[260px]' : ''}`}>
+          <div className={`absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pt-10 pb-6 px-4 md:px-0 z-20 transition-all duration-300 ${chatOffsetClass}`}>
             <div className="max-w-3xl w-full mx-auto relative">
               
               {/* Stop Generating Button */}
@@ -870,6 +922,15 @@ export default function AIMentorPage() {
             </div>
           </div>
         </section>
+
+        {isContextPanelOpen && (
+          <MentorContextPanel
+            transcriptUrl={profileData.transcript_url}
+            onUploadTranscript={handleTranscriptUpload}
+            loading={profileLoading}
+            onClose={() => setIsContextPanelOpen(false)}
+          />
+        )}
         </div>
       </main>
 
