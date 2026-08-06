@@ -52,3 +52,20 @@ export interface SalaryBracket {
   category: string;
   jobCount: number;
 }
+
+/**
+ * How current the data behind the charts is.
+ *
+ * Rendered on the page rather than kept for debugging: every figure here is a
+ * claim about the job market, and a claim with no period attached is read as
+ * "right now" whether or not the last scrape was a week ago.
+ */
+export interface Freshness {
+  windowDays: number;
+  /** Distinct jobs advertised in the window — re-posts counted once. */
+  jobsInWindow: number;
+  /** Of those, the ones never advertised before. What "new" honestly means. */
+  newJobs: number;
+  /** Most recent posting on file; the gap to today is how stale the data is. */
+  latestPostedDate: string | null;
+}

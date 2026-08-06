@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check } from 'lucide-react';
+import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
 import { portfolioApi, GithubRankedRepo } from '@/features/shared/portfolio/api/portfolioApi';
 import { useGithubLink } from '@/features/shared/portfolio/hooks/useGithubLink';
@@ -19,7 +19,18 @@ export const GithubIcon = ({ size = 16, className }: { size?: number; className?
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Repo URLs already in the portfolio — shown as "Added" and not re-importable. */
+  /**
+   * Repo URLs already in the portfolio — shown as "Added" and not re-importable.
+   *
+   * <p>Omit it and the modal reads the saved portfolio itself. Pass it only when
+   * the caller holds a better answer than the server does — the portfolio editor
+   * does, because it knows about projects added in the current unsaved edit.
+   *
+   * <p>The distinction matters: this used to default to `[]`, and a caller that
+   * simply forgot got "nothing has been imported" rather than "I don't know".
+   * The evidence nudge forgot, so every repository the student had already
+   * imported was offered again as if it were new.
+   */
   existingRepoUrls?: string[];
   /** Receives the raw backend project entries (PortfolioProjectResponse[]) to append. */
   onImported: (projects: any[]) => void;
@@ -39,9 +50,20 @@ const TIER_LABEL: Record<GithubRankedRepo['qualityTier'], string> = {
 
 const normalizeUrl = (url: string) => url.replace(/\.git$/, '').replace(/\/$/, '').toLowerCase();
 
-export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingRepoUrls = [], onImported }) => {
+const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingRepoUrls, onImported }) => {
   const [repos, setRepos] = useState<GithubRankedRepo[]>([]);
+  /** Fallback for callers that did not supply `existingRepoUrls`. */
+  const [savedRepoUrls, setSavedRepoUrls] = useState<string[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** Repos whose score breakdown is open, by fullName. Independent of selection. */
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   // needsReconnect => GitHub isn't linked / token expired; offer the OAuth reconnect button.
@@ -54,14 +76,30 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   // firing on a stray click next to "Import".
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
-  const existing = new Set(existingRepoUrls.map(normalizeUrl));
+  const existing = new Set((existingRepoUrls ?? savedRepoUrls).map(normalizeUrl));
 
   const loadRepos = async () => {
     setIsLoading(true);
     setError(null);
     setSelected(new Set());
+    setExpanded(new Set());
     setConfirmingDisconnect(false);
     try {
+      // Only when the caller stayed silent. Failing here must not block the
+      // picker — worst case the student is offered a repository they already
+      // have, which is where this started and is still better than no list.
+      if (existingRepoUrls === undefined) {
+        try {
+          const portfolio = await portfolioApi.getPortfolio();
+          setSavedRepoUrls(
+            (portfolio.projects ?? [])
+              .map((project) => project.codeLink)
+              .filter((url): url is string => Boolean(url) && url !== '#'),
+          );
+        } catch (err) {
+          console.warn('[GithubSync] Could not read the saved portfolio; "Added" marks may be missing:', err);
+        }
+      }
       const data = await portfolioApi.listGithubRepos();
       setRepos(data);
     } catch (err: any) {
@@ -89,6 +127,15 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const toggleExpanded = (fullName: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(fullName)) next.delete(fullName);
+      else next.add(fullName);
+      return next;
+    });
+  };
 
   const toggle = (repoUrl: string) => {
     setSelected(prev => {
@@ -261,55 +308,127 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
               {repos.map(repo => {
                 const isAdded = existing.has(normalizeUrl(repo.repoUrl));
                 const isChecked = selected.has(repo.repoUrl);
+                const isOpen = expanded.has(repo.fullName);
                 return (
-                  <button
+                  <div
                     key={repo.fullName}
-                    type="button"
-                    disabled={isAdded}
-                    onClick={() => !isAdded && toggle(repo.repoUrl)}
                     className={[
-                      'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                      'rounded-lg border transition-colors',
                       isAdded
-                        ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-60'
+                        ? 'border-slate-100 bg-slate-50 opacity-70'
                         : isChecked
                           ? 'border-indigo-400 bg-indigo-50/60'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                          : 'border-slate-200 hover:border-slate-300',
                     ].join(' ')}
                   >
-                    {/* Checkbox */}
-                    <span
+                    {/* Selecting and inspecting are separate controls: reading why a repo
+                        scored what it did should never tick a box by accident. */}
+                    <button
+                      type="button"
+                      disabled={isAdded}
+                      onClick={() => !isAdded && toggle(repo.repoUrl)}
                       className={[
-                        'mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border',
-                        isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white',
+                        'flex w-full items-start gap-3 p-3 text-left',
+                        isAdded ? 'cursor-not-allowed' : 'hover:bg-slate-50/70',
                       ].join(' ')}
                     >
-                      {isChecked && <Check size={13} strokeWidth={3} />}
-                    </span>
+                      {/* Checkbox */}
+                      <span
+                        className={[
+                          'mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border',
+                          isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white',
+                        ].join(' ')}
+                      >
+                        {isChecked && <Check size={13} strokeWidth={3} />}
+                      </span>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-semibold text-slate-800">{repo.name}</span>
-                        {repo.isPrivate && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                            <Lock size={11} /> Private
-                          </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate font-semibold text-slate-800">{repo.name}</span>
+                          {repo.isPrivate && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                              <Lock size={11} /> Private
+                            </span>
+                          )}
+                          <Badge variant={TIER_VARIANT[repo.qualityTier]}>{TIER_LABEL[repo.qualityTier]}</Badge>
+                          {isAdded && <Badge variant="default">Added</Badge>}
+                        </div>
+
+                        {/* The full owner/name, because two repositories can share a name —
+                            which is exactly the case for a fork of your own team's repo. */}
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">{repo.fullName}</p>
+
+                        {repo.description ? (
+                          <p className={['mt-1 text-xs text-slate-600', isOpen ? '' : 'line-clamp-2'].join(' ')}>
+                            {repo.description}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs italic text-slate-400">
+                            No description on GitHub — the AI will have less to read.
+                          </p>
                         )}
-                        <Badge variant={TIER_VARIANT[repo.qualityTier]}>{TIER_LABEL[repo.qualityTier]}</Badge>
-                        {isAdded && <Badge variant="default">Added</Badge>}
-                      </div>
 
-                      {repo.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">{repo.description}</p>
+                        {/* The ranker's own reasons. They were computed all along and never shown. */}
+                        {repo.highlights?.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {repo.highlights.map(highlight => (
+                              <span
+                                key={highlight}
+                                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
+                              >
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                          {repo.language && <span className="font-medium text-slate-500">{repo.language}</span>}
+                          <span className="inline-flex items-center gap-1"><Star size={11} /> {repo.stars}</span>
+                          <span className="inline-flex items-center gap-1"><GitFork size={11} /> {repo.forks}</span>
+                          {repo.lastPushedAt && <span>pushed {formatDate(repo.lastPushedAt)}</span>}
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="border-t border-slate-100 px-3 py-1.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(repo.fullName)}
+                        className="flex w-full items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-700"
+                      >
+                        <ChevronDown
+                          size={13}
+                          className={['transition-transform', isOpen ? 'rotate-180' : ''].join(' ')}
+                        />
+                        Why score {repo.qualityScore}/100?
+                      </button>
+
+                      {isOpen && (
+                        <div className="mt-2 space-y-1.5 pb-1">
+                          {/* Said plainly, because a number beside a repository invites the
+                              reading that an AI judged the project. Nothing here is AI. */}
+                          <p className="text-[11px] text-slate-400">
+                            Computed from GitHub metadata only — no AI has read this repository yet.
+                          </p>
+                          {repo.scoreBreakdown?.map(line => (
+                            <div key={line.label} className="flex items-baseline gap-2 text-[11px]">
+                              <span
+                                className={[
+                                  'w-12 flex-shrink-0 text-right font-semibold tabular-nums',
+                                  line.points > 0 ? 'text-slate-700' : 'text-slate-300',
+                                ].join(' ')}
+                              >
+                                {line.points}/{line.max}
+                              </span>
+                              <span className="font-medium text-slate-600">{line.label}</span>
+                              <span className="min-w-0 flex-1 text-slate-400">{line.detail}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
-
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                        {repo.language && <span className="font-medium text-slate-500">{repo.language}</span>}
-                        <span className="inline-flex items-center gap-1"><Star size={11} /> {repo.stars}</span>
-                        <span className="inline-flex items-center gap-1"><GitFork size={11} /> {repo.forks}</span>
-                        <span className="text-slate-300">Score {repo.qualityScore}</span>
-                      </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

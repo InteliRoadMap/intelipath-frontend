@@ -1,8 +1,35 @@
 import { useEffect, useState } from "react"
 import { isAxiosError } from "axios"
 import { isUuid } from "@/lib/utils"
+import { assessmentService } from "../assessment"
 import { studentDashboardService } from "../services/studentDashboardService"
 import type { StudentSetupStep } from "../types"
+
+/**
+ * Remembers that a student passed on the optional assessment.
+ *
+ * Local rather than server-side: declining is a UI preference about whether to
+ * show an offer, not a fact about the student worth a column and a migration.
+ * Losing it (new browser, cleared storage) simply offers the assessment once
+ * more, which is a harmless failure mode.
+ */
+const declinedKey = (userId?: string) => `assessment.declined.${userId ?? "anon"}`
+
+const hasDeclinedAssessment = (userId?: string) => {
+  try {
+    return localStorage.getItem(declinedKey(userId)) === "true"
+  } catch {
+    return false
+  }
+}
+
+const declineAssessment = (userId?: string) => {
+  try {
+    localStorage.setItem(declinedKey(userId), "true")
+  } catch {
+    /* private mode: the offer will simply appear again next time */
+  }
+}
 
 // Add missing interface
 interface SetupProfile {
@@ -44,15 +71,24 @@ export function useStudentSetup(userId?: string) {
         try {
           profile = await studentDashboardService.getStudentProfile() as SetupProfile
         } catch (err) {
-          console.warn("[Student Setup] Profile fetch failed, assuming onboarding needed:", err)
+          console.warn("[Student Setup] Profile fetch failed; leaving onboarding closed:", err)
           profileError = true
         }
 
         if (!active) return
 
+        // A request that FAILED is not a student who has not answered. This used
+        // to force the wizard open, and the commonest failure by far is an
+        // expired token — so a student with a complete profile, 18 selected
+        // skills and three saved assessments got the whole four-step onboarding
+        // thrown over whatever they were doing, including on top of an open
+        // dialog. The same reasoning the assessment branch below already applies
+        // to itself: only the server actually saying the data is absent may
+        // reopen onboarding.
+        if (profileError) return
+
         const profileCareerId = getProfileCareerId(profile)
         const isProfileMissing =
-          profileError ||
           !profile ||
           !profile.university ||
           !profile.admissionDate ||
@@ -71,22 +107,45 @@ export function useStudentSetup(userId?: string) {
         try {
           skills = await studentDashboardService.getSelectedSkills()
         } catch (err) {
-          console.warn("[Student Setup] Skills fetch failed:", err)
+          console.warn("[Student Setup] Skills fetch failed; leaving onboarding closed:", err)
           skillsError = true
         }
 
         if (!active) return
+        if (skillsError) return
 
         const isSkillsMissing =
-          skillsError ||
           !Array.isArray(skills) ||
           skills.length === 0
 
         if (isSkillsMissing) {
           setActiveSetupStep("skills")
-        } else {
-          setActiveSetupStep(null)
+          return
         }
+
+        // 3. The assessment is an OFFER, not a gate. Two consequences, and both
+        //    are deliberate departures from how the steps above behave:
+        //    - a student who declined it must never be asked again, and the
+        //      server has no "declined" state, so the dismissal is remembered
+        //      locally;
+        //    - a failed request must let them through, unlike the skills branch
+        //      above which treats a failure as "missing". Trapping someone in an
+        //      optional step because the network blinked is the worst outcome
+        //      available here.
+        if (hasDeclinedAssessment(userId)) {
+          setActiveSetupStep(null)
+          return
+        }
+
+        let hasAssessment = true
+        try {
+          hasAssessment = Boolean(await assessmentService.getLatest())
+        } catch (err) {
+          console.warn("[Student Setup] Assessment check failed; skipping the offer:", err)
+        }
+
+        if (!active) return
+        setActiveSetupStep(hasAssessment ? null : "assessment")
       } catch (error) {
         console.error("[Student Setup] Failed to check profile and skills:", error)
       } finally {
@@ -105,7 +164,17 @@ export function useStudentSetup(userId?: string) {
     activeSetupStep,
     isInitializing,
     openSkillSelection: () => setActiveSetupStep("skills"),
+    openAssessment: () => setActiveSetupStep("assessment"),
     goBackToProfile: () => setActiveSetupStep("profile"),
-    completeSetup: () => setActiveSetupStep(null)
+    goBackToSkills: () => setActiveSetupStep("skills"),
+    /**
+     * Ends onboarding. When the student is on the assessment step this also
+     * records that they passed on it, so the offer does not reappear on every
+     * page load — an optional step that keeps asking stops reading as optional.
+     */
+    completeSetup: () => {
+      if (activeSetupStep === "assessment") declineAssessment(userId)
+      setActiveSetupStep(null)
+    }
   }
 }

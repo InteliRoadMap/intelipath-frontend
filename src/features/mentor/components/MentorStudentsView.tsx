@@ -35,6 +35,9 @@ export function MentorStudentsView() {
   const navigate = useNavigate();
   
   const [students, setStudents] = useState<any[]>([]);
+  // Set when the request itself failed, so a broken backend is not
+  // rendered as an empty dashboard.
+  const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,7 +47,10 @@ export function MentorStudentsView() {
   useEffect(() => {
     mentorApi.getStudentsList()
       .then(res => setStudents(Array.isArray(res) ? res : []))
-      .catch(() => setStudents([]))
+      .catch(() => {
+        setStudents([]);
+        setLoadError('Could not load your students. Please refresh or try again shortly.');
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -93,6 +99,11 @@ export function MentorStudentsView() {
   return (
     <div ref={containerRef} className="min-h-screen bg-slate-50 pb-14 font-sans text-slate-950 xl:h-screen xl:overflow-hidden xl:pb-0">
       {/* TOP NAVIGATION */}
+      {loadError && (
+        <div role="alert" className="mx-auto mb-6 max-w-[1680px] rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
+          {loadError}
+        </div>
+      )}
       <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1680px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-8">

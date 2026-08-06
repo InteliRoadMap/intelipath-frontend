@@ -77,6 +77,57 @@ export interface GithubRankedRepo {
   qualityScore: number;
   qualityTier: 'HIGH' | 'MEDIUM' | 'LOW';
   highlights: string[];
+  scoreBreakdown: RepoScoreLine[];
+}
+
+// One signal that fed qualityScore. Zero-point lines are included on purpose —
+// they are the only part of the score a student can do something about.
+export interface RepoScoreLine {
+  label: string;
+  points: number;
+  max: number;
+  detail: string;
+}
+
+// Mirrors backend RepoEvidenceResponse — what one repository is currently vouching for.
+// `verifyingCount` is the ACCEPTED subset: the rows actually holding the level up, and
+// the only number worth stopping the student for.
+export interface RepoEvidence {
+  repoUrl: string;
+  verifyingCount: number;
+  skills: Array<{ skill: string; status: 'ACCEPTED' | 'PENDING' | 'REJECTED' }>;
+}
+
+// Mirrors backend GithubImportAuditResponse — how the AI arrived at one project.
+// Everything except `skills[].status` is a snapshot of the analysis run; the status
+// is read live, because the profile keeps moving after the import.
+export interface GithubImportAudit {
+  repoUrl: string;
+  repoFullName: string | null;
+  analyzedAt: string | null;
+  model: string | null;
+  fetchMode: 'AUTHENTICATED' | 'ANONYMOUS' | null;
+  catalogSize: number;
+  careerName: string | null;
+  sources: Array<{ path: string; chars: number; found: boolean }>;
+  // Whether GitHub credits this student with commits here. Null for imports analysed
+  // before authorship was checked at all. UNKNOWN is not a finding against anyone —
+  // it means no usable answer came back, and it never blocks.
+  authorshipVerdict: 'CONTRIBUTED' | 'NOT_CONTRIBUTED' | 'UNKNOWN' | null;
+  authorLogin: string | null;
+  authorCommits: number;
+  totalCommits: number;
+  authorshipReason: string | null;
+  evidenceBlocked: boolean;
+  languageBytes: Record<string, number> | null;
+  commitSubjects: string[] | null;
+  summary: string | null;
+  techStack: Record<string, unknown> | null;
+  skills: Array<{
+    skill: string;
+    confidence: number;
+    status: 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'NOT_RECORDED';
+  }>;
 }
 
 // Mirrors backend GithubLinkResponse — shared by the link, status and unlink endpoints.
@@ -352,6 +403,52 @@ export const portfolioApi = {
   // and return the resulting (unsaved) project entries to append to the portfolio.
   importGithubBatch: async (repoUrls: string[]) => {
     const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT_BATCH, { repoUrls }, NO_TOAST);
+    return res.data;
+  },
+
+  // How the AI arrived at one imported project. Returns null on 404 — a repository
+  // imported before auditing existed has no record, and that is a different thing
+  // from an analysis that found nothing. skipErrorToast because the caller renders
+  // that distinction inline.
+  getGithubAudit: async (repoUrl: string): Promise<GithubImportAudit | null> => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_AUDIT, {
+        ...NO_TOAST,
+        params: { repoUrl },
+      });
+      return res.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) return null;
+      throw error;
+    }
+  },
+
+  // What one repository is currently vouching for on the student's profile. Asked before
+  // a portfolio project is deleted, so "remove from the showcase" and "give up the skills
+  // it proved" can be two different answers instead of one silent side effect.
+  //
+  // Failure returns an empty list rather than throwing: a network hiccup must not block
+  // the student from tidying their own portfolio, and the delete path that follows is
+  // strictly less destructive when this comes back empty (no skills named, nothing
+  // withdrawn).
+  getRepoEvidence: async (repoUrl: string): Promise<RepoEvidence> => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_EVIDENCE, {
+        ...NO_TOAST,
+        params: { repoUrl },
+      });
+      return res.data;
+    } catch {
+      return { repoUrl, verifyingCount: 0, skills: [] };
+    }
+  },
+
+  // Deletes this repository's evidence and clears the verifier from any skill left with
+  // no other backing. Only called after the student explicitly chose it.
+  withdrawRepoEvidence: async (repoUrl: string): Promise<RepoEvidence> => {
+    const res = await mainClient.delete(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_EVIDENCE, {
+      params: { repoUrl },
+    });
     return res.data;
   },
 

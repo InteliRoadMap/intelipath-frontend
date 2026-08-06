@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,15 +12,32 @@ import { MagnifyingGlassMinus, MagnifyingGlassPlus } from '@phosphor-icons/react
 import { Spinner } from '@/components/ui';
 import '@xyflow/react/dist/style.css';
 import CustomRoadmapNode from './CustomRoadmapNode';
-import { ClusterBoxNode, StageBandNode } from './RoadmapContainers';
+import ExplainedEdge from './ExplainedEdge';
+import { ClusterBoxNode, SkillStackNode, SpineWaypointNode, StageBandNode } from './RoadmapContainers';
+import { ChoiceSatelliteNode } from './ChoiceSatelliteNode';
 import { STAGE_ORDER, getStageColor, getStageLabel } from '../lib/stageColors';
 import { studentDashboardService } from '../services';
 import type { StudentRoadmap } from '../types';
+import {
+  serpentineLayout,
+  TOPIC_H as SERP_TOPIC_H,
+  CHILD_W as SERP_CHILD_W,
+  CHILD_H as SERP_CHILD_H,
+} from './roadmapSerpentineLayout';
 
 const nodeTypes = {
   custom: CustomRoadmapNode,
   clusterBox: ClusterBoxNode,
+  choiceSatellite: ChoiceSatelliteNode,
+  skillStack: SkillStackNode,
+  spineWaypoint: SpineWaypointNode,
   stageBand: StageBandNode,
+};
+
+// Every edge goes through this so the per-student ordering can explain itself
+// on hover. Edges without a reason render as the plain smoothstep they were.
+const edgeTypes = {
+  explained: ExplainedEdge,
 };
 
 const MIN_ZOOM = 0.1;
@@ -124,6 +141,35 @@ interface RoadmapVectorGraphProps {
   roadmapData: StudentRoadmap | null;
   optimisticStatusMap?: Record<string, string>;
   chosenNodeIds?: Set<string>;
+  /** Ranked options per CHOOSE_ONE group, keyed by group node id. */
+  choiceOptionsByGroup?: Record<string, RankedChoiceOption[]>;
+  /** Commit a pick from an option chip. */
+  onSelectOption?: (groupNodeId: string, optionNodeId: string) => void;
+  /**
+   * Nodes the server just marked from evidence the student supplied, in the
+   * order they were applied.
+   *
+   * <p>Order matters: it becomes the stagger, so the ticks arrive as a wave.
+   * Empty on every ordinary render — this is a one-shot announcement, not state.
+   */
+  justMarkedNodeIds?: string[];
+  /**
+   * Move a node's status straight from its card.
+   *
+   * <p>Passed down through node data because that is the only channel React Flow
+   * gives a custom node type. Held in a ref inside the graph and exposed as a
+   * stable wrapper, so a parent that re-creates the handler every render cannot
+   * force the whole layout to be recomputed.
+   */
+  onSetNodeStatus?: (nodeId: string, status: string) => void;
+}
+
+/** The slice of the ranking endpoint the cluster actually draws. */
+export interface RankedChoiceOption {
+  nodeId: string;
+  matchedSkills?: unknown[];
+  /** True only for the top option of a DECISIVE ranking. */
+  recommended?: boolean;
 }
 
 // ── Layout constants ────────────────────────────────────────────────
@@ -137,6 +183,14 @@ const STAGE_GAP = 80; // extra gap inserted where the stage changes
 const SIDE_GAP = 46; // spine edge → nearest sub-skill (hug the spine)
 const INDENT = 22; // per-depth indent for nested sub-skills
 const BOX_PAD = 14;
+// Options cluster beside a CHOOSE_ONE group. Two columns because a single one
+// makes nine languages a tall list the eye reads top-to-bottom — which is the
+// sequence reading the cluster exists to kill.
+const SAT_W = 208;
+const SAT_COLS = 2;
+const SAT_ROW_H = 32;
+const SAT_HEAD_H = 26;
+const SAT_PAD_Y = 20;
 const BAND_PAD_X = 56;
 const BAND_PAD_Y = 30;
 
@@ -264,6 +318,7 @@ export const getDynamicLayoutedElements = (
     const topicNode = byId.get(topicId);
     const stage = topicNode?.data?.stage;
     const kids = childrenOf(topicId);
+
     // Balance sub-skills across both sides of the spine (even → right, odd → left)
     // so neither side sits empty and the block stays short.
     const R = layoutColumn(kids.filter((_, i) => i % 2 === 0), topicId);
@@ -365,18 +420,31 @@ export const getDynamicLayoutedElements = (
     return s.has('current') || s.has('in_progress');
   };
 
+  // The server sends one sentence per connection explaining why this student
+  // gets this order. This layout builds its own geometry, so the sentences are
+  // carried across by endpoint rather than by edge object — losing them would
+  // leave the personalisation invisible again.
+  const reasonFor = new Map<string, string>();
+  rawEdges.forEach((e) => {
+    if (e?.data?.reason) reasonFor.set(`${e.source}->${e.target}`, e.data.reason);
+  });
+
   // Spine edges (topic → next topic in the ordered chain).
   for (let i = 0; i < orderedTopics.length - 1; i++) {
     const a = orderedTopics[i];
     const b = orderedTopics[i + 1];
+    const reason = reasonFor.get(`${a}->${b}`);
     pushEdge({
       id: `spine-${a}-${b}`,
       source: a,
       target: b,
-      type: 'smoothstep',
+      // `explained` renders the same line plus a wide invisible hover target
+      // carrying the reason; without a reason it is an ordinary smoothstep.
+      type: reason ? 'explained' : 'smoothstep',
       sourceHandle: 's-bottom',
       targetHandle: 't-top',
       animated: false,
+      data: reason ? { reason } : undefined,
       style: { stroke: SPINE_STROKE, strokeWidth: 3 },
     });
   }
@@ -421,8 +489,138 @@ export const getDynamicLayoutedElements = (
   return { nodes: [...stageBands, ...clusterBoxes, ...finalReal], edges };
 };
 
-export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optimisticStatusMap = {}, chosenNodeIds }: RoadmapVectorGraphProps) => {
+/**
+ * Serpentine layout: the same ordering, folded into rows.
+ *
+ * Kept beside {@link getDynamicLayoutedElements} rather than replacing it — the
+ * mentor editor still uses that one to seed node positions, and the stored
+ * positions were authored against its single-column geometry.
+ *
+ * The full-width stage bands are deliberately dropped here. A band asserts "this
+ * horizontal strip is one stage", which holds only while the path runs
+ * top-to-bottom; once it folds, one strip carries two stages travelling in
+ * opposite directions and the band would be actively misleading. Stage stays
+ * legible through each node's own colour.
+ */
+export const getSerpentineLayoutedElements = (
+  rawNodes: any[],
+  rawEdges: any[],
+  themeColor?: string,
+  optimisticStatusMap: Record<string, string> = {},
+  chosenNodeIds: Set<string> = new Set(),
+  choiceOptionsByGroup: Record<string, RankedChoiceOption[]> = {},
+  onSelectOption?: (groupNodeId: string, optionNodeId: string) => void,
+  justMarkedNodeIds: string[] = [],
+  onSetNodeStatus?: (nodeId: string, status: string) => void
+) => {
+  if (!rawNodes.length) return { nodes: [], edges: [] };
+
+  const byId = new Map<string, any>(rawNodes.map((n) => [n.id, n]));
+  const isMain = (id: string) => (byId.get(id)?.data?.level ?? 0) > 0;
+  const stageOf = (id: string) => String(byId.get(id)?.data?.stage || '').toUpperCase();
+  const stageIndex = (id: string) => {
+    const i = STAGE_ORDER.indexOf(stageOf(id) as any);
+    return i < 0 ? STAGE_ORDER.length : i;
+  };
+  const childrenOf = (id: string): string[] =>
+    rawNodes.filter((n) => n.data?.parentNodeId === id).map((n) => n.id);
+
+  const spineNext: Record<string, string> = {};
+  const spinePrev: Record<string, string> = {};
+  rawEdges.forEach((e) => {
+    const solid = e.style?.strokeDasharray === 'none' || e.style?.strokeWidth === 3;
+    if (isMain(e.source) && isMain(e.target) && solid) {
+      spineNext[e.source] = e.target;
+      spinePrev[e.target] = e.source;
+    }
+  });
+
+  const mainNodes = rawNodes.filter((n) => isMain(n.id)).map((n) => n.id);
+  const chainOrder: string[] = [];
+  const seen = new Set<string>();
+  mainNodes
+    .filter((id) => !spinePrev[id])
+    .forEach((root) => {
+      let cur: string | undefined = root;
+      while (cur && !seen.has(cur)) {
+        chainOrder.push(cur);
+        seen.add(cur);
+        cur = spineNext[cur];
+      }
+    });
+  mainNodes.forEach((id) => {
+    if (!seen.has(id)) {
+      chainOrder.push(id);
+      seen.add(id);
+    }
+  });
+  const orderedTopics = chainOrder
+    .map((id, i) => ({ id, i }))
+    .sort((a, b) => stageIndex(a.id) - stageIndex(b.id) || a.i - b.i)
+    .map((o) => o.id);
+
+  const reasonFor = new Map<string, string>();
+  rawEdges.forEach((e) => {
+    if (e?.data?.reason) reasonFor.set(`${e.source}->${e.target}`, e.data.reason);
+  });
+
+  const laid = serpentineLayout(orderedTopics, childrenOf, byId, reasonFor, {
+    optionsByGroup: choiceOptionsByGroup,
+    chosenNodeIds,
+    onSelect: onSelectOption,
+  });
+
+  // Anything the spine walk never reached still has to appear. Dropping a node
+  // silently is worse than placing it plainly, so leftovers go in a block below.
+  const leftovers = rawNodes.filter((n) => !laid.placedIds.has(n.id));
+  const bottomY = laid.nodes.length
+    ? Math.max(...laid.nodes.map((n: any) => n.position.y)) + SERP_TOPIC_H + 120
+    : 0;
+  leftovers.forEach((n, i) => {
+    laid.nodes.push({
+      ...n,
+      position: {
+        x: (i % laid.perRow) * (SERP_CHILD_W + 40),
+        y: bottomY + Math.floor(i / laid.perRow) * (SERP_CHILD_H + 26),
+      },
+    });
+  });
+
+  // Position in the marking wave. Built from the array's own order rather than
+  // from the layout's, because the server applied them in a sequence and that
+  // sequence is the one worth replaying — a wave that follows the canvas's
+  // reading order would imply the marks were worked out top to bottom.
+  const markOrderById = new Map<string, number>();
+  justMarkedNodeIds.forEach((id, i) => markOrderById.set(String(id), i));
+
+  const finalNodes = laid.nodes.map((node: any) => ({
+    ...node,
+    data: {
+      ...node.data,
+      themeColor,
+      status: optimisticStatusMap[node.id] || node.data?.status,
+      isChosen: chosenNodeIds.has(node.id),
+      isIsolated: false,
+      justMarked: markOrderById.has(node.id),
+      markOrder: markOrderById.get(node.id),
+      onSetStatus: onSetNodeStatus,
+    },
+  }));
+
+  return { nodes: finalNodes, edges: laid.edges };
+};
+
+export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optimisticStatusMap = {}, chosenNodeIds, choiceOptionsByGroup, onSelectOption, justMarkedNodeIds, onSetNodeStatus }: RoadmapVectorGraphProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  // The handler goes into node data, and node data is rebuilt by the layout
+  // effect. A parent that re-creates its callback each render would therefore
+  // re-lay-out the whole board on every render; the ref keeps the identity the
+  // effect sees constant while the call still reaches the current handler.
+  const setStatusRef = useRef(onSetNodeStatus);
+  setStatusRef.current = onSetNodeStatus;
+  const stableSetStatus = useCallback((nodeId: string, status: string) => {
+    setStatusRef.current?.(nodeId, status);
+  }, []);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const [translateExtent, setTranslateExtent] = useState<[[number, number], [number, number]] | undefined>(undefined);
   const rfRef = useRef<any>(null);
@@ -485,7 +683,15 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
       // Build the graph from the SAME payload the page already fetched
       // (kept on `_rawResponse`) instead of hitting the roadmap endpoint again.
       const { nodes: rawNodes, edges: rawEdges } = studentDashboardService.buildRoadmapGraph(roadmapData._rawResponse);
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getDynamicLayoutedElements(rawNodes, rawEdges, themeColor, optimisticStatusMap, chosenNodeIds);
+      // The spine layout, which is what a roadmap looks like: a path you follow,
+      // with sub-skills branching off it. A banded card grid was tried here and
+      // was wrong — it read as a dashboard. The length that made the spine
+      // unusable was never the shape's fault, it was 538 nodes on one canvas;
+      // the server-side visibility filter cuts that to ~103 across 13 topics,
+      // which the spine handles fine.
+      const { nodes: layoutedNodes, edges: layoutedEdges } =
+        getSerpentineLayoutedElements(rawNodes, rawEdges, themeColor, optimisticStatusMap, chosenNodeIds,
+          choiceOptionsByGroup, onSelectOption, justMarkedNodeIds, stableSetStatus);
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
       setTranslateExtent(computeExtent(layoutedNodes));
@@ -499,7 +705,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
     } catch (e) {
       console.error("Graph layout error", e);
     }
-  }, [roadmapData, setNodes, setEdges, themeColor, optimisticStatusMap, chosenNodeIds]);
+  }, [roadmapData, setNodes, setEdges, themeColor, optimisticStatusMap, chosenNodeIds, choiceOptionsByGroup, onSelectOption, justMarkedNodeIds, stableSetStatus]);
 
   const handleNodeClick = (event: React.MouseEvent, node: any) => {
     if (node.type !== 'custom') return;
@@ -552,6 +758,7 @@ export const RoadmapVectorGraph = ({ onNodeClick, themeColor, roadmapData, optim
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onInit={(instance) => {
           rfRef.current = instance;
           // Nodes may already be laid out (sync data can beat onInit); centre now

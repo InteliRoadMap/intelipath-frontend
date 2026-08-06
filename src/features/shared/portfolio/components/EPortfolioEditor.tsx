@@ -17,6 +17,8 @@ import { Send } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { RequestReviewModal } from './RequestReviewModal';
 import { GithubSyncModal, GithubIcon } from './GithubSyncModal';
+import { ProjectAuditModal } from './ProjectAuditModal';
+import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { toast } from '@/lib/toast';
 import profileApi from '@/api/profileApi';
 
@@ -58,6 +60,20 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   const [isImporting, setIsImporting] = useState(false);
   // Sync-GitHub picker (list all repos, multi-select, batch import)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  /** Which project's AI audit is open, or null. Keyed by repo URL — that is the audit's key. */
+  const [auditProject, setAuditProject] = useState<{ repoUrl: string; name: string } | null>(null);
+  /**
+   * Which project is being deleted, while the student decides what deletion means.
+   *
+   * <p>Only imported projects get the question: a hand-typed entry has no evidence
+   * behind it, so there is nothing to ask about and the row is dropped directly.
+   */
+  const [deletingProject, setDeletingProject] = useState<{ id: string; repoUrl: string; name: string } | null>(null);
+
+  /** Drops one project from the portfolio. The autosave below persists it. */
+  const removeProject = (projectId: string) => {
+    setData((current) => ({ ...current, projects: current.projects.filter(p => p.id !== projectId) }));
+  };
 
   // Returning from the GitHub "Connect" flow: reopen the picker (now that a token exists)
   // or report failure, then strip the flag from the URL so a refresh doesn't retrigger it.
@@ -651,8 +667,16 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
             {data.projects.map((proj, idx) => (
               <div key={proj.id} className="bg-[var(--bg-primary)] overflow-hidden shadow-[0_2px_10px_-4px_rgba(0,0,0,0.10)] border border-[var(--border-color)] flex flex-col group transition-transform hover:-translate-y-1 relative" style={{ borderRadius: 'var(--card-radius)' }}>
                 {isEditMode && (
+                  // An imported project may be the only proof behind several verified
+                  // skills, so deleting it asks first. A manual entry has nothing behind
+                  // it and goes straight away.
                   <button onClick={() => {
-                    setData({ ...data, projects: data.projects.filter(p => p.id !== proj.id) });
+                    const repoUrl = proj.codeLink && proj.codeLink !== '#' ? proj.codeLink : '';
+                    if (repoUrl.toLowerCase().includes('github.com')) {
+                      setDeletingProject({ id: proj.id, repoUrl, name: proj.title || 'this project' });
+                    } else {
+                      removeProject(proj.id);
+                    }
                   }} className="absolute top-4 right-4 bg-red-500 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"><i className="fas fa-trash text-sm"></i></button>
                 )}
                 <div className="h-48 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--border-color)] flex items-center justify-center text-6xl text-[var(--primary-color)] border-b border-[var(--border-color)] relative">
@@ -715,6 +739,19 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                       }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
                     )}
                   </div>
+
+                  {/* Owner-only, and never on the public page: this explains how the
+                      student's own profile was changed, which is nobody else's business.
+                      Hidden for hand-made projects, which no AI ever read. */}
+                  {isEditMode && proj.codeLink && proj.codeLink !== '#' && (
+                    <button
+                      type="button"
+                      onClick={() => setAuditProject({ repoUrl: proj.codeLink, name: proj.title })}
+                      className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--text-color)] opacity-60 hover:opacity-100"
+                    >
+                      <i className="fas fa-wand-magic-sparkles"></i> How the AI wrote this
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -812,6 +849,28 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         
         <p className="text-[var(--text-color)] text-sm font-semibold">© 2026 IntelPath.</p>
       </footer>
+
+      {auditProject && (
+        <ProjectAuditModal
+          open
+          onOpenChange={open => !open && setAuditProject(null)}
+          repoUrl={auditProject.repoUrl}
+          projectName={auditProject.name}
+        />
+      )}
+
+      {deletingProject && (
+        <DeleteProjectDialog
+          open
+          onOpenChange={open => !open && setDeletingProject(null)}
+          repoUrl={deletingProject.repoUrl}
+          projectName={deletingProject.name}
+          onConfirm={() => {
+            removeProject(deletingProject.id);
+            setDeletingProject(null);
+          }}
+        />
+      )}
 
       <GithubSyncModal
         open={isSyncModalOpen}

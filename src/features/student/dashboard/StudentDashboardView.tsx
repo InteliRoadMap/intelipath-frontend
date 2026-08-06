@@ -6,6 +6,8 @@ import { Spinner } from "@/components/ui"
 import { useAuth } from "@/context"
 import { ROUTES } from "@/shared"
 import { useStudentSetup, RoadmapProgressProvider } from "../hooks"
+import { StudentLevelBadge, VerifyEvidenceNudge, useStudentLevel } from "../level"
+import { SkillMapView, useCoreSkills } from "../skill-map"
 import {
   StudentWelcomeHeader,
   CurrentProgressBanner,
@@ -17,6 +19,7 @@ import {
 import { SharedAppBackground } from "@/components"
 import StudentProfileSetupModal from "@/features/student/onboarding/StudentProfileSetupModal"
 import StudentSkillSelectionModal from "@/features/student/onboarding/StudentSkillSelectionModal"
+import StudentSkillAssessmentModal from "@/features/student/onboarding/StudentSkillAssessmentModal"
 import StudentHeader from "@/features/student/common/StudentHeader"
 
 gsap.registerPlugin(useGSAP)
@@ -25,7 +28,9 @@ export default function StudentDashboardView() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const dashboardRef = useRef<HTMLDivElement>(null)
-  const { activeSetupStep, isInitializing, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
+  const { activeSetupStep, isInitializing, openSkillSelection, openAssessment, goBackToProfile, goBackToSkills, completeSetup } = useStudentSetup(user?.id)
+  const { level, reload: reloadLevel } = useStudentLevel()
+  const { coreSkills } = useCoreSkills()
 
   useGSAP(() => {
     if (!isInitializing && activeSetupStep === null) {
@@ -69,7 +74,33 @@ export default function StudentDashboardView() {
               <div className="anim-block">
                 <StudentWelcomeHeader />
               </div>
-              
+
+              {/* The assessment computed a level and, until now, nothing on this
+                  page showed it — getLevel() was called only by a filter chip on
+                  Market Pulse. This is also the only route back into retaking. */}
+              <div className="anim-block mb-4">
+                <StudentLevelBadge level={level} onTakeAssessment={openAssessment} />
+              </div>
+
+              {/* Shows only while the verified share sits under the floor that
+                  caps the level at Junior, and disappears once it does not. */}
+              <div className="anim-block mb-4">
+                <VerifyEvidenceNudge level={level} onSynced={reloadLevel} />
+              </div>
+
+              {/* Where the student stands against the market, on the same core
+                  skill set the level badge above counts. Wide column on purpose:
+                  a scatter needs room, and the 264px roadmap side panel does not
+                  have it. */}
+              {coreSkills && coreSkills.length > 0 && (
+                <div className="anim-block mb-6">
+                  <h2 className="mb-3 text-[20px] font-black tracking-tight text-black">Skill Map</h2>
+                  <div className="rounded-3xl bg-[#f9f9f9] p-5">
+                    <SkillMapView coreSkills={coreSkills} />
+                  </div>
+                </div>
+              )}
+
               <div className="anim-block">
                 <CurrentProgressBanner />
               </div>
@@ -110,8 +141,11 @@ export default function StudentDashboardView() {
 
       {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
+      {activeSetupStep === "assessment" && (
+        <StudentSkillAssessmentModal isOpen onComplete={completeSetup} onBack={goBackToSkills} />
+      )}
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
+        <StudentSkillSelectionModal isOpen onComplete={openAssessment} onBack={goBackToProfile} />
       )}
     </div>
   )

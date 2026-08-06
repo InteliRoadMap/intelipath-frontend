@@ -57,7 +57,8 @@ const emptySkillResponse = (): SkillResponse => ({
   selectedSkills: [],
   skills: [],
   requiredSkills: [],
-  missingSkills: []
+  missingSkills: [],
+  markedNodeIds: []
 })
 
 const isValidSkillItem = (skill: unknown): skill is SkillItem => {
@@ -76,7 +77,10 @@ export const normalizeSkillResponse = (data: unknown): SkillResponse => {
     requiredSkills: Array.isArray(dto.requiredSkills)
       ? dto.requiredSkills.filter(({ skill }) => isValidSkillItem(skill))
       : [],
-    missingSkills: Array.isArray(dto.missingSkills) ? dto.missingSkills.filter(isValidSkillItem) : []
+    missingSkills: Array.isArray(dto.missingSkills) ? dto.missingSkills.filter(isValidSkillItem) : [],
+    // Only the select endpoint ever fills this: the roadmap nodes the declaration
+    // just marked as already covered. Empty on every read.
+    markedNodeIds: Array.isArray(dto.markedNodeIds) ? dto.markedNodeIds.map(String) : []
   }
 }
 
@@ -134,7 +138,12 @@ const normalizeNode = (node: any): RoadmapNode | null => {
       ? node.children
           .map(normalizeNode)
           .filter((child: any): child is RoadmapNode => Boolean(child))
-      : []
+      : [],
+    // The score the roadmap was already ordered by. Absent on older payloads, in
+    // which case every priority-aware surface simply shows nothing.
+    priorityScore: node.priorityScore ?? node.priority_score ?? null,
+    priorityLabel: node.priorityLabel ?? node.priority_label ?? null,
+    priorityReason: node.priorityReason ?? node.priority_reason ?? null
   }
 }
 
@@ -200,7 +209,28 @@ export const normalizeStudentRoadmap = (responseData: unknown): StudentRoadmap =
     _rawResponse: responseData,
     nodes: flattenedNodes
       .map(normalizeNode)
-      .filter((node): node is RoadmapNode => Boolean(node))
+      .filter((node): node is RoadmapNode => Boolean(node)),
+    // Passed through untouched. Both are absent on older payloads and on the
+    // career root, so the page must treat "no breadcrumb" as "at the top" rather
+    // than as an error.
+    subRoadmaps: Array.isArray((data as any)?.subRoadmaps) ? (data as any).subRoadmaps : [],
+    breadcrumb: Array.isArray((data as any)?.breadcrumb) ? (data as any).breadcrumb : undefined,
+    // Career readiness, a different measure from `progress` above: essential
+    // skills held rather than nodes ticked off on this view.
+    readiness: (data as any)?.readiness ?? null,
+    readinessVerified: (data as any)?.readinessVerified ?? (data as any)?.readiness_verified ?? null,
+    readinessRequiredCount:
+      (data as any)?.readinessRequiredCount ?? (data as any)?.readiness_required_count ?? null,
+    readinessHeldCount:
+      (data as any)?.readinessHeldCount ?? (data as any)?.readiness_held_count ?? null,
+    readinessVerifiedCount:
+      (data as any)?.readinessVerifiedCount ?? (data as any)?.readiness_verified_count ?? null,
+    // The skills those counts are over, so the map draws the same denominator.
+    coreSkills: Array.isArray((data as any)?.coreSkills)
+      ? (data as any).coreSkills
+      : Array.isArray((data as any)?.core_skills)
+        ? (data as any).core_skills
+        : null
   }
 }
 
@@ -262,11 +292,22 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
     // The backend exposes the field as `nodeLevel`; keep the other aliases for safety.
     const readLevel = (r: any) => parseInt(String(r.nodeLevel ?? r.node_level ?? r.Level ?? r.level ?? 0)) || 0;
 
-    // Main (spine) nodes are strictly those with an explicit level > 0.
-    // Only their children rely on parent/previous; the spine itself is ordered by level.
-    const actualMainNodes = rows
-      .filter(r => readLevel(r) > 0)
-      .sort((a, b) => readLevel(a) - readLevel(b));
+    // Depth is the authority on what the spine is: 0 = a root, anything else hangs
+    // off a parent. `nodeLevel` used to serve this because in the old curated set
+    // only spine nodes carried one — but in the imported pool node_level is the
+    // ordering index INSIDE each source roadmap, so "Installing Laravel" carries
+    // level 1 while being a child. Reading it as a spine marker put 134 of 169
+    // nodes in one column.
+    const hasDepth = rows.some(r => r.depth !== undefined && r.depth !== null);
+    const readDepth = (r: any) => parseInt(String(r.depth ?? 0)) || 0;
+
+    const actualMainNodes = hasDepth
+      // Server order already carries the per-student sequence; re-sorting would
+      // throw the personalisation away.
+      ? rows.filter(r => readDepth(r) === 0)
+      : rows
+          .filter(r => readLevel(r) > 0)
+          .sort((a, b) => readLevel(a) - readLevel(b));
 
     const nodes: any[] = [];
     const edges: any[] = [];
@@ -277,7 +318,9 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
     rows.forEach((row, index) => {
       const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId || `Node_${index}`;
       const isMainNode = actualMainNodes.some(m => m === row);
-      const level = isMainNode ? (readLevel(row) || 1) : 0; // Maintain explicit level for UI
+      // The layout keys off `level > 0` meaning "spine", so a root must always
+      // land above zero even when its own node_level is 0.
+      const level = isMainNode ? Math.max(1, readLevel(row) || 1) : 0;
 
       const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
 
@@ -328,7 +371,50 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
           positionY: row.positionY ?? row.position_y ?? null,
           // FLM overlay: which FPT subjects teach this node + its lesson resources.
           fptCoverage: row.fptCoverage ?? row.fpt_coverage ?? null,
-          fptResources: row.fptResources ?? row.fpt_resources ?? []
+          fptResources: row.fptResources ?? row.fpt_resources ?? [],
+          // Catalog skill + job-market demand behind this node. All three are
+          // optional on the wire: a node with no linked skill, or a skill too
+          // rarely mentioned in postings to report honestly, carries null and
+          // renders exactly as it did before these fields existed.
+          skillName: row.skillName ?? row.skill_name ?? null,
+          skillCategory: row.skillCategory ?? row.skill_category ?? null,
+          marketDemand: row.marketDemand ?? row.market_demand ?? null,
+          // The score the backend already ordered this roadmap by, exposed so the
+          // card can say why a node is worth doing before the others.
+          priorityScore: row.priorityScore ?? row.priority_score ?? null,
+          priorityLabel: row.priorityLabel ?? row.priority_label ?? null,
+          priorityReason: row.priorityReason ?? row.priority_reason ?? null,
+          // Topic progress and the depth held back by the server-side visibility
+          // filter. All optional: an older backend sends none of them and the card
+          // simply shows less.
+          childTotal: row.childTotal ?? row.child_total ?? null,
+          childCompleted: row.childCompleted ?? row.child_completed ?? null,
+          hiddenChildren: row.hiddenChildren ?? row.hidden_children ?? null,
+          depth: row.depth ?? null,
+          // What the node is worth opening for: the bar it sets, where the
+          // student stands against that bar, and the rule that finishes it.
+          // The bar alone was unreadable — "needs APPLIED" says nothing until
+          // you know you are at PRACTICED.
+          requiredProficiency: row.requiredProficiency ?? row.required_proficiency ?? null,
+          currentProficiency: row.currentProficiency ?? row.current_proficiency ?? null,
+          proficiencyVerifiedBy: row.proficiencyVerifiedBy ?? row.proficiency_verified_by ?? null,
+          completionRule: row.completionRule ?? row.completion_rule ?? null,
+          subtreeSize: row.subtreeSize ?? row.subtree_size ?? null,
+          entersRoadmap: row.entersRoadmap ?? row.enters_roadmap ?? false,
+          // Choice semantics. The backend has sent these since v2; the graph
+          // never read them, so the one place a roadmap genuinely forks looked
+          // like an ordinary topic. The market rail needs them to find a group
+          // *before* the student has picked anything — which is precisely when
+          // a ranking of the options is worth putting in front of them.
+          selection: row.selection ?? row.Selection ?? null,
+          chooseCount: row.chooseCount ?? row.choose_count ?? null,
+          nodeKind: row.nodeKind ?? row.node_kind ?? null,
+          // Which student level this node is for, and whether the current
+          // student's level reaches it. Locked rather than removed: a student
+          // who cannot see that the road continues cannot tell a roadmap that
+          // ends here from one that has more waiting.
+          tier: row.tier ?? null,
+          tierLocked: Boolean(row.tierLocked ?? row.tier_locked ?? false)
         }
       });
     });
@@ -367,6 +453,17 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
       inDegree[targetId] = (inDegree[targetId] || 0) + 1;
     };
 
+    // The backend now computes the edges per student — the ordering depends on
+    // their level, the skills they already hold and current market demand, none
+    // of which this file can see. When they are present they are authoritative
+    // and the derivation below is skipped entirely; when they are absent (an
+    // older backend, or the career template endpoint) nothing changes.
+    const serverEdges: any[] = (() => {
+      const container: any = responseData;
+      const found = container?.edges ?? container?.data?.edges ?? container?.result?.edges;
+      return Array.isArray(found) ? found : [];
+    })();
+
     rows.forEach(row => {
       const nodeName = row.title || row.name || row.NodeName || row.nodeName || row.node_name || row.id || row.nodeId;
       const nodeId = String(row.nodeId || row.id || row.node_id || nodeName).trim();
@@ -376,10 +473,15 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
       let previousId = resolveRef(row.previousNode || row.previous_node || row.PreviousNode);
 
       // Record the parent id on the node so the UI knows which CHOOSE_ONE
-      // group an alternative belongs to (needed to POST a selection).
+      // group an alternative belongs to (needed to POST a selection). Still
+      // needed with server edges — it drives selection, not drawing.
       if (parentId) {
         const self = nodes.find(n => n.id === nodeId);
         if (self) self.data.parentNodeId = parentId;
+      }
+
+      if (serverEdges.length > 0) {
+        return;
       }
 
       if (isMainNode) {
@@ -398,6 +500,29 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
         // dashed sequence edge chaining siblings via previousNode.
         if (parentId) pushEdge(parentId, nodeId, row, false);
         if (previousId) pushEdge(previousId, nodeId, row, false);
+      }
+    });
+
+    // Server-computed edges: SEQUENCE is the learn-this-first chain (solid),
+    // HIERARCHY is topic containment (dashed) — the same visual language the
+    // derivation above used, so the graph reads identically either way.
+    serverEdges.forEach(edge => {
+      const sourceId = resolveRef(edge.source);
+      const targetId = resolveRef(edge.target);
+      if (!sourceId || !targetId) return;
+      const targetRow = rows.find(r => String(r.nodeId || r.id || r.node_id || '').trim() === targetId);
+      // Solid-and-thick is the spine's visual language, and the layout also reads
+      // it to recover the topic chain. A sequence edge between two leaves is a
+      // sibling ordering, not spine, so it stays dashed like it always was.
+      const isSequence = String(edge.kind || '').toUpperCase() !== 'HIERARCHY';
+      const targetIsSpine = targetRow ? readLevel(targetRow) > 0 : false;
+      pushEdge(sourceId, targetId, targetRow || {}, isSequence && targetIsSpine);
+      // The one sentence explaining why this ordering, shown on hover. This is
+      // the visible answer to "where is the actual flow?".
+      const pushed = edges.find(e => e.source === sourceId && e.target === targetId);
+      if (pushed && edge.reason) {
+        pushed.data = { ...(pushed.data || {}), reason: edge.reason };
+        pushed.type = 'explained';
       }
     });
 

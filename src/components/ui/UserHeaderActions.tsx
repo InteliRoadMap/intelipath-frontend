@@ -9,9 +9,22 @@ interface UserHeaderActionsProps {
   user: User | null
   onLogout: () => void
   onSettings?: () => void
+  /**
+   * Something drawn around the avatar — a ring, a halo, a status dot.
+   *
+   * <p>A slot rather than a set of colour props: what goes here is role-specific
+   * (students get a seniority ring; nobody else has a seniority) and this
+   * component is shared by five roles. Keeping the meaning outside means adding a
+   * mentor badge later touches the mentor code, not this file.
+   *
+   * <p>Rendered inside a relatively-positioned wrapper, so the node should place
+   * itself absolutely and stay `pointer-events-none` — the whole avatar is a
+   * button that opens the menu.
+   */
+  avatarAccent?: React.ReactNode
 }
 
-export default function UserHeaderActions({ user, onLogout, onSettings }: UserHeaderActionsProps) {
+export default function UserHeaderActions({ user, onLogout, onSettings, avatarAccent }: UserHeaderActionsProps) {
   const navigate = useNavigate()
   const fullName = user?.fullName || 'User'
   const email = user?.email || 'No email'
@@ -53,12 +66,18 @@ export default function UserHeaderActions({ user, onLogout, onSettings }: UserHe
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
       >
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] text-[14px] font-bold text-white shadow-sm overflow-hidden">
-          {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            initial
-          )}
+        {/* The accent is drawn OUTSIDE the avatar, so it cannot live inside the
+            clipped box — `overflow-hidden` there is what keeps a rectangular
+            avatar image round. Hence the extra wrapper. */}
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+          {avatarAccent}
+          <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#0a0a0a] text-[14px] font-bold text-white shadow-sm">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              initial
+            )}
+          </div>
         </div>
         <CaretDown size={14} weight="bold" className="text-slate-500" />
       </button>

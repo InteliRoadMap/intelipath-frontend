@@ -7,12 +7,22 @@ export const Dialog = DialogPrimitive.Root
 export const DialogTrigger = DialogPrimitive.Trigger
 export const DialogClose = DialogPrimitive.Close
 
+/**
+ * A dialog sits above every other overlay in the app, including the onboarding
+ * shell (`z-[100]`).
+ *
+ * <p>At `z-50` it sat below it, and the onboarding result screen opens one: the
+ * evidence nudge's "Sync from GitHub" button rendered the repository picker
+ * *behind* the modal that launched it, greyed out and unclickable, with no hint
+ * that the click had worked. A dialog is always the most recent thing the
+ * student asked for, so it is always the thing on top.
+ */
 export const DialogContent = ({ className, children, ...props }: ComponentProps<typeof DialogPrimitive.Content>) => (
   <DialogPrimitive.Portal>
-    <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[2px]" />
+    <DialogPrimitive.Overlay className="fixed inset-0 z-[110] bg-slate-950/45 backdrop-blur-[2px]" />
     <DialogPrimitive.Content
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white p-6 shadow-2xl focus:outline-none",
+        "fixed left-1/2 top-1/2 z-[110] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white p-6 shadow-2xl focus:outline-none",
         className,
       )}
       {...props}
