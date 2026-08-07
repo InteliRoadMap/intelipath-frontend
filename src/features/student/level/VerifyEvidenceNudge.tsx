@@ -15,6 +15,33 @@ type Props = {
   className?: string
 }
 
+/** One persistence path shared by Dashboard/Assessment and Roadmap imports. */
+export async function persistImportedGithubProjects(imported: any[]) {
+  if (!imported?.length) return
+  const portfolio = await portfolioApi.getPortfolio()
+  const already = new Set(
+    (portfolio.projects ?? []).map((project) => (project.codeLink || '').toLowerCase()),
+  )
+  const added = imported
+    .map((project) => ({
+      id: project.projectId ?? `proj-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title: project.projectName || 'Project',
+      tech: project.techStack ? Object.values(project.techStack).flat().join(', ') : '',
+      description: project.description || '',
+      icon: 'fab fa-github',
+      codeLink: project.repoUrl || '#',
+      demoLink: project.demoUrl || '#',
+    }))
+    .filter((project) => !already.has(project.codeLink.toLowerCase()))
+
+  if (added.length) {
+    await portfolioApi.updatePortfolio({
+      ...portfolio,
+      projects: [...(portfolio.projects ?? []), ...added],
+    })
+  }
+}
+
 /**
  * Asks the student to connect GitHub, with the reason stated as their own numbers.
  *
@@ -50,30 +77,7 @@ export default function VerifyEvidenceNudge({ level, onSynced, className = '' }:
   const saveImportedProjects = async (imported: any[]) => {
     setSyncOpen(false)
     try {
-      if (imported?.length) {
-        const portfolio = await portfolioApi.getPortfolio()
-        const already = new Set(
-          (portfolio.projects ?? []).map((project) => (project.codeLink || '').toLowerCase()),
-        )
-        const added = imported
-          .map((project) => ({
-            id: project.projectId ?? `proj-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            title: project.projectName || 'Project',
-            tech: project.techStack ? Object.values(project.techStack).flat().join(', ') : '',
-            description: project.description || '',
-            icon: 'fab fa-github',
-            codeLink: project.repoUrl || '#',
-            demoLink: project.demoUrl || '#',
-          }))
-          .filter((project) => !already.has(project.codeLink.toLowerCase()))
-
-        if (added.length) {
-          await portfolioApi.updatePortfolio({
-            ...portfolio,
-            projects: [...(portfolio.projects ?? []), ...added],
-          })
-        }
-      }
+      await persistImportedGithubProjects(imported)
     } catch (err) {
       console.warn('[VerifyEvidenceNudge] Import counted, but saving it to the portfolio failed:', err)
     } finally {

@@ -14,6 +14,8 @@ import {
   Clock,
   CaretDown,
   GitFork,
+  GithubLogo,
+  ShieldCheck,
   GraduationCap,
   LinkSimple,
   ListChecks,
@@ -52,6 +54,8 @@ import FptCurriculumPanel from "@/features/student/courses/FptCurriculumPanel"
 import StageLegend from "./StageLegend"
 import ResourceViewerModal, { getYouTubeId, type ViewerResource } from "./ResourceViewerModal"
 import { getStageStyle } from "../lib/stageColors"
+import { GithubSyncModal } from "@/features/shared/portfolio/components/GithubSyncModal"
+import { persistImportedGithubProjects } from "../level/VerifyEvidenceNudge"
 
 gsap.registerPlugin(useGSAP)
 
@@ -253,6 +257,7 @@ export default function StudentRoadmapPageView() {
   // and closed by default: the roadmap is what the page is for, and three stacked
   // widgets used to cover a third of it before the student had read anything.
   const [activeTool, setActiveTool] = useState<null | 'career' | 'plan' | 'choices' | 'ai' | 'legend'>(null)
+  const [githubImportOpen, setGithubImportOpen] = useState(false)
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerSearch, setCareerSearch] = useState("")
   const [selectedCareerId, setSelectedCareerId] = useState("")
@@ -425,6 +430,12 @@ export default function StudentRoadmapPageView() {
 
   const { activeSetupStep, openSkillSelection, openAssessment, goBackToProfile, goBackToSkills, completeSetup } = useStudentSetup(user?.id)
   const { level: studentLevel, reload: reloadStudentLevel } = useStudentLevel()
+
+  const handleAssessmentComplete = async () => {
+    completeSetup()
+    await reloadStudentLevel()
+    await loadRoadmap()
+  }
   // Suggestion only: this list never sets the career, it just orders the options
   // and shows the count behind each one.
   const { affinities } = useCareerAffinity(3)
@@ -469,6 +480,18 @@ export default function StudentRoadmapPageView() {
     } finally {
       setIsRoadmapLoading(false)
     }
+  }
+
+  const handleGithubImported = async (projects: any[]) => {
+    setGithubImportOpen(false)
+    try {
+      await persistImportedGithubProjects(projects)
+    } catch (error) {
+      // Evidence and roadmap refresh already happened server-side. Portfolio
+      // persistence is useful, but it must not hide the learning-path update.
+      console.warn('[Roadmap] Import counted, but portfolio persistence failed:', error)
+    }
+    await Promise.all([reloadStudentLevel(), loadRoadmap()])
   }
 
   // Entering or leaving a standalone roadmap swaps the whole view, so it refetches
@@ -517,7 +540,7 @@ export default function StudentRoadmapPageView() {
     setIsUpdatingNode(true);
     try {
       // 1. Gửi request lên Backend (nếu lỗi sẽ văng xuống catch)
-      await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus);
+      await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus, subRoadmapId);
       
       // 2. Cập nhật lạc quan (Optimistic Update)
       setSelectedNodeData({ ...selectedNodeData, status: newStatus });
@@ -572,7 +595,7 @@ export default function StudentRoadmapPageView() {
     // Keep the drawer honest if it happens to be showing this node.
     setSelectedNodeData((prev: any) => prev?.id === nodeId ? { ...prev, status: newStatus } : prev)
     try {
-      await studentDashboardService.updateNodeProgress(nodeId, newStatus)
+      await studentDashboardService.updateNodeProgress(nodeId, newStatus, subRoadmapId)
       const freshData = await fetchCurrentView()
       if (freshData) {
         setRoadmapData(freshData)
@@ -908,6 +931,9 @@ export default function StudentRoadmapPageView() {
                       key={sub.nodeId}
                       type="button"
                       onClick={() => openSubRoadmap(sub.nodeId)}
+                      style={{
+                        background: `linear-gradient(90deg, rgba(52,211,153,.28) 0%, rgba(52,211,153,.28) ${Math.max(0, Math.min(100, sub.nodeCount ? (sub.completedCount / sub.nodeCount) * 100 : 0))}%, rgba(241,245,249,.72) ${Math.max(0, Math.min(100, sub.nodeCount ? (sub.completedCount / sub.nodeCount) * 100 : 0))}%, rgba(241,245,249,.72) 100%)`,
+                      }}
                       className="group flex shrink-0 items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-slate-100"
                     >
                       <span className="max-w-[150px] truncate text-[11.5px] font-semibold text-slate-800">
@@ -962,6 +988,16 @@ export default function StudentRoadmapPageView() {
                       <Icon size={17} weight="bold" />
                     </button>
                   ))}
+
+                  <button
+                    type="button"
+                    title="Import projects from GitHub"
+                    aria-label="Import projects from GitHub"
+                    onClick={() => setGithubImportOpen(true)}
+                    className="grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 active:bg-slate-200"
+                  >
+                    <GithubLogo size={17} weight="fill" />
+                  </button>
 
                   {currentCareerId && isFptAccount && (
                     <button
@@ -1100,9 +1136,9 @@ export default function StudentRoadmapPageView() {
             but faded to transparent on its left edge, so it read as a broken overlay rather
             than a sheet. Below `sm` it becomes opaque and owns the viewport. */}
         {selectedNodeData && !showFptPanel && (
-        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-full flex-col justify-start bg-slate-50 px-4 pt-4 sm:w-[380px] sm:max-w-[calc(100%-1rem)] sm:bg-gradient-to-l sm:from-slate-50 sm:via-slate-50/85 sm:to-transparent sm:pl-10 sm:pr-5 sm:pt-6">
+        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-full flex-col justify-start border-l border-slate-200/90 bg-slate-50/95 px-4 pt-4 shadow-[-18px_0_48px_-28px_rgba(15,23,42,0.48)] backdrop-blur-xl sm:w-[380px] sm:max-w-[calc(100%-1rem)] sm:px-5 sm:pt-6">
           <style>{`@keyframes rmPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}.roadmap-node-panel{animation:rmPanelIn .2s ease-out}`}</style>
-          <div className="pointer-events-auto flex max-h-full flex-col">
+          <div className="pointer-events-auto flex max-h-full flex-col rounded-2xl border border-white/90 bg-white/75 shadow-sm ring-1 ring-slate-200/55">
           {/* Compact header: stage dot + node name + close. */}
           <div className="flex items-start gap-2 px-4 pt-3.5 pb-2 shrink-0">
             {getStageStyle(selectedNodeData.stage) && (
@@ -1123,7 +1159,7 @@ export default function StudentRoadmapPageView() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-4">
+          <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-5">
             {/* One tight status line: state + completion date. */}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
               <span className={`rounded-full px-2 py-0.5 ${
@@ -1167,6 +1203,42 @@ export default function StudentRoadmapPageView() {
               <p className="text-[12.5px] leading-relaxed text-slate-600 line-clamp-4">
                 {selectedNodeData.description}
               </p>
+            )}
+
+            {/* Evidence is part of the node contract, not a hidden recommendation log.
+                A reviewer can now see both the proof and the exact bar it failed. */}
+            {(selectedNodeData.evidenceDecision || (selectedNodeData.evidence || []).length > 0) && (
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/90 p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={13} weight="fill" className="text-indigo-600" />
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Completion evidence</p>
+                  </div>
+                  {typeof selectedNodeData.evidenceRequiredConfidence === 'number' && (
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[9.5px] font-bold text-slate-600 ring-1 ring-slate-200">
+                      Needs {Math.round(selectedNodeData.evidenceRequiredConfidence * 100)}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-slate-700">{selectedNodeData.evidenceDecision}</p>
+                {(selectedNodeData.evidence || []).map((item: any) => (
+                  <div key={item.evidenceId} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 ring-1 ring-slate-200/80">
+                    <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold text-slate-700">
+                      {item.skillName || 'Matched evidence'} · {(item.sourceType || 'unknown').replaceAll('_', ' ')}
+                    </span>
+                    {typeof item.confidence === 'number' && (
+                      <span className={`text-[10.5px] font-black tabular-nums ${item.confidence >= (selectedNodeData.evidenceRequiredConfidence ?? 0) ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {Math.round(item.confidence * 100)}%
+                      </span>
+                    )}
+                    {item.sourceUrl && (
+                      <button type="button" onClick={() => window.open(item.sourceUrl, '_blank', 'noopener,noreferrer')} aria-label="Open evidence source">
+                        <ArrowUpRight size={12} weight="bold" className="text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* FLM overlay — which FPT subjects teach this skill, and their lesson resources.
@@ -1352,9 +1424,15 @@ export default function StudentRoadmapPageView() {
         onClose={() => setPostingsFor(null)}
       />
 
+      <GithubSyncModal
+        open={githubImportOpen}
+        onOpenChange={setGithubImportOpen}
+        onImported={handleGithubImported}
+      />
+
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "assessment" && (
-        <StudentSkillAssessmentModal isOpen onComplete={completeSetup} onBack={goBackToSkills} />
+        <StudentSkillAssessmentModal isOpen onComplete={handleAssessmentComplete} onBack={goBackToSkills} />
       )}
       {activeSetupStep === "skills" && (
         <StudentSkillSelectionModal isOpen onComplete={openAssessment} onBack={goBackToProfile} />

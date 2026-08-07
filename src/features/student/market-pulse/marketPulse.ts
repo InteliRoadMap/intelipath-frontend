@@ -15,6 +15,7 @@ export interface Recruitment {
   salary: string;
   location: string;
   experience: string;
+  seniority?: string;
   application_deadline: string; // ISO Date string
   tags: string[];
   descriptions: Record<string, any>;

@@ -215,7 +215,23 @@ export const getDynamicLayoutedElements = (
   if (!rawNodes.length) return { nodes: [], edges: [] };
 
   const byId = new Map<string, any>(rawNodes.map((n) => [n.id, n]));
-  const isMain = (id: string) => (byId.get(id)?.data?.level ?? 0) > 0;
+  const hasExplicitTopLevelMain = rawNodes.some((n) => {
+    const data = n.data;
+    return Number(data?.relativeDepth ?? data?.depth ?? -1) === 0
+      && String(data?.axis ?? 'MAIN').toUpperCase() === 'MAIN';
+  });
+  const isMain = (id: string) => {
+    const data = byId.get(id)?.data;
+    const semantic = String(data?.semanticType ?? '').toUpperCase();
+    if (semantic) {
+      // const legacySemanticGate = data?.parentTopic || semantic === 'TOPIC' || semantic === 'CHECKPOINT';
+      // View-relative position determines the spine. A promoted sub-roadmap
+      // child can be a SKILL and still be a first-class step in that roadmap.
+      return Number(data?.relativeDepth ?? data?.depth ?? -1) === 0
+        && (String(data?.axis ?? 'MAIN').toUpperCase() === 'MAIN' || !hasExplicitTopLevelMain);
+    }
+    return (data?.level ?? 0) > 0;
+  };
   const stageOf = (id: string) => String(byId.get(id)?.data?.stage || '').toUpperCase();
   const stageIndex = (id: string) => {
     const i = STAGE_ORDER.indexOf(stageOf(id) as any);
@@ -225,7 +241,7 @@ export const getDynamicLayoutedElements = (
   // The tree hierarchy comes from data.parentNodeId (set by the service): a
   // child's parent is its topic / choose-one group. Spine order comes from the
   // spine edges (solid, no dash) chaining topic → topic.
-  const childrenOf = (id: string): string[] =>
+  const explicitChildrenOf = (id: string): string[] =>
     rawNodes.filter((n) => n.data?.parentNodeId === id).map((n) => n.id);
 
   const spineNext: Record<string, string> = {};
@@ -263,6 +279,22 @@ export const getDynamicLayoutedElements = (
     .map((id, i) => ({ id, i }))
     .sort((a, b) => stageIndex(a.id) - stageIndex(b.id) || a.i - b.i)
     .map((o) => o.id);
+
+  // A sub-roadmap hides its breadcrumb root. Direct MAIN children become the
+  // local spine, while direct BRANCH children lose their outside-view parent.
+  // const legacyChildrenOf = explicitChildrenOf;
+  // Keep those root-level branches in the graph by anchoring their cluster to
+  // the local entry step; this is a view relationship, not a rewritten DB edge.
+  const rootLevelBranches = (hasExplicitTopLevelMain ? rawNodes : [])
+    .filter((n) => Number(n.data?.relativeDepth ?? n.data?.depth ?? -1) === 0)
+    .filter((n) => String(n.data?.axis ?? 'MAIN').toUpperCase() === 'BRANCH')
+    .filter((n) => !n.data?.parentNodeId)
+    .map((n) => n.id);
+  const entryTopicId = orderedTopics[0];
+  const childrenOf = (id: string): string[] => [
+    ...explicitChildrenOf(id),
+    ...(id === entryTopicId ? rootLevelBranches : []),
+  ];
 
   const placedNodes: any[] = [];
   const placedSet = new Set<string>();
@@ -516,13 +548,27 @@ export const getSerpentineLayoutedElements = (
   if (!rawNodes.length) return { nodes: [], edges: [] };
 
   const byId = new Map<string, any>(rawNodes.map((n) => [n.id, n]));
-  const isMain = (id: string) => (byId.get(id)?.data?.level ?? 0) > 0;
+  const hasExplicitTopLevelMain = rawNodes.some((n) => {
+    const data = n.data;
+    return Number(data?.relativeDepth ?? data?.depth ?? -1) === 0
+      && String(data?.axis ?? 'MAIN').toUpperCase() === 'MAIN';
+  });
+  const isMain = (id: string) => {
+    const data = byId.get(id)?.data;
+    const semantic = String(data?.semanticType ?? '').toUpperCase();
+    if (semantic) {
+      // const legacySemanticGate = data?.parentTopic || semantic === 'TOPIC' || semantic === 'CHECKPOINT';
+      return Number(data?.relativeDepth ?? data?.depth ?? -1) === 0
+        && (String(data?.axis ?? 'MAIN').toUpperCase() === 'MAIN' || !hasExplicitTopLevelMain);
+    }
+    return (data?.level ?? 0) > 0;
+  };
   const stageOf = (id: string) => String(byId.get(id)?.data?.stage || '').toUpperCase();
   const stageIndex = (id: string) => {
     const i = STAGE_ORDER.indexOf(stageOf(id) as any);
     return i < 0 ? STAGE_ORDER.length : i;
   };
-  const childrenOf = (id: string): string[] =>
+  const explicitChildrenOf = (id: string): string[] =>
     rawNodes.filter((n) => n.data?.parentNodeId === id).map((n) => n.id);
 
   const spineNext: Record<string, string> = {};
@@ -558,6 +604,18 @@ export const getSerpentineLayoutedElements = (
     .map((id, i) => ({ id, i }))
     .sort((a, b) => stageIndex(a.id) - stageIndex(b.id) || a.i - b.i)
     .map((o) => o.id);
+
+  // const legacyChildrenOf = explicitChildrenOf;
+  const rootLevelBranches = (hasExplicitTopLevelMain ? rawNodes : [])
+    .filter((n) => Number(n.data?.relativeDepth ?? n.data?.depth ?? -1) === 0)
+    .filter((n) => String(n.data?.axis ?? 'MAIN').toUpperCase() === 'BRANCH')
+    .filter((n) => !n.data?.parentNodeId)
+    .map((n) => n.id);
+  const entryTopicId = orderedTopics[0];
+  const childrenOf = (id: string): string[] => [
+    ...explicitChildrenOf(id),
+    ...(id === entryTopicId ? rootLevelBranches : []),
+  ];
 
   const reasonFor = new Map<string, string>();
   rawEdges.forEach((e) => {

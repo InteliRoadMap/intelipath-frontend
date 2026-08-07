@@ -1,5 +1,7 @@
 import { ENDPOINTS, mainClient } from "@/shared/api"
-import { mapToFrontendData } from "@/features/shared/portfolio/api/portfolioApi"
+import type { AxiosRequestConfig } from "axios"
+import type { RequestConfig } from "@/shared/api/httpClient"
+import { mapToFrontendData, type GithubImportAudit } from "@/features/shared/portfolio/api/portfolioApi"
 
 /**
  * Mentor Dashboard API.
@@ -42,6 +44,21 @@ const mentorApi = {
   getStudentPortfolio: async (slug: string) => {
     const res = await mainClient.get(`/public-portfolio/slug/${slug}`)
     return mapToFrontendData(res.data?.data ?? res.data)
+  },
+
+  // This reads the already-stored audit snapshot. The backend verifies that the
+  // student requested a portfolio review from the authenticated mentor first.
+  getStudentGithubAudit: async (studentId: string, repoUrl: string): Promise<GithubImportAudit | null> => {
+    try {
+      const response = await mainClient.get(ENDPOINTS.MENTOR.PORTFOLIO_AUDIT, {
+        params: { studentId, repoUrl },
+        skipErrorToast: true,
+      } as AxiosRequestConfig & RequestConfig)
+      return response.data?.data ?? response.data
+    } catch (error: any) {
+      if (error?.response?.status === 404) return null
+      throw error
+    }
   },
 
   getFeedbackHistory: async () =>

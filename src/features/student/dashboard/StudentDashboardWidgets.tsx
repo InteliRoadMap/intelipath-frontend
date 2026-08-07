@@ -732,12 +732,13 @@ export const SkillMatchWidget = () => {
   )
   const [gapsOnly, setGapsOnly] = useState(false)
 
-  const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
-
   const rows: SkillRow[] = (data?.requiredSkills ?? []).map(({ skill, importanceLevel, progress }) => {
+    // Mastery is authoritative backend data: it applies the same proficiency
+    // threshold as SeniorityCalculator and can also include measurable roadmap
+    // progress. A selected skill without proficiency is only a claim, not 100%.
     const pct = progress !== undefined && progress !== null
       ? progress
-      : selectedIds.has(skill.skillId) ? 100 : 0
+      : 0
     const imp = String(importanceLevel || "AVG").toUpperCase()
     return {
       id: skill.skillId,
@@ -817,4 +818,3 @@ export const SkillMatchWidget = () => {
     </div>
   )
 }
-

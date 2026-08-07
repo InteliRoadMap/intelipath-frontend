@@ -21,6 +21,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   repoUrl: string;
   projectName: string;
+  /** Mentor view supplies an authorized reader for the student's stored snapshot. */
+  loadAudit?: (repoUrl: string) => Promise<GithubImportAudit | null>;
 }
 
 const STATUS_COPY: Record<GithubImportAudit['skills'][number]['status'], { label: string; className: string }> = {
@@ -37,7 +39,7 @@ const STATUS_EXPLAINER: Record<GithubImportAudit['skills'][number]['status'], st
   NOT_RECORDED: 'the AI named a skill that is not in your career\'s skill list, so it was dropped rather than invented',
 };
 
-export const ProjectAuditModal: React.FC<Props> = ({ open, onOpenChange, repoUrl, projectName }) => {
+export const ProjectAuditModal: React.FC<Props> = ({ open, onOpenChange, repoUrl, projectName, loadAudit }) => {
   const [audit, setAudit] = useState<GithubImportAudit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // Distinguishes "no record exists" from "the request failed" — a missing audit is a
@@ -51,8 +53,8 @@ export const ProjectAuditModal: React.FC<Props> = ({ open, onOpenChange, repoUrl
     setIsLoading(true);
     setNotFound(false);
     setFailed(false);
-    portfolioApi
-      .getGithubAudit(repoUrl)
+    const getAudit = loadAudit ?? portfolioApi.getGithubAudit;
+    getAudit(repoUrl)
       .then(result => {
         if (cancelled) return;
         setAudit(result);
@@ -67,7 +69,7 @@ export const ProjectAuditModal: React.FC<Props> = ({ open, onOpenChange, repoUrl
     return () => {
       cancelled = true;
     };
-  }, [open, repoUrl]);
+  }, [open, repoUrl, loadAudit]);
 
   const readSources = audit?.sources.filter(source => source.found) ?? [];
   const emptySources = audit?.sources.filter(source => !source.found) ?? [];

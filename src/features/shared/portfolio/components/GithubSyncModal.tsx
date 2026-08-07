@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check, ChevronDown } from 'lucide-react';
+import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check, ChevronDown, Sparkles, FileCode2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
-import { portfolioApi, GithubRankedRepo } from '@/features/shared/portfolio/api/portfolioApi';
+import { portfolioApi, GithubRankedRepo, type GithubImportAudit, type RepoSourcePlan } from '@/features/shared/portfolio/api/portfolioApi';
 import { useGithubLink } from '@/features/shared/portfolio/hooks/useGithubLink';
 import { toast } from '@/lib/toast';
 
@@ -66,6 +66,9 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [sourcePlans, setSourcePlans] = useState<RepoSourcePlan[]>([]);
+  const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'mapping' | 'analyzing'>('idle');
+  const [analysisResults, setAnalysisResults] = useState<Array<{ project: any; audit: GithubImportAudit | null }>>([]);
   // needsReconnect => GitHub isn't linked / token expired; offer the OAuth reconnect button.
   const [error, setError] = useState<{ message: string; needsReconnect: boolean } | null>(null);
   // Link state and its actions are shared with the profile settings page, so the two
@@ -84,6 +87,7 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
     setSelected(new Set());
     setExpanded(new Set());
     setConfirmingDisconnect(false);
+    setAnalysisResults([]);
     try {
       // Only when the caller stayed silent. Failing here must not block the
       // picker — worst case the student is offered a repository they already
@@ -149,27 +153,46 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   const handleImport = async () => {
     if (selected.size === 0) return;
     setIsImporting(true);
+    setSourcePlans([]);
+    setAnalysisPhase('mapping');
     try {
-      const projects = await portfolioApi.importGithubBatch(Array.from(selected));
+      const repoUrls = Array.from(selected);
+      const plans = await portfolioApi.planGithubAnalysis(repoUrls);
+      setSourcePlans(plans);
+      setAnalysisPhase('analyzing');
+      const projects = await portfolioApi.importGithubBatch(repoUrls);
       if (!projects || projects.length === 0) {
         toast.error('None of the selected repositories could be analyzed. Please try again.');
         return;
       }
-      onImported(projects);
-      const skipped = selected.size - projects.length;
-      toast.success(
-        skipped > 0
-          ? `Added ${projects.length} project${projects.length > 1 ? 's' : ''} (${skipped} skipped).`
-          : `Added ${projects.length} project${projects.length > 1 ? 's' : ''} to your portfolio.`,
+      const audits = await Promise.all(
+        projects.map((project: any) => portfolioApi.getGithubAudit(project.repoUrl).catch(() => null)),
       );
-      onOpenChange(false);
+      setAnalysisResults(projects.map((project: any, index: number) => ({ project, audit: audits[index] })));
     } catch (err: any) {
       toast.error(err?.response?.status === 429
         ? 'Too many requests. Please wait a moment and try again.'
         : 'Import failed. The AI service may be busy — please try again.');
     } finally {
       setIsImporting(false);
+      setAnalysisPhase('idle');
+      setSourcePlans([]);
     }
+  };
+
+  const handleApplyResults = async () => {
+    const projects = analysisResults.map(result => result.project);
+    await Promise.resolve(onImported(projects));
+    toast.success(`Added ${projects.length} project${projects.length > 1 ? 's' : ''} to your portfolio.`);
+    onOpenChange(false);
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    // Radix can emit a dismiss while the dialog is reflowing after the long-running
+    // request. Analysis and review are protected states: only explicit actions below
+    // may leave them, so a completed result can never disappear on arrival.
+    if (!nextOpen && (isImporting || analysisResults.length > 0)) return;
+    onOpenChange(nextOpen);
   };
 
   // Unlinking leaves this modal showing a repo list the student can no longer use, so it
@@ -183,8 +206,8 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GithubIcon size={20} /> Sync from GitHub
@@ -302,7 +325,7 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
         )}
 
         {/* Repo list */}
-        {!isLoading && !error && repos.length > 0 && (
+        {!isLoading && !error && repos.length > 0 && analysisResults.length === 0 && (
           <>
             <div className="-mx-1 max-h-[52vh] space-y-2 overflow-y-auto px-1 py-1">
               {repos.map(repo => {
@@ -433,21 +456,130 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
               })}
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+            {isImporting && (
+              <div className="relative mt-4 overflow-hidden rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-cyan-50 p-3" role="status" aria-live="polite">
+                <div className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-gradient-to-r from-violet-500 via-cyan-400 to-violet-500" />
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-violet-600 text-white shadow-sm shadow-violet-200">
+                    <Sparkles size={16} className="animate-pulse" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-600">InteliPath AI · live source context</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {analysisPhase === 'mapping' ? 'Mapping the repository source tree…' : 'Reading real implementation files…'}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                        {sourcePlans.reduce((total, plan) => total + plan.sourcePaths.length, 0)} source files selected
+                      </span>
+                    </div>
+                    {sourcePlans.length > 0 && (
+                      <div className="mt-2 max-h-32 space-y-2 overflow-y-auto pr-1">
+                        {sourcePlans.map(plan => (
+                          <div key={plan.repoUrl}>
+                            <p className="mb-1 truncate text-[11px] font-semibold text-slate-600">{plan.repoFullName}</p>
+                            <div className="grid gap-1 sm:grid-cols-2">
+                              {plan.sourcePaths.map(path => (
+                                <div key={path} title={path} className="flex min-w-0 items-center gap-1.5 rounded-md bg-white/80 px-2 py-1 text-[10px] text-slate-600 ring-1 ring-slate-100">
+                                  <FileCode2 size={11} className="flex-shrink-0 text-cyan-600" />
+                                  <span className="truncate font-mono">{path}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-[10px] text-slate-400">
+                      Exact files sent as source evidence — this list is returned by the backend, not simulated.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
               <span className="text-sm text-slate-500">
                 {selected.size > 0 ? `${selected.size} selected` : 'Select repositories to import'}
               </span>
+              <div className="flex min-w-0 items-center justify-end gap-3">
               <Button
                 variant="brand"
                 disabled={selected.size === 0 || isImporting}
                 onClick={handleImport}
-                className="gap-2"
+                className="flex-shrink-0 gap-2"
               >
                 {isImporting ? <Loader2 className="animate-spin" size={16} /> : <GithubIcon size={16} />}
                 {isImporting ? 'Analyzing…' : `Import ${selected.size > 0 ? selected.size : ''}`.trim()}
               </Button>
+              </div>
             </div>
           </>
+        )}
+
+        {analysisResults.length > 0 && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Analysis complete</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">Review what InteliPath AI found before adding it.</p>
+              <p className="mt-0.5 text-xs text-slate-600">Summaries and verified skill candidates below came from the source files shown during analysis.</p>
+            </div>
+
+            <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+              {analysisResults.map(({ project, audit }) => {
+                const stack = Object.keys(project.techStack ?? {});
+                return (
+                  <article key={project.repoUrl} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-bold text-slate-900">{project.projectName}</p>
+                        <p className="truncate text-[11px] text-slate-400">{project.repoUrl}</p>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700">
+                        {audit?.sources.filter(source => source.found).length ?? 0} files read
+                      </span>
+                    </div>
+
+                    <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">AI project summary</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
+                        {project.description || 'The repository was analyzed, but the model did not return a usable summary.'}
+                      </p>
+                    </div>
+
+                    {stack.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {stack.map(name => <Badge key={name} variant="info">{name}</Badge>)}
+                      </div>
+                    )}
+
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Skill evidence</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {(audit?.skills ?? []).map(skill => (
+                          <span key={skill.skill} className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                            {skill.skill} · {Math.round(skill.confidence * 100)}%
+                          </span>
+                        ))}
+                        {(audit?.skills?.length ?? 0) === 0 && (
+                          <span className="text-xs text-amber-700">No career skill had strong enough source evidence.</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-slate-200 bg-white py-3">
+              <Button variant="outline" onClick={() => setAnalysisResults([])}>Back to repositories</Button>
+              <Button variant="brand" onClick={handleApplyResults} className="gap-2">
+                <Check size={15} /> Add {analysisResults.length} to portfolio
+              </Button>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>

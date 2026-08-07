@@ -49,6 +49,13 @@ export default function StudentDashboardView() {
     navigate(ROUTES.LOGIN)
   }
 
+
+  const handleAssessmentComplete = async () => {
+    completeSetup()
+    await reloadLevel()
+    navigate(ROUTES.DASHBOARD_STUDENT_ROADMAP)
+  }
+
   return (
     <div ref={dashboardRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
       <SharedAppBackground />
@@ -142,7 +149,7 @@ export default function StudentDashboardView() {
       {/* Modals */}
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
       {activeSetupStep === "assessment" && (
-        <StudentSkillAssessmentModal isOpen onComplete={completeSetup} onBack={goBackToSkills} />
+        <StudentSkillAssessmentModal isOpen onComplete={handleAssessmentComplete} onBack={goBackToSkills} />
       )}
       {activeSetupStep === "skills" && (
         <StudentSkillSelectionModal isOpen onComplete={openAssessment} onBack={goBackToProfile} />

@@ -22,8 +22,8 @@ const roadmapApi = {
       params: expand && expand.length ? { expand } : undefined,
       paramsSerializer: { indexes: null },
     }),
-  updateNodeProgress: (nodeId: string, status: string) =>
-    mainClient.put(ENDPOINTS.ROADMAP.UPDATE_NODE_PROGRESS, { nodeId, status }),
+  updateNodeProgress: (nodeId: string, status: string, contextRootNodeId?: string | null) =>
+    mainClient.put(ENDPOINTS.ROADMAP.UPDATE_NODE_PROGRESS, { nodeId, status, contextRootNodeId }),
   getNodeDetail: (nodeId: string) => mainClient.get(ENDPOINTS.ROADMAP.NODE_DETAIL(nodeId)),
 
   // ─── Choose-one selections ─────────────────────────────────────

@@ -72,8 +72,8 @@ export default function GradedAssessmentForm({ paper, drafts, onChange, result }
 
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
         <div
-          className="h-full rounded-full bg-slate-900 transition-[width] duration-300"
-          style={{ width: `${((index + 1) / paper.items.length) * 100}%` }}
+          className="h-full origin-left rounded-full bg-slate-900 transition-transform duration-300"
+          style={{ transform: `scaleX(${(index + 1) / paper.items.length})` }}
         />
       </div>
 

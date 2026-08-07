@@ -47,6 +47,8 @@ export interface PortfolioData {
     category: string;
     stack: string;
     description: string;
+    verified?: boolean;
+    evidenceSource?: 'GITHUB_PROJECT' | 'TRANSCRIPT' | 'MANUAL' | string | null;
   }>;
   projects: Array<{
     id: string;
@@ -57,8 +59,37 @@ export interface PortfolioData {
     demoLink: string;
     icon: string;
   }>;
+  learningJourney?: PortfolioLearningJourney | null;
+  studentLevel?: {
+    level: string;
+    source: string | null;
+    assessedAt: string | null;
+  } | null;
   slug?: string;
   studentId?: string;
+}
+
+export interface PortfolioLearningJourney {
+  targetCareerRole: string;
+  progress: number;
+  readiness: number | null;
+  readinessVerified: number | null;
+  readinessRequiredCount: number | null;
+  readinessHeldCount: number | null;
+  readinessVerifiedCount: number | null;
+  coreSkills: Array<{
+    skillName: string;
+    importance: string | null;
+    proficiency: number | null;
+    verifiedBy: string | null;
+    marketJobCount: number | null;
+  }>;
+  stages: Array<{
+    name: string;
+    totalNodes: number;
+    completedNodes: number;
+    currentNodes: number;
+  }>;
 }
 
 // Mirrors backend GithubRepoRankResponse — one ranked repo in the Sync-GitHub picker.
@@ -130,6 +161,12 @@ export interface GithubImportAudit {
   }>;
 }
 
+export interface RepoSourcePlan {
+  repoUrl: string;
+  repoFullName: string;
+  sourcePaths: string[];
+}
+
 // Mirrors backend GithubLinkResponse — shared by the link, status and unlink endpoints.
 // When `linked` is false the remaining fields are null/false.
 export interface GithubLinkState {
@@ -137,6 +174,12 @@ export interface GithubLinkState {
   githubLogin: string | null;
   scopes: string | null;
   repoAccess: boolean;
+}
+
+export interface PortfolioAboutDraft {
+  role: string;
+  description: string;
+  objective: string;
 }
 
 const defaultPortfolioData: PortfolioData = {
@@ -268,8 +311,17 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
       id: `skill-${idx}`,
       category: s.skillName || 'Skill',
       stack: s.techStack || '',
-      description: s.customDescription || ''
+      description: s.customDescription || '',
+      verified: Boolean(s.verified),
+      evidenceSource: s.evidenceSource || null
     }));
+  }
+
+  if (backendData.learningJourney) {
+    uiData.learningJourney = backendData.learningJourney;
+  }
+  if (backendData.studentLevel) {
+    uiData.studentLevel = backendData.studentLevel;
   }
 
   return uiData;
@@ -347,6 +399,11 @@ export const portfolioApi = {
     }
   },
 
+  generateAboutDraft: async (): Promise<PortfolioAboutDraft> => {
+    const response = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_ABOUT_AI_DRAFT, undefined, NO_TOAST);
+    return response.data;
+  },
+
   getPublicPortfolio: async (slug: string): Promise<PortfolioData | null> => {
     try {
       // Backend endpoint: GET /api/v1/public-portfolio/slug/{slug}
@@ -355,6 +412,18 @@ export const portfolioApi = {
     } catch (error) {
       console.error('Failed to fetch public portfolio', error);
       return null;
+    }
+  },
+
+  getPublicGithubEvidence: async (slug: string, repoUrl: string): Promise<GithubImportAudit | null> => {
+    try {
+      const response = await publicClient.get(`/public-portfolio/slug/${slug}/project-evidence`, {
+        params: { repoUrl },
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) return null;
+      throw error;
     }
   },
 
@@ -403,6 +472,15 @@ export const portfolioApi = {
   // and return the resulting (unsaved) project entries to append to the portfolio.
   importGithubBatch: async (repoUrls: string[]) => {
     const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT_BATCH, { repoUrls }, NO_TOAST);
+    return res.data;
+  },
+
+  planGithubAnalysis: async (repoUrls: string[]): Promise<RepoSourcePlan[]> => {
+    const res = await mainClient.post(
+      ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_ANALYSIS_PLAN,
+      { repoUrls },
+      NO_TOAST,
+    );
     return res.data;
   },
 

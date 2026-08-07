@@ -14,6 +14,7 @@ import TrendingSkillsChart from './TrendingSkillsChart';
 import SalaryOverviewChart from './SalaryOverviewChart';
 import { TopCompany, SkillTrend, SalaryBracket, Freshness } from './marketPulse';
 import { assessmentService } from '../assessment';
+import { studentDashboardService } from '../services';
 
 
 interface MarketPulsePageViewProps {
@@ -45,16 +46,21 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
   // known, but stays visible and switchable — a page that silently hides most of
   // the market is worse than one that shows too much.
   const [matchLevel, setMatchLevel] = useState(true);
+  const [careerId, setCareerId] = useState<string | null>(null);
+  const [careerName, setCareerName] = useState<string | null>(null);
+  const [levelResolved, setLevelResolved] = useState(false);
+  const [careerResolved, setCareerResolved] = useState(false);
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!levelResolved || !careerResolved) return;
       try {
         const results = await Promise.allSettled([
-          marketPulseApi.getTopHiringCompanies(5, windowDays),
-          marketPulseApi.getTrendingSkills(windowDays),
-          marketPulseApi.getSalaryOverview(windowDays),
-          marketPulseApi.getRecruitmentPosts(matchLevel ? level : null),
-          marketPulseApi.getFreshness(windowDays)
+          marketPulseApi.getTopHiringCompanies(5, windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getTrendingSkills(windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getSalaryOverview(windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getRecruitmentPosts(matchLevel ? level : null, careerId),
+          marketPulseApi.getFreshness(windowDays, careerId, matchLevel ? level : null)
         ]);
         
         const companiesRes = results[0].status === 'fulfilled' ? results[0].value : { data: [] };
@@ -87,7 +93,7 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
     };
     setLoading(true);
     fetchDashboardData();
-  }, [windowDays, level, matchLevel]);
+  }, [windowDays, level, matchLevel, careerId, levelResolved, careerResolved]);
 
   // Resolved once. A 204 (no assessment taken) resolves to null and everything
   // below simply behaves as it did before levels existed.
@@ -96,7 +102,21 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
     assessmentService
       .getLevel()
       .then((result) => { if (active) setLevel(result?.level ?? null); })
-      .catch(() => { if (active) setLevel(null); });
+      .catch(() => { if (active) setLevel(null); })
+      .finally(() => { if (active) setLevelResolved(true); });
+    return () => { active = false; };
+  }, []);
+
+  React.useEffect(() => {
+    let active = true;
+    studentDashboardService.getStudentProfile().then((raw: any) => {
+      if (!active) return;
+      const profile = raw?.data ?? raw;
+      const career = profile?.career;
+      setCareerId(profile?.careerId ?? profile?.career_id ?? career?.careerId ?? career?.career_id ?? null);
+      setCareerName(profile?.careerName ?? profile?.career_name ?? career?.careerName ?? career?.career_name ?? null);
+    }).catch(() => { if (active) { setCareerId(null); setCareerName(null); } })
+      .finally(() => { if (active) setCareerResolved(true); });
     return () => { active = false; };
   }, []);
 
@@ -190,7 +210,8 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
               Market Pulse
             </h1>
             <p className="max-w-xl text-[15px] leading-relaxed text-slate-500">
-              In-demand skills, salary signals and open roles — matched to your roadmap.
+              In-demand skills, salary signals and open roles
+              {careerName ? ` for ${careerName}` : ''}{level && matchLevel ? ` at ${level} level` : ''}.
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -399,7 +420,12 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
                       {post.recruitment?.title}
                     </h3>
                     <div className="truncate text-[12.5px] font-medium text-slate-500">
-                      {post.company?.name}
+                      <span>{post.company?.name}</span>
+                      {post.recruitment?.seniority && (
+                        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white">
+                          {post.recruitment.seniority}
+                        </span>
+                      )}
                     </div>
                     {/* Inline meta */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate-500">

@@ -61,6 +61,19 @@ interface CustomRoadmapNodeProps {
     step?: number | null;
     /** The bar this node sets, and where the student stands against it: 1..4. */
     requiredProficiency?: number | null;
+    semanticType?: 'TOPIC' | 'SKILL' | 'CAPABILITY' | 'CHECKPOINT' | string;
+    relativeDepth?: number | null;
+    axis?: 'MAIN' | 'SIDE' | string | null;
+    topic?: { childTotal?: number; childCompleted?: number; completionRule?: string | null } | null;
+    skill?: {
+      skillId?: string;
+      skillName?: string;
+      category?: string;
+      requiredProficiency?: number | null;
+      currentProficiency?: number | null;
+      verifiedBy?: string | null;
+      marketDemand?: { frequency?: number; reason?: string; jobCount?: number } | null;
+    } | null;
     currentProficiency?: number | null;
     /** TRANSCRIPT | GITHUB | MENTOR, or null when the student declared it. */
     proficiencyVerifiedBy?: string | null;
@@ -131,7 +144,18 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   const isAvailable = data.status === 'current';
   const isCurrent = isInProgress; // drives the active-focus visuals (glow, pulse, pressed)
   const isLocked = !isAlternativeStatus && !isCompleted && !isInProgress && !isAvailable;
-  const isMain = data.level !== undefined && data.level > 0;
+  // Legacy level fallback remains for old payloads. The current contract makes
+  // visual meaning explicit and correctly rebases roots inside sub-roadmaps.
+  // const legacyIsMain = data.level !== undefined && data.level > 0;
+  const semanticType = String(data.semanticType ?? '').toUpperCase();
+  // const legacySemanticMain = Number(data.relativeDepth ?? -1) === 0
+  //   && (semanticType === 'TOPIC' || semanticType === 'CHECKPOINT');
+  // Semantic type controls the card content. Placement on the current view's
+  // spine is determined independently by relativeDepth and axis.
+  const isMain = semanticType
+    ? Number(data.relativeDepth ?? -1) === 0
+      && (String(data.axis ?? 'MAIN').toUpperCase() === 'MAIN' || Number(data.level ?? 0) > 0)
+    : data.level !== undefined && data.level > 0;
   const isIsolated = !!data.isIsolated;
 
   // v2 flags
@@ -162,15 +186,22 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
    * data and no children keeps its bare name rather than being padded out with
    * zeroes. Ordered by what decides "should I do this next?": how far in you
    * already are, how much is behind it, then what the market says.
-   */
+  */
   const topicMeta: string[] = [];
+  const hasTopicProgress = isMain && (data.childTotal ?? 0) > 0;
+  const topicProgress = hasTopicProgress
+    ? Math.max(0, Math.min(1, (data.childCompleted ?? 0) / (data.childTotal ?? 1)))
+    : isCompleted ? 1 : 0;
+  const topicBackground = hasTopicProgress
+    ? `linear-gradient(90deg, ${stageColor} 0%, ${stageColor} ${topicProgress * 100}%, #cbd5e1 ${topicProgress * 100}%, #cbd5e1 100%)`
+    : isLocked ? '#cbd5e1' : stageColor;
   if (isMain) {
     const total = data.childTotal ?? 0;
     if (total > 0) topicMeta.push(`${data.childCompleted ?? 0}/${total} done`);
     if (data.entersRoadmap && (data.subtreeSize ?? 0) > 0) {
       topicMeta.push(`${data.subtreeSize} nodes`);
     }
-    const frequency = data.marketDemand?.frequency;
+    const frequency = data.skill?.marketDemand?.frequency ?? data.marketDemand?.frequency;
     if (typeof frequency === 'number') {
       topicMeta.push(`${Math.round(frequency * 100)}% of jobs`);
     }
@@ -310,12 +341,12 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
           />
         )}
         <div
-          style={{ backgroundColor: stageColor, ...(isJustMarked ? markStyle : {}) }}
+          style={{ background: topicBackground, ...(isJustMarked ? markStyle : {}) }}
           className={`
             relative z-10 flex items-center justify-center min-h-[64px] px-6 py-4
             rounded-full border-[3.5px] border-black ${shadowClass}
             transition-all duration-200 ease-out
-            ${isLocked ? 'opacity-45 saturate-50' : ''}
+            ${isLocked && topicProgress === 0 ? 'text-slate-500 saturate-0' : ''}
             ${isCompleted ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}
             ${isJustMarked ? 'node-mark-settle' : ''}
           `}
@@ -404,13 +435,15 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
   // choose-one options read differently from ordinary sub-skills.
   // Market demand is a ratio 0..1 on the wire; shown as a whole percent, and only
   // when the backend actually sent one.
-  const demandPct = typeof data.marketDemand?.frequency === 'number'
-    ? Math.round(data.marketDemand.frequency * 100)
+  const nodeMarketDemand = data.skill?.marketDemand ?? data.marketDemand;
+  const demandPct = typeof nodeMarketDemand?.frequency === 'number'
+    ? Math.round(nodeMarketDemand.frequency * 100)
     : null;
   // The skill name only earns a line when it differs from the node's own label —
   // "React / React" is noise.
-  const skillSubtitle = data.skillName && data.skillName.trim().toLowerCase() !== data.label.trim().toLowerCase()
-    ? data.skillName
+  const explicitSkillName = data.skill?.skillName ?? data.skillName;
+  const skillSubtitle = explicitSkillName && explicitSkillName.trim().toLowerCase() !== data.label.trim().toLowerCase()
+    ? explicitSkillName
     : null;
   const linkCount = data.links?.length ?? 0;
   const childTotal = data.childTotal ?? 0;
@@ -451,7 +484,7 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
       metaChips.push(
         <span
           key="demand"
-          title={data.marketDemand?.reason || undefined}
+          title={nodeMarketDemand?.reason || undefined}
           className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-1.5 py-[1px] text-[10px] font-semibold text-orange-700"
         >
           <TrendingUp size={9} strokeWidth={2.5} />
@@ -486,7 +519,7 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
     // is a column of dashes: it reports the absence of a claim, which is not news.
     if (data.currentProficiency != null) {
       const current = data.currentProficiency ?? 0;
-      const required = data.requiredProficiency ?? 0;
+      const required = data.skill?.requiredProficiency ?? data.requiredProficiency ?? 0;
       const met = required > 0 && current >= required;
       metaChips.push(
         <span
@@ -535,7 +568,7 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
         style={isJustMarked ? markStyle : undefined}
         className={`
         relative z-10 flex items-center justify-between min-h-[52px] pl-5 pr-4 py-3
-        bg-white overflow-hidden rounded-2xl
+        ${isLocked || isAlternativeStatus ? 'bg-slate-100' : 'bg-white'} overflow-hidden rounded-2xl
         ring-1 ring-slate-900/10
         transition-all duration-200 ease-out
         ${isJustMarked ? 'node-mark-settle ring-2 ring-emerald-400' : ''}
@@ -543,12 +576,12 @@ const CustomRoadmapNode = ({ data, selected }: CustomRoadmapNodeProps) => {
         ${isDashed ? 'border border-dashed border-slate-300' : ''}
         ${isCurrent ? 'ring-2 ring-slate-900/70' : ''}
         ${isChosen ? 'ring-2 ring-emerald-500' : ''}
-        ${isAlternativeStatus ? 'opacity-50 saturate-50' : isLocked ? 'opacity-70' : ''}
+        ${isAlternativeStatus ? 'opacity-55 saturate-0' : isLocked ? 'saturate-0' : ''}
       `}>
         {/* Stage accent: a thin bar, enough to group by colour without tinting
             the card and hurting the text. */}
         <span
-          style={{ backgroundColor: stageColor }}
+          style={{ backgroundColor: isLocked || isAlternativeStatus ? '#94a3b8' : stageColor }}
           className="absolute left-0 top-0 h-full w-[3px]"
         />
         <div className="flex-1 min-w-0">

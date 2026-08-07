@@ -58,6 +58,8 @@ const emptySkillResponse = (): SkillResponse => ({
   skills: [],
   requiredSkills: [],
   missingSkills: [],
+  careerSkillGaps: [],
+  marketSkillGaps: [],
   markedNodeIds: []
 })
 
@@ -78,6 +80,8 @@ export const normalizeSkillResponse = (data: unknown): SkillResponse => {
       ? dto.requiredSkills.filter(({ skill }) => isValidSkillItem(skill))
       : [],
     missingSkills: Array.isArray(dto.missingSkills) ? dto.missingSkills.filter(isValidSkillItem) : [],
+    careerSkillGaps: Array.isArray(dto.careerSkillGaps) ? dto.careerSkillGaps : [],
+    marketSkillGaps: Array.isArray(dto.marketSkillGaps) ? dto.marketSkillGaps : [],
     // Only the select endpoint ever fills this: the roadmap nodes the declaration
     // just marked as already covered. Empty on every read.
     markedNodeIds: Array.isArray(dto.markedNodeIds) ? dto.markedNodeIds.map(String) : []
@@ -301,13 +305,27 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
     const hasDepth = rows.some(r => r.depth !== undefined && r.depth !== null);
     const readDepth = (r: any) => parseInt(String(r.depth ?? 0)) || 0;
 
-    const actualMainNodes = hasDepth
-      // Server order already carries the per-student sequence; re-sorting would
-      // throw the personalisation away.
-      ? rows.filter(r => readDepth(r) === 0)
-      : rows
-          .filter(r => readLevel(r) > 0)
-          .sort((a, b) => readLevel(a) - readLevel(b));
+    // Legacy fallback retained for payloads from an older backend. New payloads
+    // state semantics and relative depth explicitly, so a sub-roadmap root such
+    // as Java is depth 0 even though its depth in the whole Backend tree is 1.
+    // const legacyMainNodes = hasDepth
+    //   ? rows.filter(r => readDepth(r) === 0)
+    //   : rows.filter(r => readLevel(r) > 0).sort((a, b) => readLevel(a) - readLevel(b));
+    const hasSemanticContract = rows.some(r => r.semanticType ?? r.semantic_type);
+    const semanticTopLevelRows = hasSemanticContract
+      ? rows.filter(r => Number(r.relativeDepth ?? r.relative_depth ?? 0) === 0)
+      : [];
+    const semanticMainRows = semanticTopLevelRows.filter(
+      r => String(r.axis ?? 'MAIN').toUpperCase() === 'MAIN'
+    );
+    const actualMainNodes = hasSemanticContract
+      // If the view has no authored MAIN child, its rebased top-level BRANCH
+      // children are the only possible local path. Promoting them prevents a
+      // valid branch-only subtree from becoming an empty canvas.
+      ? (semanticMainRows.length > 0 ? semanticMainRows : semanticTopLevelRows)
+      : hasDepth
+        ? rows.filter(r => readDepth(r) === 0)
+        : rows.filter(r => readLevel(r) > 0).sort((a, b) => readLevel(a) - readLevel(b));
 
     const nodes: any[] = [];
     const edges: any[] = [];
@@ -391,6 +409,12 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
           childCompleted: row.childCompleted ?? row.child_completed ?? null,
           hiddenChildren: row.hiddenChildren ?? row.hidden_children ?? null,
           depth: row.depth ?? null,
+          relativeDepth: row.relativeDepth ?? row.relative_depth ?? row.depth ?? null,
+          semanticType: row.semanticType ?? row.semantic_type ?? (isMainNode ? 'TOPIC' : 'CAPABILITY'),
+          parentTopic: Boolean(row.parentTopic ?? row.parent_topic ?? false),
+          axis: row.axis ?? 'MAIN',
+          topic: row.topic ?? null,
+          skill: row.skill ?? null,
           // What the node is worth opening for: the bar it sets, where the
           // student stands against that bar, and the rule that finishes it.
           // The bar alone was unreadable — "needs APPLIED" says nothing until
@@ -399,6 +423,9 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
           currentProficiency: row.currentProficiency ?? row.current_proficiency ?? null,
           proficiencyVerifiedBy: row.proficiencyVerifiedBy ?? row.proficiency_verified_by ?? null,
           completionRule: row.completionRule ?? row.completion_rule ?? null,
+          evidence: row.evidence ?? [],
+          evidenceRequiredConfidence: row.evidenceRequiredConfidence ?? row.evidence_required_confidence ?? null,
+          evidenceDecision: row.evidenceDecision ?? row.evidence_decision ?? null,
           subtreeSize: row.subtreeSize ?? row.subtree_size ?? null,
           entersRoadmap: row.entersRoadmap ?? row.enters_roadmap ?? false,
           // Choice semantics. The backend has sent these since v2; the graph
@@ -515,7 +542,10 @@ export const buildRoadmapGraph = (responseData: unknown): { nodes: any[], edges:
       // it to recover the topic chain. A sequence edge between two leaves is a
       // sibling ordering, not spine, so it stays dashed like it always was.
       const isSequence = String(edge.kind || '').toUpperCase() !== 'HIERARCHY';
-      const targetIsSpine = targetRow ? readLevel(targetRow) > 0 : false;
+      // const targetIsSpine = targetRow ? readLevel(targetRow) > 0 : false;
+      const targetIsSpine = targetRow
+        ? actualMainNodes.some((mainNode) => mainNode === targetRow)
+        : false;
       pushEdge(sourceId, targetId, targetRow || {}, isSequence && targetIsSpine);
       // The one sentence explaining why this ordering, shown on hover. This is
       // the visible answer to "where is the actual flow?".

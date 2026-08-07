@@ -209,6 +209,8 @@ export type SkillResponse = {
   skills: SkillItem[]
   requiredSkills: RequiredSkill[]
   missingSkills: SkillItem[]
+  careerSkillGaps: CareerSkillGap[]
+  marketSkillGaps: MarketSkillGap[]
   /**
    * Roadmap nodes the declaration just marked as already covered.
    *
@@ -216,6 +218,19 @@ export type SkillResponse = {
    * happened, not a property of the skill list. Empty everywhere else.
    */
   markedNodeIds: string[]
+}
+
+export type CareerSkillGap = {
+  skillId: string
+  skillName: string
+  category: string
+  importance: string
+}
+
+export type MarketSkillGap = {
+  skillId: string
+  skillName: string
+  demand: NonNullable<CoreSkill['marketDemand']>
 }
 
 export type SkillGap = {

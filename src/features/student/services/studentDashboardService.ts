@@ -11,7 +11,6 @@ import type {
   NodeSelection,
   Recommendation,
   RoadmapProgress,
-  SkillGap,
   SkillItem,
   SkillResponse,
   StudentRoadmap
@@ -50,6 +49,11 @@ export const studentDashboardService = {
   getStudentProfile: async () => {
     const response = await profileApi.getStudentProfile()
     return unwrapResponse(response.data)
+  },
+
+  getStudentLevel: async () => {
+    const response = await profileApi.getStudentLevel()
+    return response.data || null
   },
 
   updateUserProfile: (payload: Parameters<typeof profileApi.updateUserProfile>[0]) =>
@@ -167,8 +171,8 @@ export const studentDashboardService = {
     return normalizeStudentRoadmap(response.data)
   },
 
-  updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
-    const response = await roadmapApi.updateNodeProgress(nodeId, status);
+  updateNodeProgress: async (nodeId: string, status: string, contextRootNodeId?: string | null): Promise<any> => {
+    const response = await roadmapApi.updateNodeProgress(nodeId, status, contextRootNodeId);
     return unwrapResponse(response.data);
   },
 
@@ -177,12 +181,14 @@ export const studentDashboardService = {
     return normalizeRoadmapProgress(response.data)
   },
 
-  getSkillGaps: async (): Promise<SkillGap[]> => {
+  getSkillGaps: async (): Promise<{ career: any[]; market: any[] }> => {
     // REFACTOR: Use skillApi.getSkills() instead of deprecated dashboardApi.getSkillGaps()
     const response = await skillApi.getSkills()
     const data = unwrapResponse(response.data) as any
-    // Depending on the exact structure, it could be data.missingSkills or data.missing
-    return data.missingSkills || data.missing || []
+    return {
+      career: Array.isArray(data.careerSkillGaps) ? data.careerSkillGaps : [],
+      market: Array.isArray(data.marketSkillGaps) ? data.marketSkillGaps : []
+    }
   },
 
   getNodeDetail: async (nodeId: string): Promise<any> => {

@@ -35,6 +35,8 @@ export const ENDPOINTS = {
     PORTFOLIO_GITHUB_REPOS: "/student/portfolio/projects/github-repos",
     PORTFOLIO_GITHUB_IMPORT_BATCH:
       "/student/portfolio/projects/github-import-batch",
+    PORTFOLIO_GITHUB_ANALYSIS_PLAN:
+      "/student/portfolio/projects/github-analysis-plan",
     // What the AI read and answered for one imported repository. 404 when the
     // repository was imported before auditing existed.
     PORTFOLIO_GITHUB_AUDIT: "/student/portfolio/projects/github-audit",
@@ -45,6 +47,7 @@ export const ENDPOINTS = {
     PORTFOLIO_GITHUB_LINK_START: "/student/portfolio/github/link/start",
     PORTFOLIO_GITHUB_LINK: "/student/portfolio/github/link",
     PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
+    PORTFOLIO_ABOUT_AI_DRAFT: "/student/portfolio/about/ai-draft",
     UPLOAD_TRANSCRIPT: "/student/profile/transcript",
     ASSESSMENT_QUESTIONS: "/student/assessment/questions",
     ASSESSMENT_SUBMIT: "/student/assessment/submit",
@@ -210,7 +213,8 @@ export const ENDPOINTS = {
     PROGRESS_REPORTS: "/mentor/dashboard/progress-reports"
   },
   MENTOR: {
-    PROFILE: "/mentor/profile"
+    PROFILE: "/mentor/profile",
+    PORTFOLIO_AUDIT: "/mentor/portfolio/audit"
   },
   CHAT: {
     SESSIONS: "/chat/sessions",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Sparkles, TrendingUp } from 'lucide-react'
+import { BrainCircuit, Check, ScanSearch, Sparkles, TrendingUp } from 'lucide-react'
 import { Spinner } from '@/components/ui'
 import { assessmentService, getAssessmentErrorMessage } from '../assessment'
 import type {
@@ -21,7 +21,7 @@ import { VerifyEvidenceNudge, useStudentLevel } from '../level'
 interface StudentSkillAssessmentModalProps {
   isOpen: boolean
   /** Called when the student finishes — or chooses to skip. */
-  onComplete: () => void
+  onComplete: () => void | Promise<void>
   onBack?: () => void
 }
 
@@ -88,6 +88,24 @@ export default function StudentSkillAssessmentModal({
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [gradingStage, setGradingStage] = useState(0)
+  const isRelease = import.meta.env.PROD
+
+  useEffect(() => {
+    if (!isSaving || !paper) {
+      setGradingStage(0)
+      return
+    }
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      // The client knows the objective pass happens before the model call, but
+      // the synchronous endpoint does not stream server progress. Never pretend
+      // the roadmap update finished on a timer; the result response is that proof.
+      setGradingStage(elapsed >= 1200 ? 1 : 0)
+    }, 400)
+    return () => window.clearInterval(timer)
+  }, [isSaving, paper])
 
   // The graded paper is asked for first and the self-report set is the fallback.
   // Asking in that order means adding a career's question bank is a file on the
@@ -193,6 +211,14 @@ export default function StudentSkillAssessmentModal({
     }
   }
 
+  const handleOpenRoadmap = async () => {
+    // Finish the level request before changing pages. Each page owns its own
+    // level hook, so fire-and-forget used to race navigation and leave the old
+    // badge visible until a full browser refresh.
+    await reloadLevel()
+    await onComplete()
+  }
+
   if (!isOpen) return null
 
   // ── Intro. Taking this is a choice, so skipping is as prominent as starting.
@@ -205,7 +231,7 @@ export default function StudentSkillAssessmentModal({
         title="Want us to find your starting point?"
         subtitle="A few questions about what you have actually built. Optional — you can skip and start from the beginning instead."
         error={error}
-        onBack={onBack}
+        onBack={isRelease ? undefined : onBack}
         onNext={() => setPhase('questions')}
         nextLabel="Take the assessment"
       >
@@ -233,16 +259,16 @@ export default function StudentSkillAssessmentModal({
             </div>
           ))}
 
-          <button
+          {!isRelease && <button
             type="button"
             onClick={onComplete}
             className="w-full rounded-xl py-2.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
           >
             Skip for now — start from the beginning
-          </button>
-          <p className="text-center text-[11.5px] text-slate-400">
+          </button>}
+          {!isRelease && <p className="text-center text-[11.5px] text-slate-400">
             You can take it any time from your dashboard.
-          </p>
+          </p>}
         </div>
       </OnboardingShell>
     )
@@ -256,15 +282,16 @@ export default function StudentSkillAssessmentModal({
     const level = gradedResult.level as SeniorityLevel
     return (
       <OnboardingShell
+        wide
         step={4}
         totalSteps={4}
         stepLabels={STEP_LABELS}
         title={`You are at ${level} level`}
         subtitle={LEVEL_BLURB[level] ?? 'Your answers were graded.'}
         error={error}
-        onBack={() => setPhase('questions')}
+        onBack={isRelease ? undefined : () => setPhase('questions')}
         backLabel="Back to my answers"
-        onNext={onComplete}
+        onNext={handleOpenRoadmap}
         nextLabel="Open my roadmap"
       >
         <div className="space-y-3">
@@ -321,6 +348,7 @@ export default function StudentSkillAssessmentModal({
 
     return (
       <OnboardingShell
+        wide
         step={4}
         totalSteps={4}
         stepLabels={STEP_LABELS}
@@ -333,9 +361,9 @@ export default function StudentSkillAssessmentModal({
         // built") had nowhere to go. Returning to the questions keeps the answers
         // already typed; submitting again grades a new assessment rather than
         // editing this one, which is the honest record of both attempts.
-        onBack={() => setPhase('questions')}
+        onBack={isRelease ? undefined : () => setPhase('questions')}
         backLabel="Back to my answers"
-        onNext={onComplete}
+        onNext={handleOpenRoadmap}
         nextLabel="Open my roadmap"
       >
         <div className="space-y-3">
@@ -389,26 +417,31 @@ export default function StudentSkillAssessmentModal({
   if (paper) {
     return (
       <OnboardingShell
+        wide
         step={4}
         totalSteps={4}
         stepLabels={STEP_LABELS}
         title={careerName ? `${careerName} assessment` : 'Assessment'}
         subtitle="Answer what you can. An unanswered question scores zero rather than counting against you, so there is nothing to gain by guessing."
         error={error}
-        onBack={() => setPhase('intro')}
+        onBack={isRelease ? undefined : () => setPhase('intro')}
         onNext={handleSubmitPaper}
         nextLabel={isSaving ? 'Grading…' : 'Submit answers'}
         nextLoading={isSaving}
         nextDisabled={isSaving}
       >
-        <GradedAssessmentForm
-          paper={paper}
-          drafts={gradedDrafts}
-          onChange={(itemId, draft) =>
-            setGradedDrafts((current) => ({ ...current, [itemId]: draft }))
-          }
-          result={null}
-        />
+        {isSaving ? (
+          <AssessmentGradingProgress stage={gradingStage} />
+        ) : (
+          <GradedAssessmentForm
+            paper={paper}
+            drafts={gradedDrafts}
+            onChange={(itemId, draft) =>
+              setGradedDrafts((current) => ({ ...current, [itemId]: draft }))
+            }
+            result={null}
+          />
+        )}
       </OnboardingShell>
     )
   }
@@ -534,6 +567,77 @@ export default function StudentSkillAssessmentModal({
         </button>
       </div>
     </OnboardingShell>
+  )
+}
+
+const GRADING_STEPS = [
+  {
+    title: 'Checking objective answers',
+    detail: 'The answer key scores multiple-choice questions deterministically.',
+  },
+  {
+    title: 'AI is reading your reasoning',
+    detail: 'Written and code answers are compared criterion-by-criterion with the fixed rubric.',
+  },
+  {
+    title: 'Updating your learning path',
+    detail: 'Verified skills are mapped to roadmap capability and prerequisite gates.',
+  },
+]
+
+function AssessmentGradingProgress({ stage }: { stage: number }) {
+  return (
+    <div className="mx-auto flex min-h-[440px] w-full max-w-2xl flex-col justify-center py-8">
+      {/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */}
+      <div className="mb-7 flex items-center gap-4">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white">
+          <BrainCircuit size={23} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            Assessment engine
+          </p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Building an evidence-based result</h2>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {GRADING_STEPS.map((step, index) => {
+          const complete = index < stage
+          const active = index === stage
+          return (
+            <div
+              key={step.title}
+              className={`flex gap-3 rounded-2xl border p-4 transition-colors ${
+                active
+                  ? 'border-slate-900 bg-slate-950 text-white'
+                  : complete
+                    ? 'border-emerald-200 bg-emerald-50 text-slate-900'
+                    : 'border-slate-200 bg-white text-slate-400'
+              }`}
+            >
+              <span
+                className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                  active ? 'bg-white text-slate-950' : complete ? 'bg-emerald-600 text-white' : 'bg-slate-100'
+                }`}
+              >
+                {complete ? <Check size={14} strokeWidth={3} /> : <ScanSearch size={14} />}
+              </span>
+              <div>
+                <p className="text-[13.5px] font-bold">{step.title}</p>
+                <p className={`mt-1 text-[12.5px] leading-relaxed ${active ? 'text-slate-300' : ''}`}>
+                  {step.detail}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="mt-5 text-center text-[12px] text-slate-400" role="status" aria-live="polite">
+        Keep this window open. Your answers are saved with this attempt.
+      </p>
+    </div>
   )
 }
 

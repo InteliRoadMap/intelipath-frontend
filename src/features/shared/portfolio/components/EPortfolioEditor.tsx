@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { portfolioApi, PortfolioData } from '@/features/shared/portfolio/api/portfolioApi';
+import { portfolioApi, PortfolioData, type GithubImportAudit } from '@/features/shared/portfolio/api/portfolioApi';
 import { useDebounce } from '@/hooks/useDebounce';
 import { EditableText } from './EditableText';
 import { ThemeEditor } from './ThemeEditor';
@@ -13,12 +13,14 @@ import { useAuth } from '@/context';
 import mentorApi from '@/features/mentor/api/mentorApi';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, Input, Button } from '@/components/ui';
 import { ROUTES } from '@/shared';
-import { Send } from 'lucide-react';
+import { Check, Send, Sparkles, X } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { RequestReviewModal } from './RequestReviewModal';
 import { GithubSyncModal, GithubIcon } from './GithubSyncModal';
 import { ProjectAuditModal } from './ProjectAuditModal';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { PortfolioLearningJourney } from './PortfolioLearningJourney';
+import { PortfolioSkillsShowcase } from './PortfolioSkillsShowcase';
 import { toast } from '@/lib/toast';
 import profileApi from '@/api/profileApi';
 
@@ -35,6 +37,8 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   const isMentor = user?.role === 'MENTOR';
 
   const [data, setData] = useState<PortfolioData>(initialData);
+  const [publicEvidence, setPublicEvidence] = useState<Record<string, GithubImportAudit | null>>({});
+  const studentLevel = data.studentLevel?.level;
   const [isSaving, setIsSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(!isMentor && !isPublicView);
   const [iconPickerProjectIdx, setIconPickerProjectIdx] = useState<number | null>(null);
@@ -50,9 +54,52 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
     }
   }, [isMentor, isPublicView]);
 
+  useEffect(() => {
+    if (!isPublicView) return;
+    const githubProjects = data.projects.filter(project =>
+      project.codeLink?.toLowerCase().includes('github.com'));
+    if (githubProjects.length === 0) return;
+    let cancelled = false;
+    void Promise.all(githubProjects.map(async project => {
+      const audit = isMentor && data.studentId
+        ? await mentorApi.getStudentGithubAudit(data.studentId, project.codeLink).catch(() => null)
+        : data.slug
+          ? await portfolioApi.getPublicGithubEvidence(data.slug, project.codeLink).catch(() => null)
+          : null;
+      return [project.codeLink, audit] as const;
+    })).then(entries => {
+      if (!cancelled) setPublicEvidence(Object.fromEntries(entries));
+    });
+    return () => { cancelled = true; };
+  }, [isPublicView, isMentor, data.studentId, data.slug, data.projects]);
+
   // Mentor Feedback State
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isRequestReviewOpen, setIsRequestReviewOpen] = useState(false);
+  const [isGeneratingAbout, setIsGeneratingAbout] = useState(false);
+  const [aboutDraft, setAboutDraft] = useState<Awaited<ReturnType<typeof portfolioApi.generateAboutDraft>> | null>(null);
+
+  const generateAboutDraft = async () => {
+    setIsGeneratingAbout(true);
+    try {
+      setAboutDraft(await portfolioApi.generateAboutDraft());
+    } catch (error: any) {
+      toast.error(error?.response?.status === 429
+        ? 'AI usage limit reached. Please try again later.'
+        : 'AI could not create a draft right now.');
+    } finally {
+      setIsGeneratingAbout(false);
+    }
+  };
+
+  const applyAboutDraft = () => {
+    if (!aboutDraft) return;
+    setData(current => ({
+      ...current,
+      hero: { ...current.hero, role: aboutDraft.role, description: aboutDraft.description, objective: aboutDraft.objective },
+    }));
+    setAboutDraft(null);
+  };
 
   // GitHub Import State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -62,6 +109,11 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   /** Which project's AI audit is open, or null. Keyed by repo URL — that is the audit's key. */
   const [auditProject, setAuditProject] = useState<{ repoUrl: string; name: string } | null>(null);
+  const [linkEditor, setLinkEditor] = useState<{
+    projectIndex: number;
+    kind: 'code' | 'demo';
+    value: string;
+  } | null>(null);
   /**
    * Which project is being deleted, while the student decides what deletion means.
    *
@@ -368,6 +420,10 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           <div className="logo text-lg font-bold font-outfit text-[var(--title-color)]">
             <span className="text-[var(--primary-color)]">IN</span>TELIPATH<span className="text-[var(--primary-color)]">.</span>
           </div>
+          <div className="portfolio-identity" aria-label={`Student${studentLevel ? `, level ${studentLevel}` : ''}`}>
+            <span>Student</span>
+            {studentLevel && <strong>{studentLevel}</strong>}
+          </div>
           <ul className="hidden lg:flex items-center gap-6 text-sm font-semibold text-[var(--text-color)]">
             <li><a href="#hero" className="hover:text-[var(--primary-color)] transition-colors">Home</a></li>
             <li><a href="#education" className="hover:text-[var(--primary-color)] transition-colors">Education</a></li>
@@ -486,10 +542,35 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
               <p className="text-[var(--text-color)] text-xl leading-relaxed max-w-2xl">
                 <EditableText isEditable={isEditMode} value={data.hero.greeting} onChange={val => updateHero('greeting', val)} as="span" className="block mb-2 font-medium" />
                 My name is <EditableText isEditable={isEditMode} value={data.hero.name} onChange={val => updateHero('name', val)} as="span" className="text-[var(--primary-color)] font-bold" />.<br/>
-                I am a <EditableText isEditable={isEditMode} value={data.hero.role} onChange={val => updateHero('role', val)} as="span" className="text-[var(--primary-color)] font-semibold" /> <EditableText isEditable={isEditMode} value={data.hero.description} onChange={val => updateHero('description', val)} as="span" />
+                I am a <EditableText isEditable={isEditMode} value={data.hero.role} onChange={val => updateHero('role', val)} as="span" className="text-[var(--primary-color)] font-semibold" />.<br/>
+                <EditableText isEditable={isEditMode} value={data.hero.description} onChange={val => updateHero('description', val)} as="span" />
               </p>
               <br/>
               <p><span className="text-[var(--primary-color)] font-semibold">My objective:</span> <EditableText isEditable={isEditMode} value={data.hero.objective} onChange={val => updateHero('objective', val)} multiline /></p>
+              {isEditMode && (
+                <aside className="portfolio-profile-prompts" aria-label="AI About Me writer">
+                  <div className="portfolio-profile-prompts__heading">
+                    <div>
+                      <strong>AI About Me writer</strong>
+                      <p>Drafted from your target career, level, skills and projects. Nothing changes until you apply it.</p>
+                    </div>
+                    <button type="button" onClick={generateAboutDraft} disabled={isGeneratingAbout}>
+                      <Sparkles aria-hidden="true" /> {isGeneratingAbout ? 'Writing…' : aboutDraft ? 'Regenerate' : 'Create draft'}
+                    </button>
+                  </div>
+                  {aboutDraft && (
+                    <div className="portfolio-profile-prompts__draft">
+                      <label>Role<input value={aboutDraft.role} onChange={event => setAboutDraft({ ...aboutDraft, role: event.target.value })} /></label>
+                      <label>Description<textarea value={aboutDraft.description} onChange={event => setAboutDraft({ ...aboutDraft, description: event.target.value })} /></label>
+                      <label>Objective<textarea value={aboutDraft.objective} onChange={event => setAboutDraft({ ...aboutDraft, objective: event.target.value })} /></label>
+                      <div className="portfolio-profile-prompts__actions">
+                        <button type="button" onClick={applyAboutDraft}><Check aria-hidden="true" /> Apply draft</button>
+                        <button type="button" onClick={() => setAboutDraft(null)}><X aria-hidden="true" /> Discard</button>
+                      </div>
+                    </div>
+                  )}
+                </aside>
+              )}
             </div>
 
             <h3 className="contact-title text-4xl italic font-extrabold mb-8 font-outfit text-[var(--title-color)]">Contact</h3>
@@ -629,35 +710,21 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
         </div>
       </section>
 
-      {/* SKILLS SECTION */}
-      <section id="skills" className="reveal py-24 px-8 bg-[var(--bg-primary)]">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl text-center font-bold font-outfit mb-16 text-[var(--title-color)]">My Skills</h2>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {data.skills.map((skill, idx) => (
-              <div key={skill.id} className="relative group flex items-center bg-[var(--bg-secondary)] px-6 py-3 shadow-sm border border-[var(--border-color)] transition-all hover:shadow-md" style={{ borderRadius: 'var(--card-radius)' }}>
-                <EditableText isEditable={isEditMode} value={skill.category} onChange={val => {
-                  const newSkills = [...data.skills];
-                  newSkills[idx].category = val;
-                  setData({ ...data, skills: newSkills });
-                }} className="text-lg font-bold text-[var(--title-color)]" />
-                {isEditMode && (
-                  <button onClick={() => {
-                    setData({ ...data, skills: data.skills.filter(s => s.id !== skill.id) });
-                  }} className="ml-3 bg-red-500 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><i className="fas fa-times text-xs"></i></button>
-                )}
-              </div>
-            ))}
-            {isEditMode && (
-              <button onClick={() => {
-                setData({ ...data, skills: [...data.skills, { id: 'skill-'+Date.now(), category: 'New Skill', stack: '', description: '' }] });
-              }} className="px-6 py-3 border-2 border-dashed border-[var(--primary-color)] text-[var(--primary-color)] font-bold transition-colors hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-2" style={{ borderRadius: 'var(--card-radius)' }}>
-                <i className="fas fa-plus"></i> Add Skill
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
+      <PortfolioSkillsShowcase
+        skills={data.skills}
+        isEditable={isEditMode}
+        onRename={(id, value) => setData(current => ({
+          ...current,
+          skills: current.skills.map(skill => skill.id === id ? { ...skill, category: value } : skill),
+        }))}
+        onRemove={id => setData(current => ({ ...current, skills: current.skills.filter(skill => skill.id !== id) }))}
+        onAdd={() => setData(current => ({
+          ...current,
+          skills: [...current.skills, { id: `skill-${Date.now()}`, category: 'New Skill', stack: '', description: '', verified: false, evidenceSource: 'MANUAL' }],
+        }))}
+      />
+
+      <PortfolioLearningJourney journey={data.learningJourney} />
 
       {/* PROJECTS SECTION */}
       <section id="projects" className="reveal bg-[var(--bg-secondary)] py-24 px-8">
@@ -705,51 +772,142 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
                       setData({ ...data, projects: newProj });
                     }} multiline />
                   </p>
+                  {isPublicView && publicEvidence[proj.codeLink] && (() => {
+                    const evidence = publicEvidence[proj.codeLink]!;
+                    const credited = evidence.skills.filter(skill => skill.status === 'ACCEPTED');
+                    const shown = credited.length > 0 ? credited : evidence.skills;
+                    return (
+                      <div className="mb-5 rounded-xl border border-[var(--primary-color)]/25 bg-[var(--primary-color)]/5 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--primary-color)]">
+                            <i className="fas fa-shield-halved"></i> AI evidence snapshot
+                          </span>
+                          <span className="text-[10px] font-semibold text-[var(--text-color)]/60">
+                            {evidence.sources.length} files inspected
+                          </span>
+                        </div>
+                        {evidence.authorshipVerdict === 'CONTRIBUTED' && (
+                          <p className="mt-2 text-xs font-semibold text-[var(--text-color)]">
+                            GitHub authorship: {evidence.authorCommits}/{evidence.totalCommits} commits
+                          </p>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {shown.map(skill => (
+                            <span key={skill.skill} className="rounded-full border border-[var(--primary-color)]/25 bg-[var(--bg-primary)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-color)]">
+                              {skill.skill} · {Math.round(skill.confidence * 100)}%
+                              {skill.status === 'ACCEPTED' ? ' verified' : ' matched'}
+                            </span>
+                          ))}
+                          {shown.length === 0 && (
+                            <span className="text-xs text-[var(--text-color)]/60">No skill claim passed the evidence threshold.</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="flex gap-4 border-t border-[var(--border-color)] pt-6">
-                    {/* In edit mode always show the link so it can be set; in view mode only
-                        show it when there is a real URL (skip dead "#" links), open in new tab. */}
-                    {(isEditMode || (proj.codeLink && proj.codeLink !== '#')) && (
-                      <a href={proj.codeLink || '#'}
-                        target={!isEditMode ? '_blank' : undefined}
-                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
-                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                        if(!isEditMode) return;
-                        e.preventDefault();
-                        const link = prompt("Enter Code Link URL", proj.codeLink);
-                        if (link) {
-                          const newProj = [...data.projects];
-                          newProj[idx].codeLink = link;
-                          setData({ ...data, projects: newProj });
-                        }
-                      }}><i className="fab fa-github"></i> Code</a>
+                    {/* The old owner-mode handler intercepted Code/Live Demo and opened
+                        window.prompt instead of the destination. Navigation and editing
+                        are separate actions now: labels always navigate; pencil buttons edit. */}
+                    {proj.codeLink && proj.codeLink !== '#' && (
+                      <a
+                        href={proj.codeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2"
+                      ><i className="fab fa-github"></i> Code</a>
                     )}
-                    {(isEditMode || (proj.demoLink && proj.demoLink !== '#')) && (
-                      <a href={proj.demoLink || '#'}
-                        target={!isEditMode ? '_blank' : undefined}
-                        rel={!isEditMode ? 'noopener noreferrer' : undefined}
-                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2" onClick={(e) => {
-                        if(!isEditMode) return;
-                        e.preventDefault();
-                        const link = prompt("Enter Demo Link URL", proj.demoLink);
-                        if (link) {
+                    {isEditMode && !proj.codeLink?.toLowerCase().includes('github.com') && (
+                      <button
+                        type="button"
+                        title={proj.codeLink && proj.codeLink !== '#' ? 'Edit code link' : 'Add code link'}
+                        aria-label={proj.codeLink && proj.codeLink !== '#' ? 'Edit code link' : 'Add code link'}
+                        onClick={() => {
+                          setLinkEditor({
+                            projectIndex: idx,
+                            kind: 'code',
+                            value: proj.codeLink === '#' ? '' : (proj.codeLink || ''),
+                          });
+                        }}
+                        className="text-xs text-[var(--text-color)]/60 hover:text-[var(--primary-color)]"
+                      >
+                        <i className={proj.codeLink && proj.codeLink !== '#' ? 'fas fa-pen' : 'fas fa-plus'}></i>
+                        <span className="sr-only">{proj.codeLink && proj.codeLink !== '#' ? 'Edit code link' : 'Add code link'}</span>
+                      </button>
+                    )}
+                    {isEditMode && proj.codeLink && proj.codeLink !== '#'
+                      && !proj.codeLink.toLowerCase().includes('github.com') && (
+                      <button
+                        type="button"
+                        title="Remove code link"
+                        aria-label="Remove code link"
+                        onClick={() => {
                           const newProj = [...data.projects];
-                          newProj[idx].demoLink = link;
+                          newProj[idx].codeLink = '';
                           setData({ ...data, projects: newProj });
-                        }
-                      }}><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                        }}
+                        className="text-xs text-slate-400 hover:text-red-500"
+                      >
+                        <i className="fas fa-xmark"></i>
+                        <span className="sr-only">Remove code link</span>
+                      </button>
+                    )}
+                    {proj.demoLink && proj.demoLink !== '#' && (
+                      <a
+                        href={proj.demoLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--text-color)] hover:text-[var(--primary-color)] font-semibold flex items-center gap-2"
+                      ><i className="fas fa-external-link-alt"></i> Live Demo</a>
+                    )}
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        title={proj.demoLink && proj.demoLink !== '#' ? 'Edit demo link' : 'Add demo link'}
+                        aria-label={proj.demoLink && proj.demoLink !== '#' ? 'Edit demo link' : 'Add demo link'}
+                        onClick={() => {
+                          setLinkEditor({
+                            projectIndex: idx,
+                            kind: 'demo',
+                            value: proj.demoLink === '#' ? '' : (proj.demoLink || ''),
+                          });
+                        }}
+                        className="text-xs text-[var(--text-color)]/60 hover:text-[var(--primary-color)]"
+                      >
+                        <i className={proj.demoLink && proj.demoLink !== '#' ? 'fas fa-pen' : 'fas fa-plus'}></i>
+                        <span className="sr-only">{proj.demoLink && proj.demoLink !== '#' ? 'Edit demo link' : 'Add demo link'}</span>
+                      </button>
+                    )}
+                    {isEditMode && proj.demoLink && proj.demoLink !== '#' && (
+                      <button
+                        type="button"
+                        title="Remove demo link"
+                        aria-label="Remove demo link"
+                        onClick={() => {
+                          const newProj = [...data.projects];
+                          newProj[idx].demoLink = '';
+                          setData({ ...data, projects: newProj });
+                        }}
+                        className="text-xs text-slate-400 hover:text-red-500"
+                      >
+                        <i className="fas fa-xmark"></i>
+                        <span className="sr-only">Remove demo link</span>
+                      </button>
                     )}
                   </div>
 
-                  {/* Owner-only, and never on the public page: this explains how the
-                      student's own profile was changed, which is nobody else's business.
-                      Hidden for hand-made projects, which no AI ever read. */}
-                  {isEditMode && proj.codeLink && proj.codeLink !== '#' && (
+                  {/* GitHub evidence is useful to reviewers as well as the owner. Public
+                      viewers receive a sanitized audit: no source body, token, login or
+                      commit messages. Hand-made projects have no audit to open. */}
+                  {(isEditMode || isMentor || isPublicView)
+                    && proj.codeLink?.toLowerCase().includes('github.com') && (
                     <button
                       type="button"
                       onClick={() => setAuditProject({ repoUrl: proj.codeLink, name: proj.title })}
-                      className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--text-color)] opacity-60 hover:opacity-100"
+                      className="mt-4 flex w-fit items-center gap-2 rounded-full border border-[var(--primary-color)]/30 bg-[var(--primary-color)]/10 px-3 py-2 text-xs font-bold text-[var(--primary-color)] transition-colors hover:bg-[var(--primary-color)]/20"
                     >
-                      <i className="fas fa-wand-magic-sparkles"></i> How the AI wrote this
+                      <i className="fas fa-shield-halved"></i>
+                      {isEditMode ? 'View AI evidence' : 'Verified AI evidence'}
                     </button>
                   )}
                 </div>
@@ -856,6 +1014,11 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           onOpenChange={open => !open && setAuditProject(null)}
           repoUrl={auditProject.repoUrl}
           projectName={auditProject.name}
+          loadAudit={isMentor && data.studentId
+            ? (repoUrl) => mentorApi.getStudentGithubAudit(data.studentId!, repoUrl)
+            : isPublicView && data.slug
+              ? (repoUrl) => portfolioApi.getPublicGithubEvidence(data.slug!, repoUrl)
+              : undefined}
         />
       )}
 
@@ -871,6 +1034,60 @@ export const EPortfolioEditor: React.FC<Props> = ({ initialData, isPublicView = 
           }}
         />
       )}
+
+      <Dialog open={linkEditor !== null} onOpenChange={open => !open && setLinkEditor(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {linkEditor?.kind === 'code' ? 'Project code link' : 'Live demo link'}
+            </DialogTitle>
+            <DialogDescription>
+              {linkEditor?.kind === 'code'
+                ? 'Add the source-code URL for this manually created project.'
+                : 'Add the public URL where visitors can try this project.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            type="url"
+            placeholder="https://..."
+            value={linkEditor?.value ?? ''}
+            onChange={event => setLinkEditor(current => current ? { ...current, value: event.target.value } : current)}
+            onKeyDown={event => {
+              if (event.key !== 'Enter' || !linkEditor) return;
+              const value = linkEditor.value.trim();
+              if (!/^https?:\/\//i.test(value)) {
+                toast.error('Enter a valid http:// or https:// URL.');
+                return;
+              }
+              const newProj = [...data.projects];
+              if (linkEditor.kind === 'code') newProj[linkEditor.projectIndex].codeLink = value;
+              else newProj[linkEditor.projectIndex].demoLink = value;
+              setData({ ...data, projects: newProj });
+              setLinkEditor(null);
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setLinkEditor(null)}>Cancel</Button>
+            <Button
+              className="bg-black text-white hover:bg-slate-800"
+              onClick={() => {
+                if (!linkEditor) return;
+                const value = linkEditor.value.trim();
+                if (!/^https?:\/\//i.test(value)) {
+                  toast.error('Enter a valid http:// or https:// URL.');
+                  return;
+                }
+                const newProj = [...data.projects];
+                if (linkEditor.kind === 'code') newProj[linkEditor.projectIndex].codeLink = value;
+                else newProj[linkEditor.projectIndex].demoLink = value;
+                setData({ ...data, projects: newProj });
+                setLinkEditor(null);
+              }}
+            >Save link</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <GithubSyncModal
         open={isSyncModalOpen}
