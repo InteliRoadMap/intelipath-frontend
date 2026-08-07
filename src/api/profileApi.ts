@@ -31,8 +31,15 @@ export interface ChangePasswordPayload {
   newPassword: string
 }
 
+export interface StudentLevelResponse {
+  level: 'BEGINNER' | 'FRESHER' | 'JUNIOR' | 'MID' | 'SENIOR' | 'EXPERT' | string
+  source: 'ASSESSMENT' | 'MENTOR_OVERRIDE' | string
+  assessedAt: string | null
+}
+
 const profileApi = {
   getStudentProfile: () => mainClient.get(ENDPOINTS.STUDENT.PROFILE),
+  getStudentLevel: () => mainClient.get<StudentLevelResponse | null>(ENDPOINTS.STUDENT.LEVEL),
   getMentorProfile: () => mainClient.get(ENDPOINTS.MENTOR.PROFILE),
   getCounselorProfile: () =>
     mainClient.get(ENDPOINTS.COUNSELOR_DASHBOARD.GET_COUNSELOR_PROFILE),

@@ -415,6 +415,13 @@ export const ActionableListWidget = () => {
                       {active ? <Zap size={24} className="text-black" /> : <BookOpen size={24} className="text-black" />}
                     </div>
                     <div className="min-w-0">
+                      {/* Name the context before the node. "$eq" on its own is not a
+                          task; "MongoDB › Comparison Operators › $eq" is. */}
+                      {item.parentTitle && (
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 line-clamp-1 max-w-[280px]">
+                          {item.parentTitle}
+                        </p>
+                      )}
                       <h4 className="text-[16px] font-bold text-black line-clamp-1">{item.title}</h4>
                       <p className="text-[13px] font-medium text-slate-500 line-clamp-1 max-w-[280px]">{active ? 'In progress' : 'Up next'}</p>
                     </div>
@@ -511,15 +518,16 @@ export const MarketDemandChartWidget = () => {
     () => studentDashboardService.getMarketDemand() as Promise<MarketDemand>
   )
 
-  let rawChart = data?.chart || []
-  if (rawChart.length > 0 && rawChart.length < 7) {
-    // Pad left with 0 to ensure we have a full week visual
-    rawChart = [...Array(7 - rawChart.length).fill(0), ...rawChart]
-  }
+  // One point per calendar week, labelled by the backend with the Monday it starts
+  // on. The old code padded to 7 and named the points ['mon'..'sun'][i % 7], which
+  // printed an axis of "sat sun tue" unrelated to the dates — and the padding
+  // invented zero weeks that never happened, dragging the line down at the left.
+  const rawChart = data?.chart || []
+  const labels = data?.chartLabels || []
 
   const chartData = rawChart.map((val, i) => ({
-    name: ['mon','tue','wed','thu','fri','sat','sun'][i % 7] || `M${i}`,
-    value: val 
+    name: labels[i] ?? `W${i + 1}`,
+    value: val
   }))
 
   return (
@@ -583,8 +591,23 @@ type SkillRow = {
 const IMPORTANCE_GROUPS: { key: SkillRow["importance"]; label: string; accent: string }[] = [
   { key: "HIGH", label: "Essential", accent: "#ef4444" },
   { key: "AVG", label: "Recommended", accent: "#f59e0b" },
-  { key: "LOW", label: "Optional", accent: "#94a3b8" },
 ]
+
+/**
+ * The denominator behind the headline figures, mirroring the backend's
+ * `SeniorityCalculator.CORE_IMPORTANCE`.
+ *
+ * Backend for `vinh.student` carries 1466 required-skill rows: 29 HIGH, 152 AVG
+ * and 1285 LOW. Averaging mastery over all 1466 pinned "Career readiness" at 0%
+ * no matter what the student did, and printed "5/1466 mastered" on the same
+ * screen where the level badge said "0 of 29 required skills" — two different
+ * answers to one question. The headline follows the badge; LOW is not a career
+ * requirement in any sense a student would recognise.
+ */
+const CORE_IMPORTANCE: SkillRow["importance"][] = ["HIGH"]
+
+/** What the bar chart plots: the core skills plus the recommended tier around them. */
+const CHARTED_IMPORTANCE: SkillRow["importance"][] = ["HIGH", "AVG"]
 
 const IMPORTANCE_ACCENT: Record<SkillRow["importance"], string> = {
   HIGH: "#ef4444",
@@ -709,12 +732,13 @@ export const SkillMatchWidget = () => {
   )
   const [gapsOnly, setGapsOnly] = useState(false)
 
-  const selectedIds = new Set(data?.selectedSkills.map((skill) => skill.skillId) ?? [])
-
   const rows: SkillRow[] = (data?.requiredSkills ?? []).map(({ skill, importanceLevel, progress }) => {
+    // Mastery is authoritative backend data: it applies the same proficiency
+    // threshold as SeniorityCalculator and can also include measurable roadmap
+    // progress. A selected skill without proficiency is only a claim, not 100%.
     const pct = progress !== undefined && progress !== null
       ? progress
-      : selectedIds.has(skill.skillId) ? 100 : 0
+      : 0
     const imp = String(importanceLevel || "AVG").toUpperCase()
     return {
       id: skill.skillId,
@@ -724,17 +748,22 @@ export const SkillMatchWidget = () => {
     }
   })
 
-  const total = rows.length
-  const mastered = rows.filter((r) => r.pct >= 100).length
-  const readiness = total > 0 ? Math.round(rows.reduce((s, r) => s + r.pct, 0) / total) : 0
+  // Headline follows the level badge's denominator; the chart shows one tier wider
+  // so the student can see what sits just outside the core.
+  const coreRows = rows.filter((r) => CORE_IMPORTANCE.includes(r.importance))
+  const chartedRows = rows.filter((r) => CHARTED_IMPORTANCE.includes(r.importance))
 
-  const visible = gapsOnly ? rows.filter((r) => r.pct < 100) : rows
+  const total = coreRows.length
+  const mastered = coreRows.filter((r) => r.pct >= 100).length
+  const readiness = total > 0 ? Math.round(coreRows.reduce((s, r) => s + r.pct, 0) / total) : 0
+
+  const visible = gapsOnly ? chartedRows.filter((r) => r.pct < 100) : chartedRows
 
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[20px] font-black text-black tracking-tight">Skill Match</h2>
-        {total > 0 && (
+        {chartedRows.length > 0 && (
           <button
             onClick={() => setGapsOnly((v) => !v)}
             className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors ${
@@ -749,7 +778,7 @@ export const SkillMatchWidget = () => {
       <div className="w-full min-h-[420px] rounded-3xl bg-[#f9f9f9] p-5">
         {status === "loading" ? (
           <LoadingState rows={5} />
-        ) : status === "error" || total === 0 ? (
+        ) : status === "error" || rows.length === 0 ? (
           <EmptyState title="No skills to compare" description="Pick a target career to see your skill match." />
         ) : (
           <>
@@ -759,12 +788,13 @@ export const SkillMatchWidget = () => {
               <div className="flex-1">
                 <div className="text-[13px] font-bold text-slate-700">Career readiness</div>
                 <div className="mt-1 text-[12px] font-medium text-slate-400">
-                  Based on {total} skill{total === 1 ? "" : "s"} required for your target career.
+                  Based on the {total} essential skill{total === 1 ? "" : "s"} for your target
+                  career — the same set your level is graded on.
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-[20px] font-black text-black tabular-nums">{mastered}<span className="text-slate-400">/{total}</span></div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">mastered</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">essential mastered</div>
               </div>
             </div>
 
@@ -788,4 +818,3 @@ export const SkillMatchWidget = () => {
     </div>
   )
 }
-

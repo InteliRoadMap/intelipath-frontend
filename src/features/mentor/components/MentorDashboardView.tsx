@@ -27,13 +27,19 @@ export function MentorDashboardView() {
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'dashboard');
   const containerRef = useRef<HTMLDivElement>(null);
   const [metrics, setMetrics] = useState<any>(null);
+  // Set when the request itself failed, so a broken backend is not
+  // rendered as an empty dashboard.
+  const [loadError, setLoadError] = useState('');
   const [metricsLoading, setMetricsLoading] = useState(true);
 
   useEffect(() => {
     mentorApi.getMetrics().then(res => {
       setMetrics(res);
       setMetricsLoading(false);
-    }).catch(() => setMetricsLoading(false));
+    }).catch(() => {
+      setLoadError('Could not load your dashboard metrics. Please refresh or try again shortly.');
+      setMetricsLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -62,6 +68,11 @@ export function MentorDashboardView() {
   return (
     <div ref={containerRef} className="relative min-h-[100dvh] overflow-x-hidden bg-transparent pb-32 pt-[120px] font-sans text-slate-900 selection:bg-black/10">
       <SharedAppBackground />
+      {loadError && (
+        <div role="alert" className="mx-auto mb-6 max-w-[1680px] rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
+          {loadError}
+        </div>
+      )}
       
       <MentorHeader
         user={user}

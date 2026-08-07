@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check } from 'lucide-react';
+import { Lock, Star, GitFork, Loader2, AlertCircle, RefreshCw, Check, ChevronDown, Sparkles, FileCode2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Badge } from '@/components/ui';
-import { portfolioApi, GithubRankedRepo } from '@/features/shared/portfolio/api/portfolioApi';
+import { portfolioApi, GithubRankedRepo, type GithubImportAudit, type RepoSourcePlan } from '@/features/shared/portfolio/api/portfolioApi';
 import { useGithubLink } from '@/features/shared/portfolio/hooks/useGithubLink';
 import { toast } from '@/lib/toast';
 
@@ -19,7 +19,18 @@ export const GithubIcon = ({ size = 16, className }: { size?: number; className?
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Repo URLs already in the portfolio — shown as "Added" and not re-importable. */
+  /**
+   * Repo URLs already in the portfolio — shown as "Added" and not re-importable.
+   *
+   * <p>Omit it and the modal reads the saved portfolio itself. Pass it only when
+   * the caller holds a better answer than the server does — the portfolio editor
+   * does, because it knows about projects added in the current unsaved edit.
+   *
+   * <p>The distinction matters: this used to default to `[]`, and a caller that
+   * simply forgot got "nothing has been imported" rather than "I don't know".
+   * The evidence nudge forgot, so every repository the student had already
+   * imported was offered again as if it were new.
+   */
   existingRepoUrls?: string[];
   /** Receives the raw backend project entries (PortfolioProjectResponse[]) to append. */
   onImported: (projects: any[]) => void;
@@ -39,11 +50,25 @@ const TIER_LABEL: Record<GithubRankedRepo['qualityTier'], string> = {
 
 const normalizeUrl = (url: string) => url.replace(/\.git$/, '').replace(/\/$/, '').toLowerCase();
 
-export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingRepoUrls = [], onImported }) => {
+const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingRepoUrls, onImported }) => {
   const [repos, setRepos] = useState<GithubRankedRepo[]>([]);
+  /** Fallback for callers that did not supply `existingRepoUrls`. */
+  const [savedRepoUrls, setSavedRepoUrls] = useState<string[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** Repos whose score breakdown is open, by fullName. Independent of selection. */
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [sourcePlans, setSourcePlans] = useState<RepoSourcePlan[]>([]);
+  const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'mapping' | 'analyzing'>('idle');
+  const [analysisResults, setAnalysisResults] = useState<Array<{ project: any; audit: GithubImportAudit | null }>>([]);
   // needsReconnect => GitHub isn't linked / token expired; offer the OAuth reconnect button.
   const [error, setError] = useState<{ message: string; needsReconnect: boolean } | null>(null);
   // Link state and its actions are shared with the profile settings page, so the two
@@ -54,14 +79,31 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   // firing on a stray click next to "Import".
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
-  const existing = new Set(existingRepoUrls.map(normalizeUrl));
+  const existing = new Set((existingRepoUrls ?? savedRepoUrls).map(normalizeUrl));
 
   const loadRepos = async () => {
     setIsLoading(true);
     setError(null);
     setSelected(new Set());
+    setExpanded(new Set());
     setConfirmingDisconnect(false);
+    setAnalysisResults([]);
     try {
+      // Only when the caller stayed silent. Failing here must not block the
+      // picker — worst case the student is offered a repository they already
+      // have, which is where this started and is still better than no list.
+      if (existingRepoUrls === undefined) {
+        try {
+          const portfolio = await portfolioApi.getPortfolio();
+          setSavedRepoUrls(
+            (portfolio.projects ?? [])
+              .map((project) => project.codeLink)
+              .filter((url): url is string => Boolean(url) && url !== '#'),
+          );
+        } catch (err) {
+          console.warn('[GithubSync] Could not read the saved portfolio; "Added" marks may be missing:', err);
+        }
+      }
       const data = await portfolioApi.listGithubRepos();
       setRepos(data);
     } catch (err: any) {
@@ -90,6 +132,15 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  const toggleExpanded = (fullName: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(fullName)) next.delete(fullName);
+      else next.add(fullName);
+      return next;
+    });
+  };
+
   const toggle = (repoUrl: string) => {
     setSelected(prev => {
       const next = new Set(prev);
@@ -102,27 +153,46 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   const handleImport = async () => {
     if (selected.size === 0) return;
     setIsImporting(true);
+    setSourcePlans([]);
+    setAnalysisPhase('mapping');
     try {
-      const projects = await portfolioApi.importGithubBatch(Array.from(selected));
+      const repoUrls = Array.from(selected);
+      const plans = await portfolioApi.planGithubAnalysis(repoUrls);
+      setSourcePlans(plans);
+      setAnalysisPhase('analyzing');
+      const projects = await portfolioApi.importGithubBatch(repoUrls);
       if (!projects || projects.length === 0) {
         toast.error('None of the selected repositories could be analyzed. Please try again.');
         return;
       }
-      onImported(projects);
-      const skipped = selected.size - projects.length;
-      toast.success(
-        skipped > 0
-          ? `Added ${projects.length} project${projects.length > 1 ? 's' : ''} (${skipped} skipped).`
-          : `Added ${projects.length} project${projects.length > 1 ? 's' : ''} to your portfolio.`,
+      const audits = await Promise.all(
+        projects.map((project: any) => portfolioApi.getGithubAudit(project.repoUrl).catch(() => null)),
       );
-      onOpenChange(false);
+      setAnalysisResults(projects.map((project: any, index: number) => ({ project, audit: audits[index] })));
     } catch (err: any) {
       toast.error(err?.response?.status === 429
         ? 'Too many requests. Please wait a moment and try again.'
         : 'Import failed. The AI service may be busy — please try again.');
     } finally {
       setIsImporting(false);
+      setAnalysisPhase('idle');
+      setSourcePlans([]);
     }
+  };
+
+  const handleApplyResults = async () => {
+    const projects = analysisResults.map(result => result.project);
+    await Promise.resolve(onImported(projects));
+    toast.success(`Added ${projects.length} project${projects.length > 1 ? 's' : ''} to your portfolio.`);
+    onOpenChange(false);
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    // Radix can emit a dismiss while the dialog is reflowing after the long-running
+    // request. Analysis and review are protected states: only explicit actions below
+    // may leave them, so a completed result can never disappear on arrival.
+    if (!nextOpen && (isImporting || analysisResults.length > 0)) return;
+    onOpenChange(nextOpen);
   };
 
   // Unlinking leaves this modal showing a repo list the student can no longer use, so it
@@ -136,8 +206,8 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GithubIcon size={20} /> Sync from GitHub
@@ -255,80 +325,261 @@ export const GithubSyncModal: React.FC<Props> = ({ open, onOpenChange, existingR
         )}
 
         {/* Repo list */}
-        {!isLoading && !error && repos.length > 0 && (
+        {!isLoading && !error && repos.length > 0 && analysisResults.length === 0 && (
           <>
             <div className="-mx-1 max-h-[52vh] space-y-2 overflow-y-auto px-1 py-1">
               {repos.map(repo => {
                 const isAdded = existing.has(normalizeUrl(repo.repoUrl));
                 const isChecked = selected.has(repo.repoUrl);
+                const isOpen = expanded.has(repo.fullName);
                 return (
-                  <button
+                  <div
                     key={repo.fullName}
-                    type="button"
-                    disabled={isAdded}
-                    onClick={() => !isAdded && toggle(repo.repoUrl)}
                     className={[
-                      'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                      'rounded-lg border transition-colors',
                       isAdded
-                        ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-60'
+                        ? 'border-slate-100 bg-slate-50 opacity-70'
                         : isChecked
                           ? 'border-indigo-400 bg-indigo-50/60'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                          : 'border-slate-200 hover:border-slate-300',
                     ].join(' ')}
                   >
-                    {/* Checkbox */}
-                    <span
+                    {/* Selecting and inspecting are separate controls: reading why a repo
+                        scored what it did should never tick a box by accident. */}
+                    <button
+                      type="button"
+                      disabled={isAdded}
+                      onClick={() => !isAdded && toggle(repo.repoUrl)}
                       className={[
-                        'mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border',
-                        isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white',
+                        'flex w-full items-start gap-3 p-3 text-left',
+                        isAdded ? 'cursor-not-allowed' : 'hover:bg-slate-50/70',
                       ].join(' ')}
                     >
-                      {isChecked && <Check size={13} strokeWidth={3} />}
-                    </span>
+                      {/* Checkbox */}
+                      <span
+                        className={[
+                          'mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border',
+                          isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white',
+                        ].join(' ')}
+                      >
+                        {isChecked && <Check size={13} strokeWidth={3} />}
+                      </span>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-semibold text-slate-800">{repo.name}</span>
-                        {repo.isPrivate && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                            <Lock size={11} /> Private
-                          </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate font-semibold text-slate-800">{repo.name}</span>
+                          {repo.isPrivate && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                              <Lock size={11} /> Private
+                            </span>
+                          )}
+                          <Badge variant={TIER_VARIANT[repo.qualityTier]}>{TIER_LABEL[repo.qualityTier]}</Badge>
+                          {isAdded && <Badge variant="default">Added</Badge>}
+                        </div>
+
+                        {/* The full owner/name, because two repositories can share a name —
+                            which is exactly the case for a fork of your own team's repo. */}
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">{repo.fullName}</p>
+
+                        {repo.description ? (
+                          <p className={['mt-1 text-xs text-slate-600', isOpen ? '' : 'line-clamp-2'].join(' ')}>
+                            {repo.description}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs italic text-slate-400">
+                            No description on GitHub — the AI will have less to read.
+                          </p>
                         )}
-                        <Badge variant={TIER_VARIANT[repo.qualityTier]}>{TIER_LABEL[repo.qualityTier]}</Badge>
-                        {isAdded && <Badge variant="default">Added</Badge>}
-                      </div>
 
-                      {repo.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">{repo.description}</p>
+                        {/* The ranker's own reasons. They were computed all along and never shown. */}
+                        {repo.highlights?.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {repo.highlights.map(highlight => (
+                              <span
+                                key={highlight}
+                                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
+                              >
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                          {repo.language && <span className="font-medium text-slate-500">{repo.language}</span>}
+                          <span className="inline-flex items-center gap-1"><Star size={11} /> {repo.stars}</span>
+                          <span className="inline-flex items-center gap-1"><GitFork size={11} /> {repo.forks}</span>
+                          {repo.lastPushedAt && <span>pushed {formatDate(repo.lastPushedAt)}</span>}
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="border-t border-slate-100 px-3 py-1.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(repo.fullName)}
+                        className="flex w-full items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-700"
+                      >
+                        <ChevronDown
+                          size={13}
+                          className={['transition-transform', isOpen ? 'rotate-180' : ''].join(' ')}
+                        />
+                        Why score {repo.qualityScore}/100?
+                      </button>
+
+                      {isOpen && (
+                        <div className="mt-2 space-y-1.5 pb-1">
+                          {/* Said plainly, because a number beside a repository invites the
+                              reading that an AI judged the project. Nothing here is AI. */}
+                          <p className="text-[11px] text-slate-400">
+                            Computed from GitHub metadata only — no AI has read this repository yet.
+                          </p>
+                          {repo.scoreBreakdown?.map(line => (
+                            <div key={line.label} className="flex items-baseline gap-2 text-[11px]">
+                              <span
+                                className={[
+                                  'w-12 flex-shrink-0 text-right font-semibold tabular-nums',
+                                  line.points > 0 ? 'text-slate-700' : 'text-slate-300',
+                                ].join(' ')}
+                              >
+                                {line.points}/{line.max}
+                              </span>
+                              <span className="font-medium text-slate-600">{line.label}</span>
+                              <span className="min-w-0 flex-1 text-slate-400">{line.detail}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
-
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                        {repo.language && <span className="font-medium text-slate-500">{repo.language}</span>}
-                        <span className="inline-flex items-center gap-1"><Star size={11} /> {repo.stars}</span>
-                        <span className="inline-flex items-center gap-1"><GitFork size={11} /> {repo.forks}</span>
-                        <span className="text-slate-300">Score {repo.qualityScore}</span>
-                      </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+            {isImporting && (
+              <div className="relative mt-4 overflow-hidden rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-cyan-50 p-3" role="status" aria-live="polite">
+                <div className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-gradient-to-r from-violet-500 via-cyan-400 to-violet-500" />
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-violet-600 text-white shadow-sm shadow-violet-200">
+                    <Sparkles size={16} className="animate-pulse" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-600">InteliPath AI · live source context</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {analysisPhase === 'mapping' ? 'Mapping the repository source tree…' : 'Reading real implementation files…'}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                        {sourcePlans.reduce((total, plan) => total + plan.sourcePaths.length, 0)} source files selected
+                      </span>
+                    </div>
+                    {sourcePlans.length > 0 && (
+                      <div className="mt-2 max-h-32 space-y-2 overflow-y-auto pr-1">
+                        {sourcePlans.map(plan => (
+                          <div key={plan.repoUrl}>
+                            <p className="mb-1 truncate text-[11px] font-semibold text-slate-600">{plan.repoFullName}</p>
+                            <div className="grid gap-1 sm:grid-cols-2">
+                              {plan.sourcePaths.map(path => (
+                                <div key={path} title={path} className="flex min-w-0 items-center gap-1.5 rounded-md bg-white/80 px-2 py-1 text-[10px] text-slate-600 ring-1 ring-slate-100">
+                                  <FileCode2 size={11} className="flex-shrink-0 text-cyan-600" />
+                                  <span className="truncate font-mono">{path}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-[10px] text-slate-400">
+                      Exact files sent as source evidence — this list is returned by the backend, not simulated.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
               <span className="text-sm text-slate-500">
                 {selected.size > 0 ? `${selected.size} selected` : 'Select repositories to import'}
               </span>
+              <div className="flex min-w-0 items-center justify-end gap-3">
               <Button
                 variant="brand"
                 disabled={selected.size === 0 || isImporting}
                 onClick={handleImport}
-                className="gap-2"
+                className="flex-shrink-0 gap-2"
               >
                 {isImporting ? <Loader2 className="animate-spin" size={16} /> : <GithubIcon size={16} />}
                 {isImporting ? 'Analyzing…' : `Import ${selected.size > 0 ? selected.size : ''}`.trim()}
               </Button>
+              </div>
             </div>
           </>
+        )}
+
+        {analysisResults.length > 0 && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Analysis complete</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">Review what InteliPath AI found before adding it.</p>
+              <p className="mt-0.5 text-xs text-slate-600">Summaries and verified skill candidates below came from the source files shown during analysis.</p>
+            </div>
+
+            <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+              {analysisResults.map(({ project, audit }) => {
+                const stack = Object.keys(project.techStack ?? {});
+                return (
+                  <article key={project.repoUrl} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-bold text-slate-900">{project.projectName}</p>
+                        <p className="truncate text-[11px] text-slate-400">{project.repoUrl}</p>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700">
+                        {audit?.sources.filter(source => source.found).length ?? 0} files read
+                      </span>
+                    </div>
+
+                    <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">AI project summary</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
+                        {project.description || 'The repository was analyzed, but the model did not return a usable summary.'}
+                      </p>
+                    </div>
+
+                    {stack.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {stack.map(name => <Badge key={name} variant="info">{name}</Badge>)}
+                      </div>
+                    )}
+
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Skill evidence</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {(audit?.skills ?? []).map(skill => (
+                          <span key={skill.skill} className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                            {skill.skill} · {Math.round(skill.confidence * 100)}%
+                          </span>
+                        ))}
+                        {(audit?.skills?.length ?? 0) === 0 && (
+                          <span className="text-xs text-amber-700">No career skill had strong enough source evidence.</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-slate-200 bg-white py-3">
+              <Button variant="outline" onClick={() => setAnalysisResults([])}>Back to repositories</Button>
+              <Button variant="brand" onClick={handleApplyResults} className="gap-2">
+                <Check size={15} /> Add {analysisResults.length} to portfolio
+              </Button>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>

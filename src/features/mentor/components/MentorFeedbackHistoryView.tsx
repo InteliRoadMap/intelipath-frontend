@@ -8,6 +8,9 @@ import mentorApi from '@/features/mentor/api/mentorApi';
 export function MentorFeedbackHistoryView() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Set when the request itself failed, so a broken backend is not rendered as
+  // an empty history.
+  const [loadError, setLoadError] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,6 +20,7 @@ export function MentorFeedbackHistoryView() {
       setIsLoading(false);
     }).catch(() => {
       setData([]);
+      setLoadError('Could not load your feedback history. Please refresh or try again shortly.');
       setIsLoading(false);
     });
   }, []);
@@ -36,6 +40,11 @@ export function MentorFeedbackHistoryView() {
 
   return (
     <div ref={containerRef} className="pb-10">
+      {loadError && (
+        <div role="alert" className="mx-auto mb-6 max-w-[1680px] rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
+          {loadError}
+        </div>
+      )}
       <div className="mb-8">
         <h2 className="text-[24px] font-bold text-slate-900 tracking-tight mb-2">Feedback History</h2>
         <p className="text-[14px] text-slate-500 font-medium">Review your recent feedback to students</p>

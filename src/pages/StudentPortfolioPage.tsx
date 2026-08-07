@@ -9,6 +9,7 @@ import { EPortfolioEditor } from "@/features/shared/portfolio/components/EPortfo
 
 import { useAuth } from "@/context"
 import { studentDashboardService } from "@/features/student/services/studentDashboardService"
+import { toPortfolioLearningJourney } from "@/features/student/mappers/portfolioLearningJourneyMapper"
 
 export const StudentPortfolioPage = () => {
   const { user } = useAuth()
@@ -18,10 +19,17 @@ export const StudentPortfolioPage = () => {
   useEffect(() => {
     const fetchPortfolioData = async () => {
       try {
-        const [portfolioRes, profileRes] = await Promise.all([
+        const [portfolioRes, profileRes, roadmapRes, levelRes] = await Promise.all([
           portfolioApi.getPortfolio(),
-          studentDashboardService.getStudentProfile()
+          studentDashboardService.getStudentProfile(),
+          studentDashboardService.getStudentRoadmap(),
+          studentDashboardService.getStudentLevel()
         ])
+
+        // Owner view can use the already-authorized roadmap endpoint immediately.
+        // The portfolio response remains the source for public and mentor views.
+        portfolioRes.learningJourney ??= toPortfolioLearningJourney(roadmapRes)
+        portfolioRes.studentLevel ??= levelRes
 
         // Merge real user data if this is the first time (mock data still has 'Student Name')
         if (portfolioRes.hero.name === "Student Name" && user) {

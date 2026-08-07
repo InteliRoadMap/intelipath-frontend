@@ -35,10 +35,30 @@ export const ENDPOINTS = {
     PORTFOLIO_GITHUB_REPOS: "/student/portfolio/projects/github-repos",
     PORTFOLIO_GITHUB_IMPORT_BATCH:
       "/student/portfolio/projects/github-import-batch",
+    PORTFOLIO_GITHUB_ANALYSIS_PLAN:
+      "/student/portfolio/projects/github-analysis-plan",
+    // What the AI read and answered for one imported repository. 404 when the
+    // repository was imported before auditing existed.
+    PORTFOLIO_GITHUB_AUDIT: "/student/portfolio/projects/github-audit",
+    // The skills one repository is currently vouching for. GET asks what deleting the
+    // project would cost; DELETE gives them up. Two calls because the student is asked
+    // between them.
+    PORTFOLIO_GITHUB_EVIDENCE: "/student/portfolio/projects/github-evidence",
     PORTFOLIO_GITHUB_LINK_START: "/student/portfolio/github/link/start",
     PORTFOLIO_GITHUB_LINK: "/student/portfolio/github/link",
     PORTFOLIO_REQUEST_REVIEW: "/student/portfolio/request-review",
-    UPLOAD_TRANSCRIPT: "/student/profile/transcript"
+    PORTFOLIO_ABOUT_AI_DRAFT: "/student/portfolio/about/ai-draft",
+    UPLOAD_TRANSCRIPT: "/student/profile/transcript",
+    ASSESSMENT_QUESTIONS: "/student/assessment/questions",
+    ASSESSMENT_SUBMIT: "/student/assessment/submit",
+    ASSESSMENT_LATEST: "/student/assessment/latest",
+    // The graded paper: real questions with right answers, for the careers that
+    // have a bank. Answers 204 when there is none, and the client falls back to
+    // ASSESSMENT_QUESTIONS above.
+    ASSESSMENT_PAPER: "/student/assessment/paper",
+    ASSESSMENT_PAPER_SUBMIT: "/student/assessment/paper/submit",
+    LEVEL: "/student/level",
+    CAREER_AFFINITY: "/student/career-affinity"
   },
   CAREER_ROLES: {
     LIST: "/careers"
@@ -62,12 +82,22 @@ export const ENDPOINTS = {
     CAREER_ROADMAP: (careerId: string) => `/roadmaps/${careerId}`,
     CAREER_PROGRESS: (careerId: string) => `/roadmaps/${careerId}/progress`,
     STUDENT_ROADMAP: "/roadmaps/student",
+    // The inverse of STUDENT_ROADMAP: that one filters the career's catalog down,
+    // this one starts from the student's own evidence and derives the work.
+    STUDENT_PLAN: "/roadmaps/student/plan",
+    // One standalone roadmap under the career (a language, a framework), opened
+    // in full rather than folded into the career path.
+    STUDENT_SUB_ROADMAP: (nodeId: string) => `/roadmaps/student/sub/${nodeId}`,
     NODE_DETAIL: (nodeId: string) => `/roadmaps/nodes/${nodeId}`,
     UPDATE_NODE_PROGRESS: "/roadmaps/nodes/progress",
     COMPARE_SKILLS: "/roadmap/skills/compare",
     SELECTIONS: "/roadmaps/selections",
     CLEAR_SELECTION: (groupNodeId: string) =>
-      `/roadmaps/selections/${groupNodeId}`
+      `/roadmaps/selections/${groupNodeId}`,
+    // Read-only ranking of one group's alternatives. Opening a chooser must
+    // never store a selection as a side effect of looking at it.
+    CHOICE_OPTIONS: (groupNodeId: string) =>
+      `/roadmaps/selections/${groupNodeId}/options`
   },
 
   ROADMAP_RECOMMENDATIONS: {
@@ -96,6 +126,8 @@ export const ENDPOINTS = {
     // the browser alone is what made an opened notification come back unread on reload.
     MENTOR_FEEDBACK_READ: (id: string) =>
       `/student/dashboard/mentor-feedback/${id}/read`,
+    MENTOR_FEEDBACK_REPLY: (id: string) =>
+      `/student/dashboard/mentor-feedback/${id}/reply`,
     MENTOR_FEEDBACK_DISMISS: (id: string) =>
       `/student/dashboard/mentor-feedback/${id}`,
     RECOMMENDATIONS: "/student/dashboard/recommendations",
@@ -104,9 +136,13 @@ export const ENDPOINTS = {
     COMPARE_SKILLS: "/roadmap/skills/compare"
   },
   MARKET_TRENDS: {
+    BASE: "/market-trends",
     TOP_HIRING: "/market-trends/companies/top-hiring",
     TRENDING_SKILLS: "/market-trends/skills/trending",
-    SALARY_OVERVIEW: "/market-trends/salary-overview"
+    SALARY_OVERVIEW: "/market-trends/salary-overview",
+    FRESHNESS: "/market-trends/freshness",
+    /** The actual ads behind a skill's count, so the number can be checked at source. */
+    SKILL_POSTINGS: (skillId: string) => `/market-trends/skills/${skillId}/postings`
   },
   // UNIVERSITIES: {
   //   LIST: "/universities"
@@ -177,7 +213,8 @@ export const ENDPOINTS = {
     PROGRESS_REPORTS: "/mentor/dashboard/progress-reports"
   },
   MENTOR: {
-    PROFILE: "/mentor/profile"
+    PROFILE: "/mentor/profile",
+    PORTFOLIO_AUDIT: "/mentor/portfolio/audit"
   },
   CHAT: {
     SESSIONS: "/chat/sessions",

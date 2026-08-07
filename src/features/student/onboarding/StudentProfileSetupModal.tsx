@@ -23,7 +23,7 @@ interface FormErrors {
   general?: string
 }
 
-const STEP_LABELS = ['Personal', 'Academic', 'Skills']
+const STEP_LABELS = ['Personal', 'Academic', 'Skills', 'Assessment']
 
 export default function StudentProfileSetupModal({
   isOpen,
@@ -299,7 +299,7 @@ export default function StudentProfileSetupModal({
   return (
     <OnboardingShell
       step={step}
-      totalSteps={3}
+      totalSteps={4}
       stepLabels={STEP_LABELS}
       title={isPersonal ? 'Tell us about yourself' : 'Add your academic details'}
       subtitle={
