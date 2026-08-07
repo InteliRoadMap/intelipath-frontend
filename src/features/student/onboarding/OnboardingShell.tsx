@@ -16,6 +16,7 @@ interface OnboardingShellProps {
    * pushing the fields that feed it off the top of the screen. Below `md` the two stack.
    */
   aside?: ReactNode
+  wide?: boolean
   onBack?: () => void
   backLabel?: string
   onNext: () => void
@@ -41,6 +42,7 @@ export default function OnboardingShell({
   error,
   children,
   aside,
+  wide = false,
   onBack,
   backLabel = 'Back',
   onNext,
@@ -67,7 +69,9 @@ export default function OnboardingShell({
         className={`animate-fade-in relative z-10 m-auto flex w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl ${
           aside
             ? 'h-[min(calc(100dvh-4rem),640px)] max-w-3xl'
-            : 'max-h-[calc(100dvh-4rem)] max-w-md'
+            : wide
+              ? 'h-[min(calc(100dvh-4rem),760px)] max-w-4xl'
+              : 'max-h-[calc(100dvh-4rem)] max-w-md'
         }`}
       >
       {/* ── Header + stepper ─────────────────────────────────── */}

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { ReactFlowProvider } from '@xyflow/react'
+import { consumeJustMarkedNodes } from './justMarkedNodes'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -13,8 +14,11 @@ import {
   Clock,
   CaretDown,
   GitFork,
+  GithubLogo,
+  ShieldCheck,
   GraduationCap,
   LinkSimple,
+  ListChecks,
   LockKey,
   MapTrifold,
   MagnifyingGlass,
@@ -30,18 +34,28 @@ import { useAuth } from "@/context"
 import { isUuid, formatPrerequisite } from "@/lib/utils"
 import { ROUTES } from "@/shared"
 import { useStudentSetup } from "../hooks"
+import { useStudentLevel } from "../level"
+import { CareerAffinityHint, useCareerAffinity } from "../career-affinity"
 import { studentDashboardService } from "../services"
-import type { CareerRole, NodeSelection, StudentRoadmap } from "../types"
+import type { CareerRole, ChoiceOptions, NodeSelection, StudentRoadmap } from "../types"
 import ConfirmModal from "@/components/modals/ConfirmModal"
 import StudentProfileSetupModal from "@/features/student/onboarding/StudentProfileSetupModal"
 import StudentSkillSelectionModal from "@/features/student/onboarding/StudentSkillSelectionModal"
+import StudentSkillAssessmentModal from "@/features/student/onboarding/StudentSkillAssessmentModal"
 import StudentHeader from "@/features/student/common/StudentHeader"
 import { RoadmapVectorGraph } from "./RoadmapVectorGraph"
 import RoadmapRecommendationsPanel from "./RoadmapRecommendationsPanel"
+import LearningPlanPanel from "./LearningPlanPanel"
+import RoadmapBreadcrumb from "./RoadmapBreadcrumb"
+import MarketChoiceRail from "./MarketChoiceRail"
+import SkillPostingsPanel from "./SkillPostingsPanel"
+import { MIN_OPTIONS, buildChoiceGroups } from "./marketChoiceData"
 import FptCurriculumPanel from "@/features/student/courses/FptCurriculumPanel"
 import StageLegend from "./StageLegend"
 import ResourceViewerModal, { getYouTubeId, type ViewerResource } from "./ResourceViewerModal"
 import { getStageStyle } from "../lib/stageColors"
+import { GithubSyncModal } from "@/features/shared/portfolio/components/GithubSyncModal"
+import { persistImportedGithubProjects } from "../level/VerifyEvidenceNudge"
 
 gsap.registerPlugin(useGSAP)
 
@@ -239,7 +253,11 @@ export default function StudentRoadmapPageView() {
   const pageRef = useRef<HTMLDivElement>(null)
   // Phone only: the tools stack starts folded so the canvas is what you land on.
   // Above `sm` the CSS shows the stack regardless and this never comes into play.
-  const [controlsOpen, setControlsOpen] = useState(false)
+  // Which tool panel is open beside the canvas, or null for none. One at a time
+  // and closed by default: the roadmap is what the page is for, and three stacked
+  // widgets used to cover a third of it before the student had read anything.
+  const [activeTool, setActiveTool] = useState<null | 'career' | 'plan' | 'choices' | 'ai' | 'legend'>(null)
+  const [githubImportOpen, setGithubImportOpen] = useState(false)
   const [careers, setCareers] = useState<CareerRole[]>([])
   const [careerSearch, setCareerSearch] = useState("")
   const [selectedCareerId, setSelectedCareerId] = useState("")
@@ -252,6 +270,8 @@ export default function StudentRoadmapPageView() {
   const [themeColor, setThemeColor] = useState('cyan')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [roadmapData, setRoadmapData] = useState<StudentRoadmap | null>(null)
+  // Which standalone roadmap is open, or null for the career's own path.
+  const [subRoadmapId, setSubRoadmapId] = useState<string | null>(null)
   // Bumped after an FPT-subject save so the recommendations panel reloads.
   const [recsRefresh, setRecsRefresh] = useState(0)
   // Right-docked FPT curriculum panel (blends into background like node detail).
@@ -262,6 +282,10 @@ export default function StudentRoadmapPageView() {
   const [isFptAccount, setIsFptAccount] = useState(false)
   
   const [selectedNodeData, setSelectedNodeData] = useState<any | null>(null)
+  // Topics the student has opened. The server sends only the top two levels by
+  // default — Backend alone holds 1.678 nodes — so going deeper is an explicit
+  // request, and it is kept here so every later refetch keeps them open.
+  const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>([])
   // Resource currently open in the smart viewer modal.
   const [activeResource, setActiveResource] = useState<ViewerResource | null>(null)
   const [isUpdatingNode, setIsUpdatingNode] = useState(false);
@@ -273,13 +297,148 @@ export default function StudentRoadmapPageView() {
   const [isSelecting, setIsSelecting] = useState(false);
   // Node awaiting a "mark as completed" confirmation.
   const [pendingComplete, setPendingComplete] = useState<any | null>(null);
+
+  /**
+   * The marking wave, held only while it plays.
+   *
+   * <p>A student who declares their skills or sits the paper has the server mark
+   * every node that evidence covers. Before this the canvas simply refetched and
+   * a different set of ticks was silently already there, which reads as nothing
+   * having happened — so the work the assessment did was invisible to the person
+   * who did it. These ids drive the animation, and are cleared once it ends
+   * because "just marked" is an event, not a property of the node.
+   */
+  const [justMarked, setJustMarked] = useState<{ ids: string[]; source: 'assessment' | 'skills' } | null>(null);
+  const markWaveConsumed = useRef(false);
+
+  /**
+   * The skill whose job ads are open.
+   *
+   * <p>Every market figure the canvas shows is an aggregate, and an aggregate
+   * nobody can open is a number taken on trust — a poor basis for choosing the
+   * language your whole roadmap hangs off. This is the way in to what the count
+   * is made of.
+   */
+  const [postingsFor, setPostingsFor] = useState<{ skillId: string; skillName: string } | null>(null);
   const chosenNodeIds = useMemo(
     () => new Set(selections.map(s => s.chosenNodeId)),
     [selections]
   );
   const roadmapProgress = Math.max(0, Math.min(100, Math.round(roadmapData?.progress ?? 0)));
 
-  const { activeSetupStep, openSkillSelection, goBackToProfile, completeSetup } = useStudentSetup(user?.id)
+  // The same pure builder the canvas uses, off the payload the page already
+  // fetched — no second request, and the rail can never disagree with the graph
+  // about which options a group holds.
+  const graphNodes = useMemo(() => {
+    if (!roadmapData?._rawResponse) return [];
+    try {
+      return studentDashboardService.buildRoadmapGraph(roadmapData._rawResponse).nodes;
+    } catch {
+      // The rail is commentary; losing it must not take down the roadmap.
+      return [];
+    }
+  }, [roadmapData]);
+
+  // Ranked alternatives per CHOOSE_ONE group, for the option clusters on the
+  // canvas. Fetched off the graph the page already built, so a group that is not
+  // on screen costs no request.
+  const [choiceGroups, setChoiceGroups] = useState<ChoiceOptions[]>([])
+  // The clusters only need the option arrays; the rail needs group names too, so
+  // the full objects are kept and this is derived rather than fetched twice.
+  const choiceOptionsByGroup = useMemo(
+    () => Object.fromEntries(choiceGroups.map(g => [g.groupNodeId, g.options])),
+    [choiceGroups]
+  )
+
+  // Whether the ranked-choices panel has anything to say. Asked of both sources
+  // the rail itself reads, in the same order, so the button can never open onto
+  // an empty panel — and never hide a ranking the rail would have drawn.
+  const hasChoices = useMemo(() => {
+    if (choiceGroups.some(group => group.options.length >= MIN_OPTIONS)) return true
+    return buildChoiceGroups(graphNodes as never, selections).length > 0
+  }, [choiceGroups, graphNodes, selections])
+
+  /**
+   * The icon rail, in the order it is drawn.
+   *
+   * <p>Built here rather than inline in the JSX because one entry is
+   * conditional, and a conditional spread inside an `as const` array stops
+   * TypeScript from narrowing `id` to the union {@link activeTool} is typed
+   * against — which would let a typo compile.
+   */
+  const tools: { id: NonNullable<typeof activeTool>; icon: typeof Target; label: string }[] = [
+    { id: 'career', icon: Target, label: 'Target career & progress' },
+    // Sits directly under 'career' because it answers the question that follows
+    // picking one: not "what exists" but "what now".
+    { id: 'plan', icon: ListChecks, label: 'What to learn next' },
+    // The choices behind this particular roadmap, ranked by the job market.
+    //
+    // It used to float on its own at `left-16 top-16`, which is the exact
+    // rectangle this dock's panel opens into — so opening any tool stacked a
+    // second panel on top of the ranking instead of replacing it. A tool rail
+    // whose panels do not exclude each other is not a tool rail. Offered only
+    // when there is a fork to explain: on a roadmap with no CHOOSE_ONE group the
+    // panel would open empty, and a button that does nothing costs more trust
+    // than it saves.
+    ...(hasChoices
+      ? [{ id: 'choices' as const, icon: GitFork, label: 'Your choices, ranked by the market' }]
+      : []),
+    { id: 'ai', icon: TreeStructure, label: 'AI suggestions' },
+    { id: 'legend', icon: Palette, label: 'Stage legend' },
+  ]
+
+  useEffect(() => {
+    const groupIds = graphNodes
+      .filter((node: any) => String(node?.data?.selection || '').toUpperCase() === 'CHOOSE_ONE')
+      .map((node: any) => node.id)
+    if (groupIds.length === 0) {
+      setChoiceGroups([])
+      return
+    }
+    let cancelled = false
+    void Promise.all(
+      groupIds.map((id: string) =>
+        studentDashboardService.getChoiceOptions(id).catch(() => null)
+      )
+    ).then(results => {
+      if (cancelled) return
+      // The clusters draw without this — names, ticks and the chosen chip all
+      // come from the roadmap payload. Losing the ranking costs the recommended
+      // highlight and drops the rail back to relevance-filtered demand, which is
+      // the right order to lose things in.
+      setChoiceGroups(results.filter((r): r is ChoiceOptions => r != null))
+    })
+    return () => { cancelled = true }
+  }, [graphNodes])
+
+  // Commit straight from a chip: a click on an alternative is already an
+  // unambiguous statement of intent, and a confirm step here would be a modal
+  // between the student and a decision they can reverse by clicking another chip.
+  const selectFromCluster = async (groupNodeId: string, optionNodeId: string) => {
+    if (isSelecting) return
+    setIsSelecting(true)
+    try {
+      await studentDashboardService.selectAlternative(groupNodeId, optionNodeId)
+      await loadRoadmap()
+      setOptimisticStatusMap({})
+    } catch (error) {
+      console.error("[Student Roadmap] Failed to select alternative:", error)
+    } finally {
+      setIsSelecting(false)
+    }
+  }
+
+  const { activeSetupStep, openSkillSelection, openAssessment, goBackToProfile, goBackToSkills, completeSetup } = useStudentSetup(user?.id)
+  const { level: studentLevel, reload: reloadStudentLevel } = useStudentLevel()
+
+  const handleAssessmentComplete = async () => {
+    completeSetup()
+    await reloadStudentLevel()
+    await loadRoadmap()
+  }
+  // Suggestion only: this list never sets the career, it just orders the options
+  // and shows the count behind each one.
+  const { affinities } = useCareerAffinity(3)
 
   const loadSelections = async () => {
     try {
@@ -290,14 +449,29 @@ export default function StudentRoadmapPageView() {
     }
   }
 
+  /**
+   * Refetch whatever the student is currently looking at.
+   *
+   * <p>The single place that decides between the career roadmap and an open
+   * sub-roadmap. It used to be decided three times — here, in `expandNode` and in
+   * the background sync after a status update — and the last two always asked for
+   * the career view. So marking a node complete inside C#'s 269-node roadmap
+   * silently swapped the canvas back out to the career path, which read as the
+   * click having broken something.
+   *
+   * <p>`expanded` is passed rather than read off state so a caller that has just
+   * computed the next set does not have to wait a render for it.
+   */
+  const fetchCurrentView = (expanded: string[] = expandedNodeIds) =>
+    subRoadmapId
+      ? studentDashboardService.getStudentSubRoadmap(subRoadmapId, expanded)
+      : studentDashboardService.getStudentRoadmap(expanded)
+
   const loadRoadmap = async () => {
     setIsRoadmapLoading(true)
     setErrorMessage(undefined)
     try {
-      const [nextRoadmap] = await Promise.all([
-        studentDashboardService.getStudentRoadmap(),
-        loadSelections(),
-      ])
+      const [nextRoadmap] = await Promise.all([fetchCurrentView(), loadSelections()])
       setRoadmapData(nextRoadmap)
     } catch (error) {
       console.error("[Student Roadmap] Failed to load roadmap:", error)
@@ -307,6 +481,37 @@ export default function StudentRoadmapPageView() {
       setIsRoadmapLoading(false)
     }
   }
+
+  const handleGithubImported = async (projects: any[]) => {
+    setGithubImportOpen(false)
+    try {
+      await persistImportedGithubProjects(projects)
+    } catch (error) {
+      // Evidence and roadmap refresh already happened server-side. Portfolio
+      // persistence is useful, but it must not hide the learning-path update.
+      console.warn('[Roadmap] Import counted, but portfolio persistence failed:', error)
+    }
+    await Promise.all([reloadStudentLevel(), loadRoadmap()])
+  }
+
+  // Entering or leaving a standalone roadmap swaps the whole view, so it refetches
+  // rather than filtering what is already loaded: the career payload never held
+  // the sub-roadmap's nodes in the first place.
+  const openSubRoadmap = (nodeId: string | null) => {
+    setSelectedNodeData(null)
+    setActiveTool(null)
+    // Expansions belong to the view they were made in. Carrying them across
+    // would send the career roadmap's opened topics to the sub-roadmap endpoint,
+    // which knows none of those ids, and grow the list without bound as the
+    // student walks in and out of tracks.
+    setExpandedNodeIds([])
+    setSubRoadmapId(nodeId)
+  }
+
+  useEffect(() => {
+    if (currentCareerId) void loadRoadmap()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subRoadmapId])
 
   // Commit a choice: pick this alternative within its CHOOSE_ONE group, then
   // refetch (statuses, progress and greyed alternatives all move server-side).
@@ -335,7 +540,7 @@ export default function StudentRoadmapPageView() {
     setIsUpdatingNode(true);
     try {
       // 1. Gửi request lên Backend (nếu lỗi sẽ văng xuống catch)
-      await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus);
+      await studentDashboardService.updateNodeProgress(selectedNodeData.id, newStatus, subRoadmapId);
       
       // 2. Cập nhật lạc quan (Optimistic Update)
       setSelectedNodeData({ ...selectedNodeData, status: newStatus });
@@ -348,7 +553,7 @@ export default function StudentRoadmapPageView() {
       setOptimisticStatusMap(prev => ({ ...prev, [selectedNodeData.id]: newStatus }));
 
       // 3. Gọi ngầm Backend để lấy cây Roadmap mới nhất (đã được tính toán Auto-Unlock)
-      studentDashboardService.getStudentRoadmap().then(freshData => {
+      fetchCurrentView().then(freshData => {
         if (freshData) {
           setRoadmapData(freshData);
           // Xóa map lạc quan vì data thật đã về
@@ -368,6 +573,99 @@ export default function StudentRoadmapPageView() {
       setIsUpdatingNode(false);
     }
   };
+
+  /**
+   * Set any node's status, without it having to be the one in the drawer.
+   *
+   * <p>{@link handleUpdateNodeStatus} was the only way to move a node, and it
+   * reads `selectedNodeData` — so changing a status cost a click to open the
+   * drawer, a read of a panel the student did not ask for, and a click to close
+   * it. On a board of a hundred nodes that is the whole interaction budget spent
+   * on bookkeeping. This is the same write, addressable by id, so the card can
+   * offer it directly.
+   *
+   * <p>Optimistic, with the same rollback: the map is the canvas's source of
+   * truth until the refetch lands, and a failed write removes its own entry
+   * rather than leaving a tick the server never accepted.
+   */
+  const setNodeStatus = useCallback(async (nodeId: string, newStatus: string) => {
+    if (!nodeId) return
+    const previous = optimisticStatusMap[nodeId]
+    setOptimisticStatusMap(prev => ({ ...prev, [nodeId]: newStatus }))
+    // Keep the drawer honest if it happens to be showing this node.
+    setSelectedNodeData((prev: any) => prev?.id === nodeId ? { ...prev, status: newStatus } : prev)
+    try {
+      await studentDashboardService.updateNodeProgress(nodeId, newStatus, subRoadmapId)
+      const freshData = await fetchCurrentView()
+      if (freshData) {
+        setRoadmapData(freshData)
+        setOptimisticStatusMap({})
+      }
+    } catch (error) {
+      console.error("[Student Roadmap] Failed to set node status:", error)
+      setOptimisticStatusMap(prev => {
+        const next = { ...prev }
+        if (previous === undefined) delete next[nodeId]
+        else next[nodeId] = previous
+        return next
+      })
+    }
+  }, [optimisticStatusMap, expandedNodeIds, subRoadmapId])
+
+  /**
+   * Collect the marking wave, once the canvas has nodes to draw it on.
+   *
+   * <p>Waits for `roadmapData` deliberately: the ids arrive before the fetch
+   * that renders them, and starting the animation against an empty canvas would
+   * spend the whole wave on nothing. The handoff clears itself on read, and the
+   * ref stops a second collection, so a refetch cannot replay it.
+   */
+  useEffect(() => {
+    if (markWaveConsumed.current) return
+    if (!roadmapData?.nodes?.length) return
+    const handoff = consumeJustMarkedNodes()
+    markWaveConsumed.current = true
+    if (!handoff) return
+    // Only what is actually on screen. The visibility filter caps depth, so some
+    // marked nodes live inside topics the student has not opened; announcing
+    // twelve while drawing three would be a worse claim than announcing three.
+    const onCanvas = new Set(roadmapData.nodes.map((node: any) => String(node.id)))
+    const visible = handoff.ids.filter(id => onCanvas.has(id))
+    if (!visible.length) return
+    setJustMarked({ ids: visible, source: handoff.source })
+  }, [roadmapData])
+
+  /**
+   * Re-read the level once the setup flow closes.
+   *
+   * <p>`useStudentLevel` fetches on mount, and the assessment modal holds its
+   * own instance of the hook — so the modal's `reload()` refreshed a copy this
+   * page never sees. The header therefore kept the value it read while the
+   * student was still mid-onboarding, which is null, and stayed null until a
+   * full page reload. It looked level-specific because a session that happened
+   * to have been reloaded showed its level fine.
+   *
+   * <p>Keyed on the step leaving a modal state rather than on `completeSetup`,
+   * so backing out of the flow refreshes too — the level can have moved by then
+   * either way.
+   */
+  const previousSetupStep = useRef(activeSetupStep)
+  useEffect(() => {
+    const wasInSetup = previousSetupStep.current != null
+    previousSetupStep.current = activeSetupStep
+    if (wasInSetup && activeSetupStep == null) {
+      reloadStudentLevel()
+    }
+  }, [activeSetupStep, reloadStudentLevel])
+
+  // The wave is an event, so it ends. Long enough for the last tick to land and
+  // be read, short enough that it is gone before the student wonders whether the
+  // emerald ring is a permanent state they now have to understand.
+  useEffect(() => {
+    if (!justMarked) return
+    const timer = setTimeout(() => setJustMarked(null), 6000)
+    return () => clearTimeout(timer)
+  }, [justMarked])
 
   useEffect(() => {
     let active = true
@@ -454,7 +752,46 @@ export default function StudentRoadmapPageView() {
     setSelectedNodeData(null)
   }
 
+  /**
+   * Pull in everything beneath a topic.
+   *
+   * Optimistic on purpose: the id goes into state first so the "+13" badge
+   * disappears immediately, and the refetch fills the nodes in behind it.
+   */
+  const expandNode = async (nodeId: string) => {
+    if (!nodeId || expandedNodeIds.includes(nodeId)) return
+    const next = [...expandedNodeIds, nodeId]
+    setExpandedNodeIds(next)
+    try {
+      const fresh = await fetchCurrentView(next)
+      if (fresh) setRoadmapData(fresh)
+    } catch (error) {
+      console.error("[Student Roadmap] Failed to expand node:", error)
+      // Roll back so the badge comes back rather than silently doing nothing.
+      setExpandedNodeIds(expandedNodeIds)
+    }
+  }
+
   const handleNodeClick = async (nodeData: any) => {
+    // A decided choice group is a doorway to the track it names. Opening the
+    // group itself would land the student back on the nine alternatives they
+    // just chose between — the chosen one is what "open Pick a Language" means
+    // once the choice exists.
+    if (nodeData?.choiceChosenId) {
+      openSubRoadmap(nodeData.choiceChosenId)
+      return
+    }
+    // A node carrying a curriculum inside it — Java's 71, Python's 122 — opens as
+    // its own roadmap. Expanding it in place is what buried the rest of the path
+    // under a list nobody could scan.
+    if (nodeData?.entersRoadmap) {
+      openSubRoadmap(nodeData.id)
+      return
+    }
+    // A topic with held-back depth: opening it is what the click means.
+    if ((nodeData?.hiddenChildren ?? 0) > 0) {
+      void expandNode(nodeData.id)
+    }
     setShowFptPanel(false)
     setSelectedNodeData(nodeData)
     if (nodeData && (!nodeData.links || nodeData.links.length === 0)) {
@@ -526,7 +863,28 @@ export default function StudentRoadmapPageView() {
         user={user}
         onLogout={handleLogout}
         onOpenAiMentor={() => navigate(ROUTES.AI_MENTOR)}
+        level={studentLevel}
+        careerName={currentCareerName}
+        onTakeAssessment={openAssessment}
       />
+
+      {/* The wave needs a sentence, not just motion. A tick that appears on its
+          own is something the student has to explain to themselves — and the
+          explanation they reach for is usually "did I click that?". This says who
+          did it and on what grounds, and it leaves when the wave does. */}
+      {justMarked && (
+        <div className="pointer-events-none fixed left-1/2 top-[88px] z-40 -translate-x-1/2">
+          <div className="node-mark-stamp flex items-center gap-2.5 rounded-full bg-slate-900 py-2 pl-3 pr-4 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.6)]">
+            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-500">
+              <Check size={12} weight="bold" className="text-white" />
+            </span>
+            <p className="text-[12.5px] font-semibold text-white">
+              {justMarked.ids.length} {justMarked.ids.length === 1 ? 'node' : 'nodes'} marked from{' '}
+              {justMarked.source === 'assessment' ? 'your assessment' : 'the skills you declared'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Canvas Area */}
       <main className="relative z-10 mt-[72px] flex w-full flex-1 overflow-hidden p-2 sm:p-4">
@@ -539,95 +897,228 @@ export default function StudentRoadmapPageView() {
                 <RoadmapVectorGraph
                   onNodeClick={handleNodeClick}
                   themeColor={themeColor}
+                  justMarkedNodeIds={justMarked?.ids}
+                  onSetNodeStatus={setNodeStatus}
                   roadmapData={roadmapData}
                   optimisticStatusMap={optimisticStatusMap}
                   chosenNodeIds={chosenNodeIds}
+                  choiceOptionsByGroup={choiceOptionsByGroup}
+                  onSelectOption={selectFromCluster}
                 />
               </ReactFlowProvider>
             </div>
 
-            {/* Top-left floating stack: target career, AI suggestions, legend */}
-            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
-              <div className="absolute top-2 left-2 z-20 flex max-h-[calc(100%-1rem)] flex-col items-start gap-2.5 overflow-y-auto sm:top-4 sm:left-4 sm:max-h-[calc(100%-2rem)]">
-                {/* Target Career control (moved here from the old right column). */}
-                <div className="w-[260px] max-w-[calc(100vw-1rem)] rounded-xl bg-white/70 px-3.5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md sm:max-w-[calc(100vw-2rem)]">
-                  <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                    <Target size={12} weight="bold" />
-                    Target Career
-                  </p>
-                  <div className="flex items-center justify-between gap-2">
-                    <h1 className="text-[15px] font-bold tracking-tight text-slate-900 truncate flex-1">
-                      {roadmapData?.targetCareerRole || currentCareerName || "Target Career"}
-                    </h1>
+            {/* Where you are, and the way back. Sits above the tool rail because a
+                student who has drilled two levels down needs the exit before they
+                need any of the tools. */}
+            {roadmapData?.breadcrumb && roadmapData.breadcrumb.length > 1 && (
+              <div className="pointer-events-none absolute left-2 top-2 z-30 sm:left-4 sm:top-4">
+                <RoadmapBreadcrumb trail={roadmapData.breadcrumb} onNavigate={openSubRoadmap} />
+              </div>
+            )}
+
+            {/* Standalone roadmaps under this career: languages, frameworks, DB
+                tracks. Offered as somewhere to go, at the foot of the canvas, so
+                they never compete with the career path itself for attention. */}
+            {!subRoadmapId && roadmapData?.subRoadmaps && roadmapData.subRoadmaps.length > 0 && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-3">
+                <div className="pointer-events-auto flex max-w-[min(760px,calc(100vw-1.5rem))] items-center gap-1.5 overflow-x-auto rounded-2xl bg-white/85 p-1.5 shadow-[0_6px_28px_rgb(15,23,42,0.1)] ring-1 ring-white/60 backdrop-blur-md">
+                  <span className="shrink-0 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                    Go deeper
+                  </span>
+                  {roadmapData.subRoadmaps.map((sub) => (
                     <button
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100/70 hover:bg-slate-100 text-[10px] font-semibold text-slate-600 transition-all active:scale-[0.98] group shrink-0"
-                      onClick={() => {
-                        setSelectedCareerId(currentCareerId || "")
-                        setCareerSearch("")
-                        setIsChangingCareer(true)
+                      key={sub.nodeId}
+                      type="button"
+                      onClick={() => openSubRoadmap(sub.nodeId)}
+                      style={{
+                        background: `linear-gradient(90deg, rgba(52,211,153,.28) 0%, rgba(52,211,153,.28) ${Math.max(0, Math.min(100, sub.nodeCount ? (sub.completedCount / sub.nodeCount) * 100 : 0))}%, rgba(241,245,249,.72) ${Math.max(0, Math.min(100, sub.nodeCount ? (sub.completedCount / sub.nodeCount) * 100 : 0))}%, rgba(241,245,249,.72) 100%)`,
                       }}
+                      className="group flex shrink-0 items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-slate-100"
                     >
-                      <PencilSimple size={10} weight="bold" className="group-hover:text-slate-900 transition-colors" /> Change
+                      <span className="max-w-[150px] truncate text-[11.5px] font-semibold text-slate-800">
+                        {sub.name}
+                      </span>
+                      <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-slate-500 group-hover:bg-white">
+                        {sub.completedCount ? `${sub.completedCount}/${sub.nodeCount}` : sub.nodeCount}
+                      </span>
                     </button>
-                  </div>
-
-                  {/* Overall learning progress. */}
-                  <div className="mt-3 pt-3 border-t border-black/[0.06]">
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Progress</span>
-                      <span className="text-[12px] font-black tabular-nums text-slate-900">{roadmapProgress}%</span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-[width] duration-500 ease-out"
-                        style={{ width: `${roadmapProgress}%` }}
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                {/* On a phone this stack and the canvas want the same space, and the stack
-                    wins by default — 260px of controls over a 375px viewport leaves nothing
-                    to read. Everything below the career card folds away behind one toggle,
-                    closed to begin with, so the roadmap is what you land on. */}
-                <button
-                  type="button"
-                  onClick={() => setControlsOpen((open) => !open)}
-                  aria-expanded={controlsOpen}
-                  className="flex w-[260px] max-w-[calc(100vw-1rem)] items-center justify-between gap-2 rounded-xl bg-white/70 px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-500 shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-colors hover:text-slate-900 sm:hidden"
-                >
-                  {controlsOpen ? 'Hide tools' : 'Tools & legend'}
-                  <CaretDown
-                    size={12}
-                    weight="bold"
-                    className={`transition-transform ${controlsOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
+              </div>
+            )}
 
-                <div
-                  className={`${controlsOpen ? 'flex' : 'hidden'} w-[260px] max-w-[calc(100vw-1rem)] flex-col items-start gap-2.5 sm:flex sm:max-w-[calc(100vw-2rem)]`}
-                >
-                  <RoadmapRecommendationsPanel
-                    hasCareer={Boolean(currentCareerId)}
-                    onApplied={loadRoadmap}
-                    refreshSignal={recsRefresh}
-                  />
+            {/* The level used to float here, top-right, in its own bar. It now
+                rides the avatar in the header — a ring for the coverage, the band
+                name and Reassess beside it — because it says something about the
+                student rather than about the roadmap, and the canvas was paying
+                for it. See StudentLevelRing.
+
+                The evidence prompt deliberately stays off this canvas too: it is
+                a three-line panel, and the left side already stacks a breadcrumb
+                over a tool rail. It sits on the dashboard and on the assessment
+                result instead — places where the student is reading rather than
+                navigating. */}
+
+            {/* Tools: an icon rail on the left, each opening one panel beside it.
+                Everything that used to float over the canvas as a permanent stack
+                now lives behind these buttons, so the roadmap owns the space
+                until the student asks for a tool. */}
+            {roadmapData && roadmapData.nodes && roadmapData.nodes.length > 0 && (
+              <div className={`absolute left-2 z-20 flex items-start gap-2 sm:left-4 ${
+                roadmapData?.breadcrumb && roadmapData.breadcrumb.length > 1
+                  ? 'top-14 sm:top-16'
+                  : 'top-2 sm:top-4'
+              }`}>
+                <div className="flex flex-col gap-1 rounded-2xl bg-white/80 p-1.5 shadow-[0_4px_24px_rgb(15,23,42,0.08)] ring-1 ring-white/60 backdrop-blur-md">
+                  {tools.map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      title={label}
+                      aria-label={label}
+                      aria-pressed={activeTool === id}
+                      onClick={() => setActiveTool((cur) => (cur === id ? null : id))}
+                      className={`grid h-9 w-9 place-items-center rounded-xl transition-colors ${
+                        activeTool === id
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
+                    >
+                      <Icon size={17} weight="bold" />
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    title="Import projects from GitHub"
+                    aria-label="Import projects from GitHub"
+                    onClick={() => setGithubImportOpen(true)}
+                    className="grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 active:bg-slate-200"
+                  >
+                    <GithubLogo size={17} weight="fill" />
+                  </button>
+
                   {currentCareerId && isFptAccount && (
                     <button
                       type="button"
-                      onClick={() => { setSelectedNodeData(null); setShowFptPanel(true) }}
-                      className="group flex w-full items-center gap-2.5 rounded-xl bg-white/70 px-3.5 py-2.5 text-left shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-white/60 backdrop-blur-md transition-all hover:-translate-y-px hover:bg-white active:scale-[0.99]"
+                      title="FPT courses taken"
+                      aria-label="FPT courses taken"
+                      onClick={() => { setSelectedNodeData(null); setActiveTool(null); setShowFptPanel(true) }}
+                      className="grid h-9 w-9 place-items-center rounded-xl text-orange-500 transition-colors hover:bg-orange-50"
                     >
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm">
-                        <GraduationCap size={17} weight="fill" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[12px] font-bold text-slate-800">FPT courses taken</span>
-                        <span className="block text-[10px] text-slate-500">Personalize your roadmap</span>
-                      </span>
+                      <GraduationCap size={17} weight="bold" />
                     </button>
                   )}
-                  <StageLegend />
                 </div>
+
+                {activeTool && (
+                  <div className="max-h-[calc(100vh-8rem)] w-[264px] max-w-[calc(100vw-5rem)] overflow-y-auto rounded-2xl bg-white/85 p-3.5 shadow-[0_8px_32px_rgb(15,23,42,0.1)] ring-1 ring-white/60 backdrop-blur-md">
+                    {activeTool === 'career' && (
+                      <>
+                        <p className="mb-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                          <Target size={12} weight="bold" />
+                          Target Career
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <h1 className="flex-1 truncate text-[15px] font-bold tracking-tight text-slate-900">
+                            {roadmapData?.targetCareerRole || currentCareerName || "Target Career"}
+                          </h1>
+                          <button
+                            className="group flex shrink-0 items-center gap-1 rounded-md bg-slate-100/70 px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition-all hover:bg-slate-100 active:scale-[0.98]"
+                            onClick={() => {
+                              setSelectedCareerId(currentCareerId || "")
+                              setCareerSearch("")
+                              setIsChangingCareer(true)
+                            }}
+                          >
+                            <PencilSimple size={10} weight="bold" className="transition-colors group-hover:text-slate-900" /> Change
+                          </button>
+                        </div>
+
+                        <div className="mt-3 border-t border-black/[0.06] pt-3">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Progress</span>
+                            <span className="text-[12px] font-black tabular-nums text-slate-900">{roadmapProgress}%</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-[width] duration-500 ease-out"
+                              style={{ width: `${roadmapProgress}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Sits under Change, because that is the decision it
+                            informs. Opens the picker with the career preselected
+                            rather than switching outright — a suggestion the
+                            student can still walk away from. */}
+                        <CareerAffinityHint
+                          className="mt-3 border-t border-black/[0.06] pt-3"
+                          affinities={affinities}
+                          onChoose={(careerId) => {
+                            setSelectedCareerId(careerId)
+                            setCareerSearch("")
+                            setIsChangingCareer(true)
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {activeTool === 'plan' && (
+                      <LearningPlanPanel
+                        hasCareer={Boolean(currentCareerId)}
+                        refreshSignal={recsRefresh}
+                        // The very nodes the canvas is drawing, so the priority
+                        // list beside it cannot rank the same roadmap differently.
+                        roadmap={roadmapData}
+                        selections={selections}
+                        onOpenNode={(node) => {
+                          // The plan may point at a node the graph is currently
+                          // hiding, so this opens the detail directly rather than
+                          // trying to select something that is not on screen.
+                          setShowFptPanel(false)
+                          setSelectedNodeData({
+                            id: node.nodeId,
+                            label: node.nodeName,
+                            description: node.description,
+                            status: node.status,
+                            links: (node.resources || []).map(url => ({ title: url, url }))
+                          })
+                        }}
+                      />
+                    )}
+
+                    {activeTool === 'choices' && (
+                      <>
+                        <p className="mb-2 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                          <GitFork size={12} weight="bold" />
+                          Your choices
+                        </p>
+                        {/* No `onFocusGroup`: nothing here can move the canvas
+                            yet, and a heading that turns into a button and then
+                            does not go anywhere is worse than plain text. */}
+                        <MarketChoiceRail
+                          rawNodes={graphNodes}
+                          selections={selections}
+                          rankedGroups={choiceGroups}
+                          onOpenPostings={(skillId, name) => setPostingsFor({ skillId, skillName: name })}
+                          onOpenNode={openSubRoadmap}
+                        />
+                      </>
+                    )}
+
+                    {activeTool === 'ai' && (
+                      <RoadmapRecommendationsPanel
+                        hasCareer={Boolean(currentCareerId)}
+                        onApplied={loadRoadmap}
+                        refreshSignal={recsRefresh}
+                      />
+                    )}
+
+                    {activeTool === 'legend' && <StageLegend />}
+                  </div>
+                )}
               </div>
             )}
         </div>
@@ -645,9 +1136,9 @@ export default function StudentRoadmapPageView() {
             but faded to transparent on its left edge, so it read as a broken overlay rather
             than a sheet. Below `sm` it becomes opaque and owns the viewport. */}
         {selectedNodeData && !showFptPanel && (
-        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-full flex-col justify-start bg-slate-50 px-4 pt-4 sm:w-[380px] sm:max-w-[calc(100%-1rem)] sm:bg-gradient-to-l sm:from-slate-50 sm:via-slate-50/85 sm:to-transparent sm:pl-10 sm:pr-5 sm:pt-6">
+        <div className="roadmap-node-panel pointer-events-none absolute inset-y-0 right-0 z-30 flex w-full flex-col justify-start border-l border-slate-200/90 bg-slate-50/95 px-4 pt-4 shadow-[-18px_0_48px_-28px_rgba(15,23,42,0.48)] backdrop-blur-xl sm:w-[380px] sm:max-w-[calc(100%-1rem)] sm:px-5 sm:pt-6">
           <style>{`@keyframes rmPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}.roadmap-node-panel{animation:rmPanelIn .2s ease-out}`}</style>
-          <div className="pointer-events-auto flex max-h-full flex-col">
+          <div className="pointer-events-auto flex max-h-full flex-col rounded-2xl border border-white/90 bg-white/75 shadow-sm ring-1 ring-slate-200/55">
           {/* Compact header: stage dot + node name + close. */}
           <div className="flex items-start gap-2 px-4 pt-3.5 pb-2 shrink-0">
             {getStageStyle(selectedNodeData.stage) && (
@@ -668,7 +1159,7 @@ export default function StudentRoadmapPageView() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-4">
+          <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-5">
             {/* One tight status line: state + completion date. */}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
               <span className={`rounded-full px-2 py-0.5 ${
@@ -687,11 +1178,67 @@ export default function StudentRoadmapPageView() {
               )}
             </div>
 
+            {/* Above the student's level. Said in words here, not just as the chip
+                on the card: the chip fits two syllables and this is the panel the
+                student opened to find out what the node actually is.
+
+                Deliberately not a block: the completion button below stays live.
+                A tier is a statement about timing, not permission, and the
+                student's learning path carries no approval gate. */}
+            {selectedNodeData.tierLocked && (
+              <div className="flex items-start gap-2 rounded-xl bg-slate-900/[0.04] px-2.5 py-2 ring-1 ring-slate-900/[0.06]">
+                <LockKey size={13} weight="bold" className="mt-px shrink-0 text-slate-500" />
+                <p className="text-[11.5px] leading-relaxed text-slate-600">
+                  <span className="font-semibold text-slate-900">
+                    {selectedNodeData.tier === 3 ? 'Advanced' : 'Later on'}
+                  </span>{' '}
+                  — this usually comes after the earlier parts of the track. You can
+                  still learn it now; it just is not what your level suggests next.
+                </p>
+              </div>
+            )}
+
             {/* Short description — clamped, no scroll box. */}
             {selectedNodeData.description && (
               <p className="text-[12.5px] leading-relaxed text-slate-600 line-clamp-4">
                 {selectedNodeData.description}
               </p>
+            )}
+
+            {/* Evidence is part of the node contract, not a hidden recommendation log.
+                A reviewer can now see both the proof and the exact bar it failed. */}
+            {(selectedNodeData.evidenceDecision || (selectedNodeData.evidence || []).length > 0) && (
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/90 p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={13} weight="fill" className="text-indigo-600" />
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Completion evidence</p>
+                  </div>
+                  {typeof selectedNodeData.evidenceRequiredConfidence === 'number' && (
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[9.5px] font-bold text-slate-600 ring-1 ring-slate-200">
+                      Needs {Math.round(selectedNodeData.evidenceRequiredConfidence * 100)}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-slate-700">{selectedNodeData.evidenceDecision}</p>
+                {(selectedNodeData.evidence || []).map((item: any) => (
+                  <div key={item.evidenceId} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 ring-1 ring-slate-200/80">
+                    <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold text-slate-700">
+                      {item.skillName || 'Matched evidence'} · {(item.sourceType || 'unknown').replaceAll('_', ' ')}
+                    </span>
+                    {typeof item.confidence === 'number' && (
+                      <span className={`text-[10.5px] font-black tabular-nums ${item.confidence >= (selectedNodeData.evidenceRequiredConfidence ?? 0) ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {Math.round(item.confidence * 100)}%
+                      </span>
+                    )}
+                    {item.sourceUrl && (
+                      <button type="button" onClick={() => window.open(item.sourceUrl, '_blank', 'noopener,noreferrer')} aria-label="Open evidence source">
+                        <ArrowUpRight size={12} weight="bold" className="text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* FLM overlay — which FPT subjects teach this skill, and their lesson resources.
@@ -871,9 +1418,24 @@ export default function StudentRoadmapPageView() {
         )}
       </main>
 
+      <SkillPostingsPanel
+        skillId={postingsFor?.skillId ?? null}
+        skillName={postingsFor?.skillName ?? null}
+        onClose={() => setPostingsFor(null)}
+      />
+
+      <GithubSyncModal
+        open={githubImportOpen}
+        onOpenChange={setGithubImportOpen}
+        onImported={handleGithubImported}
+      />
+
       <StudentProfileSetupModal isOpen={activeSetupStep === "profile"} onComplete={openSkillSelection} />
+      {activeSetupStep === "assessment" && (
+        <StudentSkillAssessmentModal isOpen onComplete={handleAssessmentComplete} onBack={goBackToSkills} />
+      )}
       {activeSetupStep === "skills" && (
-        <StudentSkillSelectionModal isOpen onComplete={completeSetup} onBack={goBackToProfile} />
+        <StudentSkillSelectionModal isOpen onComplete={openAssessment} onBack={goBackToProfile} />
       )}
 
       <ConfirmModal

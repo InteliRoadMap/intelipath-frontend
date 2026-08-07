@@ -6,6 +6,7 @@ import { getSkillErrorMessage, studentDashboardService } from '../services'
 import type { SkillItem } from '../types'
 import { useChipFlight } from './useChipFlight'
 import OnboardingShell from './OnboardingShell'
+import { rememberJustMarkedNodes } from '../roadmap/justMarkedNodes'
 
 interface StudentSkillSelectionModalProps {
   isOpen: boolean
@@ -13,7 +14,7 @@ interface StudentSkillSelectionModalProps {
   onBack?: () => void
 }
 
-const STEP_LABELS = ['Personal', 'Academic', 'Skills']
+const STEP_LABELS = ['Personal', 'Academic', 'Skills', 'Assessment']
 const ALL = 'All'
 const UNCATEGORISED = 'Other'
 
@@ -144,8 +145,12 @@ export default function StudentSkillSelectionModal({
     setError('')
     setIsSaving(true)
     try {
-      const selectedSkills = await studentDashboardService.selectSkills(uniqueSkillIds)
+      const { selectedSkills, markedNodeIds } = await studentDashboardService.selectSkillsWithMarks(uniqueSkillIds)
       setSelected(selectedSkills)
+      // What the student just told us they know, the roadmap should stop asking
+      // them to learn. Handed to the canvas so it can show those nodes being
+      // ticked instead of quietly already being ticked when they arrive.
+      rememberJustMarkedNodes(markedNodeIds, 'skills')
       onComplete()
     } catch (requestError) {
       setError(getSkillErrorMessage(requestError))
@@ -210,7 +215,7 @@ export default function StudentSkillSelectionModal({
   return (
     <OnboardingShell
       step={3}
-      totalSteps={3}
+      totalSteps={4}
       stepLabels={STEP_LABELS}
       title="Select your current skills"
       subtitle="Pick what you can already do. Your roadmap starts from there instead of the beginning."

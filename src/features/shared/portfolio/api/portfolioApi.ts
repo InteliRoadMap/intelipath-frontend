@@ -47,6 +47,8 @@ export interface PortfolioData {
     category: string;
     stack: string;
     description: string;
+    verified?: boolean;
+    evidenceSource?: 'GITHUB_PROJECT' | 'TRANSCRIPT' | 'MANUAL' | string | null;
   }>;
   projects: Array<{
     id: string;
@@ -57,8 +59,37 @@ export interface PortfolioData {
     demoLink: string;
     icon: string;
   }>;
+  learningJourney?: PortfolioLearningJourney | null;
+  studentLevel?: {
+    level: string;
+    source: string | null;
+    assessedAt: string | null;
+  } | null;
   slug?: string;
   studentId?: string;
+}
+
+export interface PortfolioLearningJourney {
+  targetCareerRole: string;
+  progress: number;
+  readiness: number | null;
+  readinessVerified: number | null;
+  readinessRequiredCount: number | null;
+  readinessHeldCount: number | null;
+  readinessVerifiedCount: number | null;
+  coreSkills: Array<{
+    skillName: string;
+    importance: string | null;
+    proficiency: number | null;
+    verifiedBy: string | null;
+    marketJobCount: number | null;
+  }>;
+  stages: Array<{
+    name: string;
+    totalNodes: number;
+    completedNodes: number;
+    currentNodes: number;
+  }>;
 }
 
 // Mirrors backend GithubRepoRankResponse — one ranked repo in the Sync-GitHub picker.
@@ -77,6 +108,63 @@ export interface GithubRankedRepo {
   qualityScore: number;
   qualityTier: 'HIGH' | 'MEDIUM' | 'LOW';
   highlights: string[];
+  scoreBreakdown: RepoScoreLine[];
+}
+
+// One signal that fed qualityScore. Zero-point lines are included on purpose —
+// they are the only part of the score a student can do something about.
+export interface RepoScoreLine {
+  label: string;
+  points: number;
+  max: number;
+  detail: string;
+}
+
+// Mirrors backend RepoEvidenceResponse — what one repository is currently vouching for.
+// `verifyingCount` is the ACCEPTED subset: the rows actually holding the level up, and
+// the only number worth stopping the student for.
+export interface RepoEvidence {
+  repoUrl: string;
+  verifyingCount: number;
+  skills: Array<{ skill: string; status: 'ACCEPTED' | 'PENDING' | 'REJECTED' }>;
+}
+
+// Mirrors backend GithubImportAuditResponse — how the AI arrived at one project.
+// Everything except `skills[].status` is a snapshot of the analysis run; the status
+// is read live, because the profile keeps moving after the import.
+export interface GithubImportAudit {
+  repoUrl: string;
+  repoFullName: string | null;
+  analyzedAt: string | null;
+  model: string | null;
+  fetchMode: 'AUTHENTICATED' | 'ANONYMOUS' | null;
+  catalogSize: number;
+  careerName: string | null;
+  sources: Array<{ path: string; chars: number; found: boolean }>;
+  // Whether GitHub credits this student with commits here. Null for imports analysed
+  // before authorship was checked at all. UNKNOWN is not a finding against anyone —
+  // it means no usable answer came back, and it never blocks.
+  authorshipVerdict: 'CONTRIBUTED' | 'NOT_CONTRIBUTED' | 'UNKNOWN' | null;
+  authorLogin: string | null;
+  authorCommits: number;
+  totalCommits: number;
+  authorshipReason: string | null;
+  evidenceBlocked: boolean;
+  languageBytes: Record<string, number> | null;
+  commitSubjects: string[] | null;
+  summary: string | null;
+  techStack: Record<string, unknown> | null;
+  skills: Array<{
+    skill: string;
+    confidence: number;
+    status: 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'NOT_RECORDED';
+  }>;
+}
+
+export interface RepoSourcePlan {
+  repoUrl: string;
+  repoFullName: string;
+  sourcePaths: string[];
 }
 
 // Mirrors backend GithubLinkResponse — shared by the link, status and unlink endpoints.
@@ -86,6 +174,12 @@ export interface GithubLinkState {
   githubLogin: string | null;
   scopes: string | null;
   repoAccess: boolean;
+}
+
+export interface PortfolioAboutDraft {
+  role: string;
+  description: string;
+  objective: string;
 }
 
 const defaultPortfolioData: PortfolioData = {
@@ -217,8 +311,17 @@ export const mapToFrontendData = (backendData: any): PortfolioData => {
       id: `skill-${idx}`,
       category: s.skillName || 'Skill',
       stack: s.techStack || '',
-      description: s.customDescription || ''
+      description: s.customDescription || '',
+      verified: Boolean(s.verified),
+      evidenceSource: s.evidenceSource || null
     }));
+  }
+
+  if (backendData.learningJourney) {
+    uiData.learningJourney = backendData.learningJourney;
+  }
+  if (backendData.studentLevel) {
+    uiData.studentLevel = backendData.studentLevel;
   }
 
   return uiData;
@@ -296,6 +399,11 @@ export const portfolioApi = {
     }
   },
 
+  generateAboutDraft: async (): Promise<PortfolioAboutDraft> => {
+    const response = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_ABOUT_AI_DRAFT, undefined, NO_TOAST);
+    return response.data;
+  },
+
   getPublicPortfolio: async (slug: string): Promise<PortfolioData | null> => {
     try {
       // Backend endpoint: GET /api/v1/public-portfolio/slug/{slug}
@@ -304,6 +412,18 @@ export const portfolioApi = {
     } catch (error) {
       console.error('Failed to fetch public portfolio', error);
       return null;
+    }
+  },
+
+  getPublicGithubEvidence: async (slug: string, repoUrl: string): Promise<GithubImportAudit | null> => {
+    try {
+      const response = await publicClient.get(`/public-portfolio/slug/${slug}/project-evidence`, {
+        params: { repoUrl },
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) return null;
+      throw error;
     }
   },
 
@@ -352,6 +472,61 @@ export const portfolioApi = {
   // and return the resulting (unsaved) project entries to append to the portfolio.
   importGithubBatch: async (repoUrls: string[]) => {
     const res = await mainClient.post(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_IMPORT_BATCH, { repoUrls }, NO_TOAST);
+    return res.data;
+  },
+
+  planGithubAnalysis: async (repoUrls: string[]): Promise<RepoSourcePlan[]> => {
+    const res = await mainClient.post(
+      ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_ANALYSIS_PLAN,
+      { repoUrls },
+      NO_TOAST,
+    );
+    return res.data;
+  },
+
+  // How the AI arrived at one imported project. Returns null on 404 — a repository
+  // imported before auditing existed has no record, and that is a different thing
+  // from an analysis that found nothing. skipErrorToast because the caller renders
+  // that distinction inline.
+  getGithubAudit: async (repoUrl: string): Promise<GithubImportAudit | null> => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_AUDIT, {
+        ...NO_TOAST,
+        params: { repoUrl },
+      });
+      return res.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) return null;
+      throw error;
+    }
+  },
+
+  // What one repository is currently vouching for on the student's profile. Asked before
+  // a portfolio project is deleted, so "remove from the showcase" and "give up the skills
+  // it proved" can be two different answers instead of one silent side effect.
+  //
+  // Failure returns an empty list rather than throwing: a network hiccup must not block
+  // the student from tidying their own portfolio, and the delete path that follows is
+  // strictly less destructive when this comes back empty (no skills named, nothing
+  // withdrawn).
+  getRepoEvidence: async (repoUrl: string): Promise<RepoEvidence> => {
+    try {
+      const res = await mainClient.get(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_EVIDENCE, {
+        ...NO_TOAST,
+        params: { repoUrl },
+      });
+      return res.data;
+    } catch {
+      return { repoUrl, verifyingCount: 0, skills: [] };
+    }
+  },
+
+  // Deletes this repository's evidence and clears the verifier from any skill left with
+  // no other backing. Only called after the student explicitly chose it.
+  withdrawRepoEvidence: async (repoUrl: string): Promise<RepoEvidence> => {
+    const res = await mainClient.delete(ENDPOINTS.STUDENT.PORTFOLIO_GITHUB_EVIDENCE, {
+      params: { repoUrl },
+    });
     return res.data;
   },
 

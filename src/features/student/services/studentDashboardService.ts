@@ -4,12 +4,13 @@ import { isUuid } from "@/lib/utils"
 import type {
   AiHistoryItem,
   CareerRole,
+  ChoiceOptions,
+  LearningPlan,
   MarketDemand,
   MentorFeedback,
   NodeSelection,
   Recommendation,
   RoadmapProgress,
-  SkillGap,
   SkillItem,
   SkillResponse,
   StudentRoadmap
@@ -48,6 +49,11 @@ export const studentDashboardService = {
   getStudentProfile: async () => {
     const response = await profileApi.getStudentProfile()
     return unwrapResponse(response.data)
+  },
+
+  getStudentLevel: async () => {
+    const response = await profileApi.getStudentLevel()
+    return response.data || null
   },
 
   updateUserProfile: (payload: Parameters<typeof profileApi.updateUserProfile>[0]) =>
@@ -113,18 +119,60 @@ export const studentDashboardService = {
     return normalizeSkillResponse(response.data).selectedSkills
   },
 
+  /**
+   * The same call, keeping the marked-node receipt the server sends back.
+   *
+   * <p>Added beside {@link selectSkills} rather than widening its return type:
+   * the existing callers only ever wanted the skill list, and the ids are a
+   * one-shot event that would mean nothing to them.
+   */
+  selectSkillsWithMarks: async (
+    skillIds: string[]
+  ): Promise<{ selectedSkills: SkillItem[]; markedNodeIds: string[] }> => {
+    const payload = { skillIds: [...new Set(skillIds)] }
+
+    if (payload.skillIds.some((skillId) => !isUuid(skillId))) {
+      throw new Error("Every selected skill ID must be a valid UUID.")
+    }
+
+    const response = await skillApi.selectSkills(payload)
+    const normalized = normalizeSkillResponse(response.data)
+    return { selectedSkills: normalized.selectedSkills, markedNodeIds: normalized.markedNodeIds }
+  },
+
   compareRoadmapSkills: async (): Promise<SkillResponse> => {
     const response = await skillApi.compareRoadmapSkills()
     return normalizeSkillResponse(response.data)
   },
 
-  getStudentRoadmap: async (): Promise<StudentRoadmap> => {
-    const response = await roadmapApi.getStudentRoadmap()
+  getStudentRoadmap: async (expand?: string[]): Promise<StudentRoadmap> => {
+    const response = await roadmapApi.getStudentRoadmap(expand)
     return normalizeStudentRoadmap(response.data)
   },
 
-  updateNodeProgress: async (nodeId: string, status: string): Promise<any> => {
-    const response = await roadmapApi.updateNodeProgress(nodeId, status);
+  // Shape-tolerant on purpose: a plan whose `steps` failed to arrive should
+  // render as "no plan yet", not throw and take the roadmap page down with it.
+  getStudentPlan: async (): Promise<LearningPlan> => {
+    const response = await roadmapApi.getStudentPlan()
+    const data = unwrapResponse(response.data) as Partial<LearningPlan> | null
+    return {
+      targetCareerRole: data?.targetCareerRole ?? null,
+      level: data?.level ?? null,
+      summary: data?.summary ?? null,
+      requiredSkillCount: data?.requiredSkillCount ?? null,
+      coveredSkillCount: data?.coveredSkillCount ?? null,
+      steps: Array.isArray(data?.steps) ? data.steps : [],
+      alreadyCovered: Array.isArray(data?.alreadyCovered) ? data.alreadyCovered : []
+    }
+  },
+
+  getStudentSubRoadmap: async (nodeId: string, expand: string[] = []): Promise<StudentRoadmap> => {
+    const response = await roadmapApi.getStudentSubRoadmap(nodeId, expand)
+    return normalizeStudentRoadmap(response.data)
+  },
+
+  updateNodeProgress: async (nodeId: string, status: string, contextRootNodeId?: string | null): Promise<any> => {
+    const response = await roadmapApi.updateNodeProgress(nodeId, status, contextRootNodeId);
     return unwrapResponse(response.data);
   },
 
@@ -133,12 +181,14 @@ export const studentDashboardService = {
     return normalizeRoadmapProgress(response.data)
   },
 
-  getSkillGaps: async (): Promise<SkillGap[]> => {
+  getSkillGaps: async (): Promise<{ career: any[]; market: any[] }> => {
     // REFACTOR: Use skillApi.getSkills() instead of deprecated dashboardApi.getSkillGaps()
     const response = await skillApi.getSkills()
     const data = unwrapResponse(response.data) as any
-    // Depending on the exact structure, it could be data.missingSkills or data.missing
-    return data.missingSkills || data.missing || []
+    return {
+      career: Array.isArray(data.careerSkillGaps) ? data.careerSkillGaps : [],
+      market: Array.isArray(data.marketSkillGaps) ? data.marketSkillGaps : []
+    }
   },
 
   getNodeDetail: async (nodeId: string): Promise<any> => {
@@ -160,6 +210,40 @@ export const studentDashboardService = {
 
   clearRoadmapSelection: async (groupNodeId: string): Promise<void> => {
     await roadmapApi.clearSelection(groupNodeId)
+  },
+
+  /**
+   * One group's alternatives, ranked by fit against the student's own skills.
+   *
+   * `verdict` is the honest part and must survive to the UI: TOO_CLOSE and
+   * NO_SIGNAL mean no option may be shown as recommended, so `recommended` is
+   * set here — once, from the verdict — rather than left to each caller to
+   * re-derive and get wrong.
+   */
+  getChoiceOptions: async (groupNodeId: string): Promise<ChoiceOptions | null> => {
+    const response = await roadmapApi.getChoiceOptions(groupNodeId)
+    const data = unwrapResponse<any>(response.data)
+    if (!data || !Array.isArray(data.options)) return null
+    const decisive = String(data.verdict || '').toUpperCase() === 'DECISIVE'
+    return {
+      groupNodeId: data.groupNodeId ?? groupNodeId,
+      groupName: data.groupName ?? '',
+      verdict: data.verdict ?? 'NO_SIGNAL',
+      options: data.options.map((option: any, index: number) => ({
+        nodeId: option.nodeId,
+        name: option.name ?? '',
+        fitScore: typeof option.fitScore === 'number' ? option.fitScore : null,
+        fitReason: option.fitReason ?? null,
+        matchedSkills: Array.isArray(option.matchedSkills) ? option.matchedSkills : [],
+        marketFrequency: typeof option.marketFrequency === 'number' ? option.marketFrequency : null,
+        marketJobCount: typeof option.marketJobCount === 'number' ? option.marketJobCount : null,
+        skillId: option.skillId ? String(option.skillId) : null,
+        nodeCount: typeof option.nodeCount === 'number' ? option.nodeCount : null,
+        chosen: Boolean(option.chosen),
+        autoSelected: Boolean(option.autoSelected),
+        recommended: decisive && index === 0,
+      })),
+    }
   },
 
   getMentorFeedback: async (): Promise<MentorFeedback[]> => {

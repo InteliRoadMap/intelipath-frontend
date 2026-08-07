@@ -12,7 +12,9 @@ import { normalizeTags } from '@/lib/tags';
 import TopHiringCompaniesChart from './TopHiringCompaniesChart';
 import TrendingSkillsChart from './TrendingSkillsChart';
 import SalaryOverviewChart from './SalaryOverviewChart';
-import { TopCompany, SkillTrend, SalaryBracket } from './marketPulse';
+import { TopCompany, SkillTrend, SalaryBracket, Freshness } from './marketPulse';
+import { assessmentService } from '../assessment';
+import { studentDashboardService } from '../services';
 
 
 interface MarketPulsePageViewProps {
@@ -31,25 +33,46 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
   const [salaryOverview, setSalaryOverview] = useState<SalaryBracket[]>([]);
   const [recruitmentPosts, setRecruitmentPosts] = useState<RecruitmentPost[]>([]);
   const [loading, setLoading] = useState(true);
+  // How far back every figure on this page looks. A market chart with no period
+  // attached gets read as "today", which is the difference between analysis and a
+  // screenshot — so the window is explicit, adjustable, and stated on screen.
+  const [windowDays, setWindowDays] = useState(30);
+  const [freshness, setFreshness] = useState<Freshness | null>(null);
+  // The student's assessed level, or null when they skipped the assessment.
+  // Null must not become a filter: someone who never told us their level should
+  // see the whole market, not be quietly narrowed to FRESHER.
+  const [level, setLevel] = useState<string | null>(null);
+  // Whether the level filter is actually applied. Defaults on once a level is
+  // known, but stays visible and switchable — a page that silently hides most of
+  // the market is worse than one that shows too much.
+  const [matchLevel, setMatchLevel] = useState(true);
+  const [careerId, setCareerId] = useState<string | null>(null);
+  const [careerName, setCareerName] = useState<string | null>(null);
+  const [levelResolved, setLevelResolved] = useState(false);
+  const [careerResolved, setCareerResolved] = useState(false);
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!levelResolved || !careerResolved) return;
       try {
         const results = await Promise.allSettled([
-          marketPulseApi.getTopHiringCompanies(5),
-          marketPulseApi.getTrendingSkills(),
-          marketPulseApi.getSalaryOverview(),
-          marketPulseApi.getRecruitmentPosts()
+          marketPulseApi.getTopHiringCompanies(5, windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getTrendingSkills(windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getSalaryOverview(windowDays, careerId, matchLevel ? level : null),
+          marketPulseApi.getRecruitmentPosts(matchLevel ? level : null, careerId),
+          marketPulseApi.getFreshness(windowDays, careerId, matchLevel ? level : null)
         ]);
         
         const companiesRes = results[0].status === 'fulfilled' ? results[0].value : { data: [] };
         const skillsRes = results[1].status === 'fulfilled' ? results[1].value : { data: [] };
         const salaryRes = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
         const postsRes = results[3].status === 'fulfilled' ? results[3].value : { data: [] };
+        const freshnessRes = results[4].status === 'fulfilled' ? results[4].value : null;
 
         setTopCompanies(companiesRes.data || []);
         setTrendingSkills(skillsRes.data || []);
         setSalaryOverview(salaryRes.data || []);
+        setFreshness(freshnessRes?.data ?? null);
         
         // Handle RecruitmentPostResponse (which might have a nested list of posts depending on backend)
         const postsData = postsRes.data?.data || postsRes.data || [];
@@ -68,7 +91,33 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
         setLoading(false);
       }
     };
+    setLoading(true);
     fetchDashboardData();
+  }, [windowDays, level, matchLevel, careerId, levelResolved, careerResolved]);
+
+  // Resolved once. A 204 (no assessment taken) resolves to null and everything
+  // below simply behaves as it did before levels existed.
+  React.useEffect(() => {
+    let active = true;
+    assessmentService
+      .getLevel()
+      .then((result) => { if (active) setLevel(result?.level ?? null); })
+      .catch(() => { if (active) setLevel(null); })
+      .finally(() => { if (active) setLevelResolved(true); });
+    return () => { active = false; };
+  }, []);
+
+  React.useEffect(() => {
+    let active = true;
+    studentDashboardService.getStudentProfile().then((raw: any) => {
+      if (!active) return;
+      const profile = raw?.data ?? raw;
+      const career = profile?.career;
+      setCareerId(profile?.careerId ?? profile?.career_id ?? career?.careerId ?? career?.career_id ?? null);
+      setCareerName(profile?.careerName ?? profile?.career_name ?? career?.careerName ?? career?.career_name ?? null);
+    }).catch(() => { if (active) { setCareerId(null); setCareerName(null); } })
+      .finally(() => { if (active) setCareerResolved(true); });
+    return () => { active = false; };
   }, []);
 
   // The window the trend data actually covers, so the card states its real range instead
@@ -148,23 +197,83 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
         {/* Header — sits on the background, no card chrome */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-2.5">
+            {/* Was a "Live job market" badge. It is not live — it is as fresh as the
+                last scrape, and saying otherwise is the part a reader would most
+                reasonably object to. State the actual date instead. */}
             <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#00838f]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00838f]" />
-              Live job market
+              {freshness?.latestPostedDate
+                ? `Job data to ${new Date(freshness.latestPostedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
+                : 'Job market data'}
             </span>
             <h1 className="text-[36px] font-extrabold leading-none tracking-tight text-slate-900">
               Market Pulse
             </h1>
             <p className="max-w-xl text-[15px] leading-relaxed text-slate-500">
-              In-demand skills, salary signals and open roles — matched to your roadmap.
+              In-demand skills, salary signals and open roles
+              {careerName ? ` for ${careerName}` : ''}{level && matchLevel ? ` at ${level} level` : ''}.
             </p>
           </div>
-          {!loading && recruitmentPosts.length > 0 && (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black tabular-nums text-slate-900">{recruitmentPosts.length}</span>
-              <span className="text-[13px] font-semibold text-slate-400">open roles</span>
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            {/* Every figure below is scoped to this window. Exposed as a control
+                rather than hard-coded so the number on screen always has a stated
+                period behind it. */}
+            {/* The level filter states itself and can be switched off. A page that
+                narrows the market without saying so reads as "there are only six
+                jobs", which is a false impression of the market rather than a
+                helpful default. */}
+            {level && (
+              <button
+                type="button"
+                onClick={() => setMatchLevel((on) => !on)}
+                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                  matchLevel
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {matchLevel ? `${level} roles only` : 'All levels'}
+                <span className={matchLevel ? 'text-white/50' : 'text-slate-400'}>
+                  {matchLevel ? 'show all' : `show ${level}`}
+                </span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
+              {[7, 30, 90].map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => setWindowDays(days)}
+                  className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
+                    windowDays === days
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {days}d
+                </button>
+              ))}
             </div>
-          )}
+
+            {!loading && freshness && (
+              <div className="text-left sm:text-right">
+                <div className="flex items-baseline gap-1.5 sm:justify-end">
+                  <span className="text-3xl font-black tabular-nums text-slate-900">
+                    {freshness.jobsInWindow}
+                  </span>
+                  <span className="text-[13px] font-semibold text-slate-400">
+                    jobs in {freshness.windowDays}d
+                  </span>
+                </div>
+                {/* "New" means never advertised before, not "posted recently" — a role
+                    re-listed every fortnight would otherwise look new every fortnight. */}
+                <p className="text-[12px] font-medium text-slate-400">
+                  {freshness.newJobs} never advertised before
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Dashboard — sections sit directly on the background, separated by hairlines
@@ -311,7 +420,12 @@ export default function MarketPulsePageView({ hideLayout = false }: MarketPulseP
                       {post.recruitment?.title}
                     </h3>
                     <div className="truncate text-[12.5px] font-medium text-slate-500">
-                      {post.company?.name}
+                      <span>{post.company?.name}</span>
+                      {post.recruitment?.seniority && (
+                        <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-white">
+                          {post.recruitment.seniority}
+                        </span>
+                      )}
                     </div>
                     {/* Inline meta */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate-500">

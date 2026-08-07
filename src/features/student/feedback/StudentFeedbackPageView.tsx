@@ -18,6 +18,7 @@ export function StudentFeedbackPageView() {
   const [replyContent, setReplyContent] = useState('');
   const [isReplying, setIsReplying] = useState(false);
   const [replySuccess, setReplySuccess] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState('');
 
   useEffect(() => {
     studentApi.getFeedback()
@@ -38,8 +39,13 @@ export function StudentFeedbackPageView() {
       await studentApi.replyFeedback(feedbackId, replyContent);
       setReplySuccess(feedbackId);
       setReplyContent('');
+      setReplyError('');
     } catch (e) {
+      // The success state used to be set unconditionally, so a failed reply still
+      // told the student it had been sent. Surface it instead — a lost message the
+      // student believes was delivered is worse than a visible error.
       console.error(e);
+      setReplyError('Could not send your reply. Please try again.');
     } finally {
       setIsReplying(false);
     }
@@ -128,6 +134,11 @@ export function StudentFeedbackPageView() {
                           placeholder="E.g., Thank you so much for the review! I will definitely look into Zustand."
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none resize-none text-slate-900"
                         />
+                        {replyError && (
+                          <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+                            {replyError}
+                          </p>
+                        )}
                         <button 
                           onClick={() => handleSendReply(item.id)}
                           disabled={!replyContent.trim() || isReplying}

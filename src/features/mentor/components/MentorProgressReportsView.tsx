@@ -6,6 +6,9 @@ import mentorApi from '@/features/mentor/api/mentorApi';
 export function MentorProgressReportsView() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  // Set when the request itself failed, so a broken backend is not
+  // rendered as an empty dashboard.
+  const [loadError, setLoadError] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -14,6 +17,7 @@ export function MentorProgressReportsView() {
       setIsLoading(false);
     }).catch((err) => {
       console.error(err);
+      setLoadError('Could not load progress reports. Please refresh or try again shortly.');
       setIsLoading(false);
     });
   }, []);
@@ -46,6 +50,11 @@ export function MentorProgressReportsView() {
 
   return (
     <div ref={containerRef} className="pb-10">
+      {loadError && (
+        <div role="alert" className="mx-auto mb-6 max-w-[1680px] rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
+          {loadError}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h2 className="text-[24px] font-bold text-slate-900 tracking-tight mb-2">Progress Reports</h2>

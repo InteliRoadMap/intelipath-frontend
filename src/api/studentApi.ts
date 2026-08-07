@@ -45,15 +45,19 @@ const studentApi = {
     }
   },
 
+  /**
+   * Sends the student's reply back to whoever wrote the feedback.
+   *
+   * Errors are deliberately NOT swallowed here: this used to return a hardcoded
+   * success without calling anything, so the reply silently vanished while the UI
+   * confirmed it had been sent. The caller must be able to tell the difference.
+   */
   replyFeedback: async (feedbackId: string, content: string) => {
-    // COMMENTED OUT ORIGINAL FOR TEAM CONTRIBUTION PRESERVATION:
-    // // In reality: await mainClient.post(ENDPOINTS.STUDENT.REPLY_FEEDBACK(feedbackId), { content })
-    // return new Promise((resolve) => {
-    //   setTimeout(() => resolve({ success: true }), 500);
-    // });
-
-    // NEW LOGIC: Instant resolve for mock
-    return { success: true };
+    const res = await mainClient.post(
+      ENDPOINTS.STUDENT_DASHBOARD.MENTOR_FEEDBACK_REPLY(feedbackId),
+      { content }
+    )
+    return res.data?.data ?? res.data
   },
 
   // Mentors the student can ask for a review. Fetched as one page rather than paged in the
